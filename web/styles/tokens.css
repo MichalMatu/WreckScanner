@@ -1,0 +1,37 @@
+:root {
+    --bg: #0b0f19;
+    --surface-elevated: rgba(17, 24, 39, 0.85);
+    --surface-elevated-solid: #111827;
+    --surface-overlay: rgba(17, 24, 39, 0.97);
+    --surface-subtle: rgba(15, 23, 42, 0.72);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(148, 163, 184, 0.28);
+    --text: #f3f4f6;
+    --text-strong: #ffffff;
+    --text-soft: #e0e7ff;
+    --muted: #9ca3af;
+    --muted-strong: #cbd5e1;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-soft: rgba(99, 102, 241, 0.12);
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #38bdf8;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+    --radius-panel: 16px;
+    --shadow-panel: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6);
+    --shadow-focus: 0 0 0 2px rgba(129, 140, 248, 0.55);
+    --shadow-primary: 0 10px 30px rgba(99, 102, 241, 0.35);
+    --font: 'Plus Jakarta Sans', sans-serif;
+    --font-body: var(--font);
+    --font-title: 'Outfit', sans-serif;
+    --font-display: var(--font-title);
+    --font-mono: 'SF Mono', 'Menlo', monospace;
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23c7d2fe' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

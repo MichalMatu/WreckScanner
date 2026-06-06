@@ -1,0 +1,218 @@
+.setting-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.setting-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-toggle-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.settings-reset-btn {
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.10);
+    color: #e0e7ff;
+    font: 700 0.68rem var(--font-display);
+    padding: 5px 9px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.settings-reset-btn:hover {
+    background: rgba(99, 102, 241, 0.20);
+    border-color: rgba(99, 102, 241, 0.60);
+    color: #fff;
+}
+
+.settings-danger-btn {
+    min-height: 28px;
+    padding: 5px 10px;
+    font: 800 0.68rem var(--font-display);
+    box-shadow: none;
+}
+
+.photo-retention-status {
+    color: #cbd5e1;
+}
+
+.admin-panel-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+.admin-panel-section {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 8px;
+    padding: 14px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-panel-section h3 {
+    margin: 0;
+    color: #f8fafc;
+    font: 800 0.82rem var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.admin-panel-section--retention {
+    grid-column: 1 / -1;
+}
+
+.admin-panel-actions,
+.admin-layer-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-panel-action,
+.admin-layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e5e7eb;
+    font: 700 0.82rem var(--font-display);
+}
+
+.admin-panel-action {
+    justify-content: flex-start;
+    padding: 9px 11px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.admin-panel-action:hover {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(129, 140, 248, 0.46);
+    color: #fff;
+}
+
+.admin-panel-action svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
+.admin-layer-toggle {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.admin-layer-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    flex: 0 0 auto;
+}
+
+.admin-layer-toggle:has(input:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.admin-layer-toggle .layer-pin {
+    flex: 0 0 auto;
+}
+
+.admin-retention-header {
+    align-items: flex-start;
+}
+
+.retention-actions {
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+.retention-actions .settings-reset-btn,
+.retention-actions .settings-danger-btn {
+    white-space: nowrap;
+    min-width: 58px;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+.modal--settings .settings-grid {
+    gap: 8px 10px;
+}
+
+.setting-range {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 10px;
+    align-items: center;
+    min-width: 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.modal--settings .setting-range {
+    gap: 4px 8px;
+    font-size: 0.70rem;
+}
+
+.setting-range output {
+    color: #e0e7ff;
+    font: 700 0.72rem var(--font-display);
+}
+
+.modal--settings .setting-range output {
+    font-size: 0.68rem;
+}
+
+.setting-range input[type="range"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    background:
+        linear-gradient(to right,
+            transparent calc(var(--default-pos, -10%) - 1px),
+            rgba(224, 231, 255, 0.70) calc(var(--default-pos, -10%) - 1px),
+            rgba(224, 231, 255, 0.70) calc(var(--default-pos, -10%) + 1px),
+            transparent calc(var(--default-pos, -10%) + 1px)),
+        rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 520px) {
+    .modal--settings {
+        top: 12px;
+        right: auto;
+        left: 12px;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+
+    .modal--admin-panel {
+        top: 12px;
+        right: auto;
+        left: 12px;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-body {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,94 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Wymuszamy ukrycie elementów z atrybutem hidden — inaczej display:flex z innych klas wygrywa */
+[hidden] {
+    display: none !important;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── MAP ────────────────────────────── */
+#map {
+    flex: 1;
+    z-index: 1;
+}
+
+/* ── CROSSHAIR OVERLAY ──────────────── */
+#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    z-index: 600;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+#crosshair.is-hidden {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+}
+
+.leaflet-container.is-picking-field-photo-location {
+    cursor: crosshair;
+}
+
+#crosshair .ring {
+    width: 160px;
+    height: 160px;
+    border: 2px solid rgba(99, 102, 241, 0.8);
+    border-radius: 6px;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12), inset 0 0 20px rgba(99, 102, 241, 0.06);
+    position: relative;
+}
+
+#crosshair .ring::before,
+#crosshair .ring::after {
+    content: '';
+    position: absolute;
+    background: rgba(99, 102, 241, 0.5);
+}
+
+#crosshair .ring::before {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+}
+
+#crosshair .ring::after {
+    height: 1px;
+    width: 100%;
+    top: 50%;
+    left: 0;
+}
+
+#crosshair .size-label {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: #a5b4fc;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
