@@ -16,11 +16,12 @@ from core.privacy_requests import create_privacy_request
 from core.report_models import ReportPhotoUpload
 from core.report_packages import create_public_report_package, create_report_package
 from core.uploads import UploadedFile
+from core.wrecks import delete_wreck
 from core.wrecks_attachments import (
     attach_field_photos_to_wreck,
     attach_wreck_photos,
 )
-from core.wrecks_save import save_manual_wreck
+from core.wrecks_save import save_vehicle_case
 
 
 def report_photo_uploads(files: list[UploadedFile]) -> list[ReportPhotoUpload]:
@@ -349,18 +350,34 @@ def handle_save_wreck(handler) -> None:
             handler, "manual_wrecks", "Dodawanie pinezek jest teraz wylaczone dla niezalogowanych."
         ):
             return
+        photo_ids = data.get("field_photo_ids") if isinstance(data.get("field_photo_ids"), list) else []
+        if not photo_ids:
+            raise ValueError("Utworzenie sprawy pojazdu wymaga co najmniej jednego zatwierdzonego zdjęcia z miejsca.")
         review_status = "approved" if http_admin_session.is_admin(handler) else "pending"
         submission_owner = None if http_admin_session.is_admin(handler) else access.submission_owner(handler)
         if not http_admin_session.is_admin(handler):
             access.ensure_public_submission_quota(handler, additional_bytes=0, additional_items=1)
-        result = save_manual_wreck(
+        result = save_vehicle_case(
             data.get("lat"),
             data.get("lon"),
             core_config.WRECKS_DIR,
-            crop_m=data.get("cropM", core_config.REVIEW_CROP_M),
             public_review_status=review_status,
             submission_owner=submission_owner,
         )
+        wreck_id = str(result.get("wreck", {}).get("id") or "")
+        try:
+            attach_result = attach_field_photos_to_wreck(
+                wreck_id,
+                photo_ids,
+                core_config.FIELD_PHOTOS_DIR,
+                core_config.WRECKS_DIR,
+            )
+        except Exception:
+            if result.get("created") and wreck_id:
+                delete_wreck(wreck_id, core_config.WRECKS_DIR)
+            raise
+        result["wreck"] = attach_result["wreck"]
+        result["attached_count"] = attach_result["attached_count"]
         http_responses.send_json(handler, 200, result)
     except (FileNotFoundError, TypeError, ValueError) as e:
         http_responses.send_json(handler, 400, {"error": str(e)})

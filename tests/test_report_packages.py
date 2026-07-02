@@ -17,7 +17,7 @@ from core.report_packages import (
     create_public_report_package,
     create_report_package,
 )
-from core.wrecks_save import save_manual_wreck
+from core.wrecks_save import save_vehicle_case
 
 
 def image_bytes(fmt: str = "JPEG") -> bytes:
@@ -221,13 +221,12 @@ class ReportPackageTests(unittest.TestCase):
             self.assertEqual(pdf_path.read_bytes()[:5], b"%PDF-")
             self.assertGreater(result["pdf_size_bytes"], 10_000)
 
-    def test_create_report_package_accepts_manual_wreck_with_map_crops(self):
+    def test_create_report_package_generates_map_crops_for_photo_ready_case(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             wrecks_dir = root / "zidentyfikowane_wraki"
             private_reports_dir = root / "private_reports"
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                saved = save_manual_wreck(51.088784, 17.035782, wrecks_dir)
+            saved = save_vehicle_case(51.088784, 17.035782, wrecks_dir)
             wreck_id = saved["wreck"]["id"]
 
             with (

@@ -9,15 +9,26 @@ from core.wrecks_catalog import load_records as _load_records
 from core.wrecks_identity import now_iso as _now_iso
 from core.wrecks_migration import migrate_wreck_record as _migrate_wreck_record
 from core.wrecks_public import wreck_summary
-from core.wrecks_rendering import render_record_html
+from core.wrecks_rendering import approved_attached_photos, render_record_html
 from core.wrecks_review import apply_wreck_review
 from core.wrecks_review import wreck_photo_review_items as _wreck_photo_review_items
 from core.wrecks_review import wreck_review_items as _wreck_review_items
 from core.wrecks_store import read_json, record_dir_for, validate_wreck_id, write_json
 
 
+def _has_vehicle_photos(record: dict[str, Any], *, include_pending: bool) -> bool:
+    photos = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
+    if include_pending:
+        return bool(photos)
+    return bool(approved_attached_photos(record))
+
+
 def list_wrecks(wrecks_dir: Path, *, include_pending: bool = False) -> list[dict[str, Any]]:
-    return [wreck_summary(record) for record in _load_records(wrecks_dir) if include_pending or is_approved(record)]
+    return [
+        wreck_summary(record)
+        for record in _load_records(wrecks_dir)
+        if (include_pending or is_approved(record)) and _has_vehicle_photos(record, include_pending=include_pending)
+    ]
 
 
 def list_wreck_review_items(wrecks_dir: Path, *, status: str = "pending") -> list[dict[str, Any]]:

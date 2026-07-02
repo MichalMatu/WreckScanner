@@ -13,34 +13,6 @@ def wreck_public_file_url(record_id: str, relative_path: Any) -> str | None:
     return f"/zidentyfikowane_wraki/{quote(record_id, safe='')}/{quote(rel, safe='/._-')}"
 
 
-def evidence_previews(record: dict[str, Any]) -> list[dict[str, str]]:
-    record_id = str(record.get("id") or "")
-    previews: list[dict[str, str]] = []
-
-    latest = record.get("latest_evidence") if isinstance(record.get("latest_evidence"), dict) else {}
-    evidence_path = str(latest.get("path") or "").strip("/")
-    crops = latest.get("crops") if isinstance(latest.get("crops"), list) else []
-    for crop in crops:
-        if not isinstance(crop, dict):
-            continue
-        file_name = str(crop.get("file") or "").strip("/")
-        if not file_name:
-            continue
-        url = wreck_public_file_url(record_id, f"{evidence_path}/{file_name}")
-        if not url:
-            continue
-        label = str(crop.get("label") or "evidence")
-        previews.append(
-            {
-                "source": "evidence",
-                "label": label,
-                "public_image": url,
-                "public_thumb": url,
-            }
-        )
-    return previews
-
-
 def field_photo_previews(record: dict[str, Any]) -> list[dict[str, str]]:
     record_id = str(record.get("id") or "")
     previews: list[dict[str, str]] = []
@@ -81,7 +53,6 @@ def wreck_summary(record: dict[str, Any]) -> dict[str, Any]:
         "latest_evidence_id": latest.get("id"),
         "photo_count": len(attached_photos),
         "review_photo_count": len(all_attached_photos),
-        "evidence_previews": evidence_previews(record),
         "field_photo_previews": field_photo_previews(record),
         "folder_url": f"/zidentyfikowane_wraki/{record['id']}/index.html",
         "links": record.get("links") or {},

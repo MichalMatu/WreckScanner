@@ -60,27 +60,6 @@ def save_location_evidence(
     return evidence
 
 
-def save_manual_evidence(
-    *,
-    lat: float,
-    lon: float,
-    record_dir: Path,
-    created_at: str,
-    crop_m: Any,
-    links: dict[str, str],
-) -> dict[str, Any]:
-    return save_location_evidence(
-        lat=lat,
-        lon=lon,
-        record_dir=record_dir,
-        created_at=created_at,
-        crop_m=crop_m,
-        links=links,
-        source="manual_inspection",
-        id_prefix="manual",
-    )
-
-
 def save_report_evidence(
     *,
     lat: float,

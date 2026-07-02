@@ -7,7 +7,7 @@ from typing import Any
 from core import config
 from core.photo_privacy import safe_child
 from core.uploads import UploadedFile
-from core.wreck_photo_transfers import move_field_photo_to_wreck, prepare_field_photo_attachment
+from core.wreck_photo_transfers import copy_field_photo_to_wreck, prepare_field_photo_copy
 from core.wrecks_identity import now_iso
 from core.wrecks_migration import migrate_wreck_record
 from core.wrecks_photos import (
@@ -98,19 +98,24 @@ def attach_field_photos_to_wreck(
     if not isinstance(wreck_record, dict):
         raise ValueError("Nieprawidłowy format record.json.")
 
-    field_records: list[tuple[Path, dict[str, Any]]] = []
+    field_records: list[dict[str, Any]] = []
     for photo_id in unique_photo_ids:
-        field_records.append(prepare_field_photo_attachment(photo_id, field_photos_dir, wreck_record_dir))
+        field_records.append(prepare_field_photo_copy(photo_id, field_photos_dir))
 
     attached = wreck_record.get("attached_photos")
     if not isinstance(attached, list):
         attached = []
     moved = []
-    for field_record_dir, field_record in field_records:
-        moved_photo = move_field_photo_to_wreck(field_record, field_record_dir, wreck_record_dir)
-        migrate_attached_photo(wreck_record_dir, wreck_record, moved_photo)
-        moved.append(moved_photo)
-        attached.append(moved_photo)
+    attached_ids = {str(photo.get("id") or "") for photo in attached if isinstance(photo, dict)}
+    for field_record in field_records:
+        photo_id = str(field_record.get("id") or "")
+        if photo_id in attached_ids:
+            continue
+        copied_photo = copy_field_photo_to_wreck(field_record, wreck_record_dir)
+        migrate_attached_photo(wreck_record_dir, wreck_record, copied_photo)
+        moved.append(copied_photo)
+        attached.append(copied_photo)
+        attached_ids.add(photo_id)
         wreck_record["attached_photos"] = attached
         wreck_record["updated_at"] = now_iso()
         write_json(wreck_record_dir / "record.json", wreck_record)
@@ -121,7 +126,7 @@ def attach_field_photos_to_wreck(
         "photos": moved,
         "attached_count": len(moved),
         "photo_count": len(attached),
-        "removed_field_photo_ids": unique_photo_ids,
+        "copied_field_photo_ids": [photo["id"] for photo in moved],
         "wreck": wreck_summary(wreck_record),
     }
 

@@ -8,19 +8,20 @@ from unittest.mock import patch
 from PIL import Image
 
 from core import config as core_config
+from core.field_photos import list_field_photos, save_field_photo
 from core.uploads import UploadedFile
 from core.wrecks import delete_wreck, list_wrecks, review_wreck
 from core.wrecks_assets import public_wreck_asset, wreck_is_public, wreck_photo_original_asset
-from core.wrecks_attachments import attach_wreck_photos, review_wreck_photo
+from core.wrecks_attachments import attach_field_photos_to_wreck, attach_wreck_photos, review_wreck_photo
 from core.wrecks_catalog import find_existing_record, load_records
-from core.wrecks_evidence import first_last_year, save_manual_evidence
+from core.wrecks_evidence import first_last_year
 from core.wrecks_identity import validate_coordinates, wreck_id
 from core.wrecks_migration import migrate_wreck_record
 from core.wrecks_photos import attached_photo_by_id, save_attached_photo
 from core.wrecks_public import wreck_public_file_url, wreck_summary
 from core.wrecks_rendering import approved_attached_photos, render_record_html
 from core.wrecks_review import apply_wreck_photo_review, apply_wreck_review, wreck_photo_review_item, wreck_review_items
-from core.wrecks_save import save_manual_wreck
+from core.wrecks_save import save_vehicle_case
 from core.wrecks_store import record_dir_for, validate_wreck_id
 
 
@@ -37,6 +38,10 @@ def image_bytes() -> bytes:
 
 def upload(data: bytes, filename: str = "miejsce.jpg") -> UploadedFile:
     return UploadedFile(field_name="photos[]", filename=filename, content_type="image/jpeg", data=data)
+
+
+def field_upload(data: bytes, filename: str = "teren.jpg") -> UploadedFile:
+    return UploadedFile(field_name="photo", filename=filename, content_type="image/jpeg", data=data)
 
 
 def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **_kwargs):
@@ -106,127 +111,122 @@ class WreckIdentityCatalogTests(unittest.TestCase):
             self.assertIsNotNone(distance_m)
 
 
-class ManualWreckContractTests(unittest.TestCase):
-    def test_save_manual_wreck_creates_location_evidence_and_dedupes_nearby_location(self):
+class VehicleCaseContractTests(unittest.TestCase):
+    def test_save_vehicle_case_creates_photo_ready_record_and_dedupes_nearby_location(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                first = save_manual_wreck(51.088784, 17.035782, wrecks_dir)
-                second = save_manual_wreck(51.088785, 17.035783, wrecks_dir)
+            first = save_vehicle_case(51.088784, 17.035782, wrecks_dir)
+            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir)
 
             self.assertTrue(first["created"])
-            self.assertTrue(first["evidence_created"])
             self.assertFalse(second["created"])
-            self.assertFalse(second["evidence_created"])
-            self.assertEqual(len(list_wrecks(wrecks_dir)), 1)
+            self.assertEqual(len(list_wrecks(wrecks_dir)), 0)
 
             record_path = next(wrecks_dir.glob("*/record.json"))
             record = json.loads(record_path.read_text(encoding="utf-8"))
-            self.assertEqual(record["status"], "manual")
-            self.assertEqual(record["source"], "manual_inspection")
-            self.assertEqual(record["labels_present"], ["2024", "2025"])
+            self.assertEqual(record["status"], "field_photo_case")
+            self.assertEqual(record["source"], "field_photo")
+            self.assertEqual(record["labels_present"], [])
+            self.assertEqual(record["evidences"], [])
+            self.assertNotIn("latest_evidence", record)
             self.assertNotIn("best_score", record)
-            evidence = record["latest_evidence"]
-            self.assertEqual(evidence["source"], "manual_inspection")
-            self.assertNotIn("rank", evidence)
-            self.assertNotIn("score", evidence)
-            evidence_dir = record_path.parent / evidence["path"]
-            self.assertEqual([crop["label"] for crop in evidence["crops"]], ["2024", "2025"])
-            self.assertTrue((evidence_dir / "2024.jpg").exists())
-            self.assertTrue((evidence_dir / "2025.jpg").exists())
-            self.assertTrue((evidence_dir / "metadata.json").exists())
-            self.assertTrue((evidence_dir / "manual_inspection.json").exists())
-            self.assertTrue((evidence_dir / "links.json").exists())
             self.assertTrue((record_path.parent / "index.html").exists())
 
-    def test_save_manual_wreck_uses_location_crops_without_previous_area_state(self):
+    def test_save_vehicle_case_uses_location_without_previous_area_state(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                result = save_manual_wreck(51.2, 17.2, wrecks_dir)
+            result = save_vehicle_case(51.2, 17.2, wrecks_dir)
 
             self.assertEqual(result["status"], "ok")
             self.assertTrue((wrecks_dir / result["wreck"]["id"] / "record.json").exists())
 
-    def test_pending_manual_wreck_is_hidden_until_reviewed(self):
+    def test_photo_less_vehicle_case_is_hidden_from_map_lists_even_after_review(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                result = save_manual_wreck(
-                    51.088784,
-                    17.035782,
-                    wrecks_dir,
-                    public_review_status="pending",
-                    submission_owner="public:test",
-                )
+            result = save_vehicle_case(
+                51.088784,
+                17.035782,
+                wrecks_dir,
+                public_review_status="pending",
+                submission_owner="public:test",
+            )
 
             self.assertEqual(list_wrecks(wrecks_dir), [])
             admin_wrecks = list_wrecks(wrecks_dir, include_pending=True)
-            self.assertEqual(len(admin_wrecks), 1)
-            self.assertEqual(admin_wrecks[0]["public_review_status"], "pending")
-            self.assertEqual(admin_wrecks[0]["review_photo_count"], 0)
+            self.assertEqual(admin_wrecks, [])
 
             review_wreck(result["wreck"]["id"], wrecks_dir, status="approved")
 
             public_wrecks = list_wrecks(wrecks_dir)
-            self.assertEqual(len(public_wrecks), 1)
-            self.assertEqual(public_wrecks[0]["public_review_status"], "approved")
+            self.assertEqual(public_wrecks, [])
 
-    def test_manual_dedupe_approval_is_persisted(self):
+    def test_vehicle_case_dedupe_approval_is_persisted(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                first = save_manual_wreck(
-                    51.088784,
-                    17.035782,
-                    wrecks_dir,
-                    public_review_status="pending",
-                )
-                second = save_manual_wreck(51.088785, 17.035783, wrecks_dir)
+            first = save_vehicle_case(
+                51.088784,
+                17.035782,
+                wrecks_dir,
+                public_review_status="pending",
+            )
+            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir)
 
             self.assertFalse(second["created"])
             record = json.loads((wrecks_dir / first["wreck"]["id"] / "record.json").read_text(encoding="utf-8"))
             self.assertEqual(record["public_review_status"], "approved")
             self.assertIsNotNone(record["reviewed_at"])
 
-    def test_save_manual_wreck_rejects_invalid_coordinates(self):
+    def test_save_vehicle_case_rejects_invalid_coordinates(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
             with self.assertRaises(ValueError):
-                save_manual_wreck("not-a-lat", 17.035782, wrecks_dir)
+                save_vehicle_case("not-a-lat", 17.035782, wrecks_dir)
             with self.assertRaises(ValueError):
-                save_manual_wreck(91, 17.035782, wrecks_dir)
+                save_vehicle_case(91, 17.035782, wrecks_dir)
 
-    def test_manual_evidence_uses_location_crops_and_year_ranges(self):
-        with TemporaryDirectory() as tmp:
-            record_dir = Path(tmp) / "wreck"
-
-            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
-                evidence = save_manual_evidence(
-                    lat=51.1,
-                    lon=17.2,
-                    record_dir=record_dir,
-                    created_at="2026-06-03T10:00:00Z",
-                    crop_m=7.5,
-                    links={"geoportal": "https://example.test/geo"},
-                )
-
-            self.assertEqual(evidence["labels_present"], ["2024", "2025"])
-            self.assertNotIn("rank", evidence)
-            self.assertNotIn("score", evidence)
-            self.assertEqual(first_last_year(["x", "2025", "2024"]), (2024, 2025))
-            self.assertEqual(first_last_year(["x"]), (None, None))
-            evidence_dir = record_dir / evidence["path"]
-            self.assertTrue((evidence_dir / "2024.jpg").exists())
-            self.assertTrue((evidence_dir / "metadata.json").exists())
+    def test_evidence_year_range_helper_uses_numeric_labels(self):
+        self.assertEqual(first_last_year(["x", "2025", "2024"]), (2024, 2025))
+        self.assertEqual(first_last_year(["x"]), (None, None))
 
 
 class WreckPhotosRenderingTests(unittest.TestCase):
+    def test_attach_field_photos_to_wreck_copies_without_touching_field_photo_record(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_photos_dir = root / "zdjecia_terenowe"
+            wrecks_dir = root / "zidentyfikowane_wraki"
+            private_dir = root / "prywatne_zdjecia"
+
+            with patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_dir):
+                field_result = save_field_photo(
+                    field_upload(image_bytes()),
+                    field_photos_dir,
+                    map_lat=51.1,
+                    map_lon=17.2,
+                    public_review_status="approved",
+                )
+                photo_id = field_result["photo"]["id"]
+                case = save_vehicle_case(51.1, 17.2, wrecks_dir)
+                result = attach_field_photos_to_wreck(case["wreck"]["id"], [photo_id], field_photos_dir, wrecks_dir)
+
+                self.assertEqual(result["attached_count"], 1)
+                self.assertEqual(result["copied_field_photo_ids"], [photo_id])
+                self.assertTrue((field_photos_dir / photo_id / "record.json").exists())
+                self.assertTrue((private_dir / "field_photos" / photo_id / "original.jpg").exists())
+                self.assertTrue(
+                    (private_dir / "wreck_photos" / case["wreck"]["id"] / photo_id / "original.jpg").exists()
+                )
+                self.assertEqual([photo["id"] for photo in list_field_photos(field_photos_dir)], [photo_id])
+                summary = list_wrecks(wrecks_dir)[0]
+
+            self.assertEqual(summary["photo_count"], 1)
+            self.assertEqual(summary["field_photo_previews"][0]["source"], "attached")
+
     def test_attach_wreck_photos_updates_record_files_and_public_report(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp)
@@ -258,11 +258,11 @@ class WreckPhotosRenderingTests(unittest.TestCase):
             self.assertNotIn("original_file", photo)
             self.assertNotIn("thumb_file", photo)
             with patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_dir):
-                summary = list_wrecks(wrecks_dir)[0]
+                self.assertEqual(list_wrecks(wrecks_dir), [])
+                summary = list_wrecks(wrecks_dir, include_pending=True)[0]
             self.assertEqual(summary["photo_count"], 0)
             self.assertEqual(summary["review_photo_count"], 1)
             self.assertEqual(summary["field_photo_previews"], [])
-            self.assertEqual(summary["evidence_previews"], [])
 
             with patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_dir):
                 review_wreck_photo(
@@ -279,7 +279,6 @@ class WreckPhotosRenderingTests(unittest.TestCase):
             reviewed_photo = reviewed_record["attached_photos"][0]
             self.assertEqual(list(reviewed_photo["redactions"][0]), ["points"])
             self.assertEqual(len(reviewed_photo["redactions"][0]["points"]), 4)
-            self.assertEqual(summary["evidence_previews"], [])
             self.assertEqual(summary["field_photo_previews"][0]["source"], "attached")
             self.assertEqual(
                 summary["field_photo_previews"][0]["public_thumb"],
@@ -396,17 +395,7 @@ class WreckPhotosRenderingTests(unittest.TestCase):
         self.assertNotIn("best_score", summary)
         self.assertEqual(summary["photo_count"], 1)
         self.assertEqual(summary["review_photo_count"], 2)
-        self.assertEqual(
-            summary["evidence_previews"],
-            [
-                {
-                    "source": "evidence",
-                    "label": "2025",
-                    "public_image": "/zidentyfikowane_wraki/wreck_51100000_17200000/evidence/abc123/2025.jpg",
-                    "public_thumb": "/zidentyfikowane_wraki/wreck_51100000_17200000/evidence/abc123/2025.jpg",
-                }
-            ],
-        )
+        self.assertNotIn("evidence_previews", summary)
         self.assertEqual([photo["label"] for photo in summary["field_photo_previews"]], ["teren.jpg"])
         self.assertNotIn("photo-pending", json.dumps(summary, ensure_ascii=False))
 
@@ -438,9 +427,8 @@ class WreckPhotosRenderingTests(unittest.TestCase):
         summary = wreck_summary(record)
 
         self.assertEqual(summary["photo_count"], 8)
-        self.assertEqual(len(summary["evidence_previews"]), 8)
+        self.assertNotIn("evidence_previews", summary)
         self.assertEqual(len(summary["field_photo_previews"]), 8)
-        self.assertEqual(summary["evidence_previews"][-1]["label"], "crop-7")
         self.assertEqual(summary["field_photo_previews"][-1]["label"], "teren-7.jpg")
 
     def test_wreck_photos_module_saves_private_pending_upload_contract(self):

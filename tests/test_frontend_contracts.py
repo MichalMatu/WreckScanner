@@ -60,9 +60,10 @@ class FrontendContracts(unittest.TestCase):
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
         saved_wrecks_js = (ROOT_DIR / "web" / "app" / "saved_wrecks.js").read_text(encoding="utf-8")
+        reports_js = (ROOT_DIR / "web" / "app" / "reports.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
-        frontend = html + config_js + settings_js + field_photos_js + saved_wrecks_js + i18n_js + styles
+        frontend = html + config_js + settings_js + field_photos_js + saved_wrecks_js + reports_js + i18n_js + styles
 
         self.assertIn('id="toggle-vehicles"', html)
         self.assertIn('id="admin-layer-vehicles"', html)
@@ -74,6 +75,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function openVehicleCasePhotoUpload", saved_wrecks_js)
         self.assertIn("openFieldPhotoUploadModal", saved_wrecks_js)
         self.assertIn("issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false", field_photos_js)
+        self.assertIn("function vehiclePhotoPopup", saved_wrecks_js)
+        self.assertNotIn("function vehicleCasePopup", saved_wrecks_js)
+        self.assertNotIn("function vehiclePhotoOnlyPopup", saved_wrecks_js)
+        self.assertNotIn("wreck.evidence_previews", saved_wrecks_js)
+        self.assertNotIn("extraPhotos", reports_js)
+        self.assertNotIn("report-package-extra-photos", html)
 
         for retired in (
             "toggle-saved-wrecks",

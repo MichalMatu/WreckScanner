@@ -9,7 +9,9 @@ from typing import Any
 from core import config
 from core.field_photos import FIELD_PHOTO_ID_RE
 from core.json_io import write_json_atomic
-from core.photo_privacy import ensure_review_fields, migrate_private_original, safe_child
+from core.photo_privacy import ensure_review_fields, is_approved, safe_child
+from core.wrecks_photos import generate_wreck_public_derivatives
+from core.wrecks_photos import photo_dir as wreck_photo_dir
 
 
 def _now_iso() -> str:
@@ -45,9 +47,7 @@ def _private_photo_file(file_name: Any) -> Path:
     return path
 
 
-def prepare_field_photo_attachment(
-    photo_id: Any, field_photos_dir: Path, wreck_record_dir: Path
-) -> tuple[Path, dict[str, Any]]:
+def prepare_field_photo_copy(photo_id: Any, field_photos_dir: Path) -> dict[str, Any]:
     photo_id_text = str(photo_id or "").strip()
     field_record_dir = _field_photo_record_dir(photo_id_text, field_photos_dir)
     field_record = _read_json(field_record_dir / "record.json")
@@ -57,48 +57,28 @@ def prepare_field_photo_attachment(
         raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
     issue_type = str(field_record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE).strip()
     if issue_type != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
-        raise ValueError("Do sprawy pojazdu można przenieść tylko zdjęcia pojazdów.")
-    changed = ensure_review_fields(field_record)
-    changed = (
-        migrate_private_original(
-            field_record,
-            field_record_dir,
-            config.PRIVATE_PHOTOS_DIR,
-            scope="field_photos",
-            photo_id=photo_id_text,
-        )
-        or changed
-    )
-    for legacy_key in ("thumbnail_file", "original_url", "original_path"):
-        if legacy_key in field_record:
-            field_record.pop(legacy_key, None)
-            changed = True
-    if changed:
-        _write_json(field_record_dir / "record.json", field_record)
+        raise ValueError("Do sprawy pojazdu można skopiować tylko zdjęcia pojazdów.")
+    if not is_approved(field_record):
+        raise ValueError("Do sprawy pojazdu można skopiować tylko zatwierdzone zdjęcia terenowe.")
     _private_photo_file(field_record.get("private_original_file"))
-    destination = wreck_record_dir / "photos" / photo_id_text
-    if destination.exists():
-        raise ValueError("To zdjęcie jest już w sprawie pojazdu.")
-    return field_record_dir, field_record
+    return field_record
 
 
-def move_field_photo_to_wreck(
-    field_record: dict[str, Any], field_record_dir: Path, wreck_record_dir: Path
-) -> dict[str, Any]:
+def copy_field_photo_to_wreck(field_record: dict[str, Any], wreck_record_dir: Path) -> dict[str, Any]:
     photo_id = str(field_record.get("id") or "")
     if not FIELD_PHOTO_ID_RE.fullmatch(photo_id):
         raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
     ensure_review_fields(field_record)
     source_original = _private_photo_file(field_record.get("private_original_file"))
     ext = source_original.suffix.lower() or ".jpg"
-    photo_dir = wreck_record_dir / "photos" / photo_id
-    if photo_dir.exists():
+    photo_record_dir = wreck_photo_dir(wreck_record_dir, photo_id)
+    if photo_record_dir.exists():
         raise ValueError("To zdjęcie jest już w sprawie pojazdu.")
-    photo_dir.mkdir(parents=True, exist_ok=False)
+    photo_record_dir.mkdir(parents=True, exist_ok=False)
     private_original_file = f"wreck_photos/{wreck_record_dir.name}/{photo_id}/original{ext}"
     destination_original = safe_child(config.PRIVATE_PHOTOS_DIR, private_original_file)
     destination_original.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(source_original), destination_original)
+    shutil.copy2(source_original, destination_original)
     attached = {
         "id": photo_id,
         "created_at": _now_iso(),
@@ -119,6 +99,6 @@ def move_field_photo_to_wreck(
         "redactions": field_record.get("redactions") or [],
         "reviewed_at": field_record.get("reviewed_at"),
     }
-    _write_json(photo_dir / "record.json", attached)
-    shutil.rmtree(field_record_dir)
+    generate_wreck_public_derivatives(attached, wreck_record_dir)
+    _write_json(photo_record_dir / "record.json", attached)
     return attached

@@ -1,5 +1,3 @@
-let reportPackageExtraPhotos = [];
-
 function resetWreckPhotoModal(wreckId) {
     const form = document.getElementById('wreck-photo-form');
     const status = document.getElementById('wreck-photo-status');
@@ -90,16 +88,12 @@ function localDatetimeValue(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function resetReportPackageModal(wreckId, { extraPhotos = [] } = {}) {
+function resetReportPackageModal(wreckId) {
     const form = document.getElementById('report-package-form');
     const result = document.getElementById('report-package-result');
     const status = document.getElementById('report-package-status');
     const submit = document.getElementById('report-package-submit');
-    const extraPhotosHint = document.getElementById('report-package-extra-photos');
     const filesInput = document.getElementById('report-photos');
-    reportPackageExtraPhotos = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads) && Array.isArray(extraPhotos)
-        ? extraPhotos.slice(0, REPORT_PHOTO_MAX_COUNT)
-        : [];
     form?.reset();
     updateFilePickerSummary(filesInput);
     updatePublicFeatureAccess();
@@ -108,28 +102,22 @@ function resetReportPackageModal(wreckId, { extraPhotos = [] } = {}) {
     if (observedAt) observedAt.value = localDatetimeValue();
     if (result) result.hidden = true;
     if (status) status.textContent = '';
-    if (extraPhotosHint) {
-        extraPhotosHint.hidden = reportPackageExtraPhotos.length === 0;
-        extraPhotosHint.textContent = reportPackageExtraPhotos.length
-            ? t('modal.report.extraPublicPhotos', { n: reportPackageExtraPhotos.length })
-            : '';
-    }
     if (submit) {
         submit.disabled = false;
         submit.querySelector('span').textContent = t('modal.report.submit');
     }
 }
 
-async function openReportPackageModal(wreckId, options = {}) {
+async function openReportPackageModal(wreckId) {
     const id = safeWreckId(wreckId);
     if (!id) return;
-    resetReportPackageModal(id, options);
+    resetReportPackageModal(id);
     openModal('modal-report-package');
 }
 
-function validateReportPackageFiles(files, extraCount = 0) {
+function validateReportPackageFiles(files) {
     const photoFiles = Array.from(files || []);
-    if (photoFiles.length + extraCount > REPORT_PHOTO_MAX_COUNT) {
+    if (photoFiles.length > REPORT_PHOTO_MAX_COUNT) {
         throw new Error(t('modal.report.fileLimitError'));
     }
     const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -140,17 +128,6 @@ function validateReportPackageFiles(files, extraCount = 0) {
         if (file.type && !allowedTypes.has(file.type)) {
             throw new Error(t('modal.report.fileTypeError'));
         }
-    }
-}
-
-async function appendReportPackageExtraPhotos(formData) {
-    for (const photo of reportPackageExtraPhotos) {
-        const url = String(photo.url || '');
-        if (!url.startsWith('/')) continue;
-        const resp = await fetch(url, { cache: 'no-store' });
-        if (!resp.ok) throw new Error(t('modal.report.extraPublicPhotosError'));
-        const blob = await resp.blob();
-        formData.append('photos[]', blob, photo.filename || 'zdjecie_terenowe.jpg');
     }
 }
 
@@ -168,7 +145,7 @@ async function submitReportPackage(event) {
         const reportPhotoFiles = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
             ? document.getElementById('report-photos')?.files
             : [];
-        validateReportPackageFiles(reportPhotoFiles, reportPackageExtraPhotos.length);
+        validateReportPackageFiles(reportPhotoFiles);
     } catch (err) {
         if (status) status.textContent = err.message;
         return;
@@ -184,7 +161,6 @@ async function submitReportPackage(event) {
     try {
         const reportPath = adminAuthenticated ? 'report-package' : 'public-report-package';
         const formData = new FormData(form);
-        await appendReportPackageExtraPhotos(formData);
         const data = await apiJson(`${WRECKS_URL}/${encodeURIComponent(wreckId)}/${reportPath}`, {
             method: 'POST',
             body: formData,

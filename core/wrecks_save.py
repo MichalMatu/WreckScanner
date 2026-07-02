@@ -3,11 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from core import config
 from core.photo_privacy import REVIEW_STATUSES, is_approved
 from core.photo_privacy import now_iso as privacy_now_iso
 from core.wrecks_catalog import find_existing_record
-from core.wrecks_evidence import first_last_year, save_manual_evidence
 from core.wrecks_identity import links, now_iso, validate_coordinates, wreck_id
 from core.wrecks_migration import migrate_wreck_record
 from core.wrecks_public import wreck_summary
@@ -21,12 +19,11 @@ def _render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     render_record_html(record, record_dir)
 
 
-def save_manual_wreck(
+def save_vehicle_case(
     lat: Any,
     lon: Any,
     wrecks_dir: Path,
     *,
-    crop_m: Any = config.REVIEW_CROP_M,
     public_review_status: str = "approved",
     submission_owner: str | None = None,
 ) -> dict[str, Any]:
@@ -47,7 +44,6 @@ def save_manual_wreck(
         return {
             "status": "ok",
             "created": False,
-            "evidence_created": False,
             "dedupe_distance_m": round(distance_m, 2) if distance_m is not None else None,
             "wreck": wreck_summary(existing),
         }
@@ -56,30 +52,19 @@ def save_manual_wreck(
     map_links = links(lat_f, lon_f)
     new_wreck_id = wreck_id(lat_f, lon_f)
     record_dir = wrecks_dir / new_wreck_id
-    evidence = save_manual_evidence(
-        lat=lat_f,
-        lon=lon_f,
-        record_dir=record_dir,
-        created_at=created_at,
-        crop_m=crop_m,
-        links=map_links,
-    )
-    labels = [str(label) for label in evidence.get("labels_present") or []]
-    first_seen, last_seen = first_last_year(labels)
     record = {
         "id": new_wreck_id,
-        "status": "manual",
+        "status": "field_photo_case",
         "lat": lat_f,
         "lon": lon_f,
         "created_at": created_at,
         "updated_at": created_at,
-        "labels_present": labels,
-        "first_seen_year": first_seen,
-        "last_seen_year": last_seen,
-        "latest_evidence": evidence,
+        "labels_present": [],
+        "first_seen_year": None,
+        "last_seen_year": None,
         "links": map_links,
-        "evidences": [evidence],
-        "source": "manual_inspection",
+        "evidences": [],
+        "source": "field_photo",
         "public_review_status": public_review_status,
         "reviewed_at": privacy_now_iso() if public_review_status == "approved" else None,
         "reviewed_by": "admin" if public_review_status == "approved" else None,
@@ -92,7 +77,6 @@ def save_manual_wreck(
     return {
         "status": "ok",
         "created": True,
-        "evidence_created": True,
         "dedupe_distance_m": None,
         "wreck": wreck_summary(record),
     }
