@@ -81,6 +81,9 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("wreck.evidence_previews", saved_wrecks_js)
         self.assertNotIn("extraPhotos", reports_js)
         self.assertNotIn("report-package-extra-photos", html)
+        self.assertIn("showHeader: false", saved_wrecks_js)
+        self.assertNotIn("fieldPhotoGroupMeta(group, photos)", saved_wrecks_js)
+        self.assertNotIn("toFixed(6)", saved_wrecks_js)
 
         for retired in (
             "toggle-saved-wrecks",
@@ -151,6 +154,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("modal.fieldPhotoSummary.submit", i18n_js)
         self.assertIn("modal.fieldPhotoSummary.discard", i18n_js)
         self.assertIn("returnToFieldPhotoSummary", review_js)
+
+    def test_approved_field_photo_popups_hide_redundant_metadata(self):
+        popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+
+        self.assertNotIn("function fieldPhotoGroupMeta", popups_js)
+        self.assertNotIn("fieldPhoto.popup.capturedAt", popups_js)
+        self.assertNotIn("fieldPhotoGroupMeta(group, photos)", popups_js)
+        self.assertIn("showHeader: false", popups_js)
+        self.assertNotIn("'modal.photoPreview.photoDated': 'Photo {date}'", i18n_js)
+        self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)
 
     def test_script_order_keeps_inspection_after_field_photo_actions(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")

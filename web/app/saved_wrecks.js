@@ -222,11 +222,11 @@ function vehicleGroupPreviews(group) {
 
 function vehicleGroupMeta(group) {
     const photos = group.photos || [];
-    if (photos.length) return fieldPhotoGroupMeta(group, photos);
-    const lat = Number(group.lat);
-    const lon = Number(group.lon);
+    const firstPhoto = photos[0] || {};
     return popupMeta([
-        Number.isFinite(lat) && Number.isFinite(lon) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : '',
+        photos.length === 1
+            ? t('fieldPhoto.popup.capturedAt', { date: firstPhoto.captured_at || t('fieldPhoto.noCapturedAt') })
+            : '',
     ]);
 }
 
@@ -263,7 +263,7 @@ function vehiclePhotoPopup(group) {
         <div class="map-popup map-popup--vehicle-photo">
             ${popupHeader(title)}
             ${vehicleGroupMeta(group)}
-            ${popupPhotoSection(t('wreck.popup.fieldPhotos'), previews, { className: 'map-popup-photo-grid--field', total: photoCount })}
+            ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group, previews)}
             ${popupActions(vehicleGroupActions(group))}
         </div>

@@ -37,19 +37,6 @@ function fieldPhotoGroupLinks(group, photos) {
     ]);
 }
 
-function fieldPhotoGroupMeta(group, photos) {
-    const lat = Number(group.lat);
-    const lon = Number(group.lon);
-    const firstPhoto = photos[0] || {};
-    const singlePhoto = photos.length === 1;
-    return popupMeta([
-        singlePhoto
-            ? t('fieldPhoto.popup.capturedAt', { date: firstPhoto.captured_at || t('fieldPhoto.noCapturedAt') })
-            : '',
-        Number.isFinite(lat) && Number.isFinite(lon) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : '',
-    ]);
-}
-
 function encodedFieldPhotoIdsForGroup(group) {
     return encodeURIComponent(JSON.stringify(photoIdsForGroup(group)));
 }
@@ -172,8 +159,7 @@ function fieldPhotoGroupPopup(group) {
     return `
         <div class="map-popup ${isGroup ? 'map-popup--field-photo-group' : 'map-popup--field-photo'}">
             ${popupHeader(title)}
-            ${fieldPhotoGroupMeta(group, photos)}
-            ${popupPhotoSection(t('wreck.popup.fieldPhotos'), previews, { className: 'map-popup-photo-grid--field', total: photos.length })}
+            ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photos.length, showHeader: false })}
             ${fieldPhotoGroupLinks(group, photos)}
             ${fieldPhotoGroupActions({ ...group, issueType })}
         </div>

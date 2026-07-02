@@ -234,7 +234,7 @@ document.getElementById('modal-photo-preview')?.addEventListener('modalclose', (
 });
 
 function popupPhotoSection(title, previews, options = {}) {
-    const { total = null, ...gridOptions } = options || {};
+    const { total = null, showHeader = true, ...gridOptions } = options || {};
     const grid = popupPhotoGrid(previews, gridOptions);
     if (!grid) return '';
     const maxItems = Number.isFinite(Number(gridOptions.max))
@@ -247,12 +247,15 @@ function popupPhotoSection(title, previews, options = {}) {
     const numericTotal = Number(total);
     const totalCount = Number.isFinite(numericTotal) && numericTotal > 0 ? numericTotal : available;
     const countText = totalCount > visibleCount ? `${visibleCount}/${totalCount}` : String(totalCount);
+    const header = showHeader ? `
+        <div class="map-popup-section-title">
+            <span>${escapeHtml(title)}</span>
+            <span class="map-popup-section-count">${escapeHtml(countText)}</span>
+        </div>
+    ` : '';
     return `
         <section class="map-popup-photo-section">
-            <div class="map-popup-section-title">
-                <span>${escapeHtml(title)}</span>
-                <span class="map-popup-section-count">${escapeHtml(countText)}</span>
-            </div>
+            ${header}
             ${grid}
         </section>
     `;
