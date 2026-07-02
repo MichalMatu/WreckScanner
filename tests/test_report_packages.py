@@ -268,7 +268,7 @@ class ReportPackageTests(unittest.TestCase):
             root = Path(tmp)
             wrecks_dir = root / "zidentyfikowane_wraki"
             private_reports_dir = root / "private_reports"
-            saved = save_vehicle_case(51.088784, 17.035782, wrecks_dir)
+            saved = save_vehicle_case(51.088784, 17.035782, wrecks_dir, dedupe_existing=True)
             wreck_id = saved["wreck"]["id"]
 
             with (
@@ -317,6 +317,7 @@ class ReportPackageTests(unittest.TestCase):
             private_photos_dir = root / "private_photos"
             private_reports_dir = root / "private_reports"
             record_path = wrecks_dir / "wreck_51100000_17200000" / "record.json"
+            record_dir = wrecks_dir / "wreck_51100000_17200000"
 
             with (
                 patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_photos_dir),
@@ -327,7 +328,19 @@ class ReportPackageTests(unittest.TestCase):
                 record["attached_photos"][0]["public_review_status"] = "approved"
                 record["attached_photos"][0]["redactions"] = []
                 record["attached_photos"][0]["reviewed_at"] = "2026-06-03T00:00:00Z"
+                record["attached_photos"][0].pop("original_file", None)
+                record["attached_photos"][0].pop("thumb_file", None)
+                record["attached_photos"][0]["public_image_file"] = "photos/photo_20260603T000000Z_abcdef12/public.jpg"
+                record["attached_photos"][0]["public_thumb_file"] = (
+                    "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg"
+                )
+                (record_dir / "photos/photo_20260603T000000Z_abcdef12/public.jpg").write_bytes(image_bytes())
+                (record_dir / "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg").write_bytes(image_bytes())
                 write_json(record_path, record)
+                original_record_text = record_path.read_text(encoding="utf-8")
+                original_evidence_paths = sorted(
+                    path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+                )
                 result = create_public_report_package(
                     "wreck_51100000_17200000",
                     valid_fields(),
@@ -347,6 +360,14 @@ class ReportPackageTests(unittest.TestCase):
                 zip_path, _ = public_report_package_asset("wreck_51100000_17200000", result["package_id"], "zip", token)
                 pdf_path, _ = public_report_package_asset("wreck_51100000_17200000", result["package_id"], "pdf", token)
 
+            self.assertEqual(record_path.read_text(encoding="utf-8"), original_record_text)
+            current_evidence_paths = sorted(
+                path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+            )
+            self.assertEqual(current_evidence_paths, original_evidence_paths)
+            self.assertFalse(
+                (private_reports_dir / "wreck_51100000_17200000" / f"{result['package_id']}.work").exists()
+            )
             self.assertTrue(zip_path.exists())
             self.assertTrue(pdf_path.exists())
             self.assertFalse((zip_path.with_suffix("") / "oryginalne_zdjecia").exists())
@@ -396,6 +417,7 @@ class ReportPackageTests(unittest.TestCase):
                 },
                 evidence={"path": "", "crops": [], "created_at": "2026-07-02T14:30:31Z"},
                 record_dir=record_dir,
+                evidence_base_dir=record_dir,
                 recipient=core_config.REPORT_RECIPIENT,
                 subject="Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10",
                 mail_body="Dzień dobry,\n\nZakres oczekiwanej odpowiedzi:\nWnoszę o odpowiedź.",
@@ -479,6 +501,7 @@ class ReportPackageTests(unittest.TestCase):
                     record=record,
                     evidence=evidence,
                     record_dir=record_dir,
+                    evidence_base_dir=record_dir,
                     recipient=core_config.REPORT_RECIPIENT,
                     subject="Zgłoszenie pojazdu nieużytkowanego - ul. Testowa",
                     mail_body=base + (sentence * repetitions) + closing,

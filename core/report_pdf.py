@@ -230,9 +230,9 @@ def _attached_photos(record: dict[str, Any], record_dir: Path) -> list[PdfPhoto]
     return prepared
 
 
-def _evidence_photos(evidence: dict[str, Any], record_dir: Path) -> list[PdfPhoto]:
+def _evidence_photos(evidence: dict[str, Any], evidence_base_dir: Path) -> list[PdfPhoto]:
     evidence_rel = str(evidence.get("path") or "")
-    evidence_dir = _safe_child(record_dir, evidence_rel)
+    evidence_dir = _safe_child(evidence_base_dir, evidence_rel)
     prepared = []
     for crop in evidence.get("crops") or []:
         if not isinstance(crop, dict):
@@ -355,6 +355,7 @@ def build_report_pdf(
     record: dict[str, Any],
     evidence: dict[str, Any],
     record_dir: Path,
+    evidence_base_dir: Path,
     recipient: str,
     subject: str,
     mail_body: str,
@@ -374,7 +375,7 @@ def build_report_pdf(
     styles = _styles()
     content_width = A4[0] - (PAGE_MARGIN * 2)
     attached_photos = _attached_photos(record, record_dir)
-    evidence_images = _evidence_photos(evidence, record_dir)
+    evidence_images = _evidence_photos(evidence, evidence_base_dir)
 
     story: list[Any] = [
         Paragraph("Zgłoszenie dotyczące pojazdu nieużytkowanego", styles["title"]),
@@ -419,6 +420,7 @@ def write_report_pdf(
     record: dict[str, Any],
     evidence: dict[str, Any],
     record_dir: Path,
+    evidence_base_dir: Path,
     recipient: str,
     subject: str,
     mail_body: str,
@@ -427,6 +429,7 @@ def write_report_pdf(
         record=record,
         evidence=evidence,
         record_dir=record_dir,
+        evidence_base_dir=evidence_base_dir,
         recipient=recipient,
         subject=subject,
         mail_body=mail_body,

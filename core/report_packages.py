@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -82,6 +83,34 @@ def _append_report_evidence(record: dict[str, Any], record_dir: Path) -> dict[st
     return evidence
 
 
+def _build_report_evidence(record: dict[str, Any], evidence_base_dir: Path) -> dict[str, Any]:
+    lat, lon = validate_coordinates(record.get("lat"), record.get("lon"))
+    map_links = record.get("links") if isinstance(record.get("links"), dict) else location_links(lat, lon)
+    return save_report_evidence(
+        lat=lat,
+        lon=lon,
+        record_dir=evidence_base_dir,
+        created_at=_iso(_now_utc()),
+        crop_m=config.REVIEW_CROP_M,
+        links=map_links,
+    )
+
+
+def _record_with_report_evidence(record: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
+    report_record = dict(record)
+    evidences = record.get("evidences") if isinstance(record.get("evidences"), list) else []
+    labels = [str(label) for label in evidence.get("labels_present") or []]
+    first_seen, last_seen = first_last_year(labels)
+    report_record["evidences"] = [*evidences, evidence]
+    report_record["latest_evidence"] = evidence
+    report_record["labels_present"] = labels
+    report_record["first_seen_year"] = first_seen
+    report_record["last_seen_year"] = last_seen
+    report_record["links"] = evidence.get("links") or record.get("links") or {}
+    report_record["updated_at"] = evidence.get("created_at")
+    return report_record
+
+
 def _approved_photo_count(record: dict[str, Any]) -> int:
     photos = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
     return sum(
@@ -116,6 +145,7 @@ def create_report_package(
     report_zip.write_admin_zip(
         zip_path,
         record_dir,
+        record_dir,
         record,
         evidence,
         config.REPORT_RECIPIENT,
@@ -127,6 +157,7 @@ def create_report_package(
         record=record,
         evidence=evidence,
         record_dir=record_dir,
+        evidence_base_dir=record_dir,
         recipient=config.REPORT_RECIPIENT,
         subject=subject,
         mail_body=mail_body,
@@ -161,37 +192,45 @@ def create_public_report_package(
     record = wrecks_store.read_json(record_dir / "record.json")
     if not isinstance(record, dict):
         raise ValueError("Nieprawidłowy format record.json.")
-    evidence = _append_report_evidence(record, record_dir)
-    render_wreck_record_html(record, record_dir)
-    subject, mail_body = report_mail.build_mail_draft(record, evidence, fields)
-
     package_id = _package_id(wreck_id, fields)
     reports_dir = config.PRIVATE_REPORTS_DIR / str(record["id"])
+    work_dir = reports_dir / f"{package_id}.work"
     zip_path = reports_dir / f"{package_id}.zip"
     pdf_path = reports_dir / f"{package_id}.pdf"
     access_path = reports_dir / f"{package_id}.access.json"
     reports_dir.mkdir(parents=True, exist_ok=True)
+    if work_dir.exists():
+        shutil.rmtree(work_dir)
 
-    report_zip.write_public_zip(
-        zip_path,
-        record_dir,
-        record,
-        evidence,
-        config.REPORT_RECIPIENT,
-        subject,
-        mail_body,
-    )
-    report_pdf.write_report_pdf(
-        pdf_path,
-        record=record,
-        evidence=evidence,
-        record_dir=record_dir,
-        recipient=config.REPORT_RECIPIENT,
-        subject=subject,
-        mail_body=mail_body,
-    )
+    try:
+        evidence = _build_report_evidence(record, work_dir)
+        report_record = _record_with_report_evidence(record, evidence)
+        subject, mail_body = report_mail.build_mail_draft(report_record, evidence, fields)
+
+        report_zip.write_public_zip(
+            zip_path,
+            record_dir,
+            work_dir,
+            report_record,
+            evidence,
+            config.REPORT_RECIPIENT,
+            subject,
+            mail_body,
+        )
+        report_pdf.write_report_pdf(
+            pdf_path,
+            record=report_record,
+            evidence=evidence,
+            record_dir=record_dir,
+            evidence_base_dir=work_dir,
+            recipient=config.REPORT_RECIPIENT,
+            subject=subject,
+            mail_body=mail_body,
+        )
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
     photo_count = _approved_photo_count(record)
-    _append_report_history(record, record_dir, package_id=package_id, public=True, photo_count=photo_count)
     access = report_assets.new_access_token()
     wrecks_store.write_json(
         access_path,

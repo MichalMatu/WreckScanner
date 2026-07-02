@@ -116,8 +116,8 @@ class VehicleCaseContractTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            first = save_vehicle_case(51.088784, 17.035782, wrecks_dir)
-            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir)
+            first = save_vehicle_case(51.088784, 17.035782, wrecks_dir, dedupe_existing=True)
+            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir, dedupe_existing=True)
 
             self.assertTrue(first["created"])
             self.assertFalse(second["created"])
@@ -137,7 +137,7 @@ class VehicleCaseContractTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
-            result = save_vehicle_case(51.2, 17.2, wrecks_dir)
+            result = save_vehicle_case(51.2, 17.2, wrecks_dir, dedupe_existing=True)
 
             self.assertEqual(result["status"], "ok")
             self.assertTrue((wrecks_dir / result["wreck"]["id"] / "record.json").exists())
@@ -150,6 +150,7 @@ class VehicleCaseContractTests(unittest.TestCase):
                 51.088784,
                 17.035782,
                 wrecks_dir,
+                dedupe_existing=True,
                 public_review_status="pending",
                 submission_owner="public:test",
             )
@@ -171,23 +172,38 @@ class VehicleCaseContractTests(unittest.TestCase):
                 51.088784,
                 17.035782,
                 wrecks_dir,
+                dedupe_existing=True,
                 public_review_status="pending",
             )
-            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir)
+            second = save_vehicle_case(51.088785, 17.035783, wrecks_dir, dedupe_existing=True)
 
             self.assertFalse(second["created"])
             record = json.loads((wrecks_dir / first["wreck"]["id"] / "record.json").read_text(encoding="utf-8"))
             self.assertEqual(record["public_review_status"], "approved")
             self.assertIsNotNone(record["reviewed_at"])
 
+    def test_vehicle_case_can_reject_public_dedupe_to_existing_record(self):
+        with TemporaryDirectory() as tmp:
+            wrecks_dir = Path(tmp) / "wraki"
+
+            first = save_vehicle_case(51.088784, 17.035782, wrecks_dir, dedupe_existing=True)
+
+            with self.assertRaisesRegex(ValueError, "istnieje już sprawa"):
+                save_vehicle_case(51.088785, 17.035783, wrecks_dir, dedupe_existing=False)
+
+            record_path = wrecks_dir / first["wreck"]["id"] / "record.json"
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            self.assertEqual(record["public_review_status"], "approved")
+            self.assertIsNone(record.get("submission_owner"))
+
     def test_save_vehicle_case_rejects_invalid_coordinates(self):
         with TemporaryDirectory() as tmp:
             wrecks_dir = Path(tmp) / "wraki"
 
             with self.assertRaises(ValueError):
-                save_vehicle_case("not-a-lat", 17.035782, wrecks_dir)
+                save_vehicle_case("not-a-lat", 17.035782, wrecks_dir, dedupe_existing=True)
             with self.assertRaises(ValueError):
-                save_vehicle_case(91, 17.035782, wrecks_dir)
+                save_vehicle_case(91, 17.035782, wrecks_dir, dedupe_existing=True)
 
     def test_evidence_year_range_helper_uses_numeric_labels(self):
         self.assertEqual(first_last_year(["x", "2025", "2024"]), (2024, 2025))
@@ -211,7 +227,7 @@ class WreckPhotosRenderingTests(unittest.TestCase):
                     public_review_status="approved",
                 )
                 photo_id = field_result["photo"]["id"]
-                case = save_vehicle_case(51.1, 17.2, wrecks_dir)
+                case = save_vehicle_case(51.1, 17.2, wrecks_dir, dedupe_existing=True)
                 result = attach_field_photos_to_wreck(case["wreck"]["id"], [photo_id], field_photos_dir, wrecks_dir)
 
                 self.assertEqual(result["attached_count"], 1)

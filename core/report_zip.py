@@ -32,12 +32,12 @@ def _archive_attached_photos(archive: zipfile.ZipFile, record_dir: Path, record:
 
 def _archive_public_evidence_photos(
     archive: zipfile.ZipFile,
-    record_dir: Path,
+    evidence_base_dir: Path,
     evidence: dict[str, Any],
     *,
     archive_root: str = "miniatury_historyczne",
 ) -> None:
-    evidence_dir = _safe_child(record_dir, str(evidence.get("path") or ""))
+    evidence_dir = _safe_child(evidence_base_dir, str(evidence.get("path") or ""))
     for crop in evidence.get("crops") or []:
         if not isinstance(crop, dict):
             continue
@@ -50,6 +50,7 @@ def _archive_public_evidence_photos(
 def write_public_zip(
     zip_path: Path,
     record_dir: Path,
+    evidence_base_dir: Path,
     record: dict[str, Any],
     evidence: dict[str, Any],
     recipient: str,
@@ -60,12 +61,13 @@ def write_public_zip(
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr("raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body))
         _archive_attached_photos(archive, record_dir, record)
-        _archive_public_evidence_photos(archive, record_dir, evidence)
+        _archive_public_evidence_photos(archive, evidence_base_dir, evidence)
 
 
 def write_admin_zip(
     zip_path: Path,
     record_dir: Path,
+    evidence_base_dir: Path,
     record: dict[str, Any],
     evidence: dict[str, Any],
     recipient: str,
@@ -80,4 +82,4 @@ def write_admin_zip(
         )
 
         _archive_attached_photos(archive, record_dir, record)
-        _archive_public_evidence_photos(archive, record_dir, evidence)
+        _archive_public_evidence_photos(archive, evidence_base_dir, evidence)

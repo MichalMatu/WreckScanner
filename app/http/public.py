@@ -340,14 +340,16 @@ def handle_save_wreck(handler) -> None:
         photo_ids = data.get("field_photo_ids") if isinstance(data.get("field_photo_ids"), list) else []
         if not photo_ids:
             raise ValueError("Utworzenie sprawy pojazdu wymaga co najmniej jednego zatwierdzonego zdjęcia z miejsca.")
-        review_status = "approved" if http_admin_session.is_admin(handler) else "pending"
-        submission_owner = None if http_admin_session.is_admin(handler) else access.submission_owner(handler)
-        if not http_admin_session.is_admin(handler):
+        is_admin = http_admin_session.is_admin(handler)
+        review_status = "approved" if is_admin else "pending"
+        submission_owner = None if is_admin else access.submission_owner(handler)
+        if not is_admin:
             access.ensure_public_submission_quota(handler, additional_bytes=0, additional_items=1)
         result = save_vehicle_case(
             data.get("lat"),
             data.get("lon"),
             core_config.WRECKS_DIR,
+            dedupe_existing=is_admin,
             public_review_status=review_status,
             submission_owner=submission_owner,
         )

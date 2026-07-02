@@ -24,6 +24,7 @@ def save_vehicle_case(
     lon: Any,
     wrecks_dir: Path,
     *,
+    dedupe_existing: bool,
     public_review_status: str = "approved",
     submission_owner: str | None = None,
 ) -> dict[str, Any]:
@@ -32,6 +33,10 @@ def save_vehicle_case(
         raise ValueError("Nieprawidłowy status przeglądu sprawy.")
     existing, distance_m = find_existing_record(wrecks_dir, lat_f, lon_f)
     if existing:
+        if not dedupe_existing:
+            raise ValueError(
+                "W tym miejscu istnieje już sprawa pojazdu. Nie dopisuję publicznego zgłoszenia do istniejącej sprawy."
+            )
         record_changed = False
         if not is_approved(existing) and public_review_status == "approved":
             existing["public_review_status"] = "approved"
@@ -52,6 +57,8 @@ def save_vehicle_case(
     map_links = links(lat_f, lon_f)
     new_wreck_id = wreck_id(lat_f, lon_f)
     record_dir = wrecks_dir / new_wreck_id
+    if record_dir.exists():
+        raise ValueError("W tym miejscu istnieje już sprawa pojazdu.")
     record = {
         "id": new_wreck_id,
         "status": "field_photo_case",
