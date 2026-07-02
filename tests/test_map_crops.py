@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from io import BytesIO
 import tempfile
 import unittest
+from io import BytesIO
 
 from PIL import Image
 

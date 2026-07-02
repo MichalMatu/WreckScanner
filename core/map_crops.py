@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import math
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from io import BytesIO
-import math
-import re
 from pathlib import Path
 from typing import Any
 
