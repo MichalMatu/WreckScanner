@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs, urlsplit
 
-from app import config, map_downloads
+from app import config
 from app.http import admin_session as http_admin_session
 from app.http import auth
 from app.http import request_body as http_request_body
@@ -185,24 +185,6 @@ def handle_admin_wrecks(handler) -> None:
     http_responses.send_json(handler, 200, {"status": "ok", "wrecks": wrecks})
 
 
-def handle_admin_geotiff_cache(handler) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    include_estimate = (parse_qs(urlsplit(handler.path).query).get("estimate") or ["1"])[0] != "0"
-    try:
-        http_responses.send_json(
-            handler, 200, map_downloads.geotiff_admin_cache_report(include_estimate=include_estimate)
-        )
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Failed to build GeoTIFF cache report",
-            exc,
-            public_error="Nie udało się przygotować raportu cache GeoTIFF.",
-        )
-
-
 def handle_admin_privacy_requests(handler) -> None:
     if not http_admin_session.require_admin(handler):
         return
@@ -256,29 +238,6 @@ def handle_delete_admin_photo(handler, route: tuple[str, tuple[str, ...]]) -> No
             "Admin photo delete failed",
             exc,
             public_error="Nie udało się usunąć zdjęcia.",
-        )
-
-
-def handle_delete_geotiff_cache_file(handler, request_path: str) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    file_name = request_path.removeprefix("/api/admin/geotiff-cache/").strip("/")
-    if not file_name or "/" in file_name:
-        http_responses.send_json(handler, 400, {"error": "Nieprawidłowa nazwa pliku GeoTIFF."})
-        return
-    try:
-        http_responses.send_json(handler, 200, map_downloads.delete_geotiff_cache_file(file_name))
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Failed to delete GeoTIFF cache file",
-            exc,
-            public_error="Nie udało się usunąć pliku cache GeoTIFF.",
         )
 
 

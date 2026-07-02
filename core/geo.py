@@ -3,8 +3,7 @@ from __future__ import annotations
 import math
 
 # Przybliżenie wystarczające dla kadrów rzędu kilkudziesięciu metrów.
-# Zwiększanie precyzji tu nie poprawi detekcji YOLO, ale bardziej złożona
-# geodezja utrudniłaby debugowanie prostych bboxów WMS.
+# Bardziej złożona geodezja utrudniłaby debugowanie prostych bboxów WMS.
 METERS_PER_DEGREE_LAT = 111_320.0
 
 

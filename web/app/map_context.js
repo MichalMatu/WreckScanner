@@ -1,42 +1,5 @@
-let crosshairHiddenByPopup = false;
-let crosshairHiddenByContextMenu = false;
-let crosshairManuallyHidden = localStorage.getItem(CROSSHAIR_HIDDEN_STORAGE_KEY) === '1';
-
-function updateCrosshairVisibility() {
-    const scanDisabled = !publicFeatureAllowed(PUBLIC_FEATURE_KEYS.scanAnalysis);
-    crosshair?.classList.toggle(
-        'is-hidden',
-        scanDisabled || crosshairManuallyHidden || crosshairHiddenByPopup || crosshairHiddenByContextMenu
-    );
-}
-
-function updateContextCrosshairLabel() {
-    const label = document.getElementById('context-crosshair-label');
-    if (!label) return;
-    label.textContent = t(crosshairManuallyHidden ? 'context.showCrosshair' : 'context.hideCrosshair');
-}
-
-function setCrosshairManuallyHidden(hidden) {
-    crosshairManuallyHidden = Boolean(hidden);
-    localStorage.setItem(CROSSHAIR_HIDDEN_STORAGE_KEY, crosshairManuallyHidden ? '1' : '0');
-    updateContextCrosshairLabel();
-    updateCrosshairVisibility();
-}
-
-function toggleCrosshairFromContextMenu() {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.scanAnalysis)) return;
-    setCrosshairManuallyHidden(!crosshairManuallyHidden);
-    closeMapContextMenu();
-}
-
 map.on('popupopen', () => {
-    crosshairHiddenByPopup = true;
     closeMapContextMenu();
-    updateCrosshairVisibility();
-});
-map.on('popupclose', () => {
-    crosshairHiddenByPopup = false;
-    updateCrosshairVisibility();
 });
 
 const mapContextMenu = document.getElementById('map-context-menu');
@@ -72,15 +35,12 @@ function closeMapContextMenu() {
     if (!mapContextMenu || mapContextMenu.hidden) return;
     mapContextMenu.hidden = true;
     contextMenuLatLng = null;
-    crosshairHiddenByContextMenu = false;
-    updateCrosshairVisibility();
 }
 
 function openMapContextMenu(e) {
     if (!mapContextMenu || !contextMenuCoords) return;
     contextMenuLatLng = e.latlng;
     contextMenuCoords.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
-    updateContextCrosshairLabel();
     mapContextMenu.hidden = false;
 
     const originalEvent = e.originalEvent;
@@ -92,12 +52,7 @@ function openMapContextMenu(e) {
     mapContextMenu.style.left = `${Math.max(margin, x)}px`;
     mapContextMenu.style.top = `${Math.max(margin, y)}px`;
 
-    crosshairHiddenByContextMenu = true;
-    updateCrosshairVisibility();
 }
-crosshairVisibilityControllerReady = true;
-updateCrosshairVisibility();
-document.addEventListener('langchange', updateContextCrosshairLabel);
 
 map.on('contextmenu', (e) => {
     e.originalEvent.preventDefault();
@@ -110,12 +65,6 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeMapContextMenu();
 });
-
-function centerScanOnContextPoint() {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.scanAnalysis) || !contextMenuLatLng) return;
-    map.panTo(contextMenuLatLng);
-    closeMapContextMenu();
-}
 
 function cadastralCodeLabel(code) {
     const sourceCode = String(code || '').trim();

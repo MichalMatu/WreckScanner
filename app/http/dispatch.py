@@ -4,13 +4,13 @@ from app import config
 from app.http import admin as http_admin
 from app.http import assets as http_assets
 from app.http import health as http_health
+from app.http import location as http_location
 from app.http import public as http_public
 from app.http import public_data as http_public_data
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from app.http import retention as http_retention
 from app.http import routes as http_routes
-from app.http import scan as http_scan
 from app.http import settings as http_settings
 from app.http import static_files as http_static_files
 from app.http import wms_proxy as http_wms_proxy
@@ -55,13 +55,11 @@ def handle_static_api_get(handler, path: str) -> bool:
         "/api/admin/status": lambda: http_admin.handle_admin_status(handler),
         "/api/admin/photos": lambda: http_admin.handle_admin_photos(handler),
         "/api/admin/wrecks": lambda: http_admin.handle_admin_wrecks(handler),
-        "/api/admin/geotiff-cache": lambda: http_admin.handle_admin_geotiff_cache(handler),
         "/api/admin/privacy-requests": lambda: http_admin.handle_admin_privacy_requests(handler),
         "/api/admin/photo-retention": lambda: http_admin.handle_photo_retention_status(
             handler, http_retention.snapshot()
         ),
         "/api/settings": lambda: http_settings.handle_get_settings(handler),
-        "/api/download/progress": lambda: http_scan.handle_download_progress(handler),
         "/api/cadastral/identify": lambda: http_public_data.handle_cadastral_identify(handler),
         "/api/surface/features": lambda: http_public_data.handle_surface_features(handler),
         "/api/wrecks": lambda: http_public_data.handle_get_wrecks(handler),
@@ -122,10 +120,6 @@ def handle_delete(handler) -> None:
     admin_photo_delete_route = http_routes.admin_photo_delete_route(request_path)
     if admin_photo_delete_route:
         http_admin.handle_delete_admin_photo(handler, admin_photo_delete_route)
-        return
-
-    if request_path.startswith("/api/admin/geotiff-cache/"):
-        http_admin.handle_delete_geotiff_cache_file(handler, request_path)
         return
 
     if request_path.startswith("/api/field-photos/"):
@@ -226,14 +220,8 @@ def handle_post(handler) -> None:
     if request_path == "/api/settings":
         http_request_body.dispatch_json_request(handler, http_settings.handle_save_settings, handler)
         return
-    if request_path == "/api/download":
-        http_request_body.dispatch_json_request(handler, http_scan.handle_download, handler)
-        return
     if request_path == "/api/inspect":
-        http_request_body.dispatch_json_request(handler, http_scan.handle_inspect, handler)
-        return
-    if request_path == "/api/analyze":
-        http_request_body.dispatch_json_request(handler, http_scan.handle_analyze, handler)
+        http_request_body.dispatch_json_request(handler, http_location.handle_inspect, handler)
         return
     if request_path == "/api/wrecks":
         http_request_body.dispatch_json_request(handler, http_public.handle_save_wreck, handler)

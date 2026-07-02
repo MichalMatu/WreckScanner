@@ -1,15 +1,24 @@
 from __future__ import annotations
 
-import json
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from io import BytesIO
 import math
 import re
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+import requests
+from PIL import Image, ImageStat
 
 from core import config
-from core.geo import METERS_PER_DEGREE_LAT, lon_meters_per_degree
+from core.geo import bbox_4326
+
+
+@dataclass(frozen=True)
+class LocationCrop:
+    label: str
+    image: Image.Image
 
 
 def validate_crop_m(value: Any) -> float:
@@ -24,97 +33,145 @@ def validate_crop_m(value: Any) -> float:
     return crop_m
 
 
-def load_scan_metadata(data_dir: Path) -> dict[str, Any]:
-    metadata_path = data_dir / "metadata.json"
-    if not metadata_path.exists():
-        raise FileNotFoundError("Brak pobranych danych. Najpierw zeskanuj ten fragment mapy.")
-    with metadata_path.open(encoding="utf-8") as f:
-        metadata = json.load(f)
-    if not isinstance(metadata, dict):
-        raise ValueError("Nieprawidlowy format metadata.json.")
-    return metadata
-
-
-def _bbox(metadata: dict[str, Any]) -> dict[str, float]:
-    raw = metadata.get("bbox_4326")
-    if not isinstance(raw, dict):
-        raise ValueError("metadata.json nie zawiera bbox_4326.")
-    try:
-        bbox = {key: float(raw[key]) for key in ("min_lat", "max_lat", "min_lon", "max_lon")}
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError("metadata.json zawiera nieprawidlowy bbox_4326.") from exc
-    if bbox["min_lat"] >= bbox["max_lat"] or bbox["min_lon"] >= bbox["max_lon"]:
-        raise ValueError("metadata.json zawiera pusty bbox_4326.")
-    return bbox
-
-
-def _point_xy(lat: float, lon: float, bbox: dict[str, float], img_w: int, img_h: int) -> tuple[float, float]:
-    if not bbox["min_lat"] <= lat <= bbox["max_lat"] or not bbox["min_lon"] <= lon <= bbox["max_lon"]:
-        raise ValueError("Punkt jest poza ostatnio zeskanowanym obszarem. Zeskanuj najpierw ten fragment mapy.")
-    x = (lon - bbox["min_lon"]) / (bbox["max_lon"] - bbox["min_lon"]) * img_w
-    y = (bbox["max_lat"] - lat) / (bbox["max_lat"] - bbox["min_lat"]) * img_h
-    return x, y
-
-
-def _crop_size_px(crop_m: float, bbox: dict[str, float], img_w: int, img_h: int) -> int:
-    center_lat = (bbox["min_lat"] + bbox["max_lat"]) / 2.0
-    width_m = (bbox["max_lon"] - bbox["min_lon"]) * lon_meters_per_degree(center_lat)
-    height_m = (bbox["max_lat"] - bbox["min_lat"]) * METERS_PER_DEGREE_LAT
-    if width_m <= 0 or height_m <= 0:
-        raise ValueError("metadata.json zawiera nieprawidlowy rozmiar obszaru.")
-    pixels_per_meter = min(img_w / width_m, img_h / height_m)
-    return max(1, int(round(crop_m * pixels_per_meter)))
-
-
-def _crop_bounds(cx: float, cy: float, img_w: int, img_h: int, crop_size: int) -> tuple[int, int, int, int]:
-    crop_size = min(int(crop_size), img_w, img_h)
-    x1 = int(round(cx - crop_size / 2.0))
-    y1 = int(round(cy - crop_size / 2.0))
-    x1 = max(0, min(x1, img_w - crop_size))
-    y1 = max(0, min(y1, img_h - crop_size))
-    return x1, y1, x1 + crop_size, y1 + crop_size
-
-
 def _safe_crop_label(value: Any) -> str:
     label = str(value or "").strip()
     label = re.sub(r"[^A-Za-z0-9._-]+", "_", label).strip("._-")
     return label[:80] or "crop"
 
 
-def save_scan_crops(
+def _crop_px(crop_m: float) -> int:
+    pixels = int(round(crop_m * config.ORTHO_CROP_PIXELS_PER_METER))
+    return max(config.ORTHO_CROP_MIN_PX, min(config.ORTHO_CROP_MAX_PX, pixels))
+
+
+def _bbox_dict(bbox: str) -> dict[str, float]:
+    min_lat, min_lon, max_lat, max_lon = [float(part) for part in bbox.split(",")]
+    return {
+        "min_lat": min_lat,
+        "min_lon": min_lon,
+        "max_lat": max_lat,
+        "max_lon": max_lon,
+    }
+
+
+def _wms_url(year: int) -> str:
+    return f"{config.ORTHO_WMS_BASE}/OGC_ortofoto_{int(year)}/MapServer/WMSServer"
+
+
+def _download_crop_image(
+    *,
+    session: requests.Session,
+    year: int,
+    bbox: str,
+    size_px: int,
+) -> Image.Image | None:
+    try:
+        response = session.get(
+            _wms_url(year),
+            params={
+                "SERVICE": "WMS",
+                "VERSION": "1.3.0",
+                "REQUEST": "GetMap",
+                "LAYERS": "1",
+                "STYLES": "",
+                "CRS": "EPSG:4326",
+                "BBOX": bbox,
+                "WIDTH": str(size_px),
+                "HEIGHT": str(size_px),
+                "FORMAT": "image/png",
+            },
+            timeout=config.ORTHO_WMS_TIMEOUT,
+        )
+    except requests.RequestException:
+        return None
+    if response.status_code != 200 or b"Exception" in response.content[:2048]:
+        return None
+
+    try:
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+    except OSError:
+        return None
+
+    stat = ImageStat.Stat(image.convert("L"))
+    if stat.stddev and stat.stddev[0] < config.ORTHO_BLANK_IMAGE_STD_THRESHOLD:
+        return None
+    return image
+
+
+def fetch_location_crops(
     lat: float,
     lon: float,
-    data_dir: Path,
+    *,
+    crop_m: Any = config.REVIEW_CROP_M,
+    years: list[int] | tuple[int, ...] = tuple(config.ORTHO_YEARS),
+    session: requests.Session | None = None,
+) -> tuple[list[LocationCrop], dict[str, Any]]:
+    crop_m_f = validate_crop_m(crop_m)
+    size_px = _crop_px(crop_m_f)
+    bbox = bbox_4326(lat, lon, crop_m_f, crop_m_f)
+    years_to_fetch = [int(year) for year in years]
+
+    crops: list[LocationCrop] = []
+
+    def download_year(year: int) -> tuple[int, Image.Image | None]:
+        if session is not None:
+            return year, _download_crop_image(session=session, year=year, bbox=bbox, size_px=size_px)
+        http = requests.Session()
+        try:
+            return year, _download_crop_image(session=http, year=year, bbox=bbox, size_px=size_px)
+        finally:
+            http.close()
+
+    max_workers = max(1, min(len(years_to_fetch), config.ORTHO_CROP_MAX_WORKERS))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = [executor.submit(download_year, year) for year in years_to_fetch]
+
+    for result in results:
+        year, image = result.result()
+        if image is not None:
+            crops.append(LocationCrop(label=_safe_crop_label(year), image=image))
+
+    if not crops:
+        raise FileNotFoundError("Nie udało się pobrać ortofotomap dla tego miejsca.")
+
+    metadata = {
+        "center_lat": lat,
+        "center_lon": lon,
+        "crop_meters": crop_m_f,
+        "image_size_px": size_px,
+        "bbox_4326": _bbox_dict(bbox),
+        "years": [int(crop.label) for crop in crops if crop.label.isdigit()],
+        "source": "wroclaw_wms_location_crops",
+    }
+    return crops, metadata
+
+
+def save_location_crops(
+    lat: float,
+    lon: float,
     output_dir: Path,
     *,
     crop_m: Any = config.REVIEW_CROP_M,
+    years: list[int] | tuple[int, ...] = tuple(config.ORTHO_YEARS),
     filename_prefix: str = "",
     jpeg_quality: int = config.REVIEW_JPEG_QUALITY,
+    session: requests.Session | None = None,
 ) -> tuple[list[dict[str, str]], dict[str, Any]]:
-    crop_m_f = validate_crop_m(crop_m)
-    metadata = load_scan_metadata(data_dir)
-    bbox = _bbox(metadata)
-    years = metadata.get("years")
-    if not isinstance(years, list) or not years:
-        raise ValueError("metadata.json nie zawiera rocznikow ortofotomapy.")
-    _point_xy(lat, lon, bbox, 1, 1)
-
+    crops, metadata = fetch_location_crops(lat, lon, crop_m=crop_m, years=years, session=session)
     output_dir.mkdir(parents=True, exist_ok=True)
-    crops: list[dict[str, str]] = []
-    for year in years:
-        label = _safe_crop_label(year)
-        img_path = data_dir / f"ortofoto_{label}.png"
-        if not img_path.exists():
-            continue
-        with Image.open(img_path) as image:
-            img_w, img_h = image.size
-            x, y = _point_xy(lat, lon, bbox, img_w, img_h)
-            crop_size = _crop_size_px(crop_m_f, bbox, img_w, img_h)
-            chunk = image.crop(_crop_bounds(x, y, img_w, img_h, crop_size))
-            file_name = f"{filename_prefix}{label}.jpg"
-            chunk.convert("RGB").save(output_dir / file_name, "JPEG", quality=jpeg_quality)
-        crops.append({"label": label, "file": file_name})
 
-    if not crops:
-        raise FileNotFoundError("Brak ortofotomap dla rocznikow z metadata.json. Zeskanuj obszar ponownie.")
-    return crops, metadata
+    saved: list[dict[str, str]] = []
+    for crop in crops:
+        file_name = f"{filename_prefix}{crop.label}.jpg"
+        crop.image.save(output_dir / file_name, "JPEG", quality=jpeg_quality)
+        saved.append({"label": crop.label, "file": file_name})
+    return saved, metadata
+
+
+def crop_to_data_url(crop: LocationCrop, *, jpeg_quality: int = config.REVIEW_JPEG_QUALITY) -> str:
+    buffer = BytesIO()
+    crop.image.save(buffer, "JPEG", quality=jpeg_quality)
+    import base64
+
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"

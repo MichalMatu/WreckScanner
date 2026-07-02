@@ -4,7 +4,6 @@ from pathlib import Path
 
 from app import config as app_config
 from core import config as core_config
-from core.vehicle_size import looks_like_vehicle_size
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,23 +15,18 @@ def frontend_map_source_block(config_js: str) -> str:
     return match.group(1)
 
 
-def vehicle_features(length_m: float, width_m: float) -> dict[str, float]:
-    return {
-        "length_m": length_m,
-        "width_m": width_m,
-        "aspect": length_m / width_m,
-        "area_m2": length_m * width_m,
-    }
-
-
 class ConfigModuleContractTests(unittest.TestCase):
     def test_core_and_app_config_modules_expose_shared_runtime_contracts(self):
-        self.assertEqual(core_config.YOLO_CLASS_NAMES, {9: "large vehicle", 10: "small vehicle"})
-        self.assertEqual(core_config.VEHICLE_SIZE_RULES[9].max_length_m, 10.5)
-        self.assertEqual(core_config.VEHICLE_SIZE_RULES[10].max_length_m, 7.5)
         self.assertEqual(app_config.HOST, "127.0.0.1")
         self.assertEqual(app_config.PORT, 8001)
-        self.assertEqual(app_config.WMS_YEARS, [2020, 2021, 2022, 2023, 2024, 2025])
+        self.assertEqual(core_config.ORTHO_YEARS, [2020, 2021, 2022, 2023, 2024, 2025])
+        self.assertEqual(core_config.ORTHO_WMS_BASE, "https://gis1.um.wroc.pl/arcgis/services/ogc")
+        self.assertEqual(core_config.ORTHO_CROP_PIXELS_PER_METER, 20.0)
+        self.assertEqual(core_config.ORTHO_CROP_MIN_PX, 180)
+        self.assertEqual(core_config.ORTHO_CROP_MAX_PX, 800)
+        self.assertEqual(core_config.ORTHO_CROP_MAX_WORKERS, 4)
+        self.assertEqual(app_config.WMS_UPSTREAM_BASE, core_config.ORTHO_WMS_BASE)
+        self.assertEqual(app_config.WMS_TIMEOUT, core_config.ORTHO_WMS_TIMEOUT)
         self.assertTrue(app_config.ADMIN_COOKIE_SECURE)
         self.assertEqual(app_config.CORS_ALLOWED_ORIGINS, ("https://wreckscanner.pl",))
 
@@ -134,21 +128,6 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertNotIn("HighResolution", block)
         self.assertNotIn("3,2,1", block)
         self.assertNotIn("TrueOrtho", block)
-
-
-class VehicleSizeRuleContractTests(unittest.TestCase):
-    def test_large_vehicle_class_accepts_longer_yolo_boxes_than_small_vehicle(self):
-        delivery_van = vehicle_features(length_m=10.5, width_m=2.4)
-
-        self.assertTrue(looks_like_vehicle_size(delivery_van, 9))
-        self.assertFalse(looks_like_vehicle_size(delivery_van, 10))
-
-    def test_vehicle_size_rules_reject_boxes_above_class_length_caps(self):
-        too_long_small_vehicle = vehicle_features(length_m=7.6, width_m=2.0)
-        too_long_large_vehicle = vehicle_features(length_m=10.6, width_m=2.4)
-
-        self.assertFalse(looks_like_vehicle_size(too_long_small_vehicle, 10))
-        self.assertFalse(looks_like_vehicle_size(too_long_large_vehicle, 9))
 
 
 if __name__ == "__main__":

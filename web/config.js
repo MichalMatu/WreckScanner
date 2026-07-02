@@ -6,14 +6,10 @@ const PANEL_COLLAPSED_KEY = 'wroclaw-ortho-panel-collapsed';
 const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
-const CROSSHAIR_HIDDEN_STORAGE_KEY = 'wroclaw-ortho-crosshair-hidden';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
 // Endpointy są relatywne, żeby aplikacja działała przez tunel/proxy bez
 // twardego hosta i portu w JS.
-const API_URL = '/api/download';
-const DOWNLOAD_PROGRESS_URL = '/api/download/progress';
-const ANALYZE_URL = '/api/analyze';
 const SETTINGS_URL = '/api/settings';
 const WRECKS_URL = '/api/wrecks';
 const FIELD_PHOTOS_URL = '/api/field-photos';
@@ -24,7 +20,6 @@ const ADMIN_LOGIN_URL = '/api/admin/login';
 const ADMIN_LOGOUT_URL = '/api/admin/logout';
 const ADMIN_PHOTOS_URL = '/api/admin/photos';
 const ADMIN_WRECKS_URL = '/api/admin/wrecks';
-const ADMIN_GEOTIFF_CACHE_URL = '/api/admin/geotiff-cache';
 const ADMIN_PRIVACY_REQUESTS_URL = '/api/admin/privacy-requests';
 const ADMIN_PHOTO_RETENTION_URL = '/api/admin/photo-retention';
 
@@ -40,14 +35,11 @@ const PUBLIC_LAYER_KEYS = {
 };
 
 const PUBLIC_FEATURE_KEYS = {
-    scanAnalysis: 'scan_analysis',
-    yoloWrecks: 'yolo_wrecks',
     manualWrecks: 'manual_wrecks',
     photoUploads: 'photo_uploads',
 };
 
-// Źródła podkładu mapy w UI. Backend ma własną listę pobierania do analizy;
-// frontend steruje tutaj wyłącznie podglądem w Leaflet.
+// Źródła podkładu mapy w UI; frontend steruje tutaj wyłącznie podglądem w Leaflet.
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const CARTO_LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png';
 const GEOPORTAL_STANDARD_WMTS_TILE_URL =
@@ -94,17 +86,6 @@ const DEFAULT_MAP_VIEW = {
 const MAX_MAP_ZOOM = 22;
 const METERS_PER_DEGREE_LAT = 111320;
 
-// Rozmiar obszaru skanu w UI. Backend ma własny limit bezpieczeństwa 50 m;
-// minimum 50 m usuwa mało użyteczne, zbyt ciasne kadry z interfejsu.
-const SCAN_AREA_MIN_M = 50;
-const SCAN_AREA_MAX_M = 50;
-const SCAN_AREA_STEP_M = 5;
-
-// Crosshair pokazuje realny obszar skanu w pikselach mapy. Maksimum zależy od
-// viewportu, żeby przy dużym zoomie kwadrat nie zatrzymywał się zbyt wcześnie.
-const CROSSHAIR_MIN_PX = 48;
-const CROSSHAIR_MAX_VIEWPORT_RATIO = 0.82;
-
 // Poziomy szczegółowości pinezek. Nie skalujemy płynnie ikon, tylko zdejmujemy
 // detale przy oddalaniu: najpierw liczniki, potem zostają małe klikane kropki.
 const MARKER_DETAIL_FULL_MIN_ZOOM = 18;
@@ -145,5 +126,3 @@ const FIELD_PHOTO_ATTACH_TO_WRECK_RADIUS_M = 1;
 // requestów/przełączeń warstw; dłuższe uspokajają słabsze urządzenia.
 const ORTHO_LAYER_SWAP_FALLBACK_MS = 3000;
 const ENHANCEMENT_SETTINGS_SAVE_DEBOUNCE_MS = 350;
-const STEP_TIMER_INTERVAL_MS = 500;
-const DOWNLOAD_PROGRESS_POLL_MS = 700;

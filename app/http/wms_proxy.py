@@ -1,8 +1,5 @@
 import logging
 
-import cv2
-import numpy as np
-
 from app import config, map_downloads, wms_cache
 from app.http import responses as http_responses
 from core.enhancement import enhance_orthophoto
@@ -39,6 +36,21 @@ def handle_wms_proxy(handler) -> None:
     except Exception as exc:
         http_responses.log_exception(handler, "WMS upstream request failed", exc, status=502)
         http_responses.send_text_error(handler, 502, "WMS upstream error")
+        return
+
+    try:
+        import cv2
+        import numpy as np
+    except ModuleNotFoundError:
+        handler.send_response(200)
+        handler.send_header("Content-Type", "image/png")
+        handler.send_header("Content-Length", str(len(raw_bytes)))
+        handler.send_header("Cache-Control", config.WMS_TILE_CACHE_CONTROL)
+        handler.send_header("X-WMS-Cache", "MISS")
+        handler.end_headers()
+        wms_cache.write_tile_cache(cache_path, raw_bytes)
+        wms_cache.cleanup_tile_cache()
+        http_responses.write_body(handler, raw_bytes)
         return
 
     nparr = np.frombuffer(raw_bytes, dtype=np.uint8)

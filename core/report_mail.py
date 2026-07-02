@@ -62,7 +62,6 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
-    score = float(record.get("best_score") or evidence.get("score") or 0.0)
     links = record.get("links") or evidence.get("links") or {}
     subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(fields['location_description'])}"
     body = f"""Dzień dobry,
@@ -90,7 +89,6 @@ Opis stanu pojazdu:
 Materiał pomocniczy z aplikacji WreckScanner:
 - lokalna sprawa: {record.get("id")}
 - pojazd widoczny na ortofotomapach z lat: {labels}
-- najlepszy score analizy: {score * 100:.0f}%
 
 Linki do weryfikacji miejsca:
 {_links_text(links)}
@@ -98,7 +96,7 @@ Linki do weryfikacji miejsca:
 Zakres oczekiwanej odpowiedzi:
 {_formal_requests_text(record)}
 
-W załączniku dołączam pakiet dowodowy ZIP z miniaturami historycznymi, zdjęciami z miejsca oraz metadanymi analizy. Proszę o weryfikację przez patrol i podjęcie czynności w sprawie pojazdu nieużytkowanego.
+W załączniku dołączam pakiet dowodowy ZIP z miniaturami historycznymi i zdjęciami z miejsca. Proszę o weryfikację przez patrol i podjęcie czynności w sprawie pojazdu nieużytkowanego.
 
 Z poważaniem,
 {fields["reporter_name"]}

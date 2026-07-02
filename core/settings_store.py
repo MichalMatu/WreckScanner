@@ -21,8 +21,6 @@ DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
     "base_map_osm": True,
 }
 DEFAULT_PUBLIC_FEATURES: dict[str, bool] = {
-    "scan_analysis": True,
-    "yolo_wrecks": True,
     "manual_wrecks": True,
     "photo_uploads": True,
 }
@@ -75,30 +73,9 @@ def enhancement_settings_from_dict(raw: Any) -> EnhancementSettings:
 def default_app_settings() -> dict[str, Any]:
     return {
         "enhancement": enhancement_settings_to_dict(DEFAULT_ENHANCEMENT_SETTINGS),
-        "geotiff_cache": {
-            "max_gb": config.DEFAULT_GEOTIFF_CACHE_MAX_GB,
-        },
         "public_layers": DEFAULT_PUBLIC_LAYERS.copy(),
         "public_features": DEFAULT_PUBLIC_FEATURES.copy(),
     }
-
-
-def geotiff_cache_settings_from_dict(raw: Any) -> dict[str, Any]:
-    defaults = default_app_settings()["geotiff_cache"]
-    if not isinstance(raw, dict):
-        return defaults
-
-    if "max_gb" in raw and raw["max_gb"] is None:
-        return {"max_gb": None}
-
-    try:
-        max_gb = float(raw.get("max_gb", defaults["max_gb"]))
-    except (TypeError, ValueError):
-        max_gb = defaults["max_gb"]
-
-    min_gb, max_allowed_gb = config.GEOTIFF_CACHE_MAX_GB_RANGE
-    max_gb = max(min_gb, min(max_allowed_gb, max_gb))
-    return {"max_gb": max_gb}
 
 
 def public_layer_settings_from_dict(raw: Any) -> dict[str, bool]:
@@ -138,7 +115,6 @@ def load_app_settings() -> dict[str, Any]:
 
     settings = default_app_settings()
     settings["enhancement"] = enhancement_settings_to_dict(enhancement_settings_from_dict(raw.get("enhancement")))
-    settings["geotiff_cache"] = geotiff_cache_settings_from_dict(raw.get("geotiff_cache"))
     settings["public_layers"] = public_layer_settings_from_dict(raw.get("public_layers"))
     settings["public_features"] = public_feature_settings_from_dict(raw.get("public_features"))
     return settings
@@ -148,19 +124,10 @@ def load_enhancement_settings() -> EnhancementSettings:
     return enhancement_settings_from_dict(load_app_settings().get("enhancement"))
 
 
-def load_geotiff_cache_max_bytes() -> int | None:
-    settings = geotiff_cache_settings_from_dict(load_app_settings().get("geotiff_cache"))
-    if settings["max_gb"] is None:
-        return None
-    return int(settings["max_gb"] * config.BYTES_PER_GIB)
-
-
 def save_app_settings(raw: dict[str, Any]) -> dict[str, Any]:
     current = load_app_settings()
     if "enhancement" in raw:
         current["enhancement"] = enhancement_settings_to_dict(enhancement_settings_from_dict(raw["enhancement"]))
-    if "geotiff_cache" in raw:
-        current["geotiff_cache"] = geotiff_cache_settings_from_dict(raw["geotiff_cache"])
     if "public_layers" in raw:
         current["public_layers"] = public_layer_settings_from_dict(raw["public_layers"])
     if "public_features" in raw:

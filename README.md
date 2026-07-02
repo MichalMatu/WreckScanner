@@ -25,10 +25,11 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 ## Zakres
 
 - mapa Leaflet z podkladami `POL`, `OSM` oraz rocznikami Wroclawia `2020-2025`,
-- skan malego obszaru Wroclawia modelem YOLO OBB,
-- reczne sprawy pojazdow z pakietami ZIP/PDF i publicznym `index.html`,
+- reczne sprawy pojazdow tworzone z kliknietej lokalizacji na mapie,
+- automatyczne miniatury historyczne pobierane lekko z WMS dla miejsca sprawy,
+- pakiety ZIP/PDF i publiczny `index.html` dla zapisanych spraw,
 - zdjecia terenowe z kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
-- panel administratora dla zdjec, spraw, zgloszen prywatnosci, cache GeoTIFF i widocznosci warstw,
+- panel administratora dla zdjec, spraw, zgloszen prywatnosci i widocznosci warstw,
 - warstwy dzialek KIEG/EGiB oraz nawierzchni OSM/Overpass,
 - lokalny backup danych przez `restic`.
 
@@ -48,8 +49,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 
 Te katalogi i pliki sa lokalna baza aplikacji albo cache i nie powinny trafic do repozytorium:
 
-- `dane_dla_AI/` - pobrane ortofotomapy, metadane i cache GeoTIFF,
-- `analiza/` - raporty analizy, miniatury, overlay, `candidates.json`, `run_log.json`,
+- `analiza/` - lokalne raporty diagnostyczne uruchamiane przez `scripts/check.sh`,
 - `zidentyfikowane_wraki/` - zapisane sprawy pojazdow,
 - `zdjecia_terenowe/` - rekordy zdjec terenowych i publiczne pochodne,
 - `prywatne_zdjecia/` - prywatne oryginaly zdjec,

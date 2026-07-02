@@ -11,7 +11,7 @@ from typing import Any
 from core import config
 from core.data_diagnostics import run_data_diagnostics
 
-DEFAULT_DIAGNOSTICS_OUTPUT = config.OUTPUT_DIR / "data_diagnostics.json"
+DEFAULT_DIAGNOSTICS_OUTPUT = config.DIAGNOSTICS_DIR / "data_diagnostics.json"
 DEFAULT_RESTIC_TAGS = ("wreckscanner", "data")
 
 Runner = Callable[..., subprocess.CompletedProcess[Any]]

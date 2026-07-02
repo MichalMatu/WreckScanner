@@ -147,6 +147,7 @@ class DataDiagnosticsTests(unittest.TestCase):
             wreck_dir = wrecks_dir / "wreck_51100000_17200000"
             manual_evidence_dir = wreck_dir / "evidence" / "manual_11111111111111"
             write_json(manual_evidence_dir / "manual_inspection.json", {"source": "manual_inspection"})
+            write_json(manual_evidence_dir / "metadata.json", {"years": [2024, 2025]})
             write_json(manual_evidence_dir / "links.json", {"geoportal": "https://example.test/geo"})
             write_wreck_with_attached_photo(wrecks_dir, private_dir)
             record = json.loads((wreck_dir / "record.json").read_text(encoding="utf-8"))
@@ -317,7 +318,7 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertIn("wreck_attached_photo_duplicate", codes)
             self.assertIn("wreck_attached_photo_bad_issue_type", codes)
 
-    def test_run_data_diagnostics_finds_unsafe_evidence_paths_and_missing_metadata(self):
+    def test_run_data_diagnostics_finds_unsafe_evidence_paths_and_missing_links(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_dir = root / "zdjecia_terenowe"
@@ -328,8 +329,6 @@ class DataDiagnosticsTests(unittest.TestCase):
             (wreck_dir / "index.html").write_text("<html></html>", encoding="utf-8")
             evidence_dir = wreck_dir / "evidence" / "auto_11111111111111"
             evidence_dir.mkdir(parents=True)
-            write_json(evidence_dir / "candidate.json", {"rank": 1})
-            write_json(evidence_dir / "links.json", {})
             write_json(
                 wreck_dir / "record.json",
                 {

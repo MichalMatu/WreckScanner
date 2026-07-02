@@ -490,13 +490,7 @@ def _audit_wrecks(
             if not evidence_dir.is_dir():
                 _issue(issues, "error", "wreck_evidence_dir_missing", evidence_dir, "Brakuje katalogu dowodu.")
                 continue
-            evidence_source = str(evidence.get("source") or "").strip()
-            required_files = (
-                ("manual_inspection.json", "links.json")
-                if evidence_source == "manual_inspection"
-                else ("candidate.json", "metadata.json", "links.json")
-            )
-            for required in required_files:
+            for required in ("links.json",):
                 if not (evidence_dir / required).exists():
                     _issue(
                         issues,

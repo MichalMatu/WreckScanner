@@ -36,7 +36,7 @@ def translate_path(path: str) -> str:
     if request_path == "/":
         return str(config.WEB_DIR / "index.html")
 
-    if request_path.startswith(f"/{config.ANALYSIS_DIR_NAME}/") or request_path.startswith(f"/{config.WRECKS_ROUTE}/"):
+    if request_path.startswith(f"/{config.WRECKS_ROUTE}/"):
         base_dir = config.ROOT_DIR
         relative_path = request_path.lstrip("/")
     else:

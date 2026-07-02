@@ -1,5 +1,5 @@
-// Same source family as analysis downloads for Wroclaw sources; Geoportal sources
-// are preview-only base layers and do not change the backend scan pipeline.
+// Wrocław and Geoportal sources are preview-only base layers; saved cases fetch
+// their own small historical crops by location.
 let currentMapSourceIndex = Math.max(0, MAP_SOURCES.findIndex(source => source.key === DEFAULT_MAP_SOURCE_KEY));
 let mapSourceLayer = null;
 let mapSourceSwapToken = 0;

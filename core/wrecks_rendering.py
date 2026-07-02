@@ -131,24 +131,13 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
             crop_cards.append(
                 f'<figure><img src="{evidence_path}/{file_name}" loading="lazy"><figcaption>{label}</figcaption></figure>'
             )
-        metadata_links = []
-        evidence_dir = record_dir / raw_evidence_path
-        for file_name in ("candidate.json", "manual_inspection.json", "metadata.json", "links.json"):
-            if (evidence_dir / file_name).exists():
-                safe_file_name = html.escape(file_name)
-                metadata_links.append(f'<a href="{evidence_path}/{safe_file_name}">{safe_file_name}</a>')
-        metadata_links_html = f"<p>{' · '.join(metadata_links)}</p>" if metadata_links else ""
-        evidence_meta = ["punkt ręczny" if evidence.get("rank") is None else f"Rank #{evidence.get('rank')}"]
-        if evidence.get("score") is not None:
-            evidence_meta.append(f"score {(float(evidence.get('score') or 0) * 100):.0f}%")
-        evidence_meta.append(f"lata: {html.escape(evidence_labels)}")
+        evidence_meta = [f"lata: {html.escape(evidence_labels or 'brak danych')}"]
         evidence_sections.append(
             f"""
             <section class="evidence">
               <h2>Dowód {html.escape(evidence["id"])} · {html.escape(evidence["created_at"])}</h2>
               <p>{" · ".join(evidence_meta)}</p>
               <div class="grid">{"".join(crop_cards)}</div>
-              {metadata_links_html}
             </section>
             """
         )
@@ -160,7 +149,6 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     )
     record_labels = _compact_years(record.get("labels_present") or [])
     status = html.escape(str(record.get("status", "confirmed")))
-    score = float(record.get("best_score") or 0) * 100
     evidence_count = len(record.get("evidences") or [])
     photo_count = len(attached_photos)
     html_body = f"""<!doctype html>
@@ -178,7 +166,6 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     p {{ color:var(--mut); line-height:1.5; overflow-wrap:anywhere; }}
     a {{ color:#93c5fd; text-decoration:none; }}
     a:hover {{ text-decoration:underline; }}
-    .score {{ color:var(--acc); font-weight:800; }}
     .hero {{ padding:14px 16px; }}
     .hero-head {{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }}
     .hero h1 {{ font-size:clamp(20px,3vw,30px); margin:0; overflow-wrap:anywhere; }}
@@ -209,7 +196,6 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     </div>
     <div class="metric-strip">
       <span class="metric"><b>GPS</b>{record["lat"]:.6f}, {record["lon"]:.6f}</span>
-      <span class="metric"><b>score</b><span class="score">{score:.0f}%</span></span>
       <span class="metric"><b>widziane</b>{html.escape(record_labels)}</span>
       <span class="metric"><b>dowody</b>{evidence_count}</span>
       <span class="metric"><b>zdjęcia</b>{photo_count}</span>

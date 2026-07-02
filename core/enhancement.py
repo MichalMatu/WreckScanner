@@ -1,22 +1,26 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
-import cv2
-import numpy as np
+try:
+    import cv2
+    import numpy as np
+except ModuleNotFoundError:
+    cv2 = None
+    np = None
 
 from core.config import DEFAULT_ENHANCEMENT_SETTINGS, EnhancementSettings
-from core.models import ImageItem
 
 logger = logging.getLogger(__name__)
 
 
 def enhance_orthophoto(
-    img: np.ndarray,
+    img: Any,
     settings: EnhancementSettings = DEFAULT_ENHANCEMENT_SETTINGS,
-) -> np.ndarray:
+) -> Any:
     """Wspólny filtr ortofoto: CLAHE + auto-levels na L + soft decast a/b."""
-    if not settings.enabled:
+    if cv2 is None or np is None or not settings.enabled:
         return img.copy()
 
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -49,24 +53,6 @@ def enhance_orthophoto(
     b_channel = np.clip(b_float, 0, 255).astype(np.uint8)
 
     return cv2.cvtColor(cv2.merge([l_channel, a_channel, b_channel]), cv2.COLOR_LAB2BGR)
-
-
-def enhance_image_items(
-    items: list[ImageItem],
-    settings: EnhancementSettings = DEFAULT_ENHANCEMENT_SETTINGS,
-) -> None:
-    """Zastosuj ten sam filtr do obrazów po wyrównaniu, przed analizą YOLO."""
-    if not settings.enabled:
-        logger.info("Enhancement koloru: wyłączony")
-        return
-
-    logger.info(enhancement_summary(settings))
-    for item in items:
-        img = item.img if item.img_aligned is None else item.img_aligned
-        before_l = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)[..., 0].mean()
-        item.img_aligned = enhance_orthophoto(img, settings=settings)
-        after_l = cv2.cvtColor(item.img_aligned, cv2.COLOR_BGR2LAB)[..., 0].mean()
-        logger.info(" - %s: L %.0f -> %.0f", item.label, before_l, after_l)
 
 
 def enhancement_summary(settings: EnhancementSettings = DEFAULT_ENHANCEMENT_SETTINGS) -> str:

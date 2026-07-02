@@ -14,7 +14,6 @@ function safeWreckId(value) {
 function savedWreckPopup(wreck) {
     const lat = Number(wreck.lat);
     const lon = Number(wreck.lon);
-    const score = Number(wreck.best_score || 0);
     const years = (wreck.labels_present || []).join(', ');
     const wreckId = safeWreckId(wreck.id);
     const folder = wreck.folder_url;
@@ -74,7 +73,7 @@ function savedWreckPopup(wreck) {
     ];
     return `
         <div class="map-popup map-popup--vehicle-case">
-            ${popupHeader(t('wreck.popup.title'), `${(score * 100).toFixed(0)}%`)}
+            ${popupHeader(t('wreck.popup.title'))}
             ${popupMeta([years || '-', `${lat.toFixed(6)}, ${lon.toFixed(6)}`])}
             ${popupPhotoSection(t('wreck.popup.fieldPhotos'), wreck.field_photo_previews, { className: 'map-popup-photo-grid--field', total: wreck.photo_count })}
             ${popupPhotoSection(t('wreck.popup.evidencePreviews'), wreck.evidence_previews, { className: 'map-popup-photo-grid--evidence' })}
@@ -113,44 +112,6 @@ async function loadSavedWrecks() {
 function toggleSavedWreckLayer(visible) {
     savedWreckLayerVisible = Boolean(visible);
     placeSavedWrecks(savedWreckLayerData);
-}
-
-async function saveWreck(rank, button = null) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.yoloWrecks)) {
-        statusEl.textContent = t('wreck.saveYoloDisabled');
-        statusEl.className = 'err';
-        return;
-    }
-    const btn = button instanceof HTMLElement ? button : null;
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = t('wreck.saving');
-    }
-    try {
-        const data = await apiPostJson(WRECKS_URL, { rank });
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('wreck.saveError'));
-        }
-        await loadSavedWrecks();
-        const pendingReview = !adminAuthenticated && data.wreck?.public_review_status === 'pending';
-        if (pendingReview) {
-            addPendingSubmissionMarker({ lat: data.wreck?.lat, lon: data.wreck?.lon });
-            if (btn) btn.textContent = t('wreck.submittedShort');
-            statusEl.textContent = t('wreck.submittedForReview');
-            statusEl.className = 'ok';
-            return;
-        }
-        if (btn) btn.textContent = data.evidence_created ? t('wreck.savedShort') : t('wreck.alreadySavedShort');
-        statusEl.textContent = data.evidence_created ? t('wreck.saved') : t('wreck.alreadySaved');
-        statusEl.className = 'ok';
-    } catch (err) {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = t('wreck.save');
-        }
-        statusEl.textContent = apiErrorMessage(err, t('wreck.saveError'));
-        statusEl.className = 'err';
-    }
 }
 
 async function saveManualWreck(lat, lon, button = null) {

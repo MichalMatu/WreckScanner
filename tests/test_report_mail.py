@@ -10,7 +10,6 @@ class ReportMailTests(unittest.TestCase):
                 "id": "wreck_51100000_17200000",
                 "lat": 51.1,
                 "lon": 17.2,
-                "best_score": 0.87,
                 "links": {"street_view": "https://example.test/street"},
                 "report_history": [
                     {
@@ -35,7 +34,6 @@ class ReportMailTests(unittest.TestCase):
         self.assertEqual(subject, "Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10, parking przy szkole")
         self.assertIn("- Imię i nazwisko: Jan Kowalski", body)
         self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
-        self.assertIn("- najlepszy score analizy: 87%", body)
         self.assertIn("- Google Street View: https://example.test/street", body)
         self.assertIn("report_20260601T100000Z_deadbeef (publiczny)", body)
 

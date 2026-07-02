@@ -29,12 +29,6 @@
     <!-- Interactive Map -->
     <div id="map"></div>
 
-    <!-- Crosshair at the center -->
-    <div id="crosshair" class="is-hidden">
-        <div class="ring"></div>
-        <div class="size-label" id="size-label">50 × 50 m</div>
-    </div>
-
     <!-- Map source slider -->
     <div id="year-slider">
         <button type="button" class="year-arrow" id="year-prev" title="◀">◀</button>
@@ -49,13 +43,6 @@
     <!-- Map right-click menu -->
     <div id="map-context-menu" class="map-context-menu" hidden>
         <div class="context-menu-coords" id="context-menu-coords"></div>
-        <button type="button" id="context-center-scan" onclick="centerScanOnContextPoint()" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    d="M12 2C8.13 2 5 5.13 5 9c0 4.31 4.7 10.15 6.34 12.04a.88.88 0 0 0 1.32 0C14.3 19.15 19 13.31 19 9c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
-            </svg>
-            <span data-i18n="context.centerScan">Ustaw środek skanu</span>
-        </button>
         <button type="button" id="context-identify-parcel" onclick="identifyCadastralParcelAtContextPoint()" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -69,13 +56,6 @@
                     d="M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-5h-2v2h-2v2h2v2h2v-2h2v-2h-2v-2z" />
             </svg>
             <span data-i18n="context.addFieldPhotos">Dodaj zdjęcia tutaj</span>
-        </button>
-        <button type="button" id="context-toggle-crosshair" onclick="toggleCrosshairFromContextMenu()" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    d="M11 2h2v4h-2V2zm0 16h2v4h-2v-4zM2 11h4v2H2v-2zm16 0h4v2h-4v-2zm-6-3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
-            </svg>
-            <span id="context-crosshair-label" data-i18n="context.hideCrosshair">Ukryj celownik</span>
         </button>
         <button type="button" class="map-context-secondary" onclick="copyContextCoords()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -207,58 +187,7 @@
                 </div>
             </section>
 
-            <!-- Combined button: clear + download + analyze -->
-            <button type="button" class="btn-download btn-analyze" id="btn-run" onclick="runAll()" hidden>
-                <div class="spinner" id="spinner"></div>
-                <svg id="run-icon" viewBox="0 0 24 24">
-                    <path
-                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                <span data-i18n="panel.run">Skanuj obszar</span>
-            </button>
-
-            <!-- Status (tylko gdy są błędy ogólne / sieci) -->
             <div id="status"></div>
-
-            <!-- Strukturalny postęp pipeline'u -->
-            <div id="progress" hidden>
-                <div class="step" id="step-download">
-                    <span class="step-icon"></span>
-                    <span class="step-label" data-i18n="step.download.label">Pobieranie ortofotomap</span>
-                    <span class="step-time"></span>
-                    <div class="step-meta"></div>
-                    <div class="step-progress">
-                        <div></div>
-                    </div>
-                </div>
-                <div class="step" id="step-detect">
-                    <span class="step-icon"></span>
-                    <span class="step-label" data-i18n="step.detect.label">Wykrywanie pojazdów</span>
-                    <span class="step-time"></span>
-                    <div class="step-meta"></div>
-                    <div class="step-progress">
-                        <div></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Wiersz akcji: raport + kosz (po analizie) -->
-            <div class="result-actions" id="result-actions" hidden>
-                <a id="btn-report" class="btn-download btn-report" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                    </svg>
-                    <span id="report-label" data-i18n="result.reportShort">Raport</span>
-                </a>
-                <button type="button" id="btn-clear" class="btn-trash" data-i18n-attr="title:icon.clear"
-                    title="Wyczyść wyniki z mapy" onclick="clearResults()">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z" />
-                    </svg>
-                </button>
-            </div>
 
         </div><!-- /panel-body -->
     </div>
@@ -340,47 +269,8 @@
                 </div>
             </div>
             <div class="modal-body">
-                <section class="modal-section scan-area-section">
-                    <div class="setting-toggle-row">
-                        <label class="modal-label" for="width-slider" data-i18n="modal.settings.scanArea">Obszar
-                            skanu</label>
-                        <output class="scan-area-output" id="width-display">50 m</output>
-                    </div>
-                    <input type="range" id="width-slider" min="50" max="50" value="50" step="5">
-                    <div hidden>
-                        <span id="height-display">50 m</span>
-                        <input type="range" id="height-slider" min="50" max="50" value="50" step="5">
-                    </div>
-                    <p class="modal-hint" data-i18n="modal.settings.scanAreaHint">Minimum 50 m; mniejsze kadry rzadko
-                        dają użyteczny kontekst.</p>
-                </section>
-
                 <p class="modal-hint settings-lock-hint" id="settings-lock-hint" data-i18n="modal.settings.lockedHint">
                     Zaloguj administratora, żeby edytować ustawienia.</p>
-                <section class="modal-section">
-                    <label class="modal-label" for="model-select" data-i18n="modal.settings.model">Model YOLO</label>
-                    <select id="model-select">
-                        <option value="weights/yolo11s-obb.pt" selected data-i18n="modal.settings.modelSmall">Small —
-                            szybki (domyślny)</option>
-                        <option value="weights/yolo11m-obb.pt" data-i18n="modal.settings.modelMedium">Medium —
-                            dokładniejszy (wolniejszy)</option>
-                    </select>
-                    <p class="modal-hint" data-i18n="modal.settings.modelHint">Model OBB (oriented bounding box) z
-                        rodziny YOLO11 do wykrywania pojazdów na obrazach lotniczych.</p>
-                </section>
-
-                <section class="modal-section">
-                    <label class="modal-label" for="conf-select" data-i18n="modal.settings.sensitivity">Czułość
-                        detekcji</label>
-                    <select id="conf-select">
-                        <option value="0.10" data-i18n="modal.settings.sensHigh">Czuły — więcej kandydatów</option>
-                        <option value="0.15" selected data-i18n="modal.settings.sensStd">Standard (domyślny)</option>
-                        <option value="0.30" data-i18n="modal.settings.sensStrict">Strict — tylko twarde przypadki
-                        </option>
-                    </select>
-                    <p class="modal-hint" data-i18n="modal.settings.sensHint">Próg pewności YOLO. Niższy = więcej
-                        detekcji (też fałszywych), wyższy = krótka lista pewniaków.</p>
-                </section>
 
                 <section class="modal-section">
                     <label class="modal-label" for="crop-select" data-i18n="modal.settings.crop">Zoom miniatur w
@@ -392,22 +282,7 @@
                         <option value="15" data-i18n="modal.settings.crop15">15 m — szeroki</option>
                         <option value="20" data-i18n="modal.settings.crop20">20 m — kontekst</option>
                     </select>
-                    <p class="modal-hint" data-i18n="modal.settings.cropHint">Wielkość wycinka w metrach. Analiza
-                        przelicza ją na piksele według skali pobranych ortofotomap.</p>
-                </section>
-
-                <section class="modal-section">
-                    <label class="modal-label" for="geotiff-cache-limit" data-i18n="modal.settings.cache">Cache
-                        GeoTIFF</label>
-                    <select id="geotiff-cache-limit">
-                        <option value="2" data-i18n="modal.settings.cache2">2 GB — oszczędnie</option>
-                        <option value="4" selected data-i18n="modal.settings.cache4">4 GB — domyślnie</option>
-                        <option value="8" data-i18n="modal.settings.cache8">8 GB — wygodnie</option>
-                        <option value="16" data-i18n="modal.settings.cache16">16 GB — dużo obszarów</option>
-                        <option value="none" data-i18n="modal.settings.cacheNone">Bez limitu</option>
-                    </select>
-                    <p class="modal-hint" data-i18n="modal.settings.cacheHint">Limit dotyczy surowych GeoTIFF. Po
-                        przekroczeniu aplikacja usuwa najstarsze kompletne arkusze, a przerwane pliki .part wznawia.</p>
+                    <p class="modal-hint" data-i18n="modal.settings.cropHint">Wielkość wycinka zapisywanego w sprawie.</p>
                 </section>
 
                 <section class="modal-section">
@@ -457,8 +332,7 @@
                             <input type="range" id="enhancement-decast" min="0" max="1" step="0.05" value="0.4">
                         </label>
                     </div>
-                    <p class="modal-hint" id="settings-save-status" data-i18n="modal.settings.enhancementHint">Te same
-                        parametry są używane w podglądzie mapy i przed analizą YOLO.</p>
+                    <p class="modal-hint" id="settings-save-status" data-i18n="modal.settings.enhancementHint">Parametry są używane w podglądzie mapy.</p>
                 </section>
             </div>
         </div>
@@ -517,13 +391,6 @@
                                 <path d="M5 4h14v16H5V4zm2 2v12h10V6H7zm2 2h6v2H9V8zm0 4h6v2H9v-2zm0 4h4v2H9v-2z" />
                             </svg>
                             <span data-i18n="icon.privacyRequests">Zgłoszenia prywatności</span>
-                        </button>
-                        <button type="button" class="admin-panel-action admin-only" id="open-geotiff-cache"
-                            onclick="openGeotiffCacheModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M4 4h16v5H4V4zm0 7h16v9H4v-9zm3 2v2h2v-2H7zm4 0v2h6v-2h-6z" />
-                            </svg>
-                            <span data-i18n="icon.geotiffCache">Cache GeoTIFF</span>
                         </button>
                         <button type="button" class="admin-panel-action admin-only" id="open-welcome-modal"
                             onclick="openWelcomeModalFromAdminPanel()" hidden>
@@ -595,14 +462,6 @@
                     </div>
                     <div class="admin-layer-grid admin-feature-grid">
                         <label class="admin-layer-toggle">
-                            <input type="checkbox" id="admin-feature-scan-analysis" checked>
-                            <span data-i18n="modal.adminPanel.featureScan">Skanowanie i YOLO</span>
-                        </label>
-                        <label class="admin-layer-toggle">
-                            <input type="checkbox" id="admin-feature-yolo-wrecks" checked>
-                            <span data-i18n="modal.adminPanel.featureYoloWrecks">Pinezki z YOLO</span>
-                        </label>
-                        <label class="admin-layer-toggle">
                             <input type="checkbox" id="admin-feature-manual-wrecks" checked>
                             <span data-i18n="modal.adminPanel.featureManualWrecks">Ręczne pinezki pojazdów</span>
                         </label>
@@ -632,33 +491,6 @@
                     </div>
                     <p class="modal-hint photo-retention-status" id="photo-retention-status"
                         data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</p>
-                </section>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-backdrop modal-backdrop--floating" id="modal-geotiff-cache" hidden onclick="closeModal(this)">
-        <div class="modal modal--geotiff-cache draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
-                <h2 data-i18n="modal.geotiffCache.title">Cache GeoTIFF</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <section class="modal-section">
-                    <div class="setting-toggle-row">
-                        <label class="modal-label" data-i18n="modal.geotiffCache.summary">Podsumowanie</label>
-                        <button type="button" class="settings-reset-btn" onclick="loadGeotiffCacheStatus()"
-                            data-i18n="modal.geotiffCache.refresh">Odśwież</button>
-                    </div>
-                    <p class="modal-hint" id="geotiff-cache-status"
-                        data-i18n="modal.geotiffCache.loading">Ładuję cache GeoTIFF...</p>
-                    <div class="geotiff-cache-list" id="geotiff-cache-list"></div>
                 </section>
             </div>
         </div>
@@ -1203,8 +1035,7 @@
             <div class="modal-body">
                 <p class="welcome-lead" data-i18n="modal.help.intro">WreckScanner pomaga dokumentować porzucone albo
                     długo stojące pojazdy w przestrzeni publicznej. Mapa służy do przeglądania ortofoto, sprawdzania
-                    zgłoszonych miejsc i pracy z wynikami, a analiza YOLO dla Wrocławia pozostaje osobnym narzędziem
-                    administracyjnym.</p>
+                    zgłoszonych miejsc i przygotowywania prostych spraw z materiałem mapowym.</p>
 
                 <section class="welcome-section">
                     <h3 data-i18n="modal.help.photoTitle">Jak dodać zdjęcie wraku</h3>
@@ -1227,14 +1058,13 @@
                     <h3 data-i18n="modal.help.mapTitle">Co działa na mapie</h3>
                     <p data-i18n="modal.help.mapBody" data-i18n-html>Warstwa <b>POL</b> pokazuje krajową ortofoto,
                         <b>OSM</b> daje czytelny podkład drogowy, a roczniki <b>2020-2025</b> są miejskimi
-                        ortofotomapami Wrocławia. Sam wybór podkładu nie uruchamia analizy.</p>
+                        ortofotomapami Wrocławia.</p>
                 </section>
 
                 <section class="welcome-section">
-                    <h3 data-i18n="modal.help.scanTitle">Analiza YOLO</h3>
-                    <p data-i18n="modal.help.scanBody" data-i18n-html>Skanowanie ortofotomapy i kandydaci z YOLO są
-                        przeznaczone dla obszaru Wrocławia. Poza nim mapa nadal służy do przeglądania ortofoto i
-                        istniejących zgłoszeń.</p>
+                    <h3 data-i18n="modal.help.caseTitle">Jak dodać sprawę</h3>
+                    <p data-i18n="modal.help.caseBody" data-i18n-html>Kliknij miejsce na mapie, sprawdź historyczne
+                        wycinki ortofoto i zapisz sprawę. Aplikacja sama dołączy miniatury z dostępnych roczników.</p>
                 </section>
 
                 <div class="welcome-actions">
@@ -1243,7 +1073,7 @@
                     </button>
                 </div>
                 <p class="modal-hint modal-data-source" data-i18n="modal.help.dataSource">Dane: OSM, Geoportal Krajowy
-                    i ortofotomapy Wrocławia dla analizy YOLO.</p>
+                    i ortofotomapy Wrocławia.</p>
                 <div class="modal-footer-links">
                     <a href="/privacy" data-i18n="footer.privacy">Prywatność</a>
                     <span class="modal-footer-sep">·</span>
@@ -1310,7 +1140,7 @@
     <script src="/app/popups.js"></script>
     <script src="/app/map_markers.js"></script>
     <script src="/app/layers.js"></script>
-    <script src="/app/scan_area.js"></script>
+    <script src="/app/map_center.js"></script>
     <script src="/app/file_picker.js"></script>
 
     <!-- App logic -->
@@ -1319,6 +1149,7 @@
     <script src="/app/saved_wrecks.js"></script>
     <script src="/app/field_photos.js"></script>
     <script src="/app/field_photo_actions.js"></script>
+    <script src="/app/location_inspection.js"></script>
     <script src="/app/field_photo_popups.js"></script>
     <script src="/app/field_photo_upload.js"></script>
     <script src="/app/photo_review.js"></script>
@@ -1328,9 +1159,6 @@
     <script src="/app/reports.js"></script>
     <script src="/app/privacy_requests.js"></script>
     <script src="/app/map_controls.js"></script>
-    <script src="/app/scan_progress.js"></script>
-    <script src="/app/scan.js"></script>
-    <script src="/app/geotiff_cache.js"></script>
     <script src="/app/map_context.js"></script>
     <script src="/app/welcome.js"></script>
     <script src="/app/startup.js"></script>

@@ -31,19 +31,14 @@ class FakeHandler:
 
 
 class HttpHealthContractTests(unittest.TestCase):
-    def test_health_payload_includes_pressure_pipeline_and_wms_cache(self):
+    def test_health_payload_includes_wms_cache(self):
         handler = FakeHandler()
 
-        with (
-            patch.object(health.pipeline, "system_pressure", return_value={"overloaded": False, "reasons": []}),
-            patch.object(health.pipeline, "pipeline_snapshot", return_value={"status": "idle"}),
-            patch.object(health.wms_cache, "tile_cache_report", return_value={"count": 2}),
-        ):
+        with patch.object(health.wms_cache, "tile_cache_report", return_value={"count": 2}):
             health.handle_health(handler)
 
         self.assertEqual(handler.status, 200)
         self.assertEqual(handler.payload["status"], "ok")
-        self.assertEqual(handler.payload["pipeline"], {"status": "idle"})
         self.assertEqual(handler.payload["wms_tile_cache"], {"count": 2})
 
 

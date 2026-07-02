@@ -1,8 +1,4 @@
 // ─── STATE ──────────────────────────────────────
-let currentWidth = 50;
-let currentHeight = 50;
-let lastDownload = null;   // { lat, lon, width, height } — gdzie i co ostatnio pobraliśmy
-let currentJobToken = null;
 let enhancementSettingsRevision = Date.now();
 let settingsSaveTimer = null;
 let defaultEnhancementSettings = null;
@@ -13,7 +9,7 @@ const map = L.map('map', {
     zoom: initialMapView.zoom,
     maxZoom: MAX_MAP_ZOOM,
     zoomControl: false,
-    boxZoom: false,  // wyłączone — shift+drag używamy do zaznaczania
+    boxZoom: true,
 });
 map.on('moveend zoomend', saveMapView);
 

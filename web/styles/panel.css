@@ -284,70 +284,6 @@ select:focus {
     border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* Analyze button — distinct accent */
-.btn-analyze {
-    background: linear-gradient(135deg, #10b981, #059669) !important;
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.22) !important;
-    min-height: 40px;
-    padding: 10px 12px !important;
-    border-radius: 10px;
-    font-size: 0.86rem;
-}
-
-.btn-analyze:hover {
-    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.35) !important;
-}
-
-.btn-analyze svg,
-.btn-analyze .spinner {
-    width: 16px;
-    height: 16px;
-}
-
-/* Results panel */
-#results {
-    font-size: 0.8rem;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-#results .res-item {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--border);
-}
-
-#results .res-item:last-child {
-    border-bottom: none;
-}
-
-#results .res-score {
-    color: #a7f3d0;
-    font-weight: 600;
-}
-
-#results .res-link {
-    color: #93c5fd;
-    text-decoration: none;
-}
-
-#results .res-link:hover {
-    text-decoration: underline;
-}
-
-#results .res-header {
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: #e0e7ff;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 /* Download button */
 .btn-download {
     background: linear-gradient(135deg, var(--primary), var(--primary-hover));
@@ -388,22 +324,6 @@ select:focus {
     width: 18px;
     height: 18px;
     fill: currentColor;
-}
-
-.spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 /* Status message — wyświetla się tylko gdy ma treść (nie rezerwuje miejsca) */

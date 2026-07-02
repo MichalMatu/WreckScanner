@@ -76,7 +76,6 @@ class RuntimeSmokeTests(unittest.TestCase):
                 {
                     "status": "ok",
                     "pressure": {"overloaded": False},
-                    "pipeline": {"status": "idle"},
                     "wms_tile_cache": {"count": 1},
                 }
             )

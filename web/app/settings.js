@@ -1,5 +1,5 @@
-// Ustawienia filtra są zapisywane na backendzie, żeby mapa i analiza YOLO
-// używały dokładnie tych samych parametrów.
+// Ustawienia filtra są zapisywane na backendzie, żeby mapa używała
+// tych samych parametrów na wszystkich urządzeniach.
 const enhancementControls = {
     enabled: document.getElementById('enhancement-enabled'),
     clahe: document.getElementById('enhancement-clahe'),
@@ -21,7 +21,6 @@ const enhancementControlFields = {
     decast: 'decast_strength',
 };
 
-const geotiffCacheControl = document.getElementById('geotiff-cache-limit');
 const publicLayerControls = {
     [PUBLIC_LAYER_KEYS.savedWrecks]: document.getElementById('admin-layer-saved-wrecks'),
     [PUBLIC_LAYER_KEYS.fieldPhotoVehicle]: document.getElementById('admin-layer-field-photo-vehicle'),
@@ -33,8 +32,6 @@ const publicLayerControls = {
     [PUBLIC_LAYER_KEYS.baseMapOsm]: document.getElementById('admin-layer-base-map-osm'),
 };
 const publicFeatureControls = {
-    [PUBLIC_FEATURE_KEYS.scanAnalysis]: document.getElementById('admin-feature-scan-analysis'),
-    [PUBLIC_FEATURE_KEYS.yoloWrecks]: document.getElementById('admin-feature-yolo-wrecks'),
     [PUBLIC_FEATURE_KEYS.manualWrecks]: document.getElementById('admin-feature-manual-wrecks'),
     [PUBLIC_FEATURE_KEYS.photoUploads]: document.getElementById('admin-feature-photo-uploads'),
 };
@@ -48,10 +45,7 @@ const publicLayerToggleRows = {
     [PUBLIC_LAYER_KEYS.surface]: document.getElementById('toggle-surface-layer')?.closest('.layer-toggle'),
 };
 const adminSettingsControls = [
-    document.getElementById('model-select'),
-    document.getElementById('conf-select'),
     document.getElementById('crop-select'),
-    geotiffCacheControl,
     document.getElementById('enhancement-reset'),
     document.getElementById('photo-retention-refresh'),
     document.getElementById('photo-retention-dry-run'),
@@ -66,7 +60,6 @@ let publicLayerSettings = Object.fromEntries(Object.values(PUBLIC_LAYER_KEYS).ma
 let publicFeatureSettings = Object.fromEntries(Object.values(PUBLIC_FEATURE_KEYS).map(key => [key, true]));
 let publicLayerSettingsLoaded = false;
 let publicFeatureSettingsLoaded = false;
-let crosshairVisibilityControllerReady = false;
 let fieldPhotoIssueFilters = Object.fromEntries(Array.from(FIELD_PHOTO_ISSUE_TYPES, issueType => [issueType, true]));
 let pendingFieldPhotoLayerVisible = true;
 
@@ -176,22 +169,7 @@ function updatePublicLayerAccess() {
 }
 
 function updatePublicFeatureControlVisibility() {
-    const scanAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.scanAnalysis);
-    const yoloWrecksAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.yoloWrecks);
-    const runButton = document.getElementById('btn-run');
-    if (runButton) {
-        runButton.hidden = !scanAllowed;
-        runButton.disabled = !scanAllowed;
-    }
-    document.querySelectorAll('[data-yolo-wreck-save]').forEach(button => {
-        button.hidden = !yoloWrecksAllowed;
-        button.disabled = !yoloWrecksAllowed;
-    });
     const photoUploadsAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads);
-    const contextCenterScanButton = document.getElementById('context-center-scan');
-    if (contextCenterScanButton) contextCenterScanButton.hidden = !scanAllowed;
-    const contextCrosshairButton = document.getElementById('context-toggle-crosshair');
-    if (contextCrosshairButton) contextCrosshairButton.hidden = !scanAllowed;
     const contextFieldPhotoButton = document.getElementById('context-add-field-photos');
     const fieldPhotoUploadAvailable = photoUploadsAllowed && fieldPhotoAnyIssueAllowed();
     if (contextFieldPhotoButton) contextFieldPhotoButton.hidden = !fieldPhotoUploadAvailable;
@@ -201,7 +179,6 @@ function updatePublicFeatureControlVisibility() {
         panelPhotoUploadButton.disabled = !fieldPhotoUploadAvailable;
     }
     if (!fieldPhotoUploadAvailable) cancelFieldPhotoLocationPick({ clearStatus: true });
-    if (crosshairVisibilityControllerReady) updateCrosshairVisibility();
     const reportPhotosSection = document.getElementById('report-photos-section');
     if (reportPhotosSection) reportPhotosSection.hidden = !photoUploadsAllowed;
     if (!photoUploadsAllowed) {
@@ -260,15 +237,6 @@ function enhancementFormSettings() {
     };
 }
 
-function geotiffCacheFormSettings() {
-    if (geotiffCacheControl?.value === 'none') {
-        return { max_gb: null };
-    }
-    return {
-        max_gb: parseFloat(geotiffCacheControl?.value || '4'),
-    };
-}
-
 function applyEnhancementSettings(settings) {
     if (!settings) return;
     setControlValue('enabled', settings.enabled);
@@ -281,18 +249,6 @@ function applyEnhancementSettings(settings) {
     setControlValue('decast', settings.decast_strength);
     updateEnhancementLabels();
     updateEnhancementDefaultTicks();
-}
-
-function applyGeotiffCacheSettings(settings) {
-    if (!settings || !geotiffCacheControl) return;
-    if (settings.max_gb === null) {
-        geotiffCacheControl.value = 'none';
-        return;
-    }
-    const maxGb = Number(settings.max_gb);
-    if (!Number.isFinite(maxGb)) return;
-    const option = [...geotiffCacheControl.options].find(opt => Number(opt.value) === maxGb);
-    geotiffCacheControl.value = option ? option.value : String(maxGb);
 }
 
 function updateEnhancementLabels() {
@@ -341,7 +297,6 @@ async function loadAppSettings() {
         const data = await apiJson(SETTINGS_URL);
         defaultEnhancementSettings = data.defaults?.enhancement || data.enhancement;
         applyEnhancementSettings(data.enhancement);
-        applyGeotiffCacheSettings(data.geotiff_cache);
         applyPublicLayerSettings(data.public_layers);
         applyPublicFeatureSettings(data.public_features);
         loadedPublicLayers = true;
@@ -376,13 +331,6 @@ async function saveEnhancementSettings() {
         enhancementSettingsRevision = Date.now();
         refreshOrthoLayer();
         document.getElementById('settings-save-status').textContent = t('modal.settings.enhancementHint');
-    });
-}
-
-async function saveGeotiffCacheSettings() {
-    await saveSettings({ geotiff_cache: geotiffCacheFormSettings() }, data => {
-        applyGeotiffCacheSettings(data.geotiff_cache);
-        document.getElementById('settings-save-status').textContent = t('modal.settings.cacheHint');
     });
 }
 
@@ -509,7 +457,6 @@ document.getElementById('enhancement-reset')?.addEventListener('click', () => {
     queueEnhancementSettingsSave();
 });
 
-geotiffCacheControl?.addEventListener('change', saveGeotiffCacheSettings);
 updateSettingsAccess();
 loadAppSettings();
 setCadastralLayerVisible(cadastralLayerVisible);

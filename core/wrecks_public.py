@@ -73,7 +73,6 @@ def wreck_summary(record: dict[str, Any]) -> dict[str, Any]:
         "reviewed_at": record.get("reviewed_at"),
         "lat": record.get("lat"),
         "lon": record.get("lon"),
-        "best_score": record.get("best_score"),
         "labels_present": record.get("labels_present") or [],
         "first_seen_year": record.get("first_seen_year"),
         "last_seen_year": record.get("last_seen_year"),

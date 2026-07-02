@@ -142,8 +142,8 @@ test:
 	@"$(PYTHON)" -m unittest discover -s tests
 
 lint:
-	@"$(PYTHON)" -m ruff check app core scripts tests analyze.py server.py
-	@"$(PYTHON)" -m ruff format --check app core scripts tests analyze.py server.py
+	@"$(PYTHON)" -m ruff check app core scripts tests server.py
+	@"$(PYTHON)" -m ruff format --check app core scripts tests server.py
 	@if [ -x ./node_modules/.bin/eslint ]; then \
 		./node_modules/.bin/eslint web/*.js; \
 	elif command -v npm >/dev/null 2>&1; then \

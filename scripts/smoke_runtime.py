@@ -105,7 +105,7 @@ def check_health(base_url: str, timeout: float) -> str:
     expect_security_headers(response, "health")
     payload = expect_json(response, "health")
     expect(payload.get("status") in {"ok", "degraded"}, f"health: nieprawidłowy status {payload.get('status')!r}.")
-    for key in ("pressure", "pipeline", "wms_tile_cache"):
+    for key in ("wms_tile_cache",):
         expect(isinstance(payload.get(key), dict), f"health: pole {key!r} musi być obiektem.")
     return "health"
 

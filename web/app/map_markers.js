@@ -2,18 +2,6 @@ let pendingSubmissionLayer = L.layerGroup().addTo(map);
 let pendingSubmissionMarkers = [];
 const PENDING_SUBMISSION_MARKER_LIMIT = 25;
 
-function pinIcon(rank, score) {
-    const color = score > 0.7 ? '#10b981' : score > 0.55 ? '#f59e0b' : '#ef4444';
-    const html = `<div style="
-        background:${color}; color:#000; font-weight:800; font-size:13px;
-        width:30px; height:30px; border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg); display:flex; align-items:center; justify-content:center;
-        border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
-        <span style="transform:rotate(45deg);">${rank}</span>
-    </div>`;
-    return L.divIcon({ html, className: '', iconSize: [30,30], iconAnchor:[15,30] });
-}
-
 function countBadge(count, className) {
     const numericCount = Math.max(0, Math.floor(Number(count) || 0));
     if (numericCount <= 0) return '';

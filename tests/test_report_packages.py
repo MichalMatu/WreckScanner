@@ -31,27 +31,6 @@ def write_json(path: Path, payload):
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
-def create_scan_data(root: Path) -> Path:
-    data_dir = root / "dane"
-    write_json(
-        data_dir / "metadata.json",
-        {
-            "bbox_4326": {
-                "min_lat": 51.0886,
-                "max_lat": 51.0890,
-                "min_lon": 17.0355,
-                "max_lon": 17.0361,
-            },
-            "image_width_px": 200,
-            "image_height_px": 200,
-            "years": [2024, 2025],
-        },
-    )
-    Image.new("RGB", (200, 200), (80, 110, 140)).save(data_dir / "ortofoto_2024.png")
-    Image.new("RGB", (200, 200), (120, 90, 70)).save(data_dir / "ortofoto_2025.png")
-    return data_dir
-
-
 def valid_fields() -> dict[str, str]:
     return {
         "reporter_name": "Jan Kowalski",
@@ -62,6 +41,22 @@ def valid_fields() -> dict[str, str]:
         "observed_at": "2026-06-02T12:30",
         "vehicle_description": "Pojazd zabrudzony, długo stoi w tym samym miejscu.",
     }
+
+
+def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **_kwargs):
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for year in (2024, 2025):
+        (output_dir / f"{year}.jpg").write_bytes(image_bytes())
+    return (
+        [{"label": "2024", "file": "2024.jpg"}, {"label": "2025", "file": "2025.jpg"}],
+        {
+            "center_lat": lat,
+            "center_lon": lon,
+            "crop_meters": 7.5,
+            "years": [2024, 2025],
+            "source": "wroclaw_wms_location_crops",
+        },
+    )
 
 
 def create_wreck_fixture(root: Path) -> Path:
@@ -75,12 +70,9 @@ def create_wreck_fixture(root: Path) -> Path:
     (attached_photo_dir / "original.jpg").write_bytes(image_bytes())
     (attached_photo_dir / "thumb.jpg").write_bytes(image_bytes())
     (record_dir / "index.html").write_text(
-        '<html><body><img src="evidence/abc123/2025.jpg"><a href="evidence/abc123/candidate.json">json</a></body></html>',
+        '<html><body><img src="evidence/abc123/2025.jpg"></body></html>',
         encoding="utf-8",
     )
-    write_json(evidence_dir / "candidate.json", {"rank": 1})
-    write_json(evidence_dir / "metadata.json", {"years": [2025]})
-    write_json(evidence_dir / "links.json", {"geoportal": "https://example.test/geo"})
     write_json(attached_photo_dir / "record.json", {"id": "photo_20260603T000000Z_abcdef12"})
     write_json(
         record_dir / "record.json",
@@ -89,12 +81,10 @@ def create_wreck_fixture(root: Path) -> Path:
             "status": "confirmed",
             "lat": 51.1,
             "lon": 17.2,
-            "best_score": 0.87,
             "labels_present": ["2025"],
             "latest_evidence": {
                 "id": "abc123",
                 "path": "evidence/abc123",
-                "score": 0.87,
                 "labels_present": ["2025"],
                 "crops": [{"label": "2025", "file": "2025.jpg"}],
                 "links": {"geoportal": "https://example.test/geo"},
@@ -192,15 +182,13 @@ class ReportPackageTests(unittest.TestCase):
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
-                self.assertIn("evidence/abc123/2025.jpg", names)
-                self.assertIn("evidence/abc123/candidate.json", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", names)
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
-                self.assertIn("metadane/record.json", names)
-                self.assertEqual(archive.read("evidence/abc123/2025.jpg"), image_bytes())
+                self.assertNotIn("metadane/record.json", names)
+                self.assertFalse(any(name.startswith("evidence/") for name in names))
                 self.assertEqual(archive.read("miniatury_historyczne/2025.jpg"), image_bytes())
                 self.assertIn("Jan Kowalski", archive.read("zgloszenie.txt").decode("utf-8"))
                 report_html = archive.read("raport.html").decode("utf-8")
@@ -231,8 +219,8 @@ class ReportPackageTests(unittest.TestCase):
             root = Path(tmp)
             wrecks_dir = root / "zidentyfikowane_wraki"
             private_reports_dir = root / "private_reports"
-            data_dir = create_scan_data(root)
-            saved = save_manual_wreck(51.088784, 17.035782, data_dir, wrecks_dir)
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
+                saved = save_manual_wreck(51.088784, 17.035782, wrecks_dir)
             wreck_id = saved["wreck"]["id"]
 
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
@@ -247,10 +235,10 @@ class ReportPackageTests(unittest.TestCase):
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
-                self.assertIn("metadane/record.json", names)
+                self.assertNotIn("metadane/record.json", names)
                 self.assertIn("miniatury_historyczne/2024.jpg", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
-                self.assertTrue(any(name.endswith("/manual_inspection.json") for name in names))
+                self.assertFalse(any(name.endswith(".json") for name in names))
                 self.assertIn("Treść zgłoszenia", archive.read("raport.html").decode("utf-8"))
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 pdf_path, _ = report_package_asset(wreck_id, result["package_id"], "pdf")
@@ -302,8 +290,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", names)
                 self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", names)
                 self.assertNotIn("metadane/record.json", names)
-                self.assertNotIn("evidence/abc123/candidate.json", names)
-                self.assertNotIn("evidence/abc123/metadata.json", names)
+                self.assertFalse(any(name.startswith("evidence/") for name in names))
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
 
     def test_report_pdf_starts_mail_draft_on_new_page(self):
@@ -331,7 +318,6 @@ class ReportPackageTests(unittest.TestCase):
                     "status": "confirmed",
                     "lat": 51.1,
                     "lon": 17.2,
-                    "best_score": 0.9,
                     "labels_present": ["2024", "2025"],
                     "links": {},
                     "evidences": [],

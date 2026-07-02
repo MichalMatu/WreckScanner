@@ -26,9 +26,9 @@ run_to_file() {
     "$@" > "$output_path"
 }
 
-run "$PYTHON_BIN" -m compileall -q app core scripts tests analyze.py server.py
-run "$PYTHON_BIN" -m ruff check app core scripts tests analyze.py server.py
-run "$PYTHON_BIN" -m ruff format --check app core scripts tests analyze.py server.py
+run "$PYTHON_BIN" -m compileall -q app core scripts tests server.py
+run "$PYTHON_BIN" -m ruff check app core scripts tests server.py
+run "$PYTHON_BIN" -m ruff format --check app core scripts tests server.py
 run "$PYTHON_BIN" -m unittest discover -s tests
 
 if [[ -f "package.json" ]]; then

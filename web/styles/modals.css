@@ -87,15 +87,6 @@
     margin-top: 0;
 }
 
-.scan-area-section {
-    padding-bottom: 2px;
-}
-
-.scan-area-output {
-    color: #c7d2fe;
-    font: 800 0.78rem var(--font);
-}
-
 .settings-lock-hint {
     border: 1px solid rgba(251, 191, 36, 0.24);
     border-radius: 8px;
@@ -122,25 +113,6 @@
 
 .modal--welcome {
     max-width: 620px;
-}
-
-.modal--geotiff-cache {
-    position: absolute;
-    top: 72px;
-    right: 16px;
-    width: min(680px, calc(100vw - 24px));
-    max-width: none;
-    max-height: calc(100vh - 88px);
-    background: #111827;
-    pointer-events: auto;
-}
-
-.modal--geotiff-cache .modal-body {
-    min-height: 0;
-}
-
-.modal--geotiff-cache .modal-section {
-    min-height: 0;
 }
 
 .modal--admin-panel {
@@ -197,7 +169,6 @@
     .modal--photo-review,
     .modal--wreck-review,
     .modal--privacy-requests,
-    .modal--geotiff-cache,
     .modal--report,
     .modal--field-photo,
     .modal--field-photo-thanks,
@@ -208,14 +179,6 @@
     .modal--admin-login {
         width: 100%;
         max-width: none;
-    }
-
-    .modal--geotiff-cache {
-        top: 12px;
-        right: auto;
-        left: 12px;
-        width: calc(100vw - 24px);
-        max-height: calc(100dvh - 24px);
     }
 
     .modal-body {

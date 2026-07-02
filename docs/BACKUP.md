@@ -21,7 +21,7 @@ Backup obejmuje dane uzytkowe:
 - `settings.json`, jesli istnieje
 - `analiza/data_diagnostics.json`, jesli istnieje
 
-Backup pomija zaleznosci, cache, `.backups/`, `dane_dla_AI/` i luzne raporty.
+Backup pomija zaleznosci, cache, `.backups/` i luzne raporty.
 
 ## Komendy
 

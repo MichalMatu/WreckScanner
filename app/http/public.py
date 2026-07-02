@@ -1,4 +1,3 @@
-from app import config
 from app.http import access
 from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
@@ -11,7 +10,6 @@ from core.field_photos import (
     review_field_photo_by_owner,
     save_field_photo,
 )
-from core.map_crops import validate_crop_m
 from core.privacy_requests import create_privacy_request
 from core.report_models import ReportPhotoUpload
 from core.report_packages import create_public_report_package, create_report_package
@@ -21,7 +19,7 @@ from core.wrecks_attachments import (
     attach_wreck_photos,
     attach_wreck_photos_for_submission,
 )
-from core.wrecks_save import save_manual_wreck, save_wreck_from_rank
+from core.wrecks_save import save_manual_wreck
 
 
 def report_photo_uploads(files: list[UploadedFile]) -> list[ReportPhotoUpload]:
@@ -305,42 +303,22 @@ def handle_owner_review_field_photo(handler, photo_id: str) -> None:
 def handle_save_wreck(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        if "rank" in data:
-            if not access.require_public_feature(
-                handler, "yolo_wrecks", "Dodawanie pinezek z YOLO jest teraz wylaczone dla niezalogowanych."
-            ):
-                return
-        elif not access.require_public_feature(
-            handler, "manual_wrecks", "Dodawanie recznych pinezek jest teraz wylaczone dla niezalogowanych."
+        if not access.require_public_feature(
+            handler, "manual_wrecks", "Dodawanie pinezek jest teraz wylaczone dla niezalogowanych."
         ):
             return
         review_status = "approved" if http_admin_session.is_admin(handler) else "pending"
         submission_owner = None if http_admin_session.is_admin(handler) else access.submission_owner(handler)
         if not http_admin_session.is_admin(handler):
             access.ensure_public_submission_quota(handler, additional_bytes=0, additional_items=1)
-        if "rank" in data:
-            rank = int(data.get("rank"))
-            if rank <= 0:
-                raise ValueError("Numer kandydata musi być dodatni.")
-            result = save_wreck_from_rank(
-                rank,
-                config.ANALYSIS_DIR,
-                config.DOWNLOAD_DATA_DIR,
-                core_config.WRECKS_DIR,
-                public_review_status=review_status,
-                submission_owner=submission_owner,
-            )
-        else:
-            crop_m = validate_crop_m(data.get("cropM", core_config.REVIEW_CROP_M))
-            result = save_manual_wreck(
-                data.get("lat"),
-                data.get("lon"),
-                config.DOWNLOAD_DATA_DIR,
-                core_config.WRECKS_DIR,
-                crop_m=crop_m,
-                public_review_status=review_status,
-                submission_owner=submission_owner,
-            )
+        result = save_manual_wreck(
+            data.get("lat"),
+            data.get("lon"),
+            core_config.WRECKS_DIR,
+            crop_m=data.get("cropM", core_config.REVIEW_CROP_M),
+            public_review_status=review_status,
+            submission_owner=submission_owner,
+        )
         http_responses.send_json(handler, 200, result)
     except (FileNotFoundError, TypeError, ValueError) as e:
         http_responses.send_json(handler, 400, {"error": str(e)})

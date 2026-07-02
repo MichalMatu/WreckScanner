@@ -78,9 +78,6 @@ def write_admin_zip(
     mail_body: str,
     photos: list[report_models.PreparedReportPhoto],
 ) -> None:
-    evidence_rel = str(evidence.get("path") or "")
-    evidence_dir = _safe_child(record_dir, evidence_rel)
-    evidence_archive_root = "/".join(part for part in Path(evidence_rel).parts if part and part not in {".", ".."})
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr(
@@ -88,18 +85,7 @@ def write_admin_zip(
             report_html.build_admin_report_html(record_dir, record, recipient, subject, mail_body, photos),
         )
 
-        archive.write(record_dir / "record.json", "metadane/record.json")
         _archive_attached_photos(archive, record_dir, record)
-        for file_name in ("candidate.json", "metadata.json", "links.json"):
-            path = evidence_dir / file_name
-            if path.exists():
-                archive.write(path, f"metadane/{file_name}")
-
-        if evidence_archive_root:
-            for path in sorted(evidence_dir.rglob("*")):
-                if path.is_file():
-                    archive.write(path, f"{evidence_archive_root}/{path.relative_to(evidence_dir).as_posix()}")
-
         _archive_public_evidence_photos(archive, record_dir, evidence)
 
         for photo in photos:

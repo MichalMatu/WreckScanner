@@ -14,11 +14,11 @@ class ReusableHTTPServer(http.server.ThreadingHTTPServer):
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    """Serves static files and handles the download API."""
+    """Serves static files and handles the JSON API."""
 
     def log_message(self, format: str, *args) -> None:
         request_path = self.path.split("?", 1)[0]
-        if request_path.startswith("/wms_proxy/") or request_path == "/api/download/progress":
+        if request_path.startswith("/wms_proxy/"):
             return
         super().log_message(format, *args)
 

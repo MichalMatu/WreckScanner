@@ -341,7 +341,6 @@ def build_report_pdf(
 ) -> bytes:
     doc = _PdfPages()
     latest = record.get("latest_evidence") if isinstance(record.get("latest_evidence"), dict) else {}
-    score = float(record.get("best_score") or evidence.get("score") or 0.0)
     evidences = record.get("evidences") if isinstance(record.get("evidences"), list) else []
     attached_photos = _attached_photos(record, record_dir)
 
@@ -350,7 +349,6 @@ def build_report_pdf(
         [
             ("Status", str(record.get("status", "confirmed"))),
             ("GPS", f"{float(record.get('lat') or 0):.6f}, {float(record.get('lon') or 0):.6f}"),
-            ("Score", f"{score * 100:.0f}%"),
             ("Widziane", _compact_years(record.get("labels_present") or evidence.get("labels_present") or [])),
             ("Dowody", str(len(evidences))),
             ("Zdjęcia", str(len(attached_photos) + len(report_photos))),
