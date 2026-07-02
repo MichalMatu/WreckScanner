@@ -61,7 +61,6 @@ def handle_static_api_get(handler, path: str) -> bool:
         ),
         "/api/settings": lambda: http_settings.handle_get_settings(handler),
         "/api/cadastral/identify": lambda: http_public_data.handle_cadastral_identify(handler),
-        "/api/surface/features": lambda: http_public_data.handle_surface_features(handler),
         "/api/wrecks": lambda: http_public_data.handle_get_wrecks(handler),
         "/api/field-photos": lambda: http_public_data.handle_field_photos(handler),
     }

@@ -28,7 +28,6 @@ const publicLayerControls = {
     [PUBLIC_LAYER_KEYS.fieldPhotoSmoke]: document.getElementById('admin-layer-field-photo-smoke'),
     [PUBLIC_LAYER_KEYS.fieldPhotoPending]: document.getElementById('admin-layer-field-photo-pending'),
     [PUBLIC_LAYER_KEYS.cadastral]: document.getElementById('admin-layer-cadastral'),
-    [PUBLIC_LAYER_KEYS.surface]: document.getElementById('admin-layer-surface'),
     [PUBLIC_LAYER_KEYS.baseMapOsm]: document.getElementById('admin-layer-base-map-osm'),
 };
 const publicFeatureControls = {
@@ -42,7 +41,6 @@ const publicLayerToggleRows = {
     [PUBLIC_LAYER_KEYS.fieldPhotoSmoke]: document.getElementById('toggle-field-photo-smoke')?.closest('.layer-toggle'),
     [PUBLIC_LAYER_KEYS.fieldPhotoPending]: document.getElementById('toggle-field-photo-pending')?.closest('.layer-toggle'),
     [PUBLIC_LAYER_KEYS.cadastral]: document.getElementById('toggle-cadastral-parcels')?.closest('.layer-toggle'),
-    [PUBLIC_LAYER_KEYS.surface]: document.getElementById('toggle-surface-layer')?.closest('.layer-toggle'),
 };
 const adminSettingsControls = [
     document.getElementById('crop-select'),
@@ -206,7 +204,6 @@ function applyPublicLayerSettings(settings) {
     publicLayerSettings = normalizePublicLayerSettings(settings);
     updatePublicLayerAccess();
     setCadastralLayerVisible(cadastralLayerVisible);
-    setSurfaceLayerVisible(surfaceLayerVisible);
     updateMapSourceAvailability();
     if (savedWreckLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.savedWrecks)) {
         placeSavedWrecks(savedWreckLayerData);
@@ -460,4 +457,3 @@ document.getElementById('enhancement-reset')?.addEventListener('click', () => {
 updateSettingsAccess();
 loadAppSettings();
 setCadastralLayerVisible(cadastralLayerVisible);
-setSurfaceLayerVisible(surfaceLayerVisible);

@@ -30,7 +30,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 - pakiety ZIP/PDF i publiczny `index.html` dla zapisanych spraw,
 - zdjecia terenowe z kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
 - panel administratora dla zdjec, spraw, zgloszen prywatnosci i widocznosci warstw,
-- warstwy dzialek KIEG/EGiB oraz nawierzchni OSM/Overpass,
+- warstwa dzialek KIEG/EGiB,
 - lokalny backup danych przez `restic`.
 
 ## Prywatnosc

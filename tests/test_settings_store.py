@@ -23,7 +23,6 @@ class PublicLayerSettingsTests(unittest.TestCase):
                 "field_photo_smoke": True,
                 "field_photo_pending": True,
                 "cadastral": True,
-                "surface": True,
                 "base_map_osm": True,
             },
         )
@@ -38,7 +37,6 @@ class PublicLayerSettingsTests(unittest.TestCase):
                 "field_photo_smoke": False,
                 "field_photo_pending": True,
                 "cadastral": True,
-                "surface": True,
                 "base_map_osm": True,
             },
         )

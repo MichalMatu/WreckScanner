@@ -24,8 +24,12 @@ class FrontendContracts(unittest.TestCase):
 
     def test_frontend_removes_retired_map_download_and_model_controls(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        layers_js = (ROOT_DIR / "web" / "app" / "layers.js").read_text(encoding="utf-8")
+        settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        frontend = html + config_js + layers_js + settings_js + styles + i18n_js
 
         for retired in (
             "model-select",
@@ -37,8 +41,14 @@ class FrontendContracts(unittest.TestCase):
             "context-toggle-crosshair",
             "YOLO",
             "GeoTIFF",
+            "toggle-surface-layer",
+            "admin-layer-surface",
+            "SURFACE_FEATURES_URL",
+            "setSurfaceLayerVisible",
+            "layers.surface",
+            "layer-pin--surface",
         ):
-            self.assertNotIn(retired, html + styles + i18n_js)
+            self.assertNotIn(retired, frontend)
 
     def test_script_order_keeps_inspection_after_field_photo_actions(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")

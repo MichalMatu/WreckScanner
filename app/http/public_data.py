@@ -7,31 +7,7 @@ from app.http import responses as http_responses
 from core import config as core_config
 from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
 from core.field_photos import list_field_photos
-from core.surface import parse_bbox as parse_surface_bbox
-from core.surface import surface_features_geojson
 from core.wrecks import list_wrecks
-
-
-def handle_surface_features(handler) -> None:
-    if not access.require_public_layer(
-        handler, "surface", "Warstwa nawierzchni jest teraz wylaczona dla niezalogowanych."
-    ):
-        return
-    query = parse_qs(urlsplit(handler.path).query)
-    try:
-        bbox = parse_surface_bbox((query.get("bbox") or [""])[0])
-        http_responses.send_json(handler, 200, {"status": "ok", "geojson": surface_features_geojson(bbox)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"status": "error", "error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            502,
-            "Surface feature lookup failed",
-            exc,
-            public_error="Nie udało się pobrać danych nawierzchni.",
-            payload={"geojson": {"type": "FeatureCollection", "features": []}},
-        )
 
 
 def handle_field_photos(handler) -> None:

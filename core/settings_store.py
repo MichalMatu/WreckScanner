@@ -17,7 +17,6 @@ DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
     "field_photo_smoke": True,
     "field_photo_pending": True,
     "cadastral": True,
-    "surface": True,
     "base_map_osm": True,
 }
 DEFAULT_PUBLIC_FEATURES: dict[str, bool] = {

@@ -14,7 +14,6 @@ const SETTINGS_URL = '/api/settings';
 const WRECKS_URL = '/api/wrecks';
 const FIELD_PHOTOS_URL = '/api/field-photos';
 const CADASTRAL_IDENTIFY_URL = '/api/cadastral/identify';
-const SURFACE_FEATURES_URL = '/api/surface/features';
 const ADMIN_STATUS_URL = '/api/admin/status';
 const ADMIN_LOGIN_URL = '/api/admin/login';
 const ADMIN_LOGOUT_URL = '/api/admin/logout';
@@ -30,7 +29,6 @@ const PUBLIC_LAYER_KEYS = {
     fieldPhotoSmoke: 'field_photo_smoke',
     fieldPhotoPending: 'field_photo_pending',
     cadastral: 'cadastral',
-    surface: 'surface',
     baseMapOsm: 'base_map_osm',
 };
 
