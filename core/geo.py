@@ -5,6 +5,8 @@ import math
 # Przybliżenie wystarczające dla kadrów rzędu kilkudziesięciu metrów.
 # Bardziej złożona geodezja utrudniłaby debugowanie prostych bboxów WMS.
 METERS_PER_DEGREE_LAT = 111_320.0
+WEB_MERCATOR_RADIUS_M = 6378137.0
+WEB_MERCATOR_MAX_LAT = 85.05112878
 
 
 def lon_meters_per_degree(lat: float) -> float:
@@ -17,6 +19,20 @@ def bbox_4326(lat: float, lon: float, width_m: float, height_m: float) -> str:
     d_lat = height_m / METERS_PER_DEGREE_LAT
     d_lon = width_m / lon_meters_per_degree(lat)
     return f"{lat - d_lat / 2:.6f},{lon - d_lon / 2:.6f},{lat + d_lat / 2:.6f},{lon + d_lon / 2:.6f}"
+
+
+def web_mercator_xy(lat: float, lon: float) -> tuple[float, float]:
+    safe_lat = max(-WEB_MERCATOR_MAX_LAT, min(WEB_MERCATOR_MAX_LAT, lat))
+    x = WEB_MERCATOR_RADIUS_M * math.radians(lon)
+    y = WEB_MERCATOR_RADIUS_M * math.log(math.tan(math.pi / 4 + math.radians(safe_lat) / 2))
+    return x, y
+
+
+def bbox_3857(lat: float, lon: float, width_m: float, height_m: float) -> str:
+    x, y = web_mercator_xy(lat, lon)
+    half_width = width_m / 2
+    half_height = height_m / 2
+    return f"{x - half_width:.3f},{y - half_height:.3f},{x + half_width:.3f},{y + half_height:.3f}"
 
 
 def meters_between(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

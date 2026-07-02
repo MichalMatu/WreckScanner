@@ -12,7 +12,7 @@ import requests
 from PIL import Image, ImageStat
 
 from core import config
-from core.geo import bbox_4326
+from core.geo import bbox_3857, bbox_4326
 
 
 @dataclass(frozen=True)
@@ -44,13 +44,23 @@ def _crop_px(crop_m: float) -> int:
     return max(config.ORTHO_CROP_MIN_PX, min(config.ORTHO_CROP_MAX_PX, pixels))
 
 
-def _bbox_dict(bbox: str) -> dict[str, float]:
+def _bbox_4326_dict(bbox: str) -> dict[str, float]:
     min_lat, min_lon, max_lat, max_lon = [float(part) for part in bbox.split(",")]
     return {
         "min_lat": min_lat,
         "min_lon": min_lon,
         "max_lat": max_lat,
         "max_lon": max_lon,
+    }
+
+
+def _bbox_3857_dict(bbox: str) -> dict[str, float]:
+    min_x, min_y, max_x, max_y = [float(part) for part in bbox.split(",")]
+    return {
+        "min_x": min_x,
+        "min_y": min_y,
+        "max_x": max_x,
+        "max_y": max_y,
     }
 
 
@@ -74,7 +84,7 @@ def _download_crop_image(
                 "REQUEST": "GetMap",
                 "LAYERS": "1",
                 "STYLES": "",
-                "CRS": "EPSG:4326",
+                "CRS": "EPSG:3857",
                 "BBOX": bbox,
                 "WIDTH": str(size_px),
                 "HEIGHT": str(size_px),
@@ -108,7 +118,8 @@ def fetch_location_crops(
 ) -> tuple[list[LocationCrop], dict[str, Any]]:
     crop_m_f = validate_crop_m(crop_m)
     size_px = _crop_px(crop_m_f)
-    bbox = bbox_4326(lat, lon, crop_m_f, crop_m_f)
+    bbox = bbox_3857(lat, lon, crop_m_f, crop_m_f)
+    readable_bbox = bbox_4326(lat, lon, crop_m_f, crop_m_f)
     years_to_fetch = [int(year) for year in years]
 
     crops: list[LocationCrop] = []
@@ -139,7 +150,8 @@ def fetch_location_crops(
         "center_lon": lon,
         "crop_meters": crop_m_f,
         "image_size_px": size_px,
-        "bbox_4326": _bbox_dict(bbox),
+        "bbox_4326": _bbox_4326_dict(readable_bbox),
+        "bbox_3857": _bbox_3857_dict(bbox),
         "years": [int(crop.label) for crop in crops if crop.label.isdigit()],
         "source": "wroclaw_wms_location_crops",
     }

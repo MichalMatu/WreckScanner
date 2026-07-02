@@ -270,6 +270,7 @@ def _audit_field_photos(
         "private_original_bytes": 0,
         "public_image_bytes": 0,
         "public_thumb_bytes": 0,
+        "attached_records": 0,
         "orphan_directories": 0,
         "orphan_files": 0,
     }
@@ -309,12 +310,26 @@ def _audit_field_photos(
 
         summary["records"] += 1
         photo_id = str(record.get("id") or "")
-        if not FIELD_PHOTO_ID_RE.fullmatch(photo_id):
+        photo_id_valid = bool(FIELD_PHOTO_ID_RE.fullmatch(photo_id))
+        if not photo_id_valid:
             _issue(
                 issues, "error", "field_photo_bad_id", record_path, "Nieprawidłowy identyfikator zdjęcia.", id=photo_id
             )
         else:
-            field_photo_ids.add(photo_id)
+            attached_wreck_id = str(record.get("attached_wreck_id") or "").strip()
+            if attached_wreck_id:
+                summary["attached_records"] += 1
+                if not WRECK_ID_RE.fullmatch(attached_wreck_id):
+                    _issue(
+                        issues,
+                        "error",
+                        "field_photo_bad_attached_wreck_id",
+                        record_path,
+                        "Nieprawidłowy identyfikator sprawy podpiętej do zdjęcia terenowego.",
+                        attached_wreck_id=attached_wreck_id,
+                    )
+            else:
+                field_photo_ids.add(photo_id)
         if photo_id and photo_id != child.name:
             _issue(
                 issues, "error", "field_photo_id_folder_mismatch", record_path, "ID nie zgadza się z nazwą katalogu."
@@ -671,6 +686,7 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
             f"{config.FIELD_PHOTO_ISSUE_TYPES[key]}={issue_types.get(key, 0)}" for key in config.FIELD_PHOTO_ISSUE_TYPES
         ),
         f"  stare rekordy bez issue_type: {field['legacy_without_issue_type']}",
+        f"  podpięte do spraw: {field['attached_records']}",
         "  pliki: "
         f"prywatne oryginały {_human_bytes(field['private_original_bytes'])}, "
         f"publiczne kopie {_human_bytes(field['public_image_bytes'])}, "

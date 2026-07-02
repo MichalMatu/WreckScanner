@@ -17,6 +17,9 @@ class FrontendContracts(unittest.TestCase):
 
         self.assertIn('<script src="/app/location_inspection.js"></script>', html)
         self.assertIn("apiPostJson('/api/inspect'", location_js)
+        self.assertIn('id="context-inspect-location"', html)
+        self.assertIn("openLocationInspectionAtContextPoint", location_js)
+        self.assertNotIn("map.on('click'", location_js)
         self.assertNotIn("saveManualWreck", location_js + saved_wrecks_js)
         self.assertNotIn("inspect.saveWreck", i18n_js)
         self.assertNotIn("map-popup-text-action", location_js)

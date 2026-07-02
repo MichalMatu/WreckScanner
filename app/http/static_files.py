@@ -25,7 +25,9 @@ def send_file(
     if download_name:
         safe_name = Path(str(download_name).replace("\\", "/")).name.replace('"', "")
         encoded_name = quote(safe_name)
-        handler.send_header("Content-Disposition", f"attachment; filename=\"{safe_name}\"; filename*=UTF-8''{encoded_name}")
+        handler.send_header(
+            "Content-Disposition", f"attachment; filename=\"{safe_name}\"; filename*=UTF-8''{encoded_name}"
+        )
     handler.end_headers()
     if include_body:
         http_responses.write_body(handler, body)

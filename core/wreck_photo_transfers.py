@@ -12,6 +12,7 @@ from core.json_io import write_json_atomic
 from core.photo_privacy import ensure_review_fields, is_approved, safe_child
 from core.wrecks_photos import generate_wreck_public_derivatives
 from core.wrecks_photos import photo_dir as wreck_photo_dir
+from core.wrecks_store import validate_wreck_id
 
 
 def _now_iso() -> str:
@@ -47,7 +48,8 @@ def _private_photo_file(file_name: Any) -> Path:
     return path
 
 
-def prepare_field_photo_copy(photo_id: Any, field_photos_dir: Path) -> dict[str, Any]:
+def prepare_field_photo_copy(photo_id: Any, field_photos_dir: Path, target_wreck_id: str) -> dict[str, Any]:
+    target_wreck_id = validate_wreck_id(str(target_wreck_id or "").strip())
     photo_id_text = str(photo_id or "").strip()
     field_record_dir = _field_photo_record_dir(photo_id_text, field_photos_dir)
     field_record = _read_json(field_record_dir / "record.json")
@@ -60,7 +62,29 @@ def prepare_field_photo_copy(photo_id: Any, field_photos_dir: Path) -> dict[str,
         raise ValueError("Do sprawy pojazdu można skopiować tylko zdjęcia pojazdów.")
     if not is_approved(field_record):
         raise ValueError("Do sprawy pojazdu można skopiować tylko zatwierdzone zdjęcia terenowe.")
+    attached_wreck_id = str(field_record.get("attached_wreck_id") or "").strip()
+    if attached_wreck_id and attached_wreck_id != target_wreck_id:
+        raise ValueError("To zdjęcie terenowe jest już podpięte do innej sprawy pojazdu.")
     _private_photo_file(field_record.get("private_original_file"))
+    return field_record
+
+
+def mark_field_photo_attached(photo_id: Any, field_photos_dir: Path, wreck_id: str) -> dict[str, Any]:
+    wreck_id = validate_wreck_id(str(wreck_id or "").strip())
+    photo_id_text = str(photo_id or "").strip()
+    field_record_dir = _field_photo_record_dir(photo_id_text, field_photos_dir)
+    record_path = field_record_dir / "record.json"
+    field_record = _read_json(record_path)
+    if not isinstance(field_record, dict) or str(field_record.get("id") or "").strip() != photo_id_text:
+        raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
+
+    attached_wreck_id = str(field_record.get("attached_wreck_id") or "").strip()
+    if attached_wreck_id and attached_wreck_id != wreck_id:
+        raise ValueError("To zdjęcie terenowe jest już podpięte do innej sprawy pojazdu.")
+    if attached_wreck_id != wreck_id:
+        field_record["attached_wreck_id"] = wreck_id
+        field_record["attached_at"] = _now_iso()
+        _write_json(record_path, field_record)
     return field_record
 
 

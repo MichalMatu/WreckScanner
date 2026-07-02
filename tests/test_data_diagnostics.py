@@ -38,6 +38,7 @@ def write_field_photo_record(
     image_size: tuple[int, int] = (48, 32),
     thumb_size: tuple[int, int] = (36, 24),
     write_private: bool = True,
+    attached_wreck_id: str | None = None,
 ) -> Path:
     record_dir = field_dir / photo_id
     private_original = private_original_file or f"field_photos/{photo_id}/original.jpg"
@@ -70,6 +71,9 @@ def write_field_photo_record(
         record["public_thumb_file"] = public_thumb_file
     if issue_type is not None:
         record["issue_type"] = issue_type
+    if attached_wreck_id:
+        record["attached_wreck_id"] = attached_wreck_id
+        record["attached_at"] = "2026-06-04T20:12:00Z"
     write_json(record_dir / "record.json", record)
     return record_dir
 
@@ -317,6 +321,30 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertIn("attached_photo_still_loose", codes)
             self.assertIn("wreck_attached_photo_duplicate", codes)
             self.assertIn("wreck_attached_photo_bad_issue_type", codes)
+
+    def test_run_data_diagnostics_accepts_field_photo_marked_as_attached(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir = root / "zdjecia_terenowe"
+            wrecks_dir = root / "zidentyfikowane_wraki"
+            private_dir = root / "prywatne_zdjecia"
+            wreck_id = "wreck_51100000_17200000"
+            photo_id = "photo_20260604T201000Z_11111111"
+
+            write_field_photo_record(field_dir, private_dir, photo_id=photo_id, attached_wreck_id=wreck_id)
+            write_wreck_with_attached_photo(wrecks_dir, private_dir, wreck_id, photo_id=photo_id)
+
+            report = run_data_diagnostics(
+                field_photos_dir=field_dir,
+                wrecks_dir=wrecks_dir,
+                private_photos_dir=private_dir,
+                check_images=False,
+            )
+
+            codes = {issue["code"] for issue in report["issues"]}
+            self.assertEqual(report["status"], "ok")
+            self.assertEqual(report["summary"]["field_photos"]["attached_records"], 1)
+            self.assertNotIn("attached_photo_still_loose", codes)
 
     def test_run_data_diagnostics_finds_unsafe_evidence_paths_and_missing_links(self):
         with TemporaryDirectory() as tmp:

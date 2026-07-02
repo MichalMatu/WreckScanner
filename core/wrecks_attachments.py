@@ -7,7 +7,7 @@ from typing import Any
 from core import config
 from core.photo_privacy import safe_child
 from core.uploads import UploadedFile
-from core.wreck_photo_transfers import copy_field_photo_to_wreck, prepare_field_photo_copy
+from core.wreck_photo_transfers import copy_field_photo_to_wreck, mark_field_photo_attached, prepare_field_photo_copy
 from core.wrecks_identity import now_iso
 from core.wrecks_migration import migrate_wreck_record
 from core.wrecks_photos import (
@@ -100,7 +100,7 @@ def attach_field_photos_to_wreck(
 
     field_records: list[dict[str, Any]] = []
     for photo_id in unique_photo_ids:
-        field_records.append(prepare_field_photo_copy(photo_id, field_photos_dir))
+        field_records.append(prepare_field_photo_copy(photo_id, field_photos_dir, wreck_id))
 
     attached = wreck_record.get("attached_photos")
     if not isinstance(attached, list):
@@ -110,6 +110,7 @@ def attach_field_photos_to_wreck(
     for field_record in field_records:
         photo_id = str(field_record.get("id") or "")
         if photo_id in attached_ids:
+            mark_field_photo_attached(photo_id, field_photos_dir, wreck_id)
             continue
         copied_photo = copy_field_photo_to_wreck(field_record, wreck_record_dir)
         migrate_attached_photo(wreck_record_dir, wreck_record, copied_photo)
@@ -119,6 +120,7 @@ def attach_field_photos_to_wreck(
         wreck_record["attached_photos"] = attached
         wreck_record["updated_at"] = now_iso()
         write_json(wreck_record_dir / "record.json", wreck_record)
+        mark_field_photo_attached(photo_id, field_photos_dir, wreck_id)
     _render_record_html(wreck_record, wreck_record_dir)
     return {
         "status": "ok",

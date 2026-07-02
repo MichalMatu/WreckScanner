@@ -73,6 +73,7 @@ const TRANSLATIONS = {
 
         'context.identifyParcel': 'Sprawdź działkę',
         'context.addFieldPhotos': 'Dodaj zdjęcia tutaj',
+        'context.inspectLocation': 'Pokaż historię miejsca',
         'context.identifyingParcel': 'Sprawdzam działkę...',
         'context.parcelTitle': 'Działka ewidencyjna',
         'context.parcelTerrainType': 'Typ terenu',
@@ -574,6 +575,7 @@ const TRANSLATIONS = {
 
         'context.identifyParcel': 'Identify parcel',
         'context.addFieldPhotos': 'Add photos here',
+        'context.inspectLocation': 'Show location history',
         'context.identifyingParcel': 'Identifying parcel...',
         'context.parcelTitle': 'Cadastral parcel',
         'context.parcelTerrainType': 'Land type',

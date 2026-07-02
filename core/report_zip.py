@@ -58,9 +58,7 @@ def write_public_zip(
 ) -> None:
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
-        archive.writestr(
-            "raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body)
-        )
+        archive.writestr("raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body))
         _archive_attached_photos(archive, record_dir, record)
         _archive_public_evidence_photos(archive, record_dir, evidence)
 

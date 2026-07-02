@@ -214,7 +214,9 @@ class FieldPhotoTests(unittest.TestCase):
             record_path = storage_dir / photo_id / "record.json"
             private_original = private_dir / f"field_photos/{photo_id}/original.png"
 
-            discard_result = discard_field_photo_drafts_by_owner([photo_id], token, storage_dir, private_dir=private_dir)
+            discard_result = discard_field_photo_drafts_by_owner(
+                [photo_id], token, storage_dir, private_dir=private_dir
+            )
 
             self.assertEqual(discard_result["deleted"], [photo_id])
             self.assertFalse(record_path.exists())

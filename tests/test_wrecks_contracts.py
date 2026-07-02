@@ -195,7 +195,7 @@ class VehicleCaseContractTests(unittest.TestCase):
 
 
 class WreckPhotosRenderingTests(unittest.TestCase):
-    def test_attach_field_photos_to_wreck_copies_without_touching_field_photo_record(self):
+    def test_attach_field_photos_to_wreck_marks_source_and_hides_loose_pin(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_photos_dir = root / "zdjecia_terenowe"
@@ -216,12 +216,16 @@ class WreckPhotosRenderingTests(unittest.TestCase):
 
                 self.assertEqual(result["attached_count"], 1)
                 self.assertEqual(result["copied_field_photo_ids"], [photo_id])
-                self.assertTrue((field_photos_dir / photo_id / "record.json").exists())
+                field_record_path = field_photos_dir / photo_id / "record.json"
+                self.assertTrue(field_record_path.exists())
+                field_record = json.loads(field_record_path.read_text(encoding="utf-8"))
+                self.assertEqual(field_record["attached_wreck_id"], case["wreck"]["id"])
+                self.assertTrue(field_record["attached_at"])
                 self.assertTrue((private_dir / "field_photos" / photo_id / "original.jpg").exists())
                 self.assertTrue(
                     (private_dir / "wreck_photos" / case["wreck"]["id"] / photo_id / "original.jpg").exists()
                 )
-                self.assertEqual([photo["id"] for photo in list_field_photos(field_photos_dir)], [photo_id])
+                self.assertEqual(list_field_photos(field_photos_dir), [])
                 summary = list_wrecks(wrecks_dir)[0]
 
             self.assertEqual(summary["photo_count"], 1)

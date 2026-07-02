@@ -52,8 +52,11 @@ class MapCropTests(unittest.TestCase):
         self.assertEqual(metadata["source"], "wroclaw_wms_location_crops")
         self.assertEqual(metadata["years"], [2024, 2025])
         self.assertIn("bbox_4326", metadata)
+        self.assertIn("bbox_3857", metadata)
         self.assertEqual(len(session.calls), 2)
         self.assertEqual(session.calls[0][1]["REQUEST"], "GetMap")
+        self.assertEqual(session.calls[0][1]["CRS"], "EPSG:3857")
+        self.assertGreater(float(session.calls[0][1]["BBOX"].split(",")[0]), 1_000_000)
 
     def test_save_location_crops_writes_only_case_evidence_images(self):
         session = FakeSession()

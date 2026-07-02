@@ -49,7 +49,7 @@ class HttpAssetsTests(unittest.TestCase):
         self.assertIn(
             (
                 "Content-Disposition",
-                'attachment; filename="raport_20260702_142516.zip"; filename*=UTF-8\'\'raport_20260702_142516.zip',
+                "attachment; filename=\"raport_20260702_142516.zip\"; filename*=UTF-8''raport_20260702_142516.zip",
             ),
             handler.headers,
         )

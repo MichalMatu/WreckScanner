@@ -365,29 +365,6 @@ def group_dependencies(imports: list[dict[str, Any]], js_files: list[Path]) -> l
     ]
 
 
-def summarize_run_log() -> dict[str, Any] | None:
-    path = ROOT_DIR / "analiza" / "run_log.json"
-    if not path.exists():
-        return None
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        return {"path": rel(path), "error": f"invalid json: {exc}"}
-
-    imagery = payload.get("imagery") if isinstance(payload, dict) else {}
-    results = payload.get("results") if isinstance(payload, dict) else {}
-    timing = payload.get("timing") if isinstance(payload, dict) else {}
-    images = imagery.get("images") if isinstance(imagery, dict) else []
-    return {
-        "path": rel(path),
-        "generated_at": payload.get("generated_at"),
-        "status": payload.get("status"),
-        "candidate_count": results.get("candidate_count") if isinstance(results, dict) else None,
-        "image_count": len(images) if isinstance(images, list) else None,
-        "analysis_seconds": timing.get("analysis_seconds") if isinstance(timing, dict) else None,
-    }
-
-
 def _tool_executable(command: str) -> str | None:
     executable = shutil.which(command)
     if executable:
@@ -476,7 +453,6 @@ def build_report() -> dict[str, Any]:
         "risky_patterns": risky_patterns,
         "group_dependencies": group_dependencies(imports, js_files),
         "tool_availability": collect_tool_availability(),
-        "last_run_log": summarize_run_log(),
         "parse_errors": collect_parse_errors(py_files),
     }
 
@@ -570,15 +546,8 @@ def format_markdown(report: dict[str, Any]) -> str:
                     for item in report["tool_availability"]
                 ],
             ),
-            "## Last analysis run log",
-            "",
         ]
     )
-    run_log = report["last_run_log"]
-    if run_log:
-        lines.append(table(["Field", "Value"], [[key, value] for key, value in run_log.items()]))
-    else:
-        lines.append("_No analiza/run_log.json found._\n")
 
     if report["parse_errors"]:
         lines.extend(

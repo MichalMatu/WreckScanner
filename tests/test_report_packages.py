@@ -296,7 +296,9 @@ class ReportPackageTests(unittest.TestCase):
                 report_html = archive.read("raport.html").decode("utf-8")
                 self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", report_html)
                 self.assertIn("Miniatury historyczne", report_html)
-                self.assertLess(report_html.index("Dane osoby zgłaszającej"), report_html.index("Miniatury historyczne"))
+                self.assertLess(
+                    report_html.index("Dane osoby zgłaszającej"), report_html.index("Miniatury historyczne")
+                )
                 self.assertNotIn("Teczka pojazdu", report_html)
                 self.assertNotIn("Współrzędne:", report_html)
                 self.assertNotIn("Linki do weryfikacji", draft_text)
@@ -457,9 +459,7 @@ class ReportPackageTests(unittest.TestCase):
                 "created_at": "2026-07-02T14:30:31Z",
             }
             base = (
-                "Dzień dobry,\n\n"
-                "Zgłaszam pojazd, który od dłuższego czasu wygląda na nieużytkowany.\n\n"
-                "Opis miejsca:\n"
+                "Dzień dobry,\n\nZgłaszam pojazd, który od dłuższego czasu wygląda na nieużytkowany.\n\nOpis miejsca:\n"
             )
             sentence = (
                 "Pojazd stoi na ogólnodostępnym miejscu postojowym, nie zmienia położenia mimo rotacji "

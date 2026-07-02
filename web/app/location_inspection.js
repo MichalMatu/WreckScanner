@@ -3,11 +3,9 @@ function selectedReviewCropM() {
     return Number.isFinite(cropM) ? cropM : 7.5;
 }
 
-map.on('click', async (event) => {
-    if (isFieldPhotoLocationPickActive()) return;
-
-    const inspectLat = Number(event.latlng.lat);
-    const inspectLon = Number(event.latlng.lng);
+async function inspectLocationHistoryAt(latLng) {
+    const inspectLat = Number(latLng?.lat);
+    const inspectLon = Number(latLng?.lng);
     if (!Number.isFinite(inspectLat) || !Number.isFinite(inspectLon)) return;
 
     const popup = L.popup({ maxWidth: 300 })
@@ -47,4 +45,11 @@ map.on('click', async (event) => {
             </div>
         `);
     }
-});
+}
+
+async function openLocationInspectionAtContextPoint() {
+    if (!contextMenuLatLng) return;
+    const latLng = L.latLng(contextMenuLatLng.lat, contextMenuLatLng.lng);
+    closeMapContextMenu();
+    await inspectLocationHistoryAt(latLng);
+}
