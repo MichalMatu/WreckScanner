@@ -11,19 +11,20 @@ from unittest.mock import patch
 from PIL import Image
 
 import core.report_pdf as report_pdf
+from app.http.public import reject_report_package_files
 from core import config as core_config
-from core.config import MAX_REPORT_PHOTO_BYTES
 from core.report_assets import (
     public_report_package_asset,
     report_package_asset,
     report_package_asset_from_download_name,
     report_package_download_name,
 )
-from core.report_models import ReportPhotoUpload, prepare_report_photos, validate_report_fields
+from core.report_models import validate_report_fields
 from core.report_packages import (
     create_public_report_package,
     create_report_package,
 )
+from core.uploads import UploadedFile
 from core.wrecks_save import save_vehicle_case
 
 
@@ -152,20 +153,9 @@ class ReportPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "zbyt długie"):
             validate_report_fields({**valid_fields(), "vehicle_description": "x" * 4001})
 
-    def test_prepare_report_photos_validates_count_size_and_type(self):
-        jpg = ReportPhotoUpload("photos[]", "a.jpg", "image/jpeg", image_bytes())
-        self.assertEqual(len(prepare_report_photos([jpg])), 1)
-
-        with self.assertRaisesRegex(ValueError, "maksymalnie"):
-            prepare_report_photos([jpg, jpg, jpg, jpg, jpg, jpg])
-
-        with self.assertRaisesRegex(ValueError, "10 MB"):
-            prepare_report_photos(
-                [ReportPhotoUpload("photos[]", "big.jpg", "image/jpeg", b"x" * (MAX_REPORT_PHOTO_BYTES + 1))]
-            )
-
-        with self.assertRaisesRegex(ValueError, "obsługiwanym zdjęciem"):
-            prepare_report_photos([ReportPhotoUpload("photos[]", "bad.txt", "text/plain", b"not an image")])
+    def test_report_package_rejects_direct_photo_files(self):
+        with self.assertRaisesRegex(ValueError, "zanonimizuj"):
+            reject_report_package_files([UploadedFile("photos[]", "teren.jpg", "image/jpeg", image_bytes())])
 
     def test_create_report_package_generates_zip_and_keeps_record_without_reporter_data(self):
         with TemporaryDirectory() as tmp:
@@ -189,7 +179,6 @@ class ReportPackageTests(unittest.TestCase):
                 result = create_report_package(
                     "wreck_51100000_17200000",
                     valid_fields(),
-                    [ReportPhotoUpload("photos[]", "miejsce.png", "image/png", image_bytes("PNG"))],
                     wrecks_dir,
                 )
 
@@ -219,9 +208,9 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("raport.html", names)
                 self.assertIn("miniatury_historyczne/2024.jpg", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
-                self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", names)
+                self.assertFalse(any(name.startswith("zdjecia_z_miejsca/") for name in names))
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
                 self.assertNotIn("metadane/record.json", names)
                 self.assertFalse(any(name.startswith("evidence/") for name in names))
@@ -233,24 +222,34 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Street View", draft_text)
                 self.assertNotIn("https://example.test/street", draft_text)
                 report_html = archive.read("raport.html").decode("utf-8")
-                self.assertIn("Treść zgłoszenia", report_html)
+                self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", report_html)
+                self.assertIn("Data zgłoszenia:", report_html)
                 self.assertIn("interwencje@smwroclaw.pl", report_html)
+                self.assertIn("<strong>Dotyczy:</strong>", report_html)
                 self.assertIn(result["subject"], report_html)
                 self.assertIn("Dane osoby zgłaszającej", report_html)
                 self.assertIn("Jan Kowalski", report_html)
                 self.assertIn("Zdjęcia z miejsca", report_html)
-                self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", report_html)
+                self.assertIn("Miniatury historyczne", report_html)
+                self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", report_html)
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", report_html)
-                self.assertIn("Zdjęcia dołączone do zgłoszenia", report_html)
-                self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", report_html)
+                self.assertNotIn("Historia działań", report_html)
+                self.assertNotIn("report_20260601T100000Z_deadbeef", report_html)
+                self.assertNotIn("lokalna sprawa", report_html)
+                self.assertNotIn("Zdjęcia dołączone do zgłoszenia", report_html)
+                self.assertNotIn("zdjecia_z_miejsca", report_html)
                 self.assertIn("data-report-package-style", report_html)
+                self.assertLess(report_html.index("Dane osoby zgłaszającej"), report_html.index("Zdjęcia z miejsca"))
+                self.assertLess(report_html.index("Zdjęcia z miejsca"), report_html.index("Miniatury historyczne"))
+                self.assertNotIn("Teczka pojazdu", report_html)
+                self.assertNotIn("Współrzędne:", report_html)
                 self.assertNotIn("data-report-photo-upload", report_html)
                 self.assertNotIn("Linki do weryfikacji", report_html)
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
 
             package_dir = zip_path.with_suffix("")
-            self.assertTrue((package_dir / "oryginalne_zdjecia" / "miejsce.png").exists())
+            self.assertFalse(package_dir.exists())
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 pdf_path, _ = report_package_asset("wreck_51100000_17200000", result["package_id"], "pdf")
             self.assertTrue(pdf_path.exists())
@@ -270,7 +269,7 @@ class ReportPackageTests(unittest.TestCase):
                 patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
                 patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
             ):
-                result = create_report_package(wreck_id, valid_fields(), [], wrecks_dir)
+                result = create_report_package(wreck_id, valid_fields(), wrecks_dir)
 
             self.assertEqual(result["status"], "ok")
             self.assertIn("/api/report-packages/", result["zip_url"])
@@ -289,7 +288,11 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertFalse(any(name.endswith(".json") for name in names))
                 draft_text = archive.read("zgloszenie.txt").decode("utf-8")
                 report_html = archive.read("raport.html").decode("utf-8")
-                self.assertIn("Treść zgłoszenia", report_html)
+                self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", report_html)
+                self.assertIn("Miniatury historyczne", report_html)
+                self.assertLess(report_html.index("Dane osoby zgłaszającej"), report_html.index("Miniatury historyczne"))
+                self.assertNotIn("Teczka pojazdu", report_html)
+                self.assertNotIn("Współrzędne:", report_html)
                 self.assertNotIn("Linki do weryfikacji", draft_text)
                 self.assertNotIn("Linki do weryfikacji", report_html)
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
@@ -318,7 +321,6 @@ class ReportPackageTests(unittest.TestCase):
                 result = create_public_report_package(
                     "wreck_51100000_17200000",
                     valid_fields(),
-                    [ReportPhotoUpload("photos[]", "miejsce.png", "image/png", image_bytes("PNG"))],
                     wrecks_dir,
                 )
 
@@ -346,7 +348,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", names)
-                self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", names)
+                self.assertFalse(any(name.startswith("zdjecia_z_miejsca/") for name in names))
                 self.assertNotIn("metadane/record.json", names)
                 self.assertFalse(any(name.startswith("evidence/") for name in names))
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
@@ -355,6 +357,13 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Linki do weryfikacji", draft_text)
                 self.assertNotIn("Street View", draft_text)
                 self.assertNotIn("https://example.test/street", draft_text)
+                self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", report_html)
+                self.assertIn("Zdjęcia z miejsca", report_html)
+                self.assertIn("Miniatury historyczne", report_html)
+                self.assertLess(report_html.index("Dane osoby zgłaszającej"), report_html.index("Zdjęcia z miejsca"))
+                self.assertLess(report_html.index("Zdjęcia z miejsca"), report_html.index("Miniatury historyczne"))
+                self.assertNotIn("Teczka pojazdu", report_html)
+                self.assertNotIn("Współrzędne:", report_html)
                 self.assertNotIn("Linki do weryfikacji", report_html)
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
@@ -377,7 +386,6 @@ class ReportPackageTests(unittest.TestCase):
                 recipient=core_config.REPORT_RECIPIENT,
                 subject="Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10",
                 mail_body="Dzień dobry,\n\nZakres oczekiwanej odpowiedzi:\nWnoszę o odpowiedź.",
-                report_photos=[report_pdf.PdfPhoto(label="załącznik.jpg", data=image_bytes())],
             )
             pdf_path = record_dir / "report.pdf"
             pdf_path.write_bytes(pdf_bytes)
@@ -395,7 +403,9 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("interwencje@smwroclaw.pl", text)
                 self.assertIn("Dotyczy: Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10", text)
                 self.assertIn("Zakres oczekiwanej odpowiedzi", text)
-                self.assertIn("Zdjęcia dołączone do zgłoszenia", text)
+                self.assertNotIn("Historia działań", text)
+                self.assertNotIn("lokalna sprawa", text)
+                self.assertNotIn("Zdjęcia dołączone do zgłoszenia", text)
                 self.assertNotIn("Teczka pojazdu wreck_51100000_17200000", normalized_text)
                 self.assertNotIn("Linki do weryfikacji", text)
                 self.assertNotIn("Treść zgłoszenia", text)

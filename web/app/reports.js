@@ -93,9 +93,7 @@ function resetReportPackageModal(wreckId) {
     const result = document.getElementById('report-package-result');
     const status = document.getElementById('report-package-status');
     const submit = document.getElementById('report-package-submit');
-    const filesInput = document.getElementById('report-photos');
     form?.reset();
-    updateFilePickerSummary(filesInput);
     updatePublicFeatureAccess();
     document.getElementById('report-wreck-id').value = wreckId;
     const observedAt = form?.querySelector('[name="observed_at"]');
@@ -116,22 +114,6 @@ async function openReportPackageModal(wreckId) {
     openModal('modal-report-package');
 }
 
-function validateReportPackageFiles(files) {
-    const photoFiles = Array.from(files || []);
-    if (photoFiles.length > REPORT_PHOTO_MAX_COUNT) {
-        throw new Error(t('modal.report.fileLimitError'));
-    }
-    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
-    for (const file of photoFiles) {
-        if (file.size > REPORT_PHOTO_MAX_BYTES) {
-            throw new Error(t('modal.report.fileLimitError'));
-        }
-        if (file.type && !allowedTypes.has(file.type)) {
-            throw new Error(t('modal.report.fileTypeError'));
-        }
-    }
-}
-
 async function submitReportPackage(event) {
     event.preventDefault();
     const form = document.getElementById('report-package-form');
@@ -141,16 +123,6 @@ async function submitReportPackage(event) {
     const result = document.getElementById('report-package-result');
     if (!form || !wreckId) return;
     if (!form.reportValidity()) return;
-
-    try {
-        const reportPhotoFiles = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
-            ? document.getElementById('report-photos')?.files
-            : [];
-        validateReportPackageFiles(reportPhotoFiles);
-    } catch (err) {
-        if (status) status.textContent = err.message;
-        return;
-    }
 
     if (submit) {
         submit.hidden = false;

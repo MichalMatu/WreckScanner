@@ -175,15 +175,6 @@ function updatePublicFeatureControlVisibility() {
         panelPhotoUploadButton.disabled = !fieldPhotoUploadAvailable;
     }
     if (!fieldPhotoUploadAvailable) cancelFieldPhotoLocationPick({ clearStatus: true });
-    const reportPhotosSection = document.getElementById('report-photos-section');
-    if (reportPhotosSection) reportPhotosSection.hidden = !photoUploadsAllowed;
-    if (!photoUploadsAllowed) {
-        const reportPhotos = document.getElementById('report-photos');
-        if (reportPhotos) {
-            reportPhotos.value = '';
-            updateFilePickerSummary(reportPhotos);
-        }
-    }
 }
 
 function updatePublicFeatureAccess() {

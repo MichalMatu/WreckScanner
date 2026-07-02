@@ -1,152 +1,242 @@
 from __future__ import annotations
 
 import html
-import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from core import report_models
+from core import config, report_models
 from core.photo_privacy import is_approved
 
 
-def _fallback_report_html(record: dict[str, Any]) -> bytes:
-    title = f"Teczka pojazdu {record.get('id', '')}"
-    labels = ", ".join(str(label) for label in record.get("labels_present") or [])
+def _report_datetime_text(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "brak danych"
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text.replace("T", " ").removesuffix("Z")
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone()
+    return parsed.strftime("%d.%m.%Y, godz. %H:%M")
+
+
+def _recipient_lines(recipient: str) -> list[str]:
+    if recipient == config.REPORT_RECIPIENT:
+        return [
+            "Adresat:",
+            "Straż Miejska Wrocławia",
+            "ul. Na Grobli 14/16, 50-421 Wrocław",
+            recipient,
+        ]
+    return ["Adresat:", recipient]
+
+
+def _text_block(value: str) -> str:
+    return html.escape(str(value or ""), quote=False)
+
+
+def _line_block(lines: list[str]) -> str:
+    escaped = [html.escape(line, quote=False) for line in lines]
+    if escaped:
+        email = escaped[-1]
+        escaped[-1] = f'<a href="mailto:{email}">{email}</a>'
+    return "<br>".join(escaped)
+
+
+def _attached_photo_figures(record: dict[str, Any]) -> list[str]:
+    photos = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
+    figures: list[str] = []
+    for photo in photos:
+        if not isinstance(photo, dict) or not is_approved(photo):
+            continue
+        rel = str(photo.get("public_image_file") or photo.get("public_thumb_file") or "")
+        if not rel:
+            continue
+        label = str(photo.get("original_filename") or photo.get("id") or "zdjęcie z miejsca")
+        figures.append(_figure(rel, label))
+    return figures
+
+
+def _evidence_figures(evidence: dict[str, Any]) -> list[str]:
+    figures: list[str] = []
+    for crop in evidence.get("crops") or []:
+        if not isinstance(crop, dict):
+            continue
+        label = str(crop.get("label") or "miniatura")
+        filename = report_models.safe_filename(label, "miniatura", ".jpg")
+        figures.append(_figure(f"miniatury_historyczne/{filename}", label))
+    return figures
+
+
+def _figure(src: str, caption: str) -> str:
+    return f"""
+<figure>
+  <img src="{html.escape(src, quote=True)}" alt="">
+  <figcaption>{html.escape(caption, quote=False)}</figcaption>
+</figure>
+"""
+
+
+def _photo_section(title: str, figures: list[str], *, variant: str) -> str:
+    if not figures:
+        return ""
+    return f"""
+<section class="evidence-section evidence-section--{html.escape(variant, quote=True)}">
+  <h2>{html.escape(title, quote=False)}</h2>
+  <div class="photo-grid">{"".join(figures)}</div>
+</section>
+"""
+
+
+def build_report_html(
+    *,
+    record: dict[str, Any],
+    evidence: dict[str, Any],
+    recipient: str,
+    subject: str,
+    mail_body: str,
+) -> bytes:
+    report_date = _report_datetime_text(evidence.get("created_at"))
+    attached = _attached_photo_figures(record)
+    crops = _evidence_figures(evidence)
+    evidence_sections = "\n".join(
+        section
+        for section in (
+            _photo_section("Zdjęcia z miejsca", attached, variant="photos"),
+            _photo_section("Miniatury historyczne", crops, variant="crops"),
+        )
+        if section
+    )
+    if not evidence_sections:
+        evidence_sections = '<p class="empty-evidence">Brak zdjęć w pakiecie.</p>'
+
     body = f"""<!doctype html>
 <html lang="pl">
-<head><meta charset="utf-8"><title>{html.escape(title)}</title></head>
+<head>
+<meta charset="utf-8">
+<title>Zgłoszenie dotyczące pojazdu nieużytkowanego</title>
+<style data-report-package-style>
+  :root {{
+    color-scheme: light;
+    --page-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --muted: #475569;
+    --border: #cbd5e1;
+    --link: #2563eb;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: DejaVu Sans, Arial, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+  }}
+  main {{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 34px 38px 56px;
+  }}
+  h1 {{
+    margin: 0 0 6px;
+    font-size: 29px;
+    line-height: 1.18;
+    letter-spacing: 0;
+  }}
+  h2 {{
+    margin: 26px 0 12px;
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }}
+  p {{ margin: 0 0 10px; }}
+  a {{ color: var(--link); text-decoration: none; }}
+  .muted {{ color: var(--muted); }}
+  .recipient, .subject, .letter-body {{
+    margin-top: 12px;
+  }}
+  .letter-body {{
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }}
+  .evidence-section {{
+    break-inside: avoid;
+    margin-top: 28px;
+  }}
+  .photo-grid {{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }}
+  .evidence-section--crops .photo-grid {{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }}
+  figure {{
+    margin: 0;
+    padding: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+  }}
+  img {{
+    display: block;
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+  }}
+  .evidence-section--crops img {{
+    height: 150px;
+  }}
+  figcaption {{
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }}
+  .empty-evidence {{ color: var(--muted); }}
+  @media print {{
+    main {{ max-width: none; padding: 14mm; }}
+    h1 {{ font-size: 18pt; }}
+    h2 {{ font-size: 15pt; }}
+    body {{ font-size: 9pt; }}
+    img {{ height: 48mm; }}
+    .evidence-section--crops img {{ height: 40mm; }}
+  }}
+</style>
+</head>
 <body>
-<h1>{html.escape(title)}</h1>
-<p>{float(record.get("lat") or 0):.6f}, {float(record.get("lon") or 0):.6f}</p>
-<p>Widziane: {html.escape(labels or "brak danych")}</p>
+<main>
+  <h1>Zgłoszenie dotyczące pojazdu nieużytkowanego</h1>
+  <p class="muted">Data zgłoszenia: {html.escape(report_date, quote=False)}</p>
+  <p class="recipient">{_line_block(_recipient_lines(recipient))}</p>
+  <p class="subject"><strong>Dotyczy:</strong> {html.escape(subject, quote=False)}</p>
+  <div class="letter-body">{_text_block(mail_body)}</div>
+  {evidence_sections}
+</main>
 </body>
 </html>
 """
     return body.encode("utf-8")
 
 
-def _mail_draft_html_section(recipient: str, subject: str, mail_body: str) -> str:
-    return f"""
-<section class="evidence report-mail-draft">
-<h2>Treść zgłoszenia</h2>
-<dl>
-<dt>Adresat</dt>
-<dd>{html.escape(recipient)}</dd>
-<dt>Temat</dt>
-<dd>{html.escape(subject)}</dd>
-</dl>
-<pre>{html.escape(mail_body)}</pre>
-</section>
-"""
-
-
-def _report_package_style() -> str:
-    return """
-<style data-report-package-style>
-  .report-mail-draft pre {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-  .report-package-photos .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
-  }
-  .report-package-photos figure {
-    margin: 0;
-    border: 1px solid var(--bdr, #1f2937);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #0f172a;
-  }
-  .report-package-photos img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    display: block;
-  }
-  .report-package-photos figcaption {
-    padding: 8px;
-    color: var(--mut, #94a3b8);
-    font-size: 12px;
-    text-align: center;
-    overflow-wrap: anywhere;
-  }
-</style>
-"""
-
-
-def _strip_interactive_report_controls(html_text: str) -> str:
-    html_text = re.sub(
-        r"\s*<section class=\"evidence photo-upload\" data-report-photo-upload>.*?</section>",
-        "",
-        html_text,
-        flags=re.DOTALL,
-    )
-    html_text = re.sub(r"\s*<nav class=\"link-strip\">.*?</nav>", "", html_text, flags=re.DOTALL)
-    return re.sub(r"\s*<script data-report-photo-upload-script>.*?</script>", "", html_text, flags=re.DOTALL)
-
-
-def _inject_report_package_style(html_text: str) -> str:
-    if "data-report-package-style" in html_text:
-        return html_text
-    style = _report_package_style()
-    lower_html = html_text.lower()
-    idx = lower_html.rfind("</head>")
-    if idx != -1:
-        return f"{html_text[:idx]}{style}{html_text[idx:]}"
-    return f"{style}{html_text}"
-
-
-def _report_package_photos_section(photos: list[report_models.PreparedReportPhoto]) -> str:
-    if not photos:
-        return ""
-    figures = []
-    for photo in photos:
-        figures.append(
-            f"""
-            <figure>
-              <img src="zdjecia_z_miejsca/{html.escape(photo.optimized_name)}" loading="lazy" alt="">
-              <figcaption>{html.escape(photo.original_name)}</figcaption>
-            </figure>
-            """
-        )
-    return f"""
-<section class="evidence report-package-photos">
-<h2>Zdjęcia dołączone do zgłoszenia</h2>
-<div class="grid">{"".join(figures)}</div>
-</section>
-"""
-
-
 def build_admin_report_html(
-    record_dir: Path,
+    _record_dir: Path,
     record: dict[str, Any],
+    evidence: dict[str, Any],
     recipient: str,
     subject: str,
     mail_body: str,
-    photos: list[report_models.PreparedReportPhoto],
 ) -> bytes:
-    report_html = record_dir / "index.html"
-    if report_html.exists():
-        html_text = report_html.read_text(encoding="utf-8")
-    else:
-        html_text = _fallback_report_html(record).decode("utf-8")
-
-    html_text = _inject_report_package_style(_strip_interactive_report_controls(html_text))
-    section = _report_package_photos_section(photos) + _mail_draft_html_section(recipient, subject, mail_body)
-    lower_html = html_text.lower()
-    for marker in ("</main>", "</body>"):
-        idx = lower_html.rfind(marker)
-        if idx != -1:
-            html_text = f"{html_text[:idx]}{section}{html_text[idx:]}"
-            break
-    else:
-        html_text = f"{html_text}\n{section}"
-    return html_text.encode("utf-8")
+    return build_report_html(
+        record=record,
+        evidence=evidence,
+        recipient=recipient,
+        subject=subject,
+        mail_body=mail_body,
+    )
 
 
 def build_public_report_html(
@@ -154,56 +244,11 @@ def build_public_report_html(
     evidence: dict[str, Any],
     subject: str,
     mail_body: str,
-    photos: list[report_models.PreparedReportPhoto],
 ) -> bytes:
-    attached = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
-    attached_figures = []
-    for photo in attached:
-        if not isinstance(photo, dict) or not is_approved(photo):
-            continue
-        rel = html.escape(str(photo.get("public_image_file") or photo.get("public_thumb_file") or ""))
-        if rel:
-            attached_figures.append(
-                f'<figure><img src="{rel}" alt=""><figcaption>Zdjęcie ze sprawy pojazdu</figcaption></figure>'
-            )
-
-    crop_figures = []
-    for crop in evidence.get("crops") or []:
-        if not isinstance(crop, dict):
-            continue
-        label = report_models.safe_filename(str(crop.get("label") or "miniatura"), "miniatura", ".jpg")
-        crop_figures.append(
-            f'<figure><img src="miniatury_historyczne/{html.escape(label)}" alt=""><figcaption>{html.escape(str(crop.get("label") or ""))}</figcaption></figure>'
-        )
-
-    user_figures = [
-        f'<figure><img src="zdjecia_z_miejsca/{html.escape(photo.optimized_name)}" alt=""><figcaption>{html.escape(photo.original_name)}</figcaption></figure>'
-        for photo in photos
-    ]
-    gallery = "".join(crop_figures + attached_figures + user_figures) or "<p>Brak zdjęć w pakiecie.</p>"
-    body = f"""<!doctype html>
-<html lang="pl">
-<head>
-<meta charset="utf-8">
-<title>{html.escape(subject)}</title>
-<style>
-body {{ font-family: system-ui, sans-serif; color: #0f172a; margin: 32px; line-height: 1.55; }}
-.grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }}
-figure {{ margin: 0; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; }}
-img {{ width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }}
-figcaption {{ padding: 8px; color: #475569; font-size: 12px; }}
-pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; }}
-</style>
-</head>
-<body>
-<h1>{html.escape(subject)}</h1>
-<p>Teczka pojazdu: {html.escape(str(record.get("id") or ""))}</p>
-<p>Współrzędne: {float(record.get("lat") or 0):.6f}, {float(record.get("lon") or 0):.6f}</p>
-<h2>Zdjęcia publiczne i dołączone</h2>
-<div class="grid">{gallery}</div>
-<h2>Treść zgłoszenia</h2>
-<pre>{html.escape(mail_body)}</pre>
-</body>
-</html>
-"""
-    return body.encode("utf-8")
+    return build_report_html(
+        record=record,
+        evidence=evidence,
+        recipient=config.REPORT_RECIPIENT,
+        subject=subject,
+        mail_body=mail_body,
+    )

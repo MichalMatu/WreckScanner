@@ -90,8 +90,6 @@ const MAP_POPUP_PREVIEW_MAX_IMAGES = 6;
 
 // Uploady: backend dalej waliduje te same limity, frontend tylko daje szybszy
 // komunikat przed wysłaniem formularza.
-const REPORT_PHOTO_MAX_COUNT = 5;
-const REPORT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const WRECK_PHOTO_MAX_COUNT = 25;
 const WRECK_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FIELD_PHOTO_MAX_BYTES = 10 * 1024 * 1024;

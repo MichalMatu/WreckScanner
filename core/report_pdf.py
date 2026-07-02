@@ -17,7 +17,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image as ReportImage
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from core import config, report_models
+from core import config
 from core.photo_privacy import is_approved
 
 PAGE_BG = colors.HexColor("#f8fafc")
@@ -343,7 +343,6 @@ def build_report_pdf(
     recipient: str,
     subject: str,
     mail_body: str,
-    report_photos: list[PdfPhoto],
 ) -> bytes:
     out = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -391,16 +390,6 @@ def build_report_pdf(
             content_width=content_width,
         )
     )
-    evidence_story.extend(
-        _evidence_section(
-            "Zdjęcia dołączone do zgłoszenia",
-            report_photos,
-            columns=PHOTO_COLUMNS,
-            image_height=PHOTO_HEIGHT,
-            styles=styles,
-            content_width=content_width,
-        )
-    )
     if evidence_story:
         story.append(PageBreak())
         story.extend(evidence_story)
@@ -418,9 +407,7 @@ def write_report_pdf(
     recipient: str,
     subject: str,
     mail_body: str,
-    photos: list[report_models.PreparedReportPhoto],
 ) -> None:
-    report_photos = [PdfPhoto(label=photo.original_name, data=photo.optimized_data) for photo in photos]
     body = build_report_pdf(
         record=record,
         evidence=evidence,
@@ -428,6 +415,5 @@ def write_report_pdf(
         recipient=recipient,
         subject=subject,
         mail_body=mail_body,
-        report_photos=report_photos,
     )
     pdf_path.write_bytes(body)

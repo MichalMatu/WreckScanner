@@ -3,11 +3,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from core import report_html
-from core.report_models import PreparedReportPhoto
 
 
 class ReportHtmlTests(unittest.TestCase):
-    def test_build_admin_report_html_strips_interactive_controls_and_injects_mail(self):
+    def test_build_admin_report_html_uses_formal_pdf_like_document(self):
         with TemporaryDirectory() as tmp:
             record_dir = Path(tmp)
             (record_dir / "index.html").write_text(
@@ -28,36 +27,45 @@ class ReportHtmlTests(unittest.TestCase):
 
             body = report_html.build_admin_report_html(
                 record_dir,
-                {"id": "wreck_51100000_17200000", "lat": 51.1, "lon": 17.2},
+                {
+                    "id": "wreck_51100000_17200000",
+                    "lat": 51.1,
+                    "lon": 17.2,
+                    "attached_photos": [
+                        {
+                            "original_filename": "teren.jpg",
+                            "public_review_status": "approved",
+                            "public_image_file": "photos/approved/public.jpg",
+                        }
+                    ],
+                },
+                {"created_at": "2026-07-02T14:30:31Z", "crops": [{"label": "2025", "file": "2025.jpg"}]},
                 "interwencje@example.test",
                 "Temat <test>",
                 "Treść <zgłoszenia>",
-                [],
             ).decode("utf-8")
 
         self.assertIn("data-report-package-style", body)
-        self.assertIn("Treść zgłoszenia", body)
+        self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", body)
+        self.assertIn("Data zgłoszenia: 02.07.2026, godz.", body)
         self.assertIn("interwencje@example.test", body)
-        self.assertIn("Temat &lt;test&gt;", body)
+        self.assertIn("<strong>Dotyczy:</strong> Temat &lt;test&gt;", body)
         self.assertIn("Treść &lt;zgłoszenia&gt;", body)
+        self.assertIn("Zdjęcia z miejsca", body)
+        self.assertIn("Miniatury historyczne", body)
+        self.assertIn("photos/approved/public.jpg", body)
+        self.assertIn("miniatury_historyczne/2025.jpg", body)
+        self.assertLess(body.index("Treść &lt;zgłoszenia&gt;"), body.index("Zdjęcia z miejsca"))
         self.assertNotIn("upload controls", body)
         self.assertNotIn("Street View", body)
         self.assertNotIn("Geoportal", body)
         self.assertNotIn("https://example.test/street", body)
         self.assertNotIn("https://example.test/geo", body)
         self.assertNotIn("data-report-photo-upload-script", body)
+        self.assertNotIn("Teczka pojazdu", body)
+        self.assertNotIn("Współrzędne:", body)
 
     def test_build_public_report_html_includes_only_approved_attached_photos(self):
-        photo = PreparedReportPhoto(
-            original_name="teren.png",
-            optimized_name="zdjecie_01.jpg",
-            original_data=b"original",
-            optimized_data=b"optimized",
-            content_type="image/png",
-            size_bytes=8,
-            optimized_size_bytes=9,
-        )
-
         body = report_html.build_public_report_html(
             {
                 "id": "wreck_51100000_17200000",
@@ -77,13 +85,13 @@ class ReportHtmlTests(unittest.TestCase):
             {"crops": [{"label": "2025", "file": "2025.jpg"}]},
             "Raport",
             "Mail body",
-            [photo],
         ).decode("utf-8")
 
         self.assertIn("miniatury_historyczne/2025.jpg", body)
         self.assertIn("photos/approved/public.jpg", body)
-        self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", body)
+        self.assertNotIn("zdjecia_z_miejsca", body)
         self.assertNotIn("photos/pending/public.jpg", body)
+        self.assertLess(body.index("Mail body"), body.index("Miniatury historyczne"))
 
 
 if __name__ == "__main__":

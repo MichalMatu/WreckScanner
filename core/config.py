@@ -50,10 +50,6 @@ ALLOWED_UPLOAD_IMAGE_FORMATS = {
     "PNG": (".png", "image/png"),
     "WEBP": (".webp", "image/webp"),
 }
-ALLOWED_REPORT_PHOTO_EXTENSIONS = {
-    image_format: values[0] for image_format, values in ALLOWED_UPLOAD_IMAGE_FORMATS.items()
-}
-
 MAX_FIELD_PHOTO_BYTES = 10 * BYTES_PER_MIB
 FIELD_PHOTO_MAX_BODY_BYTES = 12 * BYTES_PER_MIB
 FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX = 360
@@ -76,12 +72,8 @@ WRECK_PHOTO_THUMB_MAX_EDGE_PX = 900
 WRECK_PHOTO_THUMB_QUALITY = 84
 
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"
-MAX_REPORT_PHOTOS = 5
-MAX_REPORT_PHOTO_BYTES = 10 * BYTES_PER_MIB
-MAX_REPORT_PACKAGE_BODY_BYTES = 60 * BYTES_PER_MIB
+MAX_REPORT_PACKAGE_BODY_BYTES = 2 * BYTES_PER_MIB
 PUBLIC_REPORT_PACKAGE_TOKEN_TTL_SECONDS = 60 * 60
-OPTIMIZED_PHOTO_MAX_EDGE_PX = 1600
-OPTIMIZED_PHOTO_JPEG_QUALITY = 82
 
 # Publiczne dodawanie spraw/zdjęć zapisuje materiały jako "pending".
 # Limity chronią dysk przed zalaniem kolejki przed moderacją.

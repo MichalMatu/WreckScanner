@@ -13,7 +13,6 @@ from core.field_photos import (
     submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
-from core.report_models import ReportPhotoUpload
 from core.report_packages import create_public_report_package, create_report_package
 from core.uploads import UploadedFile
 from core.wrecks import delete_wreck
@@ -24,17 +23,9 @@ from core.wrecks_attachments import (
 from core.wrecks_save import save_vehicle_case
 
 
-def report_photo_uploads(files: list[UploadedFile]) -> list[ReportPhotoUpload]:
-    return [
-        ReportPhotoUpload(
-            field_name=file.field_name,
-            filename=file.filename,
-            content_type=file.content_type,
-            data=file.data,
-        )
-        for file in files
-        if file.field_name in {"photos", "photos[]"}
-    ]
+def reject_report_package_files(files: list[UploadedFile]) -> None:
+    if any(file.filename or file.data for file in files):
+        raise ValueError("Zdjęcia do zgłoszenia dodaj najpierw do sprawy i zanonimizuj przed wygenerowaniem raportu.")
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -138,12 +129,8 @@ def handle_discard_field_photo_drafts(handler) -> None:
 def handle_public_report_package(handler, wreck_id: str) -> None:
     try:
         fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
-        photos = report_photo_uploads(files)
-        if photos and not access.require_public_feature(
-            handler, "photo_uploads", "Dodawanie zdjec przez niezalogowanych jest teraz wylaczone."
-        ):
-            return
-        result = create_public_report_package(wreck_id, fields, photos, core_config.WRECKS_DIR)
+        reject_report_package_files(files)
+        result = create_public_report_package(wreck_id, fields, core_config.WRECKS_DIR)
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})
@@ -164,8 +151,8 @@ def handle_report_package(handler, wreck_id: str) -> None:
         return
     try:
         fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
-        photos = report_photo_uploads(files)
-        result = create_report_package(wreck_id, fields, photos, core_config.WRECKS_DIR)
+        reject_report_package_files(files)
+        result = create_report_package(wreck_id, fields, core_config.WRECKS_DIR)
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})

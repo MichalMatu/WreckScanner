@@ -55,17 +55,14 @@ def write_public_zip(
     recipient: str,
     subject: str,
     mail_body: str,
-    photos: list[report_models.PreparedReportPhoto],
 ) -> None:
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr(
-            "raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body, photos)
+            "raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body)
         )
         _archive_attached_photos(archive, record_dir, record)
         _archive_public_evidence_photos(archive, record_dir, evidence)
-        for photo in photos:
-            archive.writestr(f"zdjecia_z_miejsca/{photo.optimized_name}", photo.optimized_data)
 
 
 def write_admin_zip(
@@ -76,17 +73,13 @@ def write_admin_zip(
     recipient: str,
     subject: str,
     mail_body: str,
-    photos: list[report_models.PreparedReportPhoto],
 ) -> None:
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr(
             "raport.html",
-            report_html.build_admin_report_html(record_dir, record, recipient, subject, mail_body, photos),
+            report_html.build_admin_report_html(record_dir, record, evidence, recipient, subject, mail_body),
         )
 
         _archive_attached_photos(archive, record_dir, record)
         _archive_public_evidence_photos(archive, record_dir, evidence)
-
-        for photo in photos:
-            archive.writestr(f"zdjecia_z_miejsca/{photo.optimized_name}", photo.optimized_data)

@@ -25,23 +25,8 @@ def _field_datetime_text(value: str) -> str:
     return parsed.strftime("%d.%m.%Y, godz. %H:%M")
 
 
-def _report_history_text(record: dict[str, Any]) -> str:
-    history = record.get("report_history") if isinstance(record.get("report_history"), list) else []
-    if not history:
-        return "- brak wcześniejszych pakietów zgłoszeniowych zapisanych w tej sprawie"
-    lines = []
-    for item in history[-5:]:
-        if not isinstance(item, dict):
-            continue
-        created_at = str(item.get("created_at") or "brak daty")
-        package_id = str(item.get("package_id") or "brak id")
-        mode = "publiczny" if item.get("public") else "administracyjny"
-        lines.append(f"- {created_at}: pakiet {package_id} ({mode})")
-    return "\n".join(lines) or "- brak wcześniejszych pakietów zgłoszeniowych zapisanych w tej sprawie"
-
-
-def _formal_requests_text(record: dict[str, Any]) -> str:
-    return f"""Wnoszę o potraktowanie niniejszego pisma jako wniosku w rozumieniu art. 241 Kodeksu postępowania administracyjnego, a jeżeli organ uzna to za właściwe - jako skargi/wniosku w trybie działu VIII Kodeksu postępowania administracyjnego.
+def _formal_requests_text() -> str:
+    return """Wnoszę o potraktowanie niniejszego pisma jako wniosku w rozumieniu art. 241 Kodeksu postępowania administracyjnego, a jeżeli organ uzna to za właściwe - jako skargi/wniosku w trybie działu VIII Kodeksu postępowania administracyjnego.
 
 Wnoszę także o zawiadomienie mnie o sposobie załatwienia sprawy w terminie wynikającym z art. 237 § 1 oraz art. 244 § 1 i § 2 Kodeksu postępowania administracyjnego.
 
@@ -52,10 +37,7 @@ Wnoszę o:
 - informację, jakie czynności podjęto dotychczas i z jakim wynikiem,
 - nadanie albo wskazanie numeru sprawy,
 - odpowiedź, czy planowane jest usunięcie pojazdu, wezwanie właściciela, kontrola patrolu albo przekazanie sprawy innemu organowi,
-- pisemną odpowiedź obejmującą każdy z powyższych punktów.
-
-Historia działań zapisana w WreckScanner:
-{_report_history_text(record)}"""
+- pisemną odpowiedź obejmującą każdy z powyższych punktów."""
 
 
 def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: dict[str, str]) -> tuple[str, str]:
@@ -86,11 +68,10 @@ Opis stanu pojazdu:
 {fields["vehicle_description"]}
 
 Materiał pomocniczy z aplikacji WreckScanner:
-- lokalna sprawa: {record.get("id")}
 - pojazd widoczny na ortofotomapach z lat: {labels}
 
 Zakres oczekiwanej odpowiedzi:
-{_formal_requests_text(record)}
+{_formal_requests_text()}
 
 W załączniku dołączam pakiet dowodowy ZIP z miniaturami historycznymi i zdjęciami z miejsca. Proszę o weryfikację przez patrol i podjęcie czynności w sprawie pojazdu nieużytkowanego.
 

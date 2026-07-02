@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip, wrecks_store
+from core.photo_privacy import is_approved
 from core.wrecks import render_wreck_record_html
 from core.wrecks_evidence import first_last_year, save_report_evidence
 from core.wrecks_identity import links as location_links
@@ -81,14 +82,23 @@ def _append_report_evidence(record: dict[str, Any], record_dir: Path) -> dict[st
     return evidence
 
 
+def _approved_photo_count(record: dict[str, Any]) -> int:
+    photos = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
+    return sum(
+        1
+        for photo in photos
+        if isinstance(photo, dict)
+        and is_approved(photo)
+        and (photo.get("public_image_file") or photo.get("public_thumb_file"))
+    )
+
+
 def create_report_package(
     wreck_id: str,
     fields: dict[str, str],
-    photos: list[report_models.ReportPhotoUpload],
     wrecks_dir: Path,
 ) -> dict[str, Any]:
     fields = report_models.validate_report_fields(fields)
-    prepared_photos = report_models.prepare_report_photos(photos)
     record_dir = wrecks_store.record_dir_for(wreck_id, wrecks_dir)
     record = wrecks_store.read_json(record_dir / "record.json")
     if not isinstance(record, dict):
@@ -99,18 +109,9 @@ def create_report_package(
 
     package_id = _package_id(wreck_id, fields)
     reports_dir = config.PRIVATE_REPORTS_DIR / str(record["id"])
-    package_dir = reports_dir / package_id
-    originals_dir = package_dir / "oryginalne_zdjecia"
-    optimized_dir = package_dir / "zdjecia_do_maila"
     zip_path = reports_dir / f"{package_id}.zip"
     pdf_path = reports_dir / f"{package_id}.pdf"
-    originals_dir.mkdir(parents=True, exist_ok=False)
-    optimized_dir.mkdir(parents=True, exist_ok=True)
     reports_dir.mkdir(parents=True, exist_ok=True)
-
-    for photo in prepared_photos:
-        (originals_dir / photo.original_name).write_bytes(photo.original_data)
-        (optimized_dir / photo.optimized_name).write_bytes(photo.optimized_data)
 
     report_zip.write_admin_zip(
         zip_path,
@@ -120,7 +121,6 @@ def create_report_package(
         config.REPORT_RECIPIENT,
         subject,
         mail_body,
-        prepared_photos,
     )
     report_pdf.write_report_pdf(
         pdf_path,
@@ -130,9 +130,9 @@ def create_report_package(
         recipient=config.REPORT_RECIPIENT,
         subject=subject,
         mail_body=mail_body,
-        photos=prepared_photos,
     )
-    _append_report_history(record, record_dir, package_id=package_id, public=False, photo_count=len(prepared_photos))
+    photo_count = _approved_photo_count(record)
+    _append_report_history(record, record_dir, package_id=package_id, public=False, photo_count=photo_count)
     zip_filename = report_assets.report_package_download_name(package_id, "zip")
     pdf_filename = report_assets.report_package_download_name(package_id, "pdf")
     return {
@@ -145,7 +145,7 @@ def create_report_package(
         "pdf_filename": pdf_filename,
         "zip_url": f"/api/report-packages/{record['id']}/{package_id}/{zip_filename}",
         "pdf_url": f"/api/report-packages/{record['id']}/{package_id}/{pdf_filename}",
-        "photo_count": len(prepared_photos),
+        "photo_count": photo_count,
         "zip_size_bytes": zip_path.stat().st_size,
         "pdf_size_bytes": pdf_path.stat().st_size,
     }
@@ -154,11 +154,9 @@ def create_report_package(
 def create_public_report_package(
     wreck_id: str,
     fields: dict[str, str],
-    photos: list[report_models.ReportPhotoUpload],
     wrecks_dir: Path,
 ) -> dict[str, Any]:
     fields = report_models.validate_report_fields(fields)
-    prepared_photos = report_models.prepare_report_photos(photos)
     record_dir = wrecks_store.record_dir_for(wreck_id, wrecks_dir)
     record = wrecks_store.read_json(record_dir / "record.json")
     if not isinstance(record, dict):
@@ -169,16 +167,10 @@ def create_public_report_package(
 
     package_id = _package_id(wreck_id, fields)
     reports_dir = config.PRIVATE_REPORTS_DIR / str(record["id"])
-    package_dir = reports_dir / package_id
-    optimized_dir = package_dir / "zdjecia_do_maila"
     zip_path = reports_dir / f"{package_id}.zip"
     pdf_path = reports_dir / f"{package_id}.pdf"
     access_path = reports_dir / f"{package_id}.access.json"
-    optimized_dir.mkdir(parents=True, exist_ok=False)
     reports_dir.mkdir(parents=True, exist_ok=True)
-
-    for photo in prepared_photos:
-        (optimized_dir / photo.optimized_name).write_bytes(photo.optimized_data)
 
     report_zip.write_public_zip(
         zip_path,
@@ -188,7 +180,6 @@ def create_public_report_package(
         config.REPORT_RECIPIENT,
         subject,
         mail_body,
-        prepared_photos,
     )
     report_pdf.write_report_pdf(
         pdf_path,
@@ -198,9 +189,9 @@ def create_public_report_package(
         recipient=config.REPORT_RECIPIENT,
         subject=subject,
         mail_body=mail_body,
-        photos=prepared_photos,
     )
-    _append_report_history(record, record_dir, package_id=package_id, public=True, photo_count=len(prepared_photos))
+    photo_count = _approved_photo_count(record)
+    _append_report_history(record, record_dir, package_id=package_id, public=True, photo_count=photo_count)
     access = report_assets.new_access_token()
     wrecks_store.write_json(
         access_path,
@@ -226,7 +217,7 @@ def create_public_report_package(
         "zip_url": f"/api/public-report-packages/{record['id']}/{package_id}/{zip_filename}{token_query}",
         "pdf_url": f"/api/public-report-packages/{record['id']}/{package_id}/{pdf_filename}{token_query}",
         "expires_at": access.expires_at,
-        "photo_count": len(prepared_photos),
+        "photo_count": photo_count,
         "zip_size_bytes": zip_path.stat().st_size,
         "pdf_size_bytes": pdf_path.stat().st_size,
     }

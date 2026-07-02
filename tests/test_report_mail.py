@@ -4,7 +4,7 @@ from core.report_mail import build_mail_draft
 
 
 class ReportMailTests(unittest.TestCase):
-    def test_build_mail_draft_includes_reporter_history_and_evidence_labels_without_map_links(self):
+    def test_build_mail_draft_includes_reporter_and_evidence_labels_without_technical_noise(self):
         subject, body = build_mail_draft(
             {
                 "id": "wreck_51100000_17200000",
@@ -39,7 +39,10 @@ class ReportMailTests(unittest.TestCase):
         self.assertIn("Zakres oczekiwanej odpowiedzi", body)
         self.assertIn("art. 241 Kodeksu postępowania administracyjnego", body)
         self.assertIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)
-        self.assertIn("report_20260601T100000Z_deadbeef (publiczny)", body)
+        self.assertNotIn("Historia działań", body)
+        self.assertNotIn("report_20260601T100000Z_deadbeef", body)
+        self.assertNotIn("lokalna sprawa", body)
+        self.assertNotIn("wreck_51100000_17200000", body)
         self.assertNotIn("Linki do weryfikacji", body)
         self.assertNotIn("Street View", body)
         self.assertNotIn("https://example.test/street", body)
