@@ -36,6 +36,7 @@ class ReportHtmlTests(unittest.TestCase):
                             "original_filename": "teren.jpg",
                             "public_review_status": "approved",
                             "public_image_file": "photos/approved/public.jpg",
+                            "public_thumb_file": "photos/approved/public_thumb.jpg",
                         }
                     ],
                 },
@@ -53,8 +54,13 @@ class ReportHtmlTests(unittest.TestCase):
         self.assertIn("Treść &lt;zgłoszenia&gt;", body)
         self.assertIn("Zdjęcia z miejsca", body)
         self.assertIn("Miniatury historyczne", body)
-        self.assertIn("photos/approved/public.jpg", body)
+        self.assertIn('href="photos/approved/public.jpg"', body)
+        self.assertIn('src="photos/approved/public_thumb.jpg"', body)
         self.assertIn("miniatury_historyczne/2025.jpg", body)
+        self.assertIn("report-photo-figure", body)
+        self.assertIn("cursor: pointer", body)
+        self.assertIn("data-report-gallery-script", body)
+        self.assertIn("data-report-gallery-close", body)
         self.assertLess(body.index("Treść &lt;zgłoszenia&gt;"), body.index("Zdjęcia z miejsca"))
         self.assertNotIn("upload controls", body)
         self.assertNotIn("Street View", body)
@@ -75,10 +81,12 @@ class ReportHtmlTests(unittest.TestCase):
                     {
                         "public_review_status": "approved",
                         "public_image_file": "photos/approved/public.jpg",
+                        "public_thumb_file": "photos/approved/public_thumb.jpg",
                     },
                     {
                         "public_review_status": "pending",
                         "public_image_file": "photos/pending/public.jpg",
+                        "public_thumb_file": "photos/pending/public_thumb.jpg",
                     },
                 ],
             },
@@ -88,9 +96,11 @@ class ReportHtmlTests(unittest.TestCase):
         ).decode("utf-8")
 
         self.assertIn("miniatury_historyczne/2025.jpg", body)
-        self.assertIn("photos/approved/public.jpg", body)
+        self.assertIn('href="photos/approved/public.jpg"', body)
+        self.assertIn('src="photos/approved/public_thumb.jpg"', body)
         self.assertNotIn("zdjecia_z_miejsca", body)
         self.assertNotIn("photos/pending/public.jpg", body)
+        self.assertNotIn("photos/pending/public_thumb.jpg", body)
         self.assertLess(body.index("Mail body"), body.index("Miniatury historyczne"))
 
 

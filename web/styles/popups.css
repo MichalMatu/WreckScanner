@@ -102,7 +102,8 @@
     border: 1px solid #d1d5db;
     background: #f8fafc;
     aspect-ratio: 1 / 1;
-    cursor: zoom-in;
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
 .map-popup-photo img {
@@ -110,6 +111,19 @@
     height: 100%;
     display: block;
     object-fit: cover;
+    cursor: pointer;
+    transition: transform 120ms ease;
+}
+
+.map-popup-photo:hover,
+.map-popup-photo:focus-visible {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+}
+
+.map-popup-photo:hover img,
+.map-popup-photo:focus-visible img {
+    transform: scale(1.015);
 }
 
 .map-popup-photo span {

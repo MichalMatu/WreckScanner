@@ -218,6 +218,9 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertEqual(archive.read("miniatury_historyczne/2025.jpg"), image_bytes())
                 draft_text = archive.read("zgloszenie.txt").decode("utf-8")
                 self.assertIn("Jan Kowalski", draft_text)
+                self.assertIn("Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne", draft_text)
+                self.assertNotIn("pakiet dowodowy ZIP", draft_text)
+                self.assertNotIn("W załączniku", draft_text)
                 self.assertNotIn("Linki do weryfikacji", draft_text)
                 self.assertNotIn("Street View", draft_text)
                 self.assertNotIn("https://example.test/street", draft_text)
@@ -228,6 +231,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("<strong>Dotyczy:</strong>", report_html)
                 self.assertIn(result["subject"], report_html)
                 self.assertIn("Dane osoby zgłaszającej", report_html)
+                self.assertIn("Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne", report_html)
                 self.assertIn("Jan Kowalski", report_html)
                 self.assertIn("Zdjęcia z miejsca", report_html)
                 self.assertIn("Miniatury historyczne", report_html)
@@ -247,6 +251,8 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Linki do weryfikacji", report_html)
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
+                self.assertNotIn("pakiet dowodowy ZIP", report_html)
+                self.assertNotIn("W załączniku", report_html)
 
             package_dir = zip_path.with_suffix("")
             self.assertFalse(package_dir.exists())
@@ -294,7 +300,9 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Teczka pojazdu", report_html)
                 self.assertNotIn("Współrzędne:", report_html)
                 self.assertNotIn("Linki do weryfikacji", draft_text)
+                self.assertNotIn("pakiet dowodowy ZIP", draft_text)
                 self.assertNotIn("Linki do weryfikacji", report_html)
+                self.assertNotIn("pakiet dowodowy ZIP", report_html)
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 pdf_path, _ = report_package_asset(wreck_id, result["package_id"], "pdf")
             self.assertTrue(pdf_path.exists())
@@ -354,6 +362,8 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
                 draft_text = archive.read("zgloszenie.txt").decode("utf-8")
                 report_html = archive.read("raport.html").decode("utf-8")
+                self.assertIn("Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne", draft_text)
+                self.assertNotIn("pakiet dowodowy ZIP", draft_text)
                 self.assertNotIn("Linki do weryfikacji", draft_text)
                 self.assertNotIn("Street View", draft_text)
                 self.assertNotIn("https://example.test/street", draft_text)
@@ -367,6 +377,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Linki do weryfikacji", report_html)
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
+                self.assertNotIn("pakiet dowodowy ZIP", report_html)
 
     def test_report_pdf_starts_with_formal_letter_before_evidence(self):
         with TemporaryDirectory() as tmp:
@@ -409,6 +420,82 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Teczka pojazdu wreck_51100000_17200000", normalized_text)
                 self.assertNotIn("Linki do weryfikacji", text)
                 self.assertNotIn("Treść zgłoszenia", text)
+                self.assertNotIn("pakiet dowodowy ZIP", text)
+
+    def test_report_pdf_does_not_force_evidence_onto_a_new_page_after_short_text_overflow(self):
+        if not shutil.which("pdftotext"):
+            self.skipTest("pdftotext is not installed")
+
+        with TemporaryDirectory() as tmp:
+            record_dir = Path(tmp)
+            photo_dir = record_dir / "photos" / "photo_20260603T000000Z_abcdef12"
+            evidence_dir = record_dir / "evidence" / "report_test"
+            photo_dir.mkdir(parents=True)
+            evidence_dir.mkdir(parents=True)
+            (photo_dir / "public.jpg").write_bytes(image_bytes())
+            (photo_dir / "public_thumb.jpg").write_bytes(image_bytes())
+            (evidence_dir / "2025.jpg").write_bytes(image_bytes())
+
+            record = {
+                "id": "wreck_51100000_17200000",
+                "status": "confirmed",
+                "lat": 51.1,
+                "lon": 17.2,
+                "attached_photos": [
+                    {
+                        "id": "photo_20260603T000000Z_abcdef12",
+                        "original_filename": "teren.jpg",
+                        "public_review_status": "approved",
+                        "public_image_file": "photos/photo_20260603T000000Z_abcdef12/public.jpg",
+                        "public_thumb_file": "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg",
+                    }
+                ],
+            }
+            evidence = {
+                "path": "evidence/report_test",
+                "crops": [{"label": "2025", "file": "2025.jpg"}],
+                "created_at": "2026-07-02T14:30:31Z",
+            }
+            base = (
+                "Dzień dobry,\n\n"
+                "Zgłaszam pojazd, który od dłuższego czasu wygląda na nieużytkowany.\n\n"
+                "Opis miejsca:\n"
+            )
+            sentence = (
+                "Pojazd stoi na ogólnodostępnym miejscu postojowym, nie zmienia położenia mimo rotacji "
+                "innych samochodów, a jego stan wskazuje na brak bieżącej eksploatacji. "
+            )
+            closing = (
+                "\n\nZakres oczekiwanej odpowiedzi:\n"
+                "Wnoszę o weryfikację przez patrol, wskazanie numeru sprawy oraz pisemną informację "
+                "o podjętych czynnościach.\n\n"
+                "Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne dołączone "
+                "do niniejszego zgłoszenia.\n\n"
+                "Z poważaniem,\nJan Kowalski"
+            )
+
+            for repetitions in (4, 8, 12, 16):
+                pdf_bytes = report_pdf.build_report_pdf(
+                    record=record,
+                    evidence=evidence,
+                    record_dir=record_dir,
+                    recipient=core_config.REPORT_RECIPIENT,
+                    subject="Zgłoszenie pojazdu nieużytkowanego - ul. Testowa",
+                    mail_body=base + (sentence * repetitions) + closing,
+                )
+                pdf_path = record_dir / f"layout_{repetitions}.pdf"
+                pdf_path.write_bytes(pdf_bytes)
+                text = subprocess.check_output(["pdftotext", str(pdf_path), "-"], text=True)
+                pages = [page for page in text.split("\f") if page.strip()]
+                signature_pages = [page for page in pages if "Z poważaniem" in page]
+                self.assertEqual(len(signature_pages), 1)
+                signature_page = signature_pages[0]
+                non_empty_lines = [line for line in signature_page.splitlines() if line.strip()]
+                has_evidence = "Zdjęcia z miejsca" in signature_page or "Miniatury historyczne" in signature_page
+                self.assertTrue(
+                    len(non_empty_lines) > 8 or has_evidence,
+                    f"orphaned signature page for {repetitions} repetitions:\n{signature_page}",
+                )
 
     def test_report_pdf_uses_approved_public_attached_photo(self):
         with TemporaryDirectory() as tmp:

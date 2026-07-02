@@ -15,7 +15,7 @@ from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image as ReportImage
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from core import config
 from core.photo_privacy import is_approved
@@ -99,6 +99,7 @@ def _styles() -> dict[str, ParagraphStyle]:
             textColor=TEXT,
             spaceBefore=4,
             spaceAfter=6,
+            keepWithNext=1,
         ),
         "body": ParagraphStyle(
             "ReportBody",
@@ -107,6 +108,8 @@ def _styles() -> dict[str, ParagraphStyle]:
             leading=11.2,
             textColor=TEXT,
             spaceAfter=6,
+            allowWidows=0,
+            allowOrphans=0,
         ),
         "muted": ParagraphStyle(
             "ReportMuted",
@@ -172,6 +175,18 @@ def _escape_text(value: Any) -> str:
 
 def _paragraph_text(value: str) -> str:
     return _escape_text(value).replace("\r\n", "\n").replace("\n", "<br/>")
+
+
+def _mail_body_flowables(mail_body: str, styles: dict[str, ParagraphStyle]) -> list[Any]:
+    normalized = str(mail_body or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    blocks = [block.strip() for block in normalized.split("\n\n") if block.strip()]
+    if not blocks:
+        return []
+
+    paragraphs = [Paragraph(_paragraph_text(block), styles["body"]) for block in blocks]
+    if len(paragraphs) >= 2:
+        return [*paragraphs[:-2], KeepTogether(paragraphs[-2:])]
+    return paragraphs
 
 
 def _email_paragraph(lines: list[str]) -> str:
@@ -366,7 +381,7 @@ def build_report_pdf(
         Paragraph(f"Data zgłoszenia: {_report_datetime_text(evidence.get('created_at'))}", styles["muted"]),
         Paragraph(_email_paragraph(_recipient_lines(recipient)), styles["body"]),
         Paragraph(f"<b>Dotyczy:</b> {_escape_text(subject)}", styles["body"]),
-        Paragraph(_paragraph_text(mail_body), styles["body"]),
+        *_mail_body_flowables(mail_body, styles),
     ]
 
     evidence_story = []
@@ -391,7 +406,7 @@ def build_report_pdf(
         )
     )
     if evidence_story:
-        story.append(PageBreak())
+        story.append(Spacer(1, 4 * mm))
         story.extend(evidence_story)
 
     doc.build(story, onFirstPage=_page_background, onLaterPages=_page_background)

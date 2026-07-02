@@ -73,7 +73,7 @@ Materiał pomocniczy z aplikacji WreckScanner:
 Zakres oczekiwanej odpowiedzi:
 {_formal_requests_text()}
 
-W załączniku dołączam pakiet dowodowy ZIP z miniaturami historycznymi i zdjęciami z miejsca. Proszę o weryfikację przez patrol i podjęcie czynności w sprawie pojazdu nieużytkowanego.
+Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne dołączone do niniejszego zgłoszenia. Proszę o weryfikację przez patrol i podjęcie czynności w sprawie pojazdu nieużytkowanego.
 
 Z poważaniem,
 {fields["reporter_name"]}

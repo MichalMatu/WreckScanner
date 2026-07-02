@@ -120,6 +120,11 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }}
     figure {{ margin:0; border:1px solid var(--bdr); border-radius:8px; overflow:hidden; background:#0f172a; }}
     img {{ width:100%; aspect-ratio:1; object-fit:cover; display:block; }}
+    .photo-card,.photo-card figcaption {{ cursor:pointer; }}
+    .photo-card a {{ display:block; cursor:pointer; }}
+    .photo-card a img {{ cursor:pointer; transition:opacity .12s ease, transform .12s ease; }}
+    .photo-card a:hover img,.photo-card a:focus-visible img {{ opacity:.9; transform:scale(1.015); }}
+    .photo-card a:focus-visible {{ outline:3px solid rgba(147,197,253,.42); outline-offset:3px; }}
     figcaption {{ padding:8px; color:var(--mut); font-size:12px; text-align:center; }}
     figcaption span {{ display:block; margin-top:3px; color:#64748b; font-size:11px; }}
     .photo-grid {{ grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }}
