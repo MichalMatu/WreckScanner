@@ -83,9 +83,8 @@ const DEFAULT_MAP_VIEW = {
 const MAX_MAP_ZOOM = 22;
 const METERS_PER_DEGREE_LAT = 111320;
 
-// Poziomy szczegółowości pinezek. Nie skalujemy płynnie ikon, tylko zdejmujemy
-// detale przy oddalaniu: najpierw liczniki, potem zostają małe klikane kropki.
-const MARKER_DETAIL_FULL_MIN_ZOOM = 18;
+// Przy dalekim oddaleniu pinezki przechodzą w małe klikane kropki.
+// Do tego momentu zachowują liczniki zdjęć.
 const MARKER_DETAIL_DOT_MAX_ZOOM = 16;
 const MAP_POPUP_PREVIEW_MAX_IMAGES = 6;
 

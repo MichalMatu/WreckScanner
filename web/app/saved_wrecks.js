@@ -288,45 +288,6 @@ function toggleVehicleLayer(visible) {
     placeVehicleMarkers();
 }
 
-async function saveManualWreck(lat, lon, button = null) {
-    const latNumber = Number(lat);
-    const lonNumber = Number(lon);
-    if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber)) return;
-    const cropM = selectedReviewCropM();
-
-    const btn = button instanceof HTMLElement ? button : null;
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = t('inspect.savingWreck');
-    }
-    try {
-        const data = await apiPostJson(WRECKS_URL, { lat: latNumber, lon: lonNumber, cropM });
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('inspect.saveWreckError'));
-        }
-        await loadSavedWrecks();
-        const created = Boolean(data.created);
-        const pendingReview = !adminAuthenticated && data.wreck?.public_review_status === 'pending';
-        if (pendingReview) {
-            addPendingSubmissionMarker({ lat: data.wreck?.lat ?? latNumber, lon: data.wreck?.lon ?? lonNumber });
-            if (btn) btn.textContent = t('wreck.submittedShort');
-            statusEl.textContent = t('inspect.submittedWreck');
-            statusEl.className = 'ok';
-            return;
-        }
-        if (btn) btn.textContent = created ? t('inspect.savedWreck') : t('inspect.alreadySavedWreck');
-        statusEl.textContent = created ? t('inspect.savedWreck') : t('inspect.alreadySavedWreck');
-        statusEl.className = 'ok';
-    } catch (err) {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = t('inspect.saveWreck');
-        }
-        statusEl.textContent = apiErrorMessage(err, t('inspect.saveWreckError'));
-        statusEl.className = 'err';
-    }
-}
-
 async function deleteWreck(wreckId, button = null) {
     if (!(await ensureAdmin())) return;
     const id = safeWreckId(wreckId);

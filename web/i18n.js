@@ -410,7 +410,7 @@ const TRANSLATIONS = {
         'modal.help.mapTitle': 'Co działa na mapie',
         'modal.help.mapBody': 'Warstwa <b>POL</b> pokazuje krajową ortofoto, <b>OSM</b> daje czytelny podkład drogowy, a roczniki <b>2020-2025</b> są miejskimi ortofotomapami Wrocławia.',
         'modal.help.caseTitle': 'Jak dodać sprawę',
-        'modal.help.caseBody': 'Kliknij miejsce na mapie, sprawdź historyczne wycinki ortofoto i zapisz sprawę. Aplikacja sama dołączy miniatury z dostępnych roczników.',
+        'modal.help.caseBody': 'Sprawę pojazdu przygotujesz ze zdjęcia albo istniejącej pinezki. Historyczne wycinki ortofoto są dodawane automatycznie podczas generowania raportu.',
         'modal.help.start': 'Zaczynam',
         'modal.help.dataSource': 'Dane: OSM, Geoportal Krajowy i ortofotomapy Wrocławia.',
 
@@ -504,15 +504,9 @@ const TRANSLATIONS = {
 
         // ręczna inspekcja
         'inspect.loading': '⏳ Pobieram historię tego miejsca...',
-        'inspect.title': '👁️ Ręczna inspekcja miejsca',
+        'inspect.title': 'Podgląd historii miejsca',
         'inspect.coords': 'Współrzędne: {lat}, {lon}',
         'inspect.loadError': 'Nie udało się pobrać historii tego miejsca.',
-        'inspect.saveWreck': 'Dodaj z wycinkiem',
-        'inspect.savingWreck': 'Zapisuję...',
-        'inspect.savedWreck': 'Pojazd dodany',
-        'inspect.submittedWreck': 'Miejsce zapisane i czeka na zatwierdzenie administratora.',
-        'inspect.alreadySavedWreck': 'Pojazd już zapisany',
-        'inspect.saveWreckError': 'Nie udało się dodać pojazdu z wycinkiem.',
     },
 
     en: {
@@ -914,7 +908,7 @@ const TRANSLATIONS = {
         'modal.help.mapTitle': 'What works on the map',
         'modal.help.mapBody': '<b>POL</b> shows nationwide Polish orthophoto, <b>OSM</b> is the road base map, and <b>2020-2025</b> are Wrocław municipal orthophotos.',
         'modal.help.caseTitle': 'How to add a case',
-        'modal.help.caseBody': 'Click a place on the map, review historical orthophoto crops, and save the case. The app will attach thumbnails from available years.',
+        'modal.help.caseBody': 'Create a vehicle case from a photo or an existing pin. Historical orthophoto crops are attached automatically when the report is generated.',
         'modal.help.start': 'Start',
         'modal.help.dataSource': 'Data: OSM, Polish Geoportal, and Wrocław orthophotos.',
 
@@ -1003,15 +997,9 @@ const TRANSLATIONS = {
         'modal.report.fileTypeError': 'Only JPG, PNG or WebP photos are allowed.',
 
         'inspect.loading': '⏳ Loading history of this spot...',
-        'inspect.title': '👁️ Manual location inspection',
+        'inspect.title': 'Location history preview',
         'inspect.coords': 'Coordinates: {lat}, {lon}',
         'inspect.loadError': 'Could not load this location history.',
-        'inspect.saveWreck': 'Add with crop',
-        'inspect.savingWreck': 'Saving...',
-        'inspect.savedWreck': 'Vehicle added',
-        'inspect.submittedWreck': 'Location saved and waiting for administrator approval.',
-        'inspect.alreadySavedWreck': 'Vehicle already saved',
-        'inspect.saveWreckError': 'Could not add vehicle with a map crop.',
     },
 };
 

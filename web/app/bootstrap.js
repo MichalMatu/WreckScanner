@@ -13,17 +13,8 @@ const map = L.map('map', {
 });
 map.on('moveend zoomend', saveMapView);
 
-function markerDetailMode() {
-    const zoom = map.getZoom();
-    if (zoom <= MARKER_DETAIL_DOT_MAX_ZOOM) return 'dots';
-    if (zoom < MARKER_DETAIL_FULL_MIN_ZOOM) return 'compact';
-    return 'full';
-}
-
 function updateMarkerDetailMode() {
-    const container = map.getContainer();
-    container.classList.remove('marker-detail--full', 'marker-detail--compact', 'marker-detail--dots');
-    container.classList.add(`marker-detail--${markerDetailMode()}`);
+    map.getContainer().classList.toggle('marker-detail--dots', map.getZoom() <= MARKER_DETAIL_DOT_MAX_ZOOM);
 }
 
 map.on('zoomend', updateMarkerDetailMode);

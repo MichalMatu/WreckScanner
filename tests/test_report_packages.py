@@ -153,6 +153,7 @@ class ReportPackageTests(unittest.TestCase):
             with (
                 patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_photos_dir),
                 patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
+                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
             ):
                 record = json.loads(record_path.read_text(encoding="utf-8"))
                 record["attached_photos"][0]["public_review_status"] = "approved"
@@ -173,7 +174,11 @@ class ReportPackageTests(unittest.TestCase):
             self.assertIn("/api/report-packages/", result["pdf_url"])
             self.assertNotIn("Jan Kowalski", public_index_path.read_text(encoding="utf-8"))
             self.assertIn("metric-strip", public_index_path.read_text(encoding="utf-8"))
+            updated_record = json.loads(record_path.read_text(encoding="utf-8"))
             self.assertNotIn('"original_file"', record_path.read_text(encoding="utf-8"))
+            self.assertEqual(updated_record["latest_evidence"]["source"], "report_package")
+            self.assertTrue(updated_record["latest_evidence"]["id"].startswith("report_"))
+            self.assertEqual([crop["label"] for crop in updated_record["latest_evidence"]["crops"]], ["2024", "2025"])
 
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 zip_path, _ = report_package_asset("wreck_51100000_17200000", result["package_id"], "zip")
@@ -182,6 +187,7 @@ class ReportPackageTests(unittest.TestCase):
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
+                self.assertIn("miniatury_historyczne/2024.jpg", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", names)
@@ -189,6 +195,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
                 self.assertNotIn("metadane/record.json", names)
                 self.assertFalse(any(name.startswith("evidence/") for name in names))
+                self.assertEqual(archive.read("miniatury_historyczne/2024.jpg"), image_bytes())
                 self.assertEqual(archive.read("miniatury_historyczne/2025.jpg"), image_bytes())
                 self.assertIn("Jan Kowalski", archive.read("zgloszenie.txt").decode("utf-8"))
                 report_html = archive.read("raport.html").decode("utf-8")
@@ -223,7 +230,10 @@ class ReportPackageTests(unittest.TestCase):
                 saved = save_manual_wreck(51.088784, 17.035782, wrecks_dir)
             wreck_id = saved["wreck"]["id"]
 
-            with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
+            with (
+                patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
+                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
+            ):
                 result = create_report_package(wreck_id, valid_fields(), [], wrecks_dir)
 
             self.assertEqual(result["status"], "ok")
@@ -256,6 +266,7 @@ class ReportPackageTests(unittest.TestCase):
             with (
                 patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_photos_dir),
                 patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
+                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
             ):
                 record = json.loads(record_path.read_text(encoding="utf-8"))
                 record["attached_photos"][0]["public_review_status"] = "approved"
@@ -285,6 +296,7 @@ class ReportPackageTests(unittest.TestCase):
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
+                self.assertIn("miniatury_historyczne/2024.jpg", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg", names)
                 self.assertIn("photos/photo_20260603T000000Z_abcdef12/public.jpg", names)

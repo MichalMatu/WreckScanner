@@ -1,5 +1,4 @@
 from app import config
-from app.http import access
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from core import config as core_config
@@ -8,10 +7,6 @@ from core.wrecks_identity import validate_coordinates
 
 
 def handle_inspect(handler) -> None:
-    if not access.require_public_feature(
-        handler, "manual_wrecks", "Dodawanie pinezek jest teraz wylaczone dla niezalogowanych."
-    ):
-        return
     try:
         data = http_request_body.read_json_body(handler)
         lat, lon = validate_coordinates(data.get("lat"), data.get("lon"))

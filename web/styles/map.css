@@ -533,11 +533,6 @@
     transition: opacity 0.15s ease;
 }
 
-.marker-detail--compact .map-pin-count {
-    opacity: 0;
-    pointer-events: none;
-}
-
 .marker-detail--dots .map-pin-count,
 .marker-detail--dots .saved-wreck-pin::before,
 .marker-detail--dots .saved-wreck-pin::after,

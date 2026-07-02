@@ -5,7 +5,6 @@ function selectedReviewCropM() {
 
 map.on('click', async (event) => {
     if (isFieldPhotoLocationPickActive()) return;
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks)) return;
 
     const inspectLat = Number(event.latlng.lat);
     const inspectLon = Number(event.latlng.lng);
@@ -38,7 +37,6 @@ map.on('click', async (event) => {
                 ${popupHeader(t('inspect.title'))}
                 ${popupMeta([t('inspect.coords', { lat: inspectLat.toFixed(6), lon: inspectLon.toFixed(6) })])}
                 ${popupPhotoSection(t('wreck.popup.evidencePreviews'), cropPreviews)}
-                ${popupActions([`<button type="button" class="map-popup-text-action" onclick="saveManualWreck(${inspectLat.toFixed(8)}, ${inspectLon.toFixed(8)}, this)">${t('inspect.saveWreck')}</button>`])}
             </div>
         `);
     } catch (err) {

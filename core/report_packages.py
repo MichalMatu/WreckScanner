@@ -8,6 +8,9 @@ from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip, wrecks_store
 from core.wrecks import render_wreck_record_html
+from core.wrecks_evidence import first_last_year, save_report_evidence
+from core.wrecks_identity import links as location_links
+from core.wrecks_identity import validate_coordinates
 
 
 def _now_utc() -> datetime:
@@ -16,18 +19,6 @@ def _now_utc() -> datetime:
 
 def _iso(dt: datetime) -> str:
     return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _latest_evidence(record: dict[str, Any]) -> dict[str, Any]:
-    latest = record.get("latest_evidence")
-    if isinstance(latest, dict) and latest:
-        return latest
-    evidences = record.get("evidences")
-    if isinstance(evidences, list) and evidences:
-        candidate = evidences[-1]
-        if isinstance(candidate, dict):
-            return candidate
-    raise ValueError("Teczka pojazdu nie ma pakietu dowodowego.")
 
 
 def _package_id(wreck_id: str, fields: dict[str, str]) -> str:
@@ -63,6 +54,33 @@ def _append_report_history(
     wrecks_store.write_json(record_dir / "record.json", record)
 
 
+def _append_report_evidence(record: dict[str, Any], record_dir: Path) -> dict[str, Any]:
+    lat, lon = validate_coordinates(record.get("lat"), record.get("lon"))
+    created_at = _iso(_now_utc())
+    map_links = record.get("links") if isinstance(record.get("links"), dict) else location_links(lat, lon)
+    evidence = save_report_evidence(
+        lat=lat,
+        lon=lon,
+        record_dir=record_dir,
+        created_at=created_at,
+        crop_m=config.REVIEW_CROP_M,
+        links=map_links,
+    )
+    evidences = record.get("evidences") if isinstance(record.get("evidences"), list) else []
+    evidences.append(evidence)
+    labels = [str(label) for label in evidence.get("labels_present") or []]
+    first_seen, last_seen = first_last_year(labels)
+    record["evidences"] = evidences
+    record["latest_evidence"] = evidence
+    record["labels_present"] = labels
+    record["first_seen_year"] = first_seen
+    record["last_seen_year"] = last_seen
+    record["links"] = map_links
+    record["updated_at"] = created_at
+    wrecks_store.write_json(record_dir / "record.json", record)
+    return evidence
+
+
 def create_report_package(
     wreck_id: str,
     fields: dict[str, str],
@@ -75,7 +93,7 @@ def create_report_package(
     record = wrecks_store.read_json(record_dir / "record.json")
     if not isinstance(record, dict):
         raise ValueError("Nieprawidłowy format record.json.")
-    evidence = _latest_evidence(record)
+    evidence = _append_report_evidence(record, record_dir)
     render_wreck_record_html(record, record_dir)
     subject, mail_body = report_mail.build_mail_draft(record, evidence, fields)
 
@@ -141,7 +159,7 @@ def create_public_report_package(
     record = wrecks_store.read_json(record_dir / "record.json")
     if not isinstance(record, dict):
         raise ValueError("Nieprawidłowy format record.json.")
-    evidence = _latest_evidence(record)
+    evidence = _append_report_evidence(record, record_dir)
     render_wreck_record_html(record, record_dir)
     subject, mail_body = report_mail.build_mail_draft(record, evidence, fields)
 

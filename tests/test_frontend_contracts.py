@@ -7,15 +7,19 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 
 class FrontendContracts(unittest.TestCase):
-    def test_frontend_uses_location_inspection_for_manual_cases(self):
+    def test_frontend_uses_location_inspection_as_preview_only(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         location_js = (ROOT_DIR / "web" / "app" / "location_inspection.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
+        saved_wrecks_js = (ROOT_DIR / "web" / "app" / "saved_wrecks.js").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
 
         self.assertIn('<script src="/app/location_inspection.js"></script>', html)
         self.assertIn("apiPostJson('/api/inspect'", location_js)
-        self.assertIn("saveManualWreck", location_js)
+        self.assertNotIn("saveManualWreck", location_js + saved_wrecks_js)
+        self.assertNotIn("inspect.saveWreck", i18n_js)
+        self.assertNotIn("map-popup-text-action", location_js)
         self.assertIn("manualWrecks: 'manual_wrecks'", config_js)
         self.assertNotIn("/api/download", config_js + html)
         self.assertNotIn("/api/analyze", config_js + html)
