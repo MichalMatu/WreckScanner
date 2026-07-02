@@ -1,5 +1,7 @@
 import io
 import json
+import shutil
+import subprocess
 import unittest
 import zipfile
 from pathlib import Path
@@ -357,44 +359,10 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
 
-    def test_report_pdf_starts_mail_draft_on_new_page(self):
-        events = []
-        original_page_break = report_pdf._PdfPages.page_break
-        original_heading = report_pdf._PdfPages.heading
-        original_title = report_pdf._PdfPages.title
-        original_paragraph = report_pdf._PdfPages.paragraph
-        original_key_values = report_pdf._PdfPages.key_values
-
-        def page_break(self):
-            events.append("page_break")
-            return original_page_break(self)
-
-        def heading(self, text):
-            events.append(("heading", text))
-            return original_heading(self, text)
-
-        def title(self, text):
-            events.append(("title", text))
-            return original_title(self, text)
-
-        def paragraph(self, text, **kwargs):
-            events.append(("paragraph", text))
-            return original_paragraph(self, text, **kwargs)
-
-        def key_values(self, items):
-            events.append(("key_values", tuple(label for label, _value in items)))
-            return original_key_values(self, items)
-
-        with (
-            TemporaryDirectory() as tmp,
-            patch.object(report_pdf._PdfPages, "page_break", page_break),
-            patch.object(report_pdf._PdfPages, "heading", heading),
-            patch.object(report_pdf._PdfPages, "title", title),
-            patch.object(report_pdf._PdfPages, "paragraph", paragraph),
-            patch.object(report_pdf._PdfPages, "key_values", key_values),
-        ):
+    def test_report_pdf_starts_with_formal_letter_before_evidence(self):
+        with TemporaryDirectory() as tmp:
             record_dir = Path(tmp)
-            report_pdf.build_report_pdf(
+            pdf_bytes = report_pdf.build_report_pdf(
                 record={
                     "id": "wreck_51100000_17200000",
                     "status": "confirmed",
@@ -406,34 +374,31 @@ class ReportPackageTests(unittest.TestCase):
                 },
                 evidence={"path": "", "crops": [], "created_at": "2026-07-02T14:30:31Z"},
                 record_dir=record_dir,
-                recipient="interwencje@example.test",
-                subject="Test",
-                mail_body="Dzień dobry,\n\nTreść zgłoszenia.",
-                report_photos=[],
+                recipient=core_config.REPORT_RECIPIENT,
+                subject="Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10",
+                mail_body="Dzień dobry,\n\nZakres oczekiwanej odpowiedzi:\nWnoszę o odpowiedź.",
+                report_photos=[report_pdf.PdfPhoto(label="załącznik.jpg", data=image_bytes())],
             )
+            pdf_path = record_dir / "report.pdf"
+            pdf_path.write_bytes(pdf_bytes)
 
-        draft_heading_idx = events.index(("heading", "Treść zgłoszenia"))
-        self.assertEqual(events[draft_heading_idx - 1], "page_break")
-        self.assertNotIn(("heading", "Linki do weryfikacji"), events)
-        self.assertIn(("title", "Zgłoszenie dotyczące pojazdu nieużytkowanego"), events)
-        self.assertFalse(any(event == ("title", "Teczka pojazdu wreck_51100000_17200000") for event in events))
-        self.assertTrue(
-            any(
-                isinstance(event, tuple)
-                and event[0] == "paragraph"
-                and event[1].startswith("Data zgłoszenia: 02.07.2026, godz.")
-                and "brak danych" not in event[1]
-                for event in events
-            )
-        )
-        for event in events:
-            if isinstance(event, tuple) and event[0] == "key_values":
-                self.assertNotIn("Status", event[1])
-                self.assertNotIn("GPS", event[1])
-                self.assertNotIn("Widziane", event[1])
-                self.assertNotIn("Dowody", event[1])
-                self.assertNotIn("Zdjęcia", event[1])
-                self.assertNotIn("Ostatni dowód", event[1])
+            self.assertEqual(pdf_bytes[:5], b"%PDF-")
+            self.assertIn(b"mailto:interwencje@smwroclaw.pl", pdf_bytes)
+            self.assertIn(b"/Subtype /Link", pdf_bytes)
+            self.assertIn(b"/Subtype /TrueType", pdf_bytes)
+            if shutil.which("pdftotext"):
+                text = subprocess.check_output(["pdftotext", str(pdf_path), "-"], text=True)
+                normalized_text = " ".join(text.split())
+                self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", normalized_text)
+                self.assertIn("Data zgłoszenia: 02.07.2026, godz.", text)
+                self.assertIn("Straż Miejska Wrocławia", text)
+                self.assertIn("interwencje@smwroclaw.pl", text)
+                self.assertIn("Dotyczy: Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10", text)
+                self.assertIn("Zakres oczekiwanej odpowiedzi", text)
+                self.assertIn("Zdjęcia dołączone do zgłoszenia", text)
+                self.assertNotIn("Teczka pojazdu wreck_51100000_17200000", normalized_text)
+                self.assertNotIn("Linki do weryfikacji", text)
+                self.assertNotIn("Treść zgłoszenia", text)
 
     def test_report_pdf_uses_approved_public_attached_photo(self):
         with TemporaryDirectory() as tmp:

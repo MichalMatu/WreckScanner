@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 
@@ -11,6 +12,17 @@ def _first_line(value: str, max_len: int = 90) -> str:
 def _labels_text(record: dict[str, Any], evidence: dict[str, Any]) -> str:
     labels = record.get("labels_present") or evidence.get("labels_present") or []
     return ", ".join(str(label) for label in labels) or "brak danych"
+
+
+def _field_datetime_text(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "brak danych"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return text
+    return parsed.strftime("%d.%m.%Y, godz. %H:%M")
 
 
 def _report_history_text(record: dict[str, Any]) -> str:
@@ -29,7 +41,11 @@ def _report_history_text(record: dict[str, Any]) -> str:
 
 
 def _formal_requests_text(record: dict[str, Any]) -> str:
-    return f"""Wnoszę o:
+    return f"""Wnoszę o potraktowanie niniejszego pisma jako wniosku w rozumieniu art. 241 Kodeksu postępowania administracyjnego, a jeżeli organ uzna to za właściwe - jako skargi/wniosku w trybie działu VIII Kodeksu postępowania administracyjnego.
+
+Wnoszę także o zawiadomienie mnie o sposobie załatwienia sprawy w terminie wynikającym z art. 237 § 1 oraz art. 244 § 1 i § 2 Kodeksu postępowania administracyjnego.
+
+Wnoszę o:
 - formalną weryfikację, czy pojazd spełnia przesłanki pojazdu nieużytkowanego lub zalegającego w przestrzeni publicznej,
 - wskazanie komórki, jednostki albo osoby odpowiedzialnej za dalsze czynności,
 - informację, czy sprawa była już wcześniej zgłaszana lub procedowana,
@@ -64,7 +80,7 @@ Współrzędne GPS:
 {lat:.6f}, {lon:.6f}
 
 Data i godzina obserwacji:
-{fields["observed_at"]}
+{_field_datetime_text(fields["observed_at"])}
 
 Opis stanu pojazdu:
 {fields["vehicle_description"]}

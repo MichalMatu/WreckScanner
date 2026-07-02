@@ -33,7 +33,12 @@ class ReportMailTests(unittest.TestCase):
 
         self.assertEqual(subject, "Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10, parking przy szkole")
         self.assertIn("- Imię i nazwisko: Jan Kowalski", body)
+        self.assertIn("02.06.2026, godz. 12:30", body)
+        self.assertNotIn("2026-06-02T12:30", body)
         self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
+        self.assertIn("Zakres oczekiwanej odpowiedzi", body)
+        self.assertIn("art. 241 Kodeksu postępowania administracyjnego", body)
+        self.assertIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)
         self.assertIn("report_20260601T100000Z_deadbeef (publiczny)", body)
         self.assertNotIn("Linki do weryfikacji", body)
         self.assertNotIn("Street View", body)

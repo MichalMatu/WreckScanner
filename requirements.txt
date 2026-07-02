@@ -2,6 +2,7 @@
 requests>=2.31
 defusedxml>=0.7.1
 Pillow>=10.0
+reportlab>=4.3
 
 # Podgląd ortofoto
 opencv-python>=4.9

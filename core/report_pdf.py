@@ -2,26 +2,40 @@ from __future__ import annotations
 
 import html
 import io
-import math
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import Image as ReportImage
+from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from core import report_models
+from core import config, report_models
 from core.photo_privacy import is_approved
 
-PAGE_WIDTH = 1240
-PAGE_HEIGHT = 1754
-PAGE_MARGIN = 70
-PAGE_BG = (248, 250, 252)
-CARD_BG = (255, 255, 255)
-CARD_BORDER = (203, 213, 225)
-TEXT = (15, 23, 42)
-MUTED = (71, 85, 105)
-ACCENT = (5, 150, 105)
+PAGE_BG = colors.HexColor("#f8fafc")
+CARD_BG = colors.white
+CARD_BORDER = colors.HexColor("#cbd5e1")
+TEXT = colors.HexColor("#0f172a")
+MUTED = colors.HexColor("#475569")
+LINK = colors.HexColor("#2563eb")
+
+PAGE_MARGIN = 14 * mm
+GAP = 6 * mm
+PHOTO_COLUMNS = 2
+CROP_COLUMNS = 3
+PHOTO_HEIGHT = 48 * mm
+CROP_HEIGHT = 40 * mm
+
+FONT_REGULAR = "DejaVuSans"
+FONT_BOLD = "DejaVuSans-Bold"
 
 
 @dataclass(frozen=True)
@@ -30,11 +44,8 @@ class PdfPhoto:
     data: bytes
 
 
-def _font(size: int, *, bold: bool = False) -> ImageFont.ImageFont:
-    names = (
-        ("DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"),
-        ("Arial Bold.ttf" if bold else "Arial.ttf"),
-    )
+def _font_path(*, bold: bool = False) -> Path | None:
+    names = ("DejaVuSans-Bold.ttf", "Arial Bold.ttf") if bold else ("DejaVuSans.ttf", "Arial.ttf")
     roots = (
         Path("/usr/share/fonts/truetype/dejavu"),
         Path("/usr/share/fonts/truetype/msttcorefonts"),
@@ -45,61 +56,75 @@ def _font(size: int, *, bold: bool = False) -> ImageFont.ImageFont:
         for name in names:
             path = root / name
             if path.exists():
-                return ImageFont.truetype(str(path), size=size)
-    return ImageFont.load_default()
+                return path
+    return None
 
 
-def _text_width(text: str, font: ImageFont.ImageFont) -> int:
-    box = font.getbbox(text)
-    return int(box[2] - box[0])
+def _register_fonts() -> None:
+    if FONT_REGULAR in pdfmetrics.getRegisteredFontNames():
+        return
+    regular = _font_path()
+    bold = _font_path(bold=True)
+    if not regular or not bold:
+        return
+    pdfmetrics.registerFont(TTFont(FONT_REGULAR, str(regular)))
+    pdfmetrics.registerFont(TTFont(FONT_BOLD, str(bold)))
 
 
-def _line_height(font: ImageFont.ImageFont, spacing: int = 8) -> int:
-    box = font.getbbox("Ag")
-    return int(box[3] - box[1]) + spacing
+def _font_name(*, bold: bool = False) -> str:
+    _register_fonts()
+    name = FONT_BOLD if bold else FONT_REGULAR
+    if name in pdfmetrics.getRegisteredFontNames():
+        return name
+    return "Helvetica-Bold" if bold else "Helvetica"
 
 
-def _break_long_word(word: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
-    parts: list[str] = []
-    current = ""
-    for char in word:
-        candidate = f"{current}{char}"
-        if current and _text_width(candidate, font) > max_width:
-            parts.append(current)
-            current = char
-        else:
-            current = candidate
-    if current:
-        parts.append(current)
-    return parts or [word]
-
-
-def _wrap_line(text: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
-    words = text.split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        word_parts = _break_long_word(word, font, max_width) if _text_width(word, font) > max_width else [word]
-        for part in word_parts:
-            candidate = part if not current else f"{current} {part}"
-            if current and _text_width(candidate, font) > max_width:
-                lines.append(current)
-                current = part
-            else:
-                current = candidate
-    if current:
-        lines.append(current)
-    return lines or [""]
-
-
-def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
-    lines: list[str] = []
-    for raw_line in str(text or "").replace("\r\n", "\n").split("\n"):
-        if raw_line.strip():
-            lines.extend(_wrap_line(raw_line, font, max_width))
-        else:
-            lines.append("")
-    return lines
+def _styles() -> dict[str, ParagraphStyle]:
+    regular = _font_name()
+    bold = _font_name(bold=True)
+    return {
+        "title": ParagraphStyle(
+            "ReportTitle",
+            fontName=bold,
+            fontSize=18,
+            leading=22,
+            textColor=TEXT,
+            spaceAfter=6,
+        ),
+        "heading": ParagraphStyle(
+            "ReportHeading",
+            fontName=bold,
+            fontSize=15,
+            leading=18,
+            textColor=TEXT,
+            spaceBefore=4,
+            spaceAfter=6,
+        ),
+        "body": ParagraphStyle(
+            "ReportBody",
+            fontName=regular,
+            fontSize=9,
+            leading=11.2,
+            textColor=TEXT,
+            spaceAfter=6,
+        ),
+        "muted": ParagraphStyle(
+            "ReportMuted",
+            fontName=regular,
+            fontSize=8.8,
+            leading=11,
+            textColor=MUTED,
+            spaceAfter=6,
+        ),
+        "caption": ParagraphStyle(
+            "ReportCaption",
+            fontName=regular,
+            fontSize=8,
+            leading=10,
+            textColor=MUTED,
+            spaceBefore=4,
+        ),
+    }
 
 
 def _safe_child(base_dir: Path, relative_path: str) -> Path:
@@ -130,149 +155,38 @@ def _report_datetime_text(value: Any) -> str:
     return parsed.strftime("%d.%m.%Y, godz. %H:%M")
 
 
-class _PdfPages:
-    def __init__(self) -> None:
-        self.pages: list[Image.Image] = []
-        self.title_font = _font(34, bold=True)
-        self.heading_font = _font(25, bold=True)
-        self.label_font = _font(17, bold=True)
-        self.body_font = _font(19)
-        self.small_font = _font(15)
-        self._new_page()
+def _recipient_lines(recipient: str) -> list[str]:
+    if recipient == config.REPORT_RECIPIENT:
+        return [
+            "Adresat:",
+            "Straż Miejska Wrocławia",
+            "ul. Na Grobli 14/16, 50-421 Wrocław",
+            recipient,
+        ]
+    return ["Adresat:", recipient]
 
-    @property
-    def page(self) -> Image.Image:
-        return self.pages[-1]
 
-    @property
-    def draw(self) -> ImageDraw.ImageDraw:
-        return ImageDraw.Draw(self.page)
+def _escape_text(value: Any) -> str:
+    return html.escape(str(value or ""), quote=False)
 
-    @property
-    def bottom(self) -> int:
-        return PAGE_HEIGHT - PAGE_MARGIN
 
-    @property
-    def content_width(self) -> int:
-        return PAGE_WIDTH - (PAGE_MARGIN * 2)
+def _paragraph_text(value: str) -> str:
+    return _escape_text(value).replace("\r\n", "\n").replace("\n", "<br/>")
 
-    def _new_page(self) -> None:
-        self.pages.append(Image.new("RGB", (PAGE_WIDTH, PAGE_HEIGHT), PAGE_BG))
-        self.y = PAGE_MARGIN
 
-    def page_break(self) -> None:
-        if self.y > PAGE_MARGIN:
-            self._new_page()
+def _email_paragraph(lines: list[str]) -> str:
+    escaped = [_escape_text(line) for line in lines]
+    if escaped:
+        email = escaped[-1]
+        escaped[-1] = f'<a href="mailto:{email}" color="{LINK.hexval()}">{email}</a>'
+    return "<br/>".join(escaped)
 
-    def _ensure(self, height: int) -> None:
-        if self.y + height > self.bottom:
-            self._new_page()
 
-    def title(self, text: str) -> None:
-        lines = _wrap_text(text, self.title_font, self.content_width)
-        height = len(lines) * _line_height(self.title_font, 10) + 12
-        self._ensure(height)
-        for line in lines:
-            self.draw.text((PAGE_MARGIN, self.y), line, font=self.title_font, fill=TEXT)
-            self.y += _line_height(self.title_font, 10)
-        self.y += 12
-
-    def heading(self, text: str) -> None:
-        self._ensure(54)
-        self.draw.text((PAGE_MARGIN, self.y), text, font=self.heading_font, fill=TEXT)
-        self.y += 44
-
-    def paragraph(
-        self, text: str, *, fill: tuple[int, int, int] = TEXT, font: ImageFont.ImageFont | None = None
-    ) -> None:
-        font = font or self.body_font
-        line_height = _line_height(font)
-        for line in _wrap_text(text, font, self.content_width):
-            self._ensure(line_height)
-            if line:
-                self.draw.text((PAGE_MARGIN, self.y), line, font=font, fill=fill)
-            self.y += line_height
-        self.y += 10
-
-    def key_values(self, items: list[tuple[str, str]]) -> None:
-        row_gap = 8
-        x = PAGE_MARGIN
-        max_x = PAGE_WIDTH - PAGE_MARGIN
-        pill_height = 36
-        self._ensure(pill_height + row_gap)
-        for label, value in items:
-            text = f"{label}: {value}"
-            width = min(_text_width(text, self.small_font) + 26, self.content_width)
-            if x + width > max_x:
-                x = PAGE_MARGIN
-                self.y += pill_height + row_gap
-                self._ensure(pill_height + row_gap)
-            self.draw.rounded_rectangle(
-                (x, self.y, x + width, self.y + pill_height),
-                radius=14,
-                fill=CARD_BG,
-                outline=CARD_BORDER,
-                width=1,
-            )
-            display = text
-            while _text_width(display, self.small_font) > width - 22 and len(display) > 4:
-                display = f"{display[:-4]}..."
-            self.draw.text((x + 13, self.y + 9), display, font=self.small_font, fill=MUTED)
-            x += width + 8
-        self.y += pill_height + 18
-
-    def image_grid(self, photos: list[PdfPhoto], *, columns: int = 2) -> None:
-        if not photos:
-            return
-        gap = 18
-        cell_w = math.floor((self.content_width - (gap * (columns - 1))) / columns)
-        image_h = 280
-        label_h = 44
-        cell_h = image_h + label_h
-        x_positions = [PAGE_MARGIN + idx * (cell_w + gap) for idx in range(columns)]
-
-        col = 0
-        for photo in photos:
-            if col == 0:
-                self._ensure(cell_h + gap)
-            x = x_positions[col]
-            y = self.y
-            self.draw.rounded_rectangle(
-                (x, y, x + cell_w, y + cell_h),
-                radius=12,
-                fill=CARD_BG,
-                outline=CARD_BORDER,
-                width=1,
-            )
-            try:
-                with Image.open(io.BytesIO(photo.data)) as raw:
-                    image = ImageOps.exif_transpose(raw).convert("RGB")
-                    image.thumbnail((cell_w - 16, image_h - 16), Image.Resampling.LANCZOS)
-                    paste_x = x + (cell_w - image.width) // 2
-                    paste_y = y + 8 + (image_h - 16 - image.height) // 2
-                    self.page.paste(image, (paste_x, paste_y))
-            except (OSError, UnidentifiedImageError):
-                self.draw.text((x + 14, y + 120), "Nie można odczytać zdjęcia", font=self.small_font, fill=MUTED)
-
-            label = html.unescape(photo.label or "zdjęcie")
-            label_lines = _wrap_text(label, self.small_font, cell_w - 20)[:2]
-            label_y = y + image_h + 8
-            for line in label_lines:
-                self.draw.text((x + 10, label_y), line, font=self.small_font, fill=MUTED)
-                label_y += _line_height(self.small_font, 2)
-            col += 1
-            if col >= columns:
-                col = 0
-                self.y += cell_h + gap
-        if col:
-            self.y += cell_h + gap
-        self.y += 8
-
-    def to_pdf(self) -> bytes:
-        out = io.BytesIO()
-        first, *rest = self.pages
-        first.save(out, "PDF", save_all=True, append_images=rest, resolution=150.0)
-        return out.getvalue()
+def _page_background(canvas, _doc) -> None:
+    canvas.saveState()
+    canvas.setFillColor(PAGE_BG)
+    canvas.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+    canvas.restoreState()
 
 
 def _photo_bytes_from_record(record_dir: Path, photo: dict[str, Any]) -> PdfPhoto | None:
@@ -317,6 +231,110 @@ def _evidence_photos(evidence: dict[str, Any], record_dir: Path) -> list[PdfPhot
     return prepared
 
 
+def _prepare_image(data: bytes, *, max_edge: int = 1400) -> tuple[bytes, int, int] | None:
+    try:
+        with Image.open(io.BytesIO(data)) as raw:
+            image = ImageOps.exif_transpose(raw).convert("RGB")
+            image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+            out = io.BytesIO()
+            image.save(out, "JPEG", quality=86, optimize=True)
+            return out.getvalue(), image.width, image.height
+    except (OSError, UnidentifiedImageError):
+        return None
+
+
+def _image_flowable(photo: PdfPhoto, width: float, height: float) -> ReportImage | Paragraph:
+    prepared = _prepare_image(photo.data)
+    if not prepared:
+        return Paragraph("Nie można odczytać zdjęcia.", _styles()["caption"])
+    data, image_width, image_height = prepared
+    scale = min(width / max(image_width, 1), height / max(image_height, 1))
+    draw_width = image_width * scale
+    draw_height = image_height * scale
+    image = ReportImage(io.BytesIO(data), width=draw_width, height=draw_height)
+    image.hAlign = "CENTER"
+    return image
+
+
+def _photo_card(photo: PdfPhoto, width: float, image_height: float, styles: dict[str, ParagraphStyle]) -> Table:
+    image = _image_flowable(photo, width - 8 * mm, image_height)
+    caption = Paragraph(_paragraph_text(photo.label or "zdjęcie"), styles["caption"])
+    card = Table(
+        [[image], [caption]],
+        colWidths=[width],
+        style=TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), CARD_BG),
+                ("BOX", (0, 0), (-1, -1), 0.5, CARD_BORDER),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4 * mm),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4 * mm),
+                ("TOPPADDING", (0, 0), (-1, -1), 3 * mm),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3 * mm),
+            ]
+        ),
+    )
+    card.keepTogether = True
+    return card
+
+
+def _image_grid(
+    photos: list[PdfPhoto],
+    *,
+    columns: int,
+    image_height: float,
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+) -> Table | None:
+    if not photos:
+        return None
+    cell_width = (content_width - (GAP * (columns - 1))) / columns
+    rows = []
+    for start in range(0, len(photos), columns):
+        row_photos = photos[start : start + columns]
+        row = [_photo_card(photo, cell_width, image_height, styles) for photo in row_photos]
+        while len(row) < columns:
+            row.append("")
+        rows.append(row)
+    table = Table(
+        rows,
+        colWidths=[cell_width] * columns,
+        hAlign="LEFT",
+        style=TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), GAP),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), GAP),
+            ]
+        ),
+    )
+    return table
+
+
+def _evidence_section(
+    title: str,
+    photos: list[PdfPhoto],
+    *,
+    columns: int,
+    image_height: float,
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+) -> list[Any]:
+    grid = _image_grid(
+        photos,
+        columns=columns,
+        image_height=image_height,
+        styles=styles,
+        content_width=content_width,
+    )
+    if not grid:
+        return []
+    return [Paragraph(_escape_text(title), styles["heading"]), grid, Spacer(1, 4 * mm)]
+
+
 def build_report_pdf(
     *,
     record: dict[str, Any],
@@ -327,30 +345,68 @@ def build_report_pdf(
     mail_body: str,
     report_photos: list[PdfPhoto],
 ) -> bytes:
-    doc = _PdfPages()
+    out = io.BytesIO()
+    doc = SimpleDocTemplate(
+        out,
+        pagesize=A4,
+        leftMargin=PAGE_MARGIN,
+        rightMargin=PAGE_MARGIN,
+        topMargin=PAGE_MARGIN,
+        bottomMargin=PAGE_MARGIN,
+        pageCompression=0,
+        title=subject,
+        author="WreckScanner",
+    )
+    styles = _styles()
+    content_width = A4[0] - (PAGE_MARGIN * 2)
     attached_photos = _attached_photos(record, record_dir)
-
-    doc.title("Zgłoszenie dotyczące pojazdu nieużytkowanego")
-    doc.paragraph(f"Data zgłoszenia: {_report_datetime_text(evidence.get('created_at'))}", fill=MUTED, font=doc.body_font)
-
-    if attached_photos:
-        doc.heading("Zdjęcia z miejsca")
-        doc.image_grid(attached_photos)
-
     evidence_images = _evidence_photos(evidence, record_dir)
-    if evidence_images:
-        doc.heading("Miniatury historyczne")
-        doc.image_grid(evidence_images, columns=3)
 
-    if report_photos:
-        doc.heading("Zdjęcia dołączone do zgłoszenia")
-        doc.image_grid(report_photos)
+    story: list[Any] = [
+        Paragraph("Zgłoszenie dotyczące pojazdu nieużytkowanego", styles["title"]),
+        Paragraph(f"Data zgłoszenia: {_report_datetime_text(evidence.get('created_at'))}", styles["muted"]),
+        Paragraph(_email_paragraph(_recipient_lines(recipient)), styles["body"]),
+        Paragraph(f"<b>Dotyczy:</b> {_escape_text(subject)}", styles["body"]),
+        Paragraph(_paragraph_text(mail_body), styles["body"]),
+    ]
 
-    doc.page_break()
-    doc.heading("Treść zgłoszenia")
-    doc.key_values([("Adresat", recipient), ("Temat", subject)])
-    doc.paragraph(mail_body)
-    return doc.to_pdf()
+    evidence_story = []
+    evidence_story.extend(
+        _evidence_section(
+            "Zdjęcia z miejsca",
+            attached_photos,
+            columns=PHOTO_COLUMNS,
+            image_height=PHOTO_HEIGHT,
+            styles=styles,
+            content_width=content_width,
+        )
+    )
+    evidence_story.extend(
+        _evidence_section(
+            "Miniatury historyczne",
+            evidence_images,
+            columns=CROP_COLUMNS,
+            image_height=CROP_HEIGHT,
+            styles=styles,
+            content_width=content_width,
+        )
+    )
+    evidence_story.extend(
+        _evidence_section(
+            "Zdjęcia dołączone do zgłoszenia",
+            report_photos,
+            columns=PHOTO_COLUMNS,
+            image_height=PHOTO_HEIGHT,
+            styles=styles,
+            content_width=content_width,
+        )
+    )
+    if evidence_story:
+        story.append(PageBreak())
+        story.extend(evidence_story)
+
+    doc.build(story, onFirstPage=_page_background, onLaterPages=_page_background)
+    return out.getvalue()
 
 
 def write_report_pdf(
