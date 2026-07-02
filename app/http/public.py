@@ -265,18 +265,11 @@ def handle_create_field_photo(handler) -> None:
                 additional_bytes=len(photo_files[0].data),
                 additional_items=1,
             )
-        ignore_exif_gps = str(fields.get("ignore_exif_gps") or "").strip().lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
         result = save_field_photo(
             photo_files[0],
             core_config.FIELD_PHOTOS_DIR,
-            fallback_lat=fields.get("fallback_lat"),
-            fallback_lon=fields.get("fallback_lon"),
-            ignore_exif_gps=ignore_exif_gps,
+            map_lat=fields.get("map_lat"),
+            map_lon=fields.get("map_lon"),
             issue_type=issue_type,
             private_dir=core_config.PRIVATE_PHOTOS_DIR,
             submission_owner=None if is_admin else access.submission_owner(handler),

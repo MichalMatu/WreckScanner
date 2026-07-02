@@ -78,29 +78,13 @@ def upload(data: bytes, filename: str = "teren.jpg", field_name: str = "photo") 
 
 
 class FieldPhotoTests(unittest.TestCase):
-    def test_save_field_photo_uses_exif_gps_before_map_fallback(self):
+    def test_save_field_photo_uses_map_point_even_when_exif_gps_exists(self):
         with TemporaryDirectory() as tmp:
             result = save_field_photo(
                 upload(image_bytes(gps=(51.1, 17.2))),
                 Path(tmp),
-                fallback_lat=1.0,
-                fallback_lon=2.0,
-                private_dir=Path(tmp) / "private",
-            )
-
-            photo = result["photo"]
-            self.assertEqual(photo["coordinate_source"], "exif")
-            self.assertAlmostEqual(photo["lat"], 51.1, places=5)
-            self.assertAlmostEqual(photo["lon"], 17.2, places=5)
-
-    def test_save_field_photo_can_ignore_exif_gps_and_use_map_fallback(self):
-        with TemporaryDirectory() as tmp:
-            result = save_field_photo(
-                upload(image_bytes(gps=(51.1, 17.2))),
-                Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
-                ignore_exif_gps=True,
+                map_lat=51.3,
+                map_lon=17.4,
                 private_dir=Path(tmp) / "private",
             )
 
@@ -109,14 +93,14 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertAlmostEqual(photo["lat"], 51.3, places=5)
             self.assertAlmostEqual(photo["lon"], 17.4, places=5)
 
-    def test_save_field_photo_uses_map_fallback_without_exif_gps(self):
+    def test_save_field_photo_uses_map_point_without_exif_gps(self):
         with TemporaryDirectory() as tmp:
             private_dir = Path(tmp) / "private"
             result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
             )
 
@@ -144,8 +128,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
                 edit_token=token,
             )
@@ -180,8 +164,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 storage_dir,
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
                 edit_token=token,
                 public_review_status="draft",
@@ -220,8 +204,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 storage_dir,
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
                 edit_token=token,
                 public_review_status="draft",
@@ -239,8 +223,8 @@ class FieldPhotoTests(unittest.TestCase):
             pending_result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 storage_dir,
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
                 edit_token=token,
                 public_review_status="draft",
@@ -259,6 +243,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes(gps=(51.1, 17.2))),
                 Path(tmp),
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
                 edit_token=token,
             )
@@ -286,8 +272,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes(gps=(51.1, 17.2))),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
             )
             photo_id = result["photo"]["id"]
@@ -326,6 +312,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes(gps=(51.1, 17.2))),
                 Path(tmp),
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=private_dir,
             )
             photo_id = result["photo"]["id"]
@@ -339,8 +327,8 @@ class FieldPhotoTests(unittest.TestCase):
             result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 issue_type="infrastructure",
                 private_dir=Path(tmp) / "private",
             )
@@ -355,19 +343,19 @@ class FieldPhotoTests(unittest.TestCase):
             save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 issue_type="other",
                 private_dir=Path(tmp) / "private",
             )
 
-    def test_save_field_photo_uses_map_fallback_for_invalid_exif_gps(self):
+    def test_save_field_photo_uses_map_point_for_invalid_exif_gps(self):
         with TemporaryDirectory() as tmp:
             result = save_field_photo(
                 upload(image_bytes_with_invalid_gps()),
                 Path(tmp),
-                fallback_lat="51.3",
-                fallback_lon="17.4",
+                map_lat="51.3",
+                map_lon="17.4",
                 private_dir=Path(tmp) / "private",
             )
 
@@ -377,7 +365,7 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(photo["lon"], 17.4)
 
     def test_save_field_photo_rejects_missing_coordinates(self):
-        with TemporaryDirectory() as tmp, self.assertRaisesRegex(ValueError, "nie ma współrzędnych GPS"):
+        with TemporaryDirectory() as tmp, self.assertRaisesRegex(ValueError, "Wskaż punkt zdjęcia"):
             save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"), Path(tmp), private_dir=Path(tmp) / "private"
             )
@@ -395,8 +383,8 @@ class FieldPhotoTests(unittest.TestCase):
                 save_field_photo(
                     upload(image_bytes("GIF"), "teren.gif"),
                     Path(tmp),
-                    fallback_lat=51,
-                    fallback_lon=17,
+                    map_lat=51,
+                    map_lon=17,
                     private_dir=Path(tmp) / "private",
                 )
 
@@ -404,8 +392,8 @@ class FieldPhotoTests(unittest.TestCase):
                 save_field_photo(
                     upload(image_bytes("JPEG"), field_name="photos[]"),
                     Path(tmp),
-                    fallback_lat=51,
-                    fallback_lon=17,
+                    map_lat=51,
+                    map_lon=17,
                     private_dir=Path(tmp) / "private",
                 )
 
@@ -413,8 +401,8 @@ class FieldPhotoTests(unittest.TestCase):
                 save_field_photo(
                     upload(b"not an image", "bad.jpg"),
                     Path(tmp),
-                    fallback_lat=51,
-                    fallback_lon=17,
+                    map_lat=51,
+                    map_lon=17,
                     private_dir=Path(tmp) / "private",
                 )
 

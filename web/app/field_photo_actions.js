@@ -183,8 +183,7 @@ async function openFieldPhotoGroupPhotoUpload(lat, lon, encodedPhotoIds, issueTy
     if (btn) btn.disabled = true;
     try {
         await openFieldPhotoUploadModal({
-            fallbackLatLng: L.latLng(latNumber, lonNumber),
-            ignoreExifGps: true,
+            mapLatLng: L.latLng(latNumber, lonNumber),
             issueType: safeIssueType,
         });
     } catch (err) {

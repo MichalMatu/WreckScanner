@@ -81,8 +81,7 @@ async function openVehicleCasePhotoUpload(wreckId, lat, lon) {
         return;
     }
     await openFieldPhotoUploadModal({
-        fallbackLatLng: L.latLng(latNumber, lonNumber),
-        ignoreExifGps: true,
+        mapLatLng: L.latLng(latNumber, lonNumber),
         issueType: FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
     });
 }

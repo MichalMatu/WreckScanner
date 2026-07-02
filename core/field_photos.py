@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
-from PIL import ExifTags, Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 
 from core import config
 from core.geo import external_map_links
@@ -32,7 +32,6 @@ from core.photo_tokens import new_photo_edit_token_hash, normalize_photo_edit_to
 from core.uploads import UploadedFile
 
 FIELD_PHOTO_ID_RE = re.compile(r"photo_\d{8}T\d{6}Z_[a-f0-9]{8}")
-EXIF_GPS_IFD = ExifTags.IFD.GPSInfo
 
 
 def _now_utc() -> datetime:
@@ -78,59 +77,6 @@ def _record_dir_for(photo_id: str, storage_dir: Path) -> Path:
     return record_dir
 
 
-def _rational_to_float(value: Any) -> float:
-    if isinstance(value, tuple) and len(value) == 2:
-        denominator = float(value[1])
-        if denominator == 0:
-            raise ValueError("Nieprawidłowa wartość EXIF GPS.")
-        number = float(value[0]) / denominator
-    else:
-        try:
-            number = float(value)
-        except ZeroDivisionError as exc:
-            raise ValueError("Nieprawidłowa wartość EXIF GPS.") from exc
-    if not math.isfinite(number):
-        raise ValueError("Nieprawidłowa wartość EXIF GPS.")
-    return number
-
-
-def _dms_to_decimal(values: Any, ref: Any) -> float | None:
-    if not isinstance(values, (list, tuple)) or len(values) != 3:
-        return None
-    degrees = _rational_to_float(values[0])
-    minutes = _rational_to_float(values[1])
-    seconds = _rational_to_float(values[2])
-    decimal = degrees + minutes / 60.0 + seconds / 3600.0
-    ref_text = str(ref or "").strip().upper()
-    if ref_text in {"S", "W"}:
-        decimal *= -1
-    return decimal
-
-
-def _gps_ifd(exif: Image.Exif) -> dict[int, Any]:
-    try:
-        gps = exif.get_ifd(EXIF_GPS_IFD)
-    except Exception:
-        gps = exif.get(EXIF_GPS_IFD, {})
-    return gps if isinstance(gps, dict) else {}
-
-
-def _extract_gps(exif: Image.Exif) -> tuple[float | None, float | None]:
-    gps = _gps_ifd(exif)
-    if not gps:
-        return None, None
-    try:
-        lat = _dms_to_decimal(gps.get(2), gps.get(1))
-        lon = _dms_to_decimal(gps.get(4), gps.get(3))
-    except (TypeError, ValueError, ZeroDivisionError):
-        return None, None
-    if lat is None or lon is None:
-        return None, None
-    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-        return None, None
-    return lat, lon
-
-
 def _format_exif_datetime(value: Any) -> str | None:
     text = _safe_text(value, 80)
     match = re.fullmatch(r"(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})", text)
@@ -160,7 +106,7 @@ def _captured_at(exif: Image.Exif) -> str | None:
     return _format_exif_datetime(exif.get(36867) or exif.get(306))
 
 
-def _fallback_coord(value: Any, label: str) -> float:
+def _coord_float(value: Any, label: str) -> float:
     try:
         coord = float(value)
     except (TypeError, ValueError) as exc:
@@ -170,34 +116,24 @@ def _fallback_coord(value: Any, label: str) -> float:
     return coord
 
 
-def _coordinates_from(
-    exif: Image.Exif,
-    fallback_lat: Any = None,
-    fallback_lon: Any = None,
-    *,
-    ignore_exif_gps: bool = False,
-) -> tuple[float, float, Literal["exif", "map"]]:
-    if not ignore_exif_gps:
-        exif_lat, exif_lon = _extract_gps(exif)
-        if exif_lat is not None and exif_lon is not None:
-            return exif_lat, exif_lon, "exif"
+def _map_coordinates_from(map_lat: Any = None, map_lon: Any = None) -> tuple[float, float, Literal["map"]]:
     if (
-        fallback_lat is None
-        or fallback_lon is None
-        or str(fallback_lat).strip() == ""
-        or str(fallback_lon).strip() == ""
+        map_lat is None
+        or map_lon is None
+        or str(map_lat).strip() == ""
+        or str(map_lon).strip() == ""
     ):
-        raise ValueError("Zdjęcie nie ma współrzędnych GPS w EXIF. Wskaż punkt na mapie i spróbuj ponownie.")
-    lat = _fallback_coord(fallback_lat, "fallback_lat")
-    lon = _fallback_coord(fallback_lon, "fallback_lon")
+        raise ValueError("Wskaż punkt zdjęcia na mapie i spróbuj ponownie.")
+    lat = _coord_float(map_lat, "map_lat")
+    lon = _coord_float(map_lon, "map_lon")
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-        raise ValueError("Nieprawidłowe współrzędne fallback z mapy.")
+        raise ValueError("Nieprawidłowe współrzędne punktu mapy.")
     return lat, lon, "map"
 
 
 def _validated_lat_lon(lat_value: Any, lon_value: Any) -> tuple[float, float]:
-    lat = _fallback_coord(lat_value, "lat")
-    lon = _fallback_coord(lon_value, "lon")
+    lat = _coord_float(lat_value, "lat")
+    lon = _coord_float(lon_value, "lon")
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise ValueError("Nieprawidłowe współrzędne zdjęcia terenowego.")
     return lat, lon
@@ -415,9 +351,8 @@ def save_field_photo(
     upload: UploadedFile,
     storage_dir: Path,
     *,
-    fallback_lat: Any = None,
-    fallback_lon: Any = None,
-    ignore_exif_gps: bool = False,
+    map_lat: Any = None,
+    map_lon: Any = None,
     issue_type: Any = None,
     private_dir: Path | None = None,
     submission_owner: str | None = None,
@@ -443,12 +378,7 @@ def save_field_photo(
             if image_format not in config.ALLOWED_UPLOAD_IMAGE_FORMATS:
                 raise ValueError("Dozwolone są tylko zdjęcia JPG, PNG albo WebP.")
             exif = image.getexif()
-            lat, lon, coordinate_source = _coordinates_from(
-                exif,
-                fallback_lat,
-                fallback_lon,
-                ignore_exif_gps=ignore_exif_gps,
-            )
+            lat, lon, coordinate_source = _map_coordinates_from(map_lat, map_lon)
             width, height = image.size
     except UnidentifiedImageError as exc:
         raise ValueError("Plik nie jest obsługiwanym zdjęciem.") from exc

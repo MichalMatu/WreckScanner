@@ -1,9 +1,3 @@
-function fieldPhotoSourceLabel(source) {
-    if (source === 'exif') return t('fieldPhoto.source.exif');
-    if (source === 'manual') return t('fieldPhoto.source.manual');
-    return t('fieldPhoto.source.map');
-}
-
 function cacheBustedUrl(url, ts = Date.now()) {
     if (!url) return '';
     const separator = String(url).includes('?') ? '&' : '?';
@@ -49,9 +43,6 @@ function fieldPhotoGroupMeta(group, photos) {
     const firstPhoto = photos[0] || {};
     const singlePhoto = photos.length === 1;
     return popupMeta([
-        singlePhoto
-            ? t('fieldPhoto.popup.source', { source: fieldPhotoSourceLabel(firstPhoto.coordinate_source) })
-            : '',
         singlePhoto
             ? t('fieldPhoto.popup.capturedAt', { date: firstPhoto.captured_at || t('fieldPhoto.noCapturedAt') })
             : '',

@@ -96,13 +96,22 @@ class FrontendContracts(unittest.TestCase):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
         review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
-        frontend = html + upload_js + review_js + i18n_js
+        frontend = html + upload_js + review_js + popups_js + i18n_js
 
         self.assertNotIn("field-photo-edit-token", frontend)
         self.assertNotIn("field-photo-token-section", frontend)
         self.assertNotIn("generateFieldPhotoEditToken", frontend)
         self.assertNotIn("copyFieldPhotoEditToken", frontend)
+        self.assertNotIn("field-photo-ignore-exif", frontend)
+        self.assertNotIn("ignore_exif_gps", frontend)
+        self.assertNotIn("fallback_lat", frontend)
+        self.assertNotIn("fallback_lon", frontend)
+        self.assertNotIn("field-photo-fallback", frontend)
+        self.assertNotIn("modal.fieldPhoto.fallbackCoords", frontend)
+        self.assertNotIn("fieldPhotoSourceLabel", frontend)
+        self.assertNotIn("fieldPhoto.popup.source", frontend)
         self.assertIn("ensureFieldPhotoUploadEditToken", upload_js)
         self.assertIn('id="modal-field-photo-upload" hidden onclick="closeFieldPhotoUploadModal(this)"', html)
         self.assertIn("function closeFieldPhotoUploadModal", upload_js)

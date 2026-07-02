@@ -1,5 +1,5 @@
 let fieldPhotoUploadItems = [];
-let fieldPhotoUploadFallbackLatLng = null;
+let fieldPhotoUploadMapLatLng = null;
 let fieldPhotoUploadEditToken = '';
 let lastFieldPhotoThanksToken = '';
 let lastFieldPhotoThanksPhotoIds = [];
@@ -265,19 +265,19 @@ function validateFieldPhotoEditToken(token, options = {}) {
     return '';
 }
 
-function updateFieldPhotoFallbackText() {
-    const el = document.getElementById('field-photo-fallback');
+function updateFieldPhotoMapPointText() {
+    const el = document.getElementById('field-photo-map-point');
     if (!el) return;
-    const point = fieldPhotoUploadFallbackLatLng || (typeof map !== 'undefined' ? map.getCenter() : null);
+    const point = fieldPhotoUploadMapLatLng || (typeof map !== 'undefined' ? map.getCenter() : null);
     if (!point) return;
-    el.textContent = t('modal.fieldPhoto.fallbackCoords', {
+    el.textContent = t('modal.fieldPhoto.mapPointCoords', {
         lat: Number(point.lat).toFixed(6),
         lon: Number(point.lng).toFixed(6),
     });
 }
 
-function currentFieldPhotoUploadFallbackLatLng() {
-    return fieldPhotoUploadFallbackLatLng || map.getCenter();
+function currentFieldPhotoUploadMapLatLng() {
+    return fieldPhotoUploadMapLatLng || map.getCenter();
 }
 
 function updatePanelFieldPhotoLocationPickUi() {
@@ -327,11 +327,10 @@ function isFieldPhotoLocationPickActive() {
 
 async function handlePanelFieldPhotoLocationPick(e) {
     if (!fieldPhotoLocationPickActive) return;
-    const fallbackLatLng = L.latLng(e.latlng.lat, e.latlng.lng);
+    const mapLatLng = L.latLng(e.latlng.lat, e.latlng.lng);
     cancelFieldPhotoLocationPick({ clearStatus: true });
     await openFieldPhotoUploadModal({
-        fallbackLatLng,
-        ignoreExifGps: true,
+        mapLatLng,
         issueType: FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
     });
 }
@@ -342,24 +341,22 @@ function resetFieldPhotoUploadModal(options = {}) {
     const submit = document.getElementById('field-photo-submit');
     const queue = document.getElementById('field-photo-queue');
     const retry = document.getElementById('field-photo-retry');
-    const ignoreExif = document.getElementById('field-photo-ignore-exif');
     const filesInput = document.getElementById('field-photo-files');
     const issueSelect = document.getElementById('field-photo-issue-type');
     fieldPhotoUploadItems = [];
     fieldPhotoUploadEditToken = '';
     form?.reset();
     updateFilePickerSummary(filesInput);
-    const rawFallback = options.fallbackLatLng;
-    fieldPhotoUploadFallbackLatLng = rawFallback && Number.isFinite(Number(rawFallback.lat)) && Number.isFinite(Number(rawFallback.lng))
-        ? L.latLng(Number(rawFallback.lat), Number(rawFallback.lng))
+    const rawMapPoint = options.mapLatLng;
+    fieldPhotoUploadMapLatLng = rawMapPoint && Number.isFinite(Number(rawMapPoint.lat)) && Number.isFinite(Number(rawMapPoint.lng))
+        ? L.latLng(Number(rawMapPoint.lat), Number(rawMapPoint.lng))
         : (typeof map !== 'undefined' ? map.getCenter() : null);
     const requestedIssueType = FIELD_PHOTO_ISSUE_TYPES.has(options.issueType)
         ? options.issueType
         : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     if (issueSelect) issueSelect.value = requestedIssueType;
     updateFieldPhotoIssueOptions();
-    if (ignoreExif) ignoreExif.checked = Boolean(options.ignoreExifGps);
-    updateFieldPhotoFallbackText();
+    updateFieldPhotoMapPointText();
     if (status) status.textContent = '';
     if (queue) {
         queue.hidden = true;
@@ -392,11 +389,10 @@ async function openFieldPhotoUploadAtContextPoint() {
         || !fieldPhotoAnyIssueAllowed()
         || !contextMenuLatLng
     ) return;
-    const fallbackLatLng = L.latLng(contextMenuLatLng.lat, contextMenuLatLng.lng);
+    const mapLatLng = L.latLng(contextMenuLatLng.lat, contextMenuLatLng.lng);
     closeMapContextMenu();
     await openFieldPhotoUploadModal({
-        fallbackLatLng,
-        ignoreExifGps: true,
+        mapLatLng,
         issueType: FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
     });
 }
@@ -434,9 +430,8 @@ function validateFieldPhotoFiles(files) {
             status: error ? 'error' : 'pending',
             message: error,
             validationError: Boolean(error),
-            fallbackLat: null,
-            fallbackLon: null,
-            ignoreExifGps: false,
+            mapLat: null,
+            mapLon: null,
         };
     });
 }
@@ -506,9 +501,8 @@ async function uploadFieldPhotoItems(items) {
             renderFieldPhotoQueue(true);
             if (status) status.textContent = t('modal.fieldPhoto.uploadProgress', { done: attempted + 1, total: items.length });
             const formData = new FormData();
-            formData.append('fallback_lat', item.fallbackLat);
-            formData.append('fallback_lon', item.fallbackLon);
-            formData.append('ignore_exif_gps', item.ignoreExifGps ? '1' : '0');
+            formData.append('map_lat', item.mapLat);
+            formData.append('map_lon', item.mapLon);
             formData.append('issue_type', item.issueType || FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
             item.editToken = item.editToken || submittedEditToken;
             if (item.editToken) formData.append('edit_token', item.editToken);
@@ -596,8 +590,7 @@ async function submitFieldPhotoUpload(event) {
         return;
     }
 
-    const fallbackLatLng = currentFieldPhotoUploadFallbackLatLng();
-    const ignoreExifGps = document.getElementById('field-photo-ignore-exif')?.checked === true;
+    const mapLatLng = currentFieldPhotoUploadMapLatLng();
     const selectedIssueType = document.getElementById('field-photo-issue-type')?.value || FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const issueType = FIELD_PHOTO_ISSUE_TYPES.has(selectedIssueType) ? selectedIssueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const editToken = ensureFieldPhotoUploadEditToken();
@@ -611,9 +604,8 @@ async function submitFieldPhotoUpload(event) {
         return;
     }
     fieldPhotoUploadItems.forEach(item => {
-        item.fallbackLat = fallbackLatLng.lat;
-        item.fallbackLon = fallbackLatLng.lng;
-        item.ignoreExifGps = ignoreExifGps;
+        item.mapLat = mapLatLng.lat;
+        item.mapLon = mapLatLng.lng;
         item.issueType = issueType;
         item.editToken = adminAuthenticated ? '' : editToken;
     });
@@ -628,15 +620,14 @@ async function submitFieldPhotoUpload(event) {
 
 async function retryFailedFieldPhotoUploads() {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
-    const fallbackLatLng = currentFieldPhotoUploadFallbackLatLng();
+    const mapLatLng = currentFieldPhotoUploadMapLatLng();
     const editToken = ensureFieldPhotoUploadEditToken();
     const retryable = fieldPhotoUploadItems.filter(item => item.status === 'error' && !item.validationError);
     retryable.forEach(item => {
         item.status = 'pending';
         item.message = '';
-        item.fallbackLat = item.fallbackLat ?? fallbackLatLng.lat;
-        item.fallbackLon = item.fallbackLon ?? fallbackLatLng.lng;
-        item.ignoreExifGps = Boolean(item.ignoreExifGps);
+        item.mapLat = item.mapLat ?? mapLatLng.lat;
+        item.mapLon = item.mapLon ?? mapLatLng.lng;
         item.issueType = item.issueType || FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
         item.editToken = item.editToken || (adminAuthenticated ? '' : editToken);
     });

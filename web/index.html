@@ -513,14 +513,8 @@
                     <div class="field-photo-queue" id="field-photo-queue" hidden></div>
                 </section>
                 <section class="modal-section">
-                    <label class="modal-label" data-i18n="modal.fieldPhoto.location">Punkt fallback</label>
-                    <p class="modal-hint field-photo-fallback" id="field-photo-fallback"></p>
-                    <label class="field-photo-toggle" for="field-photo-ignore-exif">
-                        <input type="checkbox" id="field-photo-ignore-exif">
-                        <span data-i18n="modal.fieldPhoto.ignoreExifGps">Ignoruj GPS z EXIF i użyj punktu mapy</span>
-                    </label>
-                    <p class="modal-hint" data-i18n="modal.fieldPhoto.ignoreExifHint">Przydatne, gdy GPS telefonu jest
-                        mniej dokładny niż ręcznie ustawiony punkt mapy.</p>
+                    <label class="modal-label" data-i18n="modal.fieldPhoto.location">Punkt na mapie</label>
+                    <p class="modal-hint field-photo-map-point" id="field-photo-map-point"></p>
                 </section>
                 <div class="report-actions">
                     <button type="submit" class="btn-download report-submit-btn" id="field-photo-submit">
@@ -1026,8 +1020,8 @@
                             Kliknij prawym przyciskiem myszy w miejsce na mapie i wybierz dodanie zdjęć terenowych.
                         </li>
                         <li data-i18n="modal.help.photoStep2" data-i18n-html>
-                            Zdjęcie może użyć GPS z EXIF albo punktu mapy jako pozycji fallback. Zachowaj token edycji
-                            wygenerowany przy wysyłce.
+                            Zdjęcie zostanie przypisane do wskazanego punktu mapy. Zachowaj token edycji wygenerowany
+                            przy wysyłce.
                         </li>
                         <li data-i18n="modal.help.photoStep3" data-i18n-html>
                             Publiczne zdjęcia trafiają do kolejki weryfikacji i anonimizacji, zanim pojawią się na
