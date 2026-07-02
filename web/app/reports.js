@@ -103,6 +103,7 @@ function resetReportPackageModal(wreckId) {
     if (result) result.hidden = true;
     if (status) status.textContent = '';
     if (submit) {
+        submit.hidden = false;
         submit.disabled = false;
         submit.querySelector('span').textContent = t('modal.report.submit');
     }
@@ -152,6 +153,7 @@ async function submitReportPackage(event) {
     }
 
     if (submit) {
+        submit.hidden = false;
         submit.disabled = true;
         submit.querySelector('span').textContent = t('modal.report.generating');
     }
@@ -168,14 +170,25 @@ async function submitReportPackage(event) {
         if (data.status !== 'ok') {
             throw new Error(data.error || t('wreck.reportPackageError'));
         }
-        document.getElementById('report-package-recipient').value = data.recipient || '';
-        document.getElementById('report-package-subject').value = data.subject || '';
-        document.getElementById('report-package-body').value = data.body || '';
-        document.getElementById('report-package-download').href = data.zip_url || '#';
-        document.getElementById('report-package-pdf').href = data.pdf_url || '#';
+        if (!data.zip_filename || !data.pdf_filename) {
+            throw new Error(t('wreck.reportPackageError'));
+        }
+        const zipLink = document.getElementById('report-package-download');
+        const pdfLink = document.getElementById('report-package-pdf');
+        if (zipLink) {
+            zipLink.href = data.zip_url || '#';
+            zipLink.download = data.zip_filename;
+        }
+        if (pdfLink) {
+            pdfLink.href = data.pdf_url || '#';
+            pdfLink.download = data.pdf_filename;
+        }
+        if (submit) submit.hidden = true;
         if (result) result.hidden = false;
-        if (status) status.textContent = t('modal.report.ready');
+        if (status) status.textContent = '';
     } catch (err) {
+        if (result) result.hidden = true;
+        if (submit) submit.hidden = false;
         if (status) status.textContent = apiErrorMessage(err, t('wreck.reportPackageError'));
     } finally {
         if (submit) {
@@ -183,21 +196,4 @@ async function submitReportPackage(event) {
             submit.querySelector('span').textContent = t('modal.report.submit');
         }
     }
-}
-
-async function copyReportEmailDraft() {
-    const recipient = document.getElementById('report-package-recipient')?.value || '';
-    const subject = document.getElementById('report-package-subject')?.value || '';
-    const body = document.getElementById('report-package-body')?.value || '';
-    const text = `Do: ${recipient}\nTemat: ${subject}\n\n${body}`;
-    try {
-        await navigator.clipboard.writeText(text);
-    } catch (_) {
-        const draft = document.getElementById('report-package-body');
-        draft?.focus();
-        draft?.select();
-        document.execCommand('copy');
-    }
-    const status = document.getElementById('report-package-status');
-    if (status) status.textContent = t('modal.report.copied');
 }

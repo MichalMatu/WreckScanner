@@ -37,6 +37,23 @@ class HttpStaticFilesContractTests(unittest.TestCase):
         self.assertEqual(handler.wfile.getvalue(), b"")
         self.assertIn(("Content-Length", "15"), handler.headers)
 
+    def test_send_file_can_set_download_filename(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "report.zip"
+            path.write_bytes(b"zip")
+            handler = FakeHandler()
+
+            static_files.send_file(handler, path, "application/zip", download_name="raport_20260702_142516.zip")
+
+        self.assertEqual(handler.status, 200)
+        self.assertIn(
+            (
+                "Content-Disposition",
+                'attachment; filename="raport_20260702_142516.zip"; filename*=UTF-8\'\'raport_20260702_142516.zip',
+            ),
+            handler.headers,
+        )
+
     def test_translate_path_sanitizes_dot_segments_inside_web_dir(self):
         with TemporaryDirectory() as tmp:
             web_dir = Path(tmp) / "web"

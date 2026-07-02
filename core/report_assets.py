@@ -24,6 +24,21 @@ def _validate_package_id(package_id: str) -> str:
     return package_id
 
 
+def report_package_download_name(package_id: str, asset: str) -> str:
+    package_id = _validate_package_id(package_id)
+    if asset not in {"zip", "pdf"}:
+        raise ValueError("Nieprawidłowy typ pliku pakietu zgłoszenia.")
+    stamp = package_id.removeprefix("report_").split("_", 1)[0].replace("T", "_").removesuffix("Z")
+    return f"raport_{stamp}.{asset}"
+
+
+def report_package_asset_from_download_name(package_id: str, file_name: str) -> str:
+    for asset in ("zip", "pdf"):
+        if file_name == report_package_download_name(package_id, asset):
+            return asset
+    raise ValueError("Nieprawidłowa nazwa pliku pakietu zgłoszenia.")
+
+
 def new_access_token() -> report_models.ReportPackageAccess:
     expires_at = _now_utc() + timedelta(seconds=config.PUBLIC_REPORT_PACKAGE_TOKEN_TTL_SECONDS)
     return report_models.ReportPackageAccess(token=secrets.token_urlsafe(24), expires_at=_iso(expires_at))

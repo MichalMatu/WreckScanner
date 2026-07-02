@@ -4,6 +4,7 @@ import html
 import io
 import math
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,6 @@ CARD_BORDER = (203, 213, 225)
 TEXT = (15, 23, 42)
 MUTED = (71, 85, 105)
 ACCENT = (5, 150, 105)
-LINK = (37, 99, 235)
 
 
 @dataclass(frozen=True)
@@ -110,15 +110,6 @@ def _safe_child(base_dir: Path, relative_path: str) -> Path:
     return path
 
 
-def _compact_years(labels: list[Any]) -> str:
-    years = sorted(int(label) for label in labels if str(label).isdigit())
-    if not years:
-        return "brak danych"
-    if len(years) >= 3:
-        return f"{years[0]}-{years[-1]} ({len(years)} lat)"
-    return ", ".join(str(year) for year in years)
-
-
 def _compact_datetime(value: Any) -> str:
     text = str(value or "").strip()
     if not text:
@@ -126,20 +117,17 @@ def _compact_datetime(value: Any) -> str:
     return text.replace("T", " ").removesuffix("Z")
 
 
-def _links_text(links: dict[str, Any]) -> str:
-    labels = {
-        "street_view": "Street View",
-        "google_maps_satellite": "Google Maps satelita",
-        "apple_maps": "Apple Maps",
-        "mapillary": "Mapillary",
-        "geoportal": "Geoportal",
-    }
-    lines = []
-    for key, label in labels.items():
-        url = links.get(key)
-        if url:
-            lines.append(f"{label}: {url}")
-    return "\n".join(lines) or "brak linków"
+def _report_datetime_text(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "brak danych"
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return _compact_datetime(text)
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone()
+    return parsed.strftime("%d.%m.%Y, godz. %H:%M")
 
 
 class _PdfPages:
@@ -340,24 +328,10 @@ def build_report_pdf(
     report_photos: list[PdfPhoto],
 ) -> bytes:
     doc = _PdfPages()
-    latest = record.get("latest_evidence") if isinstance(record.get("latest_evidence"), dict) else {}
-    evidences = record.get("evidences") if isinstance(record.get("evidences"), list) else []
     attached_photos = _attached_photos(record, record_dir)
 
-    doc.title(f"Teczka pojazdu {record.get('id', '')}")
-    doc.key_values(
-        [
-            ("Status", str(record.get("status", "confirmed"))),
-            ("GPS", f"{float(record.get('lat') or 0):.6f}, {float(record.get('lon') or 0):.6f}"),
-            ("Widziane", _compact_years(record.get("labels_present") or evidence.get("labels_present") or [])),
-            ("Dowody", str(len(evidences))),
-            ("Zdjęcia", str(len(attached_photos) + len(report_photos))),
-            ("Ostatni dowód", _compact_datetime(latest.get("created_at"))),
-        ]
-    )
-
-    doc.heading("Linki do weryfikacji")
-    doc.paragraph(_links_text(record.get("links") or evidence.get("links") or {}), fill=LINK, font=doc.small_font)
+    doc.title("Zgłoszenie dotyczące pojazdu nieużytkowanego")
+    doc.paragraph(f"Data zgłoszenia: {_report_datetime_text(evidence.get('created_at'))}", fill=MUTED, font=doc.body_font)
 
     if attached_photos:
         doc.heading("Zdjęcia z miejsca")

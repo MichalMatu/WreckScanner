@@ -961,35 +961,18 @@
                     <button type="submit" class="btn-download report-submit-btn" id="report-package-submit">
                         <span data-i18n="modal.report.submit">Generuj zgłoszenie</span>
                     </button>
-                </div>
-                <p class="modal-hint" id="report-package-status"></p>
-
-                <section class="modal-section report-result" id="report-package-result" hidden>
-                    <label class="report-field">
-                        <span data-i18n="modal.report.recipient">Adresat</span>
-                        <input type="text" id="report-package-recipient" readonly>
-                    </label>
-                    <label class="report-field">
-                        <span data-i18n="modal.report.subject">Temat</span>
-                        <input type="text" id="report-package-subject" readonly>
-                    </label>
-                    <label class="report-field">
-                        <span data-i18n="modal.report.body">Treść maila</span>
-                        <textarea id="report-package-body" rows="10" readonly></textarea>
-                    </label>
-                    <div class="report-result-actions">
+                    <div class="report-download-actions" id="report-package-result" hidden>
                         <a id="report-package-download" class="btn-download report-download-btn" target="_blank"
-                            rel="noopener">
+                            rel="noopener" download>
                             <span data-i18n="modal.report.download">Pobierz ZIP</span>
                         </a>
                         <a id="report-package-pdf" class="btn-download report-download-btn" target="_blank"
-                            rel="noopener">
+                            rel="noopener" download>
                             <span data-i18n="modal.report.downloadPdf">Pobierz PDF</span>
                         </a>
-                        <button type="button" class="report-copy-btn" onclick="copyReportEmailDraft()"
-                            data-i18n="modal.report.copyDraft">Kopiuj szkic</button>
                     </div>
-                </section>
+                </div>
+                <p class="modal-hint" id="report-package-status"></p>
             </form>
         </div>
     </div>

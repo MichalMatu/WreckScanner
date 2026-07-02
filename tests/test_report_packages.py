@@ -11,7 +11,12 @@ from PIL import Image
 import core.report_pdf as report_pdf
 from core import config as core_config
 from core.config import MAX_REPORT_PHOTO_BYTES
-from core.report_assets import public_report_package_asset, report_package_asset
+from core.report_assets import (
+    public_report_package_asset,
+    report_package_asset,
+    report_package_asset_from_download_name,
+    report_package_download_name,
+)
 from core.report_models import ReportPhotoUpload, prepare_report_photos, validate_report_fields
 from core.report_packages import (
     create_public_report_package,
@@ -109,6 +114,25 @@ def create_wreck_fixture(root: Path) -> Path:
 
 
 class ReportPackageTests(unittest.TestCase):
+    def test_report_package_download_name_uses_readable_timestamp(self):
+        self.assertEqual(
+            report_package_download_name("report_20260702T142516Z_0b05a053", "zip"),
+            "raport_20260702_142516.zip",
+        )
+        self.assertEqual(
+            report_package_download_name("report_20260702T142516Z_0b05a053", "pdf"),
+            "raport_20260702_142516.pdf",
+        )
+        self.assertEqual(
+            report_package_asset_from_download_name(
+                "report_20260702T142516Z_0b05a053",
+                "raport_20260702_142516.zip",
+            ),
+            "zip",
+        )
+        with self.assertRaisesRegex(ValueError, "nazwa pliku"):
+            report_package_asset_from_download_name("report_20260702T142516Z_0b05a053", "zip.zip")
+
     def test_validate_report_fields_requires_clean_email_and_short_values(self):
         fields = valid_fields()
         fields["reporter_name"] = "  Jan\x00 Kowalski  "
@@ -172,6 +196,10 @@ class ReportPackageTests(unittest.TestCase):
             self.assertIn("Zgłoszenie pojazdu nieużytkowanego", result["subject"])
             self.assertIn("Jan Kowalski", result["body"])
             self.assertIn("/api/report-packages/", result["pdf_url"])
+            self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
+            self.assertEqual(result["pdf_filename"], report_package_download_name(result["package_id"], "pdf"))
+            self.assertTrue(result["zip_url"].endswith(f"/{result['zip_filename']}"))
+            self.assertTrue(result["pdf_url"].endswith(f"/{result['pdf_filename']}"))
             self.assertNotIn("Jan Kowalski", public_index_path.read_text(encoding="utf-8"))
             self.assertIn("metric-strip", public_index_path.read_text(encoding="utf-8"))
             updated_record = json.loads(record_path.read_text(encoding="utf-8"))
@@ -197,7 +225,11 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertFalse(any(name.startswith("evidence/") for name in names))
                 self.assertEqual(archive.read("miniatury_historyczne/2024.jpg"), image_bytes())
                 self.assertEqual(archive.read("miniatury_historyczne/2025.jpg"), image_bytes())
-                self.assertIn("Jan Kowalski", archive.read("zgloszenie.txt").decode("utf-8"))
+                draft_text = archive.read("zgloszenie.txt").decode("utf-8")
+                self.assertIn("Jan Kowalski", draft_text)
+                self.assertNotIn("Linki do weryfikacji", draft_text)
+                self.assertNotIn("Street View", draft_text)
+                self.assertNotIn("https://example.test/street", draft_text)
                 report_html = archive.read("raport.html").decode("utf-8")
                 self.assertIn("Treść zgłoszenia", report_html)
                 self.assertIn("interwencje@smwroclaw.pl", report_html)
@@ -211,6 +243,9 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("zdjecia_z_miejsca/zdjecie_01.jpg", report_html)
                 self.assertIn("data-report-package-style", report_html)
                 self.assertNotIn("data-report-photo-upload", report_html)
+                self.assertNotIn("Linki do weryfikacji", report_html)
+                self.assertNotIn("Street View", report_html)
+                self.assertNotIn("https://example.test/street", report_html)
 
             package_dir = zip_path.with_suffix("")
             self.assertTrue((package_dir / "oryginalne_zdjecia" / "miejsce.png").exists())
@@ -237,6 +272,8 @@ class ReportPackageTests(unittest.TestCase):
 
             self.assertEqual(result["status"], "ok")
             self.assertIn("/api/report-packages/", result["zip_url"])
+            self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
+            self.assertTrue(result["zip_url"].endswith(f"/{result['zip_filename']}"))
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 zip_path, _ = report_package_asset(wreck_id, result["package_id"], "zip")
             self.assertTrue(zip_path.exists())
@@ -248,7 +285,11 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("miniatury_historyczne/2024.jpg", names)
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertFalse(any(name.endswith(".json") for name in names))
-                self.assertIn("Treść zgłoszenia", archive.read("raport.html").decode("utf-8"))
+                draft_text = archive.read("zgloszenie.txt").decode("utf-8")
+                report_html = archive.read("raport.html").decode("utf-8")
+                self.assertIn("Treść zgłoszenia", report_html)
+                self.assertNotIn("Linki do weryfikacji", draft_text)
+                self.assertNotIn("Linki do weryfikacji", report_html)
             with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
                 pdf_path, _ = report_package_asset(wreck_id, result["package_id"], "pdf")
             self.assertTrue(pdf_path.exists())
@@ -282,6 +323,10 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertEqual(result["status"], "ok")
                 self.assertIn("/api/public-report-packages/", result["zip_url"])
                 self.assertIn("token=", result["zip_url"])
+                self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
+                self.assertEqual(result["pdf_filename"], report_package_download_name(result["package_id"], "pdf"))
+                self.assertIn(f"/{result['zip_filename']}?token=", result["zip_url"])
+                self.assertIn(f"/{result['pdf_filename']}?token=", result["pdf_url"])
                 with self.assertRaises(FileNotFoundError):
                     public_report_package_asset("wreck_51100000_17200000", result["package_id"], "zip", "bad-token")
                 token = result["zip_url"].split("token=", 1)[1]
@@ -303,11 +348,22 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("metadane/record.json", names)
                 self.assertFalse(any(name.startswith("evidence/") for name in names))
                 self.assertNotIn("photos/photo_20260603T000000Z_abcdef12/original.jpg", names)
+                draft_text = archive.read("zgloszenie.txt").decode("utf-8")
+                report_html = archive.read("raport.html").decode("utf-8")
+                self.assertNotIn("Linki do weryfikacji", draft_text)
+                self.assertNotIn("Street View", draft_text)
+                self.assertNotIn("https://example.test/street", draft_text)
+                self.assertNotIn("Linki do weryfikacji", report_html)
+                self.assertNotIn("Street View", report_html)
+                self.assertNotIn("https://example.test/street", report_html)
 
     def test_report_pdf_starts_mail_draft_on_new_page(self):
         events = []
         original_page_break = report_pdf._PdfPages.page_break
         original_heading = report_pdf._PdfPages.heading
+        original_title = report_pdf._PdfPages.title
+        original_paragraph = report_pdf._PdfPages.paragraph
+        original_key_values = report_pdf._PdfPages.key_values
 
         def page_break(self):
             events.append("page_break")
@@ -317,10 +373,25 @@ class ReportPackageTests(unittest.TestCase):
             events.append(("heading", text))
             return original_heading(self, text)
 
+        def title(self, text):
+            events.append(("title", text))
+            return original_title(self, text)
+
+        def paragraph(self, text, **kwargs):
+            events.append(("paragraph", text))
+            return original_paragraph(self, text, **kwargs)
+
+        def key_values(self, items):
+            events.append(("key_values", tuple(label for label, _value in items)))
+            return original_key_values(self, items)
+
         with (
             TemporaryDirectory() as tmp,
             patch.object(report_pdf._PdfPages, "page_break", page_break),
             patch.object(report_pdf._PdfPages, "heading", heading),
+            patch.object(report_pdf._PdfPages, "title", title),
+            patch.object(report_pdf._PdfPages, "paragraph", paragraph),
+            patch.object(report_pdf._PdfPages, "key_values", key_values),
         ):
             record_dir = Path(tmp)
             report_pdf.build_report_pdf(
@@ -333,7 +404,7 @@ class ReportPackageTests(unittest.TestCase):
                     "links": {},
                     "evidences": [],
                 },
-                evidence={"path": "", "crops": []},
+                evidence={"path": "", "crops": [], "created_at": "2026-07-02T14:30:31Z"},
                 record_dir=record_dir,
                 recipient="interwencje@example.test",
                 subject="Test",
@@ -343,6 +414,26 @@ class ReportPackageTests(unittest.TestCase):
 
         draft_heading_idx = events.index(("heading", "Treść zgłoszenia"))
         self.assertEqual(events[draft_heading_idx - 1], "page_break")
+        self.assertNotIn(("heading", "Linki do weryfikacji"), events)
+        self.assertIn(("title", "Zgłoszenie dotyczące pojazdu nieużytkowanego"), events)
+        self.assertFalse(any(event == ("title", "Teczka pojazdu wreck_51100000_17200000") for event in events))
+        self.assertTrue(
+            any(
+                isinstance(event, tuple)
+                and event[0] == "paragraph"
+                and event[1].startswith("Data zgłoszenia: 02.07.2026, godz.")
+                and "brak danych" not in event[1]
+                for event in events
+            )
+        )
+        for event in events:
+            if isinstance(event, tuple) and event[0] == "key_values":
+                self.assertNotIn("Status", event[1])
+                self.assertNotIn("GPS", event[1])
+                self.assertNotIn("Widziane", event[1])
+                self.assertNotIn("Dowody", event[1])
+                self.assertNotIn("Zdjęcia", event[1])
+                self.assertNotIn("Ostatni dowód", event[1])
 
     def test_report_pdf_uses_approved_public_attached_photo(self):
         with TemporaryDirectory() as tmp:

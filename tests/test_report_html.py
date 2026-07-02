@@ -16,6 +16,7 @@ class ReportHtmlTests(unittest.TestCase):
 <head><meta charset="utf-8"></head>
 <body>
 <main>
+<nav class="link-strip"><a href="https://example.test/street">Street View</a><a href="https://example.test/geo">Geoportal</a></nav>
 <section class="evidence photo-upload" data-report-photo-upload>upload controls</section>
 <script data-report-photo-upload-script>window.upload = true;</script>
 </main>
@@ -40,6 +41,10 @@ class ReportHtmlTests(unittest.TestCase):
         self.assertIn("Temat &lt;test&gt;", body)
         self.assertIn("Treść &lt;zgłoszenia&gt;", body)
         self.assertNotIn("upload controls", body)
+        self.assertNotIn("Street View", body)
+        self.assertNotIn("Geoportal", body)
+        self.assertNotIn("https://example.test/street", body)
+        self.assertNotIn("https://example.test/geo", body)
         self.assertNotIn("data-report-photo-upload-script", body)
 
     def test_build_public_report_html_includes_only_approved_attached_photos(self):

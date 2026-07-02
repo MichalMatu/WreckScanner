@@ -13,22 +13,6 @@ def _labels_text(record: dict[str, Any], evidence: dict[str, Any]) -> str:
     return ", ".join(str(label) for label in labels) or "brak danych"
 
 
-def _links_text(links: dict[str, Any]) -> str:
-    labels = {
-        "street_view": "Google Street View",
-        "google_maps_satellite": "Google Maps satelita",
-        "apple_maps": "Apple Maps",
-        "mapillary": "Mapillary",
-        "geoportal": "Geoportal Krajowy",
-    }
-    lines = []
-    for key, label in labels.items():
-        url = links.get(key)
-        if url:
-            lines.append(f"- {label}: {url}")
-    return "\n".join(lines) or "- brak linków"
-
-
 def _report_history_text(record: dict[str, Any]) -> str:
     history = record.get("report_history") if isinstance(record.get("report_history"), list) else []
     if not history:
@@ -62,7 +46,6 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
-    links = record.get("links") or evidence.get("links") or {}
     subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(fields['location_description'])}"
     body = f"""Dzień dobry,
 
@@ -89,9 +72,6 @@ Opis stanu pojazdu:
 Materiał pomocniczy z aplikacji WreckScanner:
 - lokalna sprawa: {record.get("id")}
 - pojazd widoczny na ortofotomapach z lat: {labels}
-
-Linki do weryfikacji miejsca:
-{_links_text(links)}
 
 Zakres oczekiwanej odpowiedzi:
 {_formal_requests_text(record)}

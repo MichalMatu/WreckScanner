@@ -129,13 +129,23 @@ def admin_privacy_request_route(request_path: str) -> str | None:
 
 def report_package_asset_route(request_path: str) -> tuple[str, str, str] | None:
     parts = path_parts(request_path)
-    if len(parts) == 5 and parts[0] == "api" and parts[1] == "report-packages" and parts[4] in {"zip", "pdf"}:
+    if (
+        len(parts) == 5
+        and parts[0] == "api"
+        and parts[1] == "report-packages"
+        and (parts[4].endswith(".zip") or parts[4].endswith(".pdf"))
+    ):
         return parts[2], parts[3], parts[4]
     return None
 
 
 def public_report_package_asset_route(request_path: str) -> tuple[str, str, str] | None:
     parts = path_parts(request_path)
-    if len(parts) == 5 and parts[0] == "api" and parts[1] == "public-report-packages" and parts[4] in {"zip", "pdf"}:
+    if (
+        len(parts) == 5
+        and parts[0] == "api"
+        and parts[1] == "public-report-packages"
+        and (parts[4].endswith(".zip") or parts[4].endswith(".pdf"))
+    ):
         return parts[2], parts[3], parts[4]
     return None

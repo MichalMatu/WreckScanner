@@ -4,7 +4,7 @@ from core.report_mail import build_mail_draft
 
 
 class ReportMailTests(unittest.TestCase):
-    def test_build_mail_draft_includes_reporter_links_history_and_evidence_labels(self):
+    def test_build_mail_draft_includes_reporter_history_and_evidence_labels_without_map_links(self):
         subject, body = build_mail_draft(
             {
                 "id": "wreck_51100000_17200000",
@@ -34,8 +34,10 @@ class ReportMailTests(unittest.TestCase):
         self.assertEqual(subject, "Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10, parking przy szkole")
         self.assertIn("- Imię i nazwisko: Jan Kowalski", body)
         self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
-        self.assertIn("- Google Street View: https://example.test/street", body)
         self.assertIn("report_20260601T100000Z_deadbeef (publiczny)", body)
+        self.assertNotIn("Linki do weryfikacji", body)
+        self.assertNotIn("Street View", body)
+        self.assertNotIn("https://example.test/street", body)
 
 
 if __name__ == "__main__":

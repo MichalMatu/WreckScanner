@@ -133,14 +133,18 @@ def create_report_package(
         photos=prepared_photos,
     )
     _append_report_history(record, record_dir, package_id=package_id, public=False, photo_count=len(prepared_photos))
+    zip_filename = report_assets.report_package_download_name(package_id, "zip")
+    pdf_filename = report_assets.report_package_download_name(package_id, "pdf")
     return {
         "status": "ok",
         "recipient": config.REPORT_RECIPIENT,
         "subject": subject,
         "body": mail_body,
         "package_id": package_id,
-        "zip_url": f"/api/report-packages/{record['id']}/{package_id}/zip",
-        "pdf_url": f"/api/report-packages/{record['id']}/{package_id}/pdf",
+        "zip_filename": zip_filename,
+        "pdf_filename": pdf_filename,
+        "zip_url": f"/api/report-packages/{record['id']}/{package_id}/{zip_filename}",
+        "pdf_url": f"/api/report-packages/{record['id']}/{package_id}/{pdf_filename}",
         "photo_count": len(prepared_photos),
         "zip_size_bytes": zip_path.stat().st_size,
         "pdf_size_bytes": pdf_path.stat().st_size,
@@ -209,14 +213,18 @@ def create_public_report_package(
         },
     )
     token_query = f"?token={access.token}"
+    zip_filename = report_assets.report_package_download_name(package_id, "zip")
+    pdf_filename = report_assets.report_package_download_name(package_id, "pdf")
     return {
         "status": "ok",
         "recipient": config.REPORT_RECIPIENT,
         "subject": subject,
         "body": mail_body,
         "package_id": package_id,
-        "zip_url": f"/api/public-report-packages/{record['id']}/{package_id}/zip{token_query}",
-        "pdf_url": f"/api/public-report-packages/{record['id']}/{package_id}/pdf{token_query}",
+        "zip_filename": zip_filename,
+        "pdf_filename": pdf_filename,
+        "zip_url": f"/api/public-report-packages/{record['id']}/{package_id}/{zip_filename}{token_query}",
+        "pdf_url": f"/api/public-report-packages/{record['id']}/{package_id}/{pdf_filename}{token_query}",
         "expires_at": access.expires_at,
         "photo_count": len(prepared_photos),
         "zip_size_bytes": zip_path.stat().st_size,

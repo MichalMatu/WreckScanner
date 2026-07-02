@@ -86,6 +86,7 @@ def _strip_interactive_report_controls(html_text: str) -> str:
         html_text,
         flags=re.DOTALL,
     )
+    html_text = re.sub(r"\s*<nav class=\"link-strip\">.*?</nav>", "", html_text, flags=re.DOTALL)
     return re.sub(r"\s*<script data-report-photo-upload-script>.*?</script>", "", html_text, flags=re.DOTALL)
 
 

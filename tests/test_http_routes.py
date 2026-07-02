@@ -16,14 +16,21 @@ class HttpRouteParsingTests(unittest.TestCase):
         self.assertIsNone(routes.report_package_wreck_id("/api/wrecks/wreck-1/report-package/extra"))
 
     def test_asset_routes_return_expected_identifiers(self):
+        package_id = "report_20260702T142516Z_0b05a053"
         self.assertEqual(
-            routes.report_package_asset_route("/api/report-packages/wreck-1/package-2/zip"),
-            ("wreck-1", "package-2", "zip"),
+            routes.report_package_asset_route(
+                f"/api/report-packages/wreck-1/{package_id}/raport_20260702_142516.zip"
+            ),
+            ("wreck-1", package_id, "raport_20260702_142516.zip"),
         )
         self.assertEqual(
-            routes.public_report_package_asset_route("/api/public-report-packages/wreck-1/package-2/pdf"),
-            ("wreck-1", "package-2", "pdf"),
+            routes.public_report_package_asset_route(
+                f"/api/public-report-packages/wreck-1/{package_id}/raport_20260702_142516.pdf"
+            ),
+            ("wreck-1", package_id, "raport_20260702_142516.pdf"),
         )
+        self.assertIsNone(routes.report_package_asset_route(f"/api/report-packages/wreck-1/{package_id}/zip"))
+        self.assertIsNone(routes.public_report_package_asset_route(f"/api/public-report-packages/wreck-1/{package_id}/pdf"))
         self.assertEqual(
             routes.field_photo_asset_route("/api/field-photos/photo-1/public-thumb"), ("photo-1", "public-thumb")
         )
