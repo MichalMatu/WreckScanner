@@ -17,7 +17,7 @@ source .venv/bin/activate
 Aplikacja dziala pod:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8001
 ```
 
 W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja ubij aktualny proces `server.py` i poczekaj, az watcher podniesie nowy proces. Szczegoly sa w [docs/START.md](docs/START.md).
@@ -41,6 +41,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 ## Dokumentacja
 
 - [docs/START.md](docs/START.md) - uruchamianie, zatrzymanie, smoke test i haslo administratora.
+- [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 
 ## Lokalne Dane

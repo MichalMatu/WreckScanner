@@ -16,9 +16,8 @@ DOWNLOAD_DATA_DIR_NAME = DOWNLOAD_DATA_DIR.as_posix()
 ANALYSIS_DIR_NAME = ANALYSIS_DIR.as_posix()
 WRECKS_ROUTE = WRECKS_DIR.as_posix()
 
-# Lokalny port aplikacji. Zmiana wymaga aktualizacji instrukcji uruchomienia
-# albo reverse proxy, ale nie zmienia samego API HTTP.
-PORT = 8000
+HOST = os.environ.get("WRECKSCANNER_HOST", "127.0.0.1")
+PORT = int(os.environ.get("WRECKSCANNER_PORT", "8001"))
 
 WMS_UPSTREAM_BASE = "https://gis1.um.wroc.pl/arcgis/services/ogc"
 WMS_YEARS = [2020, 2021, 2022, 2023, 2024, 2025]

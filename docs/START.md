@@ -11,7 +11,7 @@ source .venv/bin/activate
 Adres lokalny:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8001
 ```
 
 ## Autostart
@@ -39,13 +39,13 @@ make stop
 Wylaczenie autostartu:
 
 ```bash
-make disable-autostart
+make serwerstop
 ```
 
 Ponowne wlaczenie:
 
 ```bash
-make enable-autostart
+make serwerstart
 ```
 
 ## Haslo Administratora
@@ -78,7 +78,7 @@ make smoke
 Szybki health check:
 
 ```bash
-curl -fsS http://localhost:8000/api/health
+curl -fsS http://127.0.0.1:8001/api/health
 ```
 
 ## Backup

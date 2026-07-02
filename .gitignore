@@ -12,6 +12,7 @@ analiza/
 __pycache__/
 .coverage
 .dev/
+.venv/
 .venv-audit/
 node_modules/
 .DS_Store

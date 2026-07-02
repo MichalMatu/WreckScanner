@@ -748,7 +748,7 @@ class SecurityHeadersContractTests(unittest.TestCase):
         local_handler = make_handler(
             "/api/admin/login",
             {"password": "secret"},
-            headers={"Host": "localhost:8000"},
+            headers={"Host": "localhost:8001"},
         )
 
         with patch.dict(os.environ, {"WRECKSCANNER_ADMIN_PASSWORD": "secret"}):

@@ -1,7 +1,9 @@
 .PHONY: help start stop restart status logs check test lint smoke health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop
 
 PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then printf './.venv/bin/python'; elif command -v python3 >/dev/null 2>&1; then command -v python3; else command -v python; fi)
-PORT ?= 8000
+HOST ?= 127.0.0.1
+PORT ?= 8001
+SERVER_URL := http://$(HOST):$(PORT)
 SERVER_PATTERN := [p]ython[^[:space:]]*[[:space:]].*$(CURDIR)/server\.py([[:space:]]|$$)
 SERVER_WAIT_SECONDS ?= 8
 SERVER_AUTOSTART_WAIT_SECONDS ?= 3
@@ -101,7 +103,7 @@ autostart-start:
 			exit 0; \
 		fi; \
 		echo 'Watcher nie podniosl server.py, uruchamiam server.py w tle.'; \
-		nohup "$(PYTHON)" "$(CURDIR)/server.py" >> "$(SERVER_LOG)" 2>&1 & \
+		WRECKSCANNER_HOST="$(HOST)" WRECKSCANNER_PORT="$(PORT)" nohup "$(PYTHON)" "$(CURDIR)/server.py" >> "$(SERVER_LOG)" 2>&1 & \
 		echo $$! > "$(SERVER_PID_FILE)"; \
 		$(MAKE) wait-server; \
 	fi
@@ -123,7 +125,7 @@ status:
 	@printf '%s\n' 'Procesy server.py:'
 	@pgrep -af '$(SERVER_PATTERN)' || true
 	@printf '\n%s\n' 'Health:'
-	@if command -v curl >/dev/null 2>&1; then curl -fsS "http://localhost:$(PORT)/api/health" || true; else echo 'curl niedostepny'; fi
+	@if command -v curl >/dev/null 2>&1; then curl -fsS "$(SERVER_URL)/api/health" || true; else echo 'curl niedostepny'; fi
 	@printf '\n'
 
 logs:
@@ -151,6 +153,6 @@ lint:
 	fi
 
 smoke:
-	@"$(PYTHON)" scripts/smoke_runtime.py --base-url "http://localhost:$(PORT)"
+	@"$(PYTHON)" scripts/smoke_runtime.py --base-url "$(SERVER_URL)"
 
 health: status

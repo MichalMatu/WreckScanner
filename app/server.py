@@ -11,7 +11,7 @@ configure_process_encoding()
 
 def main() -> None:
     try:
-        srv = http_server.ReusableHTTPServer(("", config.PORT), http_server.Handler)
+        srv = http_server.ReusableHTTPServer((config.HOST, config.PORT), http_server.Handler)
     except OSError as e:
         if e.errno in (errno.EADDRINUSE, 48):
             print(
@@ -23,7 +23,7 @@ def main() -> None:
             print("   Wyjdź z obcego virtualenv, np. `deactivate`, i uruchom ponownie: python3 server.py")
             sys.exit(1)
         raise
-    print(f"🚀 Serwer działa na http://localhost:{config.PORT}")
+    print(f"🚀 Serwer działa na http://{config.HOST}:{config.PORT}")
     print("   Otwórz tę stronę w przeglądarce.")
     if http_retention.start_scheduler():
         print("   Retencja prywatnych oryginałów: automatycznie przy starcie i potem co 24h.")

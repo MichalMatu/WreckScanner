@@ -80,7 +80,7 @@ class RuntimeEncodingContractTests(unittest.TestCase):
         self.assertIn("$(MAKE) wait-server", makefile)
         self.assertIn("skip: npm/eslint niedostepne, pomijam lint JS", makefile)
         self.assertIn("./scripts/check.sh", makefile)
-        self.assertIn('scripts/smoke_runtime.py --base-url "http://localhost:$(PORT)"', makefile)
+        self.assertIn('scripts/smoke_runtime.py --base-url "$(SERVER_URL)"', makefile)
 
     def test_server_entrypoint_respects_autostart_disable_file(self):
         entrypoint = (ROOT_DIR / "server.py").read_text(encoding="utf-8")

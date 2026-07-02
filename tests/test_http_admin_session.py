@@ -43,7 +43,7 @@ class HttpAdminSessionContractTests(unittest.TestCase):
 
     def test_admin_cookie_secure_flag_depends_on_request_host(self):
         public_handler = FakeHandler(headers={"Host": "wreckscanner.pl"})
-        local_handler = FakeHandler(headers={"Host": "localhost:8000"})
+        local_handler = FakeHandler(headers={"Host": "localhost:8001"})
 
         public_cookie = admin_session.admin_cookie_header(public_handler, "token", max_age=60)
         local_cookie = admin_session.admin_cookie_header(local_handler, "token", max_age=60)

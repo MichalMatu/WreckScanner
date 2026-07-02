@@ -150,7 +150,7 @@ def run_smoke(base_url: str, *, timeout: float = 5.0) -> list[str]:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Runtime smoke test for a running WreckScanner server.")
-    parser.add_argument("--base-url", default="http://localhost:8000", help="Base URL of the running app.")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8001", help="Base URL of the running app.")
     parser.add_argument("--timeout", type=float, default=5.0, help="Per-request timeout in seconds.")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON result.")
     return parser.parse_args(argv)
