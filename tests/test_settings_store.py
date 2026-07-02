@@ -17,8 +17,7 @@ class PublicLayerSettingsTests(unittest.TestCase):
         self.assertEqual(
             public_layer_settings_from_dict({}),
             {
-                "saved_wrecks": True,
-                "field_photo_vehicle": True,
+                "vehicles": True,
                 "field_photo_infrastructure": True,
                 "field_photo_smoke": True,
                 "field_photo_pending": True,
@@ -29,10 +28,9 @@ class PublicLayerSettingsTests(unittest.TestCase):
 
     def test_public_layer_settings_accept_booleans_per_layer(self):
         self.assertEqual(
-            public_layer_settings_from_dict({"saved_wrecks": False, "field_photo_smoke": False}),
+            public_layer_settings_from_dict({"vehicles": False, "field_photo_smoke": False}),
             {
-                "saved_wrecks": False,
-                "field_photo_vehicle": True,
+                "vehicles": False,
                 "field_photo_infrastructure": True,
                 "field_photo_smoke": False,
                 "field_photo_pending": True,
@@ -68,7 +66,7 @@ class AppSettingsPersistenceTests(unittest.TestCase):
             settings_path = Path(tmp) / "settings.json"
 
             with patch.object(settings_store, "SETTINGS_PATH", settings_path):
-                saved = settings_store.save_app_settings({"public_layers": {"saved_wrecks": False}})
+                saved = settings_store.save_app_settings({"public_layers": {"vehicles": False}})
 
             payload = json.loads(settings_path.read_text(encoding="utf-8"))
             self.assertEqual(payload, saved)
@@ -77,7 +75,7 @@ class AppSettingsPersistenceTests(unittest.TestCase):
     def test_save_app_settings_preserves_existing_file_when_atomic_replace_fails(self):
         with TemporaryDirectory() as tmp:
             settings_path = Path(tmp) / "settings.json"
-            original = {"public_layers": {"saved_wrecks": True}}
+            original = {"public_layers": {"vehicles": True}}
             settings_path.write_text(json.dumps(original) + "\n", encoding="utf-8")
 
             with (
@@ -85,7 +83,7 @@ class AppSettingsPersistenceTests(unittest.TestCase):
                 patch.object(json_io.os, "replace", side_effect=OSError("replace failed")),
                 self.assertRaises(OSError),
             ):
-                settings_store.save_app_settings({"public_layers": {"saved_wrecks": False}})
+                settings_store.save_app_settings({"public_layers": {"vehicles": False}})
 
             self.assertEqual(json.loads(settings_path.read_text(encoding="utf-8")), original)
             self.assertFalse(list(settings_path.parent.glob(".settings.json.*.tmp")))

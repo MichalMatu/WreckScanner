@@ -23,8 +23,7 @@ const ADMIN_PRIVACY_REQUESTS_URL = '/api/admin/privacy-requests';
 const ADMIN_PHOTO_RETENTION_URL = '/api/admin/photo-retention';
 
 const PUBLIC_LAYER_KEYS = {
-    savedWrecks: 'saved_wrecks',
-    fieldPhotoVehicle: 'field_photo_vehicle',
+    vehicles: 'vehicles',
     fieldPhotoInfrastructure: 'field_photo_infrastructure',
     fieldPhotoSmoke: 'field_photo_smoke',
     fieldPhotoPending: 'field_photo_pending',
@@ -108,7 +107,7 @@ const FIELD_PHOTO_ISSUE_TYPES = new Set([
     'smoke',
 ]);
 const FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
-    vehicle: PUBLIC_LAYER_KEYS.fieldPhotoVehicle,
+    vehicle: PUBLIC_LAYER_KEYS.vehicles,
     infrastructure: PUBLIC_LAYER_KEYS.fieldPhotoInfrastructure,
     smoke: PUBLIC_LAYER_KEYS.fieldPhotoSmoke,
 };

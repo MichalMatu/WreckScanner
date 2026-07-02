@@ -11,8 +11,7 @@ from core.json_io import write_json_atomic
 
 SETTINGS_PATH = Path(__file__).resolve().parent.parent / config.SETTINGS_FILENAME
 DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
-    "saved_wrecks": True,
-    "field_photo_vehicle": True,
+    "vehicles": True,
     "field_photo_infrastructure": True,
     "field_photo_smoke": True,
     "field_photo_pending": True,

@@ -68,9 +68,12 @@ function updateFieldPhotoIssueOptions() {
 function filteredFieldPhotos(photos = fieldPhotoLayerData) {
     return (photos || []).filter(photo => {
         const issueType = fieldPhotoIssueType(photo);
-        if (!fieldPhotoIssueVisible(issueType)) return false;
-        if (fieldPhotoReviewStatus(photo) !== 'pending') return true;
-        return pendingFieldPhotoLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoPending);
+        const reviewStatus = fieldPhotoReviewStatus(photo);
+        if (reviewStatus === 'pending') {
+            return pendingFieldPhotoLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoPending);
+        }
+        if (issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false;
+        return fieldPhotoIssueVisible(issueType);
     });
 }
 
@@ -101,17 +104,8 @@ function groupFieldPhotos(photos) {
 }
 
 function countLingeringCars() {
-    const wrecksWithFieldPhotos = publicLayerAllowed(PUBLIC_LAYER_KEYS.savedWrecks)
-        ? savedWreckLayerData.filter(wreck => Number(wreck.photo_count) > 0).length
-        : 0;
-    const vehiclePhotos = publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoVehicle)
-        ? fieldPhotoLayerData.filter(photo =>
-            fieldPhotoIssueType(photo) === FIELD_PHOTO_ISSUE_TYPE_VEHICLE
-            && fieldPhotoReviewStatus(photo) === 'approved'
-        )
-        : [];
-    const looseFieldPhotoGroups = groupFieldPhotos(vehiclePhotos).length;
-    return wrecksWithFieldPhotos + looseFieldPhotoGroups;
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return 0;
+    return buildVehicleGroups().filter(group => vehicleGroupPhotoCount(group) > 0).length;
 }
 
 function updateLingeringCarsCounter() {
@@ -151,6 +145,7 @@ async function loadFieldPhotos() {
         if (data.status === 'ok') {
             fieldPhotoLayerData = data.photos || [];
             placeFieldPhotos(fieldPhotoLayerData);
+            placeVehicleMarkers();
             updateLingeringCarsCounter();
         }
     } catch (_) {}

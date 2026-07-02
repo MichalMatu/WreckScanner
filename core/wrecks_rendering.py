@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import html
-import json
 from pathlib import Path
 from typing import Any
 
-from core import config
 from core.photo_privacy import is_approved
 
 
@@ -57,61 +55,6 @@ def _attached_photo_sections(record: dict[str, Any]) -> str:
       <h2>Zdjęcia z miejsca</h2>
       <div class="grid photo-grid">{"".join(cards)}</div>
     </section>
-    """
-
-
-def _photo_upload_section(wreck_id: str) -> str:
-    safe_id = html.escape(wreck_id)
-    accept_types = ",".join(sorted(config.ALLOWED_UPLOAD_IMAGE_FORMATS))
-    allowed_types = json.dumps(sorted(config.ALLOWED_UPLOAD_IMAGE_FORMATS))
-    max_mb = config.MAX_WRECK_PHOTO_BYTES // config.BYTES_PER_MIB
-    return f"""
-    <section class="evidence photo-upload" data-report-photo-upload>
-      <h2>Dodaj zdjęcia do sprawy</h2>
-      <form id="wreck-photo-form">
-        <input type="file" id="wreck-photo-files" name="photos[]" accept="{accept_types}" multiple required>
-        <p>JPG, PNG albo WebP, maks. {max_mb} MB każde, do {config.MAX_WRECK_PHOTOS_PER_UPLOAD} zdjęć naraz.</p>
-        <button type="submit">Dodaj zdjęcia</button>
-      </form>
-      <p id="wreck-photo-status">Zdjęcia dodane publicznie trafią do weryfikacji administratora.</p>
-    </section>
-    <script data-report-photo-upload-script>
-    (() => {{
-      const wreckId = {json.dumps(wreck_id)};
-      const form = document.getElementById('wreck-photo-form');
-      const input = document.getElementById('wreck-photo-files');
-      const submit = form?.querySelector('button[type="submit"]');
-      const status = document.getElementById('wreck-photo-status');
-      const maxBytes = {config.MAX_WRECK_PHOTO_BYTES};
-      const maxFiles = {config.MAX_WRECK_PHOTOS_PER_UPLOAD};
-      const allowed = new Set({allowed_types});
-      form?.addEventListener('submit', async event => {{
-        event.preventDefault();
-        const files = Array.from(input?.files || []);
-        if (!files.length) return;
-        if (files.length > maxFiles) {{
-          if (status) status.textContent = `Wybierz maksymalnie ${{maxFiles}} zdjęć naraz.`;
-          return;
-        }}
-        for (const file of files) {{
-          if (file.size > maxBytes || (file.type && !allowed.has(file.type))) {{
-            if (status) status.textContent = 'Dozwolone są tylko zdjęcia JPG, PNG albo WebP do {max_mb} MB.';
-            return;
-          }}
-        }}
-        if (status) status.textContent = 'Dodaję zdjęcia...';
-        const data = new FormData(form);
-        const resp = await fetch(`/api/wrecks/${{encodeURIComponent(wreckId)}}/photos`, {{ method: 'POST', body: data }});
-        const payload = await resp.json().catch(() => ({{}}));
-        if (!resp.ok || payload.status !== 'ok') {{
-          if (status) status.textContent = payload.error || 'Nie udało się dodać zdjęć.';
-          return;
-        }}
-        location.reload();
-      }});
-    }})();
-    </script>
-    <!-- Upload endpoint: /api/wrecks/{safe_id}/photos -->
     """
 
 
@@ -180,10 +123,6 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
     figcaption {{ padding:8px; color:var(--mut); font-size:12px; text-align:center; }}
     figcaption span {{ display:block; margin-top:3px; color:#64748b; font-size:11px; }}
     .photo-grid {{ grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }}
-    .photo-upload form {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }}
-    .photo-upload input {{ max-width:360px; color:var(--mut); }}
-    .photo-upload button {{ border:0; border-radius:8px; padding:9px 12px; background:#2563eb; color:white; font-weight:800; cursor:pointer; }}
-    .photo-upload p {{ margin:4px 0 0; font-size:12px; }}
     .report-mail-draft pre {{ white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; max-width:100%; box-sizing:border-box; }}
   </style>
 </head>
@@ -205,7 +144,6 @@ def render_record_html(record: dict[str, Any], record_dir: Path) -> None:
   </section>
   {_attached_photo_sections(record)}
   {"".join(evidence_sections)}
-  {_photo_upload_section(record["id"])}
 </main>
 </body>
 </html>

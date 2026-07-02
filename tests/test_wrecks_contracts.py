@@ -291,7 +291,7 @@ class WreckPhotosRenderingTests(unittest.TestCase):
             self.assertIn("Zdjęcia z miejsca", report_html)
             self.assertIn(f'<img src="photos/{photo["id"]}/public_thumb.jpg"', report_html)
             self.assertNotIn("original.jpg", report_html)
-            self.assertIn("wreck-photo-form", report_html)
+            self.assertNotIn("wreck-photo-form", report_html)
 
     def test_wreck_rendering_outputs_public_html_without_pending_or_technical_files(self):
         with TemporaryDirectory() as tmp:
@@ -347,7 +347,7 @@ class WreckPhotosRenderingTests(unittest.TestCase):
             self.assertNotIn("photos/photo-pending/public.jpg", report_html)
             self.assertNotIn("metadata.json", report_html)
             self.assertNotIn("links.json", report_html)
-            self.assertIn("data-report-photo-upload", report_html)
+            self.assertNotIn("data-report-photo-upload", report_html)
 
     def test_wreck_public_summary_uses_safe_urls_and_approved_photo_previews(self):
         record = {

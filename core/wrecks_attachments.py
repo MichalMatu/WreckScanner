@@ -127,16 +127,6 @@ def attach_field_photos_to_wreck(
 
 
 def attach_wreck_photos(wreck_id: str, uploads: list[UploadedFile], wrecks_dir: Path) -> dict[str, Any]:
-    return attach_wreck_photos_for_submission(wreck_id, uploads, wrecks_dir, submission_owner=None)
-
-
-def attach_wreck_photos_for_submission(
-    wreck_id: str,
-    uploads: list[UploadedFile],
-    wrecks_dir: Path,
-    *,
-    submission_owner: str | None,
-) -> dict[str, Any]:
     photo_uploads = [upload for upload in uploads if upload.filename or upload.data]
     if not photo_uploads:
         raise ValueError("Wybierz co najmniej jedno zdjęcie.")
@@ -151,7 +141,7 @@ def attach_wreck_photos_for_submission(
     attached = record.get("attached_photos")
     if not isinstance(attached, list):
         attached = []
-    saved = [save_attached_photo(upload, record_dir, submission_owner=submission_owner) for upload in photo_uploads]
+    saved = [save_attached_photo(upload, record_dir) for upload in photo_uploads]
     attached.extend(saved)
     record["attached_photos"] = attached
     record["updated_at"] = now_iso()

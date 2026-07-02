@@ -22,8 +22,7 @@ const enhancementControlFields = {
 };
 
 const publicLayerControls = {
-    [PUBLIC_LAYER_KEYS.savedWrecks]: document.getElementById('admin-layer-saved-wrecks'),
-    [PUBLIC_LAYER_KEYS.fieldPhotoVehicle]: document.getElementById('admin-layer-field-photo-vehicle'),
+    [PUBLIC_LAYER_KEYS.vehicles]: document.getElementById('admin-layer-vehicles'),
     [PUBLIC_LAYER_KEYS.fieldPhotoInfrastructure]: document.getElementById('admin-layer-field-photo-infrastructure'),
     [PUBLIC_LAYER_KEYS.fieldPhotoSmoke]: document.getElementById('admin-layer-field-photo-smoke'),
     [PUBLIC_LAYER_KEYS.fieldPhotoPending]: document.getElementById('admin-layer-field-photo-pending'),
@@ -35,8 +34,7 @@ const publicFeatureControls = {
     [PUBLIC_FEATURE_KEYS.photoUploads]: document.getElementById('admin-feature-photo-uploads'),
 };
 const publicLayerToggleRows = {
-    [PUBLIC_LAYER_KEYS.savedWrecks]: document.getElementById('toggle-saved-wrecks')?.closest('.layer-toggle'),
-    [PUBLIC_LAYER_KEYS.fieldPhotoVehicle]: document.getElementById('toggle-field-photo-vehicle')?.closest('.layer-toggle'),
+    [PUBLIC_LAYER_KEYS.vehicles]: document.getElementById('toggle-vehicles')?.closest('.layer-toggle'),
     [PUBLIC_LAYER_KEYS.fieldPhotoInfrastructure]: document.getElementById('toggle-field-photo-infrastructure')?.closest('.layer-toggle'),
     [PUBLIC_LAYER_KEYS.fieldPhotoSmoke]: document.getElementById('toggle-field-photo-smoke')?.closest('.layer-toggle'),
     [PUBLIC_LAYER_KEYS.fieldPhotoPending]: document.getElementById('toggle-field-photo-pending')?.closest('.layer-toggle'),
@@ -83,7 +81,7 @@ function normalizePublicLayerSettings(settings) {
 
 function fieldPhotoPublicLayerKey(issueType) {
     const safeIssueType = FIELD_PHOTO_ISSUE_TYPES.has(issueType) ? issueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    return FIELD_PHOTO_PUBLIC_LAYER_KEYS[safeIssueType] || PUBLIC_LAYER_KEYS.fieldPhotoVehicle;
+    return FIELD_PHOTO_PUBLIC_LAYER_KEYS[safeIssueType] || PUBLIC_LAYER_KEYS.vehicles;
 }
 
 function publicLayerAllowed(layerKey) {
@@ -205,10 +203,10 @@ function applyPublicLayerSettings(settings) {
     updatePublicLayerAccess();
     setCadastralLayerVisible(cadastralLayerVisible);
     updateMapSourceAvailability();
-    if (savedWreckLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.savedWrecks)) {
-        placeSavedWrecks(savedWreckLayerData);
+    if (vehicleLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) {
+        placeVehicleMarkers();
     } else {
-        clearSavedWreckMarkers();
+        clearVehicleMarkers();
     }
     placeFieldPhotos(fieldPhotoLayerData);
     updateLingeringCarsCounter();

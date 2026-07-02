@@ -50,6 +50,44 @@ class FrontendContracts(unittest.TestCase):
         ):
             self.assertNotIn(retired, frontend)
 
+    def test_frontend_uses_one_vehicle_layer_for_cases_and_vehicle_photos(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
+        field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
+        saved_wrecks_js = (ROOT_DIR / "web" / "app" / "saved_wrecks.js").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
+        frontend = html + config_js + settings_js + field_photos_js + saved_wrecks_js + i18n_js + styles
+
+        self.assertIn('id="toggle-vehicles"', html)
+        self.assertIn('id="admin-layer-vehicles"', html)
+        self.assertIn("vehicles: 'vehicles'", config_js)
+        self.assertIn("vehicle: PUBLIC_LAYER_KEYS.vehicles", config_js)
+        self.assertIn("function buildVehicleGroups", saved_wrecks_js)
+        self.assertIn("function placeVehicleMarkers", saved_wrecks_js)
+        self.assertIn("function toggleVehicleLayer", saved_wrecks_js)
+        self.assertIn("function openVehicleCasePhotoUpload", saved_wrecks_js)
+        self.assertIn("openFieldPhotoUploadModal", saved_wrecks_js)
+        self.assertIn("issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false", field_photos_js)
+
+        for retired in (
+            "toggle-saved-wrecks",
+            "toggle-field-photo-vehicle",
+            "admin-layer-saved-wrecks",
+            "admin-layer-field-photo-vehicle",
+            "layers.savedWrecks",
+            "layers.fieldPhotoVehicles",
+            "fieldPhotoVehicle",
+            "savedWrecks",
+            "field_photo_vehicle",
+            "layer-pin--field-photo-vehicle",
+            "placeSavedWrecks",
+            "toggleSavedWreckLayer",
+            "clearSavedWreckMarkers",
+        ):
+            self.assertNotIn(retired, frontend)
+
     def test_script_order_keeps_inspection_after_field_photo_actions(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         self.assertLess(

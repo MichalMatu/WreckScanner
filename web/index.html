@@ -142,16 +142,10 @@
                 <div class="panel-section-title" data-i18n="layers.title">Warstwy</div>
                 <div id="map-layer-controls" class="map-layer-controls is-loading-public-layers" aria-label="Warstwy mapy">
                     <label class="layer-toggle">
-                        <input type="checkbox" id="toggle-saved-wrecks" checked
-                            onchange="toggleSavedWreckLayer(this.checked)">
+                        <input type="checkbox" id="toggle-vehicles" checked
+                            onchange="toggleVehicleLayer(this.checked)">
                         <span class="layer-pin layer-pin--wreck"></span>
-                        <span data-i18n="layers.savedWrecks">Sprawy pojazdów</span>
-                    </label>
-                    <label class="layer-toggle">
-                        <input type="checkbox" id="toggle-field-photo-vehicle" checked
-                            onchange="toggleFieldPhotoIssueFilter('vehicle', this.checked)">
-                        <span class="layer-pin layer-pin--field-photo-vehicle"></span>
-                        <span data-i18n="layers.fieldPhotoVehicles">Zdjęcia pojazdów</span>
+                        <span data-i18n="layers.vehicles">Pojazdy</span>
                     </label>
                     <label class="layer-toggle">
                         <input type="checkbox" id="toggle-field-photo-infrastructure" checked
@@ -403,14 +397,9 @@
                     </div>
                     <div class="admin-layer-grid">
                         <label class="admin-layer-toggle">
-                            <input type="checkbox" id="admin-layer-saved-wrecks" checked>
+                            <input type="checkbox" id="admin-layer-vehicles" checked>
                             <span class="layer-pin layer-pin--wreck"></span>
-                            <span data-i18n="layers.savedWrecks">Sprawy pojazdów</span>
-                        </label>
-                        <label class="admin-layer-toggle">
-                            <input type="checkbox" id="admin-layer-field-photo-vehicle" checked>
-                            <span class="layer-pin layer-pin--field-photo-vehicle"></span>
-                            <span data-i18n="layers.fieldPhotoVehicles">Zdjęcia pojazdów</span>
+                            <span data-i18n="layers.vehicles">Pojazdy</span>
                         </label>
                         <label class="admin-layer-toggle">
                             <input type="checkbox" id="admin-layer-field-photo-infrastructure" checked>

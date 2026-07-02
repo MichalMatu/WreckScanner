@@ -81,7 +81,7 @@ def handle_get_wrecks(handler) -> None:
     try:
         wrecks = (
             list_wrecks(core_config.WRECKS_DIR, include_pending=http_admin_session.is_admin(handler))
-            if access.public_layer_allowed(handler, "saved_wrecks")
+            if access.public_layer_allowed(handler, "vehicles")
             else []
         )
         http_responses.send_json(handler, 200, {"status": "ok", "wrecks": wrecks})

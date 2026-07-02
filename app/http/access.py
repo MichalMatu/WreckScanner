@@ -7,7 +7,7 @@ from core.settings_store import DEFAULT_PUBLIC_FEATURES, DEFAULT_PUBLIC_LAYERS, 
 from core.submission_limits import assert_pending_submission_quota
 
 _FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
-    "vehicle": "field_photo_vehicle",
+    "vehicle": "vehicles",
     "infrastructure": "field_photo_infrastructure",
     "smoke": "field_photo_smoke",
 }
@@ -79,12 +79,10 @@ def public_field_photo_allowed(handler, photo: dict) -> bool:
     if http_admin_session.is_admin(handler):
         return True
     layer_settings = public_layer_settings()
-    if str(photo.get("public_review_status") or "approved") == "pending" and not layer_settings.get(
-        "field_photo_pending", True
-    ):
-        return False
+    if str(photo.get("public_review_status") or "approved") == "pending":
+        return layer_settings.get("field_photo_pending", True)
     issue_type = str(photo.get("issue_type") or "vehicle")
-    key = _FIELD_PHOTO_PUBLIC_LAYER_KEYS.get(issue_type, "field_photo_vehicle")
+    key = _FIELD_PHOTO_PUBLIC_LAYER_KEYS.get(issue_type, "vehicles")
     return layer_settings.get(key, True)
 
 
@@ -92,4 +90,4 @@ def field_photo_issue_layer_key(issue_type: object) -> str:
     issue_type_text = str(issue_type or core_config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE).strip()
     if issue_type_text not in core_config.FIELD_PHOTO_ISSUE_TYPES:
         raise ValueError("Nieprawidłowy typ pinezki terenowej.")
-    return _FIELD_PHOTO_PUBLIC_LAYER_KEYS.get(issue_type_text, "field_photo_vehicle")
+    return _FIELD_PHOTO_PUBLIC_LAYER_KEYS.get(issue_type_text, "vehicles")

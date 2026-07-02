@@ -4,6 +4,7 @@ from io import BytesIO
 from unittest.mock import patch
 
 from app.http import access
+from app.http import public as http_public
 
 
 class FakeHandler:
@@ -56,10 +57,48 @@ class HttpAccessContractTests(unittest.TestCase):
         self.assertIsNone(handler.status)
 
     def test_field_photo_issue_type_maps_to_layer_key(self):
+        self.assertEqual(access.field_photo_issue_layer_key("vehicle"), "vehicles")
         self.assertEqual(access.field_photo_issue_layer_key("smoke"), "field_photo_smoke")
 
         with self.assertRaises(ValueError):
             access.field_photo_issue_layer_key("unknown")
+
+    def test_pending_field_photo_access_uses_pending_layer_only(self):
+        handler = FakeHandler()
+        pending_vehicle_photo = {"issue_type": "vehicle", "public_review_status": "pending"}
+
+        with (
+            patch.object(access.http_admin_session, "is_admin", return_value=False),
+            patch.object(
+                access,
+                "load_app_settings",
+                return_value={"public_layers": {"vehicles": False, "field_photo_pending": True}},
+            ),
+        ):
+            self.assertTrue(access.public_field_photo_allowed(handler, pending_vehicle_photo))
+
+        with (
+            patch.object(access.http_admin_session, "is_admin", return_value=False),
+            patch.object(
+                access,
+                "load_app_settings",
+                return_value={"public_layers": {"vehicles": True, "field_photo_pending": False}},
+            ),
+        ):
+            self.assertFalse(access.public_field_photo_allowed(handler, pending_vehicle_photo))
+
+    def test_public_wreck_photo_upload_requires_tokenized_field_photo_flow(self):
+        handler = FakeHandler()
+
+        with (
+            patch.object(http_public.http_admin_session, "is_admin", return_value=False),
+            patch.object(http_public.http_request_body, "read_multipart_form") as read_form,
+        ):
+            http_public.handle_wreck_photo_upload(handler, "wreck_51100000_17200000")
+
+        self.assertEqual(handler.status, 403)
+        self.assertIn("tokenem edycji", handler.payload["error"])
+        read_form.assert_not_called()
 
     def test_public_submission_quota_uses_hashed_owner(self):
         handler = FakeHandler()

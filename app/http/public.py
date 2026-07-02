@@ -17,7 +17,6 @@ from core.uploads import UploadedFile
 from core.wrecks_attachments import (
     attach_field_photos_to_wreck,
     attach_wreck_photos,
-    attach_wreck_photos_for_submission,
 )
 from core.wrecks_save import save_manual_wreck
 
@@ -157,24 +156,17 @@ def handle_wreck_photo_upload(handler, wreck_id: str) -> None:
         handler, "photo_uploads", "Dodawanie zdjec przez niezalogowanych jest teraz wylaczone."
     ):
         return
+    if not http_admin_session.is_admin(handler):
+        http_responses.send_json(
+            handler,
+            403,
+            {"error": "Dodaj zdjęcie terenowe z tokenem edycji zamiast dopinać plik bezpośrednio do sprawy."},
+        )
+        return
     try:
         _, files = http_request_body.read_multipart_form(handler, core_config.MAX_WRECK_PHOTO_BODY_BYTES)
         photos = [file for file in files if file.field_name in {"photos", "photos[]", "photo"}]
-        if http_admin_session.is_admin(handler):
-            result = attach_wreck_photos(wreck_id, photos, core_config.WRECKS_DIR)
-        else:
-            additional_bytes = sum(len(file.data) for file in photos)
-            access.ensure_public_submission_quota(
-                handler,
-                additional_bytes=additional_bytes,
-                additional_items=max(1, len(photos)),
-            )
-            result = attach_wreck_photos_for_submission(
-                wreck_id,
-                photos,
-                core_config.WRECKS_DIR,
-                submission_owner=access.submission_owner(handler),
-            )
+        result = attach_wreck_photos(wreck_id, photos, core_config.WRECKS_DIR)
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})
