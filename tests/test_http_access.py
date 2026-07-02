@@ -87,6 +87,20 @@ class HttpAccessContractTests(unittest.TestCase):
         ):
             self.assertFalse(access.public_field_photo_allowed(handler, pending_vehicle_photo))
 
+    def test_draft_field_photo_is_not_publicly_visible(self):
+        handler = FakeHandler()
+        draft_photo = {"issue_type": "vehicle", "public_review_status": "draft"}
+
+        with (
+            patch.object(access.http_admin_session, "is_admin", return_value=False),
+            patch.object(
+                access,
+                "load_app_settings",
+                return_value={"public_layers": {"vehicles": True, "field_photo_pending": True}},
+            ),
+        ):
+            self.assertFalse(access.public_field_photo_allowed(handler, draft_photo))
+
     def test_public_wreck_photo_upload_requires_tokenized_field_photo_flow(self):
         handler = FakeHandler()
 

@@ -10,9 +10,9 @@ from PIL import Image, ImageDraw, ImageOps
 
 from core import config
 
-ReviewStatus = Literal["pending", "approved", "rejected"]
+ReviewStatus = Literal["draft", "pending", "approved", "rejected"]
 
-REVIEW_STATUSES = {"pending", "approved", "rejected"}
+REVIEW_STATUSES = {"draft", "pending", "approved", "rejected"}
 DEFAULT_REVIEW_STATUS: ReviewStatus = "pending"
 PUBLIC_IMAGE_FILE = "public.jpg"
 PUBLIC_THUMB_FILE = "public_thumb.jpg"

@@ -1,7 +1,10 @@
 let fieldPhotoUploadItems = [];
 let fieldPhotoUploadFallbackLatLng = null;
+let fieldPhotoUploadEditToken = '';
 let lastFieldPhotoThanksToken = '';
+let lastFieldPhotoThanksPhotoIds = [];
 let fieldPhotoLocationPickActive = false;
+let fieldPhotoUploadInProgress = false;
 
 function randomFieldPhotoEditToken() {
     const bytes = new Uint8Array(18);
@@ -15,55 +18,56 @@ function randomFieldPhotoEditToken() {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-function fieldPhotoTokenInput() {
-    return document.getElementById('field-photo-edit-token');
+function ensureFieldPhotoUploadEditToken() {
+    if (adminAuthenticated) return '';
+    if (!fieldPhotoUploadEditToken) fieldPhotoUploadEditToken = randomFieldPhotoEditToken();
+    return fieldPhotoUploadEditToken;
 }
 
-function fieldPhotoEditTokenValue() {
-    return String(fieldPhotoTokenInput()?.value || '').trim();
-}
-
-function syncFieldPhotoTokenControls() {
-    const section = document.getElementById('field-photo-token-section');
-    if (section) section.hidden = Boolean(adminAuthenticated);
-}
-
-function generateFieldPhotoEditToken() {
-    const input = fieldPhotoTokenInput();
-    if (!input) return;
-    input.value = randomFieldPhotoEditToken();
-    input.select();
-}
-
-async function copyFieldPhotoEditToken() {
-    const input = fieldPhotoTokenInput();
-    if (!input) return;
-    if (!input.value.trim()) generateFieldPhotoEditToken();
-    try {
-        await navigator.clipboard.writeText(input.value.trim());
-    } catch (_) {
-        input.select();
-        document.execCommand?.('copy');
-    }
-}
-
-function openFieldPhotoThanksModal({ saved = 0, editToken = '' } = {}) {
+function openFieldPhotoThanksModal({
+    saved = 0,
+    editToken = '',
+    photoIds = [],
+    submitted = false,
+    statusMessage = '',
+} = {}) {
+    const title = document.getElementById('field-photo-thanks-title');
     const count = document.getElementById('field-photo-thanks-count');
     const tokenSection = document.getElementById('field-photo-thanks-token-section');
     const tokenInput = document.getElementById('field-photo-thanks-token');
     const status = document.getElementById('field-photo-thanks-status');
+    const reviewButton = document.getElementById('field-photo-thanks-review');
+    const submitButton = document.getElementById('field-photo-thanks-submit');
+    const discardButton = document.getElementById('field-photo-thanks-discard');
+    const doneButton = document.getElementById('field-photo-thanks-done');
+    const closeButton = document.getElementById('field-photo-thanks-close');
     const savedCount = Number(saved) || 0;
     const normalizedToken = String(editToken || '').trim();
     lastFieldPhotoThanksToken = normalizedToken;
+    lastFieldPhotoThanksPhotoIds = Array.isArray(photoIds) ? photoIds.map(safeFieldPhotoId).filter(Boolean) : [];
+    if (title) title.textContent = t(submitted ? 'modal.fieldPhotoThanks.title' : 'modal.fieldPhotoSummary.title');
     if (count) {
         count.textContent = t(
-            savedCount === 1 ? 'modal.fieldPhotoThanks.summaryOne' : 'modal.fieldPhotoThanks.summaryMany',
+            submitted
+                ? (savedCount === 1 ? 'modal.fieldPhotoThanks.summaryOne' : 'modal.fieldPhotoThanks.summaryMany')
+                : (savedCount === 1 ? 'modal.fieldPhotoSummary.summaryOne' : 'modal.fieldPhotoSummary.summaryMany'),
             { n: savedCount }
         );
     }
     if (tokenSection) tokenSection.hidden = !normalizedToken;
     if (tokenInput) tokenInput.value = normalizedToken;
-    if (status) status.textContent = '';
+    if (reviewButton) reviewButton.hidden = !normalizedToken || !lastFieldPhotoThanksPhotoIds.length;
+    if (submitButton) {
+        submitButton.hidden = submitted || !normalizedToken || !lastFieldPhotoThanksPhotoIds.length;
+        submitButton.disabled = false;
+    }
+    if (discardButton) {
+        discardButton.hidden = submitted || !normalizedToken || !lastFieldPhotoThanksPhotoIds.length;
+        discardButton.disabled = false;
+    }
+    if (doneButton) doneButton.hidden = !submitted;
+    if (closeButton) closeButton.hidden = !submitted;
+    if (status) status.textContent = statusMessage || '';
     openModal('modal-field-photo-thanks');
 }
 
@@ -79,6 +83,177 @@ async function copyFieldPhotoThanksToken() {
         document.execCommand?.('copy');
     }
     if (status) status.textContent = t('modal.fieldPhotoThanks.copied');
+}
+
+async function submitFieldPhotoThanksForReview() {
+    const status = document.getElementById('field-photo-thanks-status');
+    const submitButton = document.getElementById('field-photo-thanks-submit');
+    const token = String(lastFieldPhotoThanksToken || '').trim();
+    const photoIds = lastFieldPhotoThanksPhotoIds.map(safeFieldPhotoId).filter(Boolean);
+    const tokenError = validateFieldPhotoEditToken(token, { required: true });
+    if (tokenError || !photoIds.length) {
+        if (status) status.textContent = tokenError || t('modal.fieldPhotoSummary.submitError');
+        return;
+    }
+    if (submitButton) submitButton.disabled = true;
+    if (status) status.textContent = t('modal.fieldPhotoSummary.submitting');
+    try {
+        const data = await apiPostJson(`${FIELD_PHOTOS_URL}/owner-submit`, {
+            photo_ids: photoIds,
+            edit_token: token,
+        });
+        if (data.status !== 'ok') {
+            throw new Error(data.error || t('modal.fieldPhotoSummary.submitError'));
+        }
+        const submittedIds = (Array.isArray(data.photos) ? data.photos : [])
+            .map(photo => safeFieldPhotoId(photo.id))
+            .filter(Boolean);
+        await loadFieldPhotos();
+        openFieldPhotoThanksModal({
+            saved: submittedIds.length || photoIds.length,
+            editToken: token,
+            photoIds: submittedIds.length ? submittedIds : photoIds,
+            submitted: true,
+        });
+    } catch (err) {
+        if (status) status.textContent = apiErrorMessage(err, t('modal.fieldPhotoSummary.submitError'));
+        if (submitButton) submitButton.disabled = false;
+    }
+}
+
+function clearFieldPhotoThanksDraftState() {
+    lastFieldPhotoThanksToken = '';
+    lastFieldPhotoThanksPhotoIds = [];
+    fieldPhotoUploadEditToken = '';
+}
+
+function fieldPhotoUploadSavedDraftPhotoIds() {
+    if (adminAuthenticated) return [];
+    return fieldPhotoUploadItems
+        .filter(item => item.status === 'saved')
+        .map(item => safeFieldPhotoId(item.photo?.id))
+        .filter(Boolean);
+}
+
+function fieldPhotoUploadSavedDraftToken() {
+    if (adminAuthenticated) return '';
+    return String(
+        fieldPhotoUploadEditToken
+        || fieldPhotoUploadItems.find(item => item.status === 'saved' && item.editToken)?.editToken
+        || ''
+    ).trim();
+}
+
+function openFieldPhotoUploadSavedDraftSummary(statusMessage = '') {
+    const photoIds = fieldPhotoUploadSavedDraftPhotoIds();
+    const editToken = fieldPhotoUploadSavedDraftToken();
+    if (!photoIds.length || !editToken) return false;
+    openFieldPhotoThanksModal({
+        saved: photoIds.length,
+        editToken,
+        photoIds,
+        submitted: false,
+        statusMessage,
+    });
+    return true;
+}
+
+function notifyFieldPhotoUploadBusy() {
+    const status = document.getElementById('field-photo-status');
+    if (status) status.textContent = t('modal.fieldPhoto.uploadInProgress');
+}
+
+function closeFieldPhotoUploadModal(target) {
+    if (fieldPhotoUploadInProgress) {
+        notifyFieldPhotoUploadBusy();
+        return;
+    }
+    if (openFieldPhotoUploadSavedDraftSummary(t('modal.fieldPhotoSummary.closeUploadWithDrafts'))) return;
+    closeModal(target instanceof Element ? target : document.getElementById('modal-field-photo-upload'));
+}
+
+function fieldPhotoThanksDraftRequiresDecision() {
+    const modal = document.getElementById('modal-field-photo-thanks');
+    const submitButton = document.getElementById('field-photo-thanks-submit');
+    return Boolean(
+        modal
+        && !modal.hidden
+        && submitButton
+        && !submitButton.hidden
+        && lastFieldPhotoThanksToken
+        && lastFieldPhotoThanksPhotoIds.length
+    );
+}
+
+function notifyFieldPhotoThanksDecisionRequired() {
+    const status = document.getElementById('field-photo-thanks-status');
+    if (status) status.textContent = t('modal.fieldPhotoSummary.closeBlocked');
+}
+
+function closeFieldPhotoThanksModal(target) {
+    if (fieldPhotoThanksDraftRequiresDecision()) {
+        notifyFieldPhotoThanksDecisionRequired();
+        return;
+    }
+    closeModal(target instanceof Element ? target : document.getElementById('modal-field-photo-thanks'));
+}
+
+async function discardFieldPhotoThanksDraft() {
+    const status = document.getElementById('field-photo-thanks-status');
+    const discardButton = document.getElementById('field-photo-thanks-discard');
+    const token = String(lastFieldPhotoThanksToken || '').trim();
+    const photoIds = lastFieldPhotoThanksPhotoIds.map(safeFieldPhotoId).filter(Boolean);
+    const tokenError = validateFieldPhotoEditToken(token, { required: true });
+    if (tokenError || !photoIds.length) {
+        if (status) status.textContent = tokenError || t('modal.fieldPhotoSummary.discardError');
+        return;
+    }
+    const confirmed = await confirmAction({
+        title: t('modal.fieldPhotoSummary.discardTitle'),
+        message: t('modal.fieldPhotoSummary.discardConfirm', { n: photoIds.length }),
+        confirmLabel: t('modal.fieldPhotoSummary.discard'),
+    });
+    if (!confirmed) return;
+
+    if (discardButton) discardButton.disabled = true;
+    if (status) status.textContent = t('modal.fieldPhotoSummary.discarding');
+    try {
+        const data = await apiPostJson(`${FIELD_PHOTOS_URL}/owner-discard`, {
+            photo_ids: photoIds,
+            edit_token: token,
+        });
+        if (data.status !== 'ok') {
+            throw new Error(data.error || t('modal.fieldPhotoSummary.discardError'));
+        }
+        clearFieldPhotoThanksDraftState();
+        await loadFieldPhotos();
+        closeModal(document.getElementById('modal-field-photo-thanks'));
+        statusEl.textContent = t('modal.fieldPhotoSummary.discarded');
+        statusEl.className = 'ok';
+    } catch (err) {
+        if (status) status.textContent = apiErrorMessage(err, t('modal.fieldPhotoSummary.discardError'));
+        if (discardButton) discardButton.disabled = false;
+    }
+}
+
+async function openFieldPhotoThanksOwnerReview() {
+    const status = document.getElementById('field-photo-thanks-status');
+    const token = String(lastFieldPhotoThanksToken || '').trim();
+    const photoIds = lastFieldPhotoThanksPhotoIds.map(safeFieldPhotoId).filter(Boolean);
+    const tokenError = validateFieldPhotoEditToken(token, { required: true });
+    if (tokenError || !photoIds.length || typeof openFieldPhotoOwnerReviewWithToken !== 'function') {
+        if (status) status.textContent = tokenError || t('modal.fieldPhotoOwner.unlockError');
+        return;
+    }
+    if (status) status.textContent = t('modal.fieldPhotoOwner.loading');
+    try {
+        await openFieldPhotoOwnerReviewWithToken(photoIds, token, {
+            sourceModalId: 'modal-field-photo-thanks',
+            returnToFieldPhotoSummary: true,
+        });
+    } catch (err) {
+        if (status) status.textContent = apiErrorMessage(err, t('modal.fieldPhotoOwner.unlockError'));
+    }
 }
 
 function validateFieldPhotoEditToken(token, options = {}) {
@@ -170,12 +345,10 @@ function resetFieldPhotoUploadModal(options = {}) {
     const ignoreExif = document.getElementById('field-photo-ignore-exif');
     const filesInput = document.getElementById('field-photo-files');
     const issueSelect = document.getElementById('field-photo-issue-type');
-    const editToken = fieldPhotoTokenInput();
     fieldPhotoUploadItems = [];
+    fieldPhotoUploadEditToken = '';
     form?.reset();
     updateFilePickerSummary(filesInput);
-    if (editToken) editToken.value = adminAuthenticated ? '' : randomFieldPhotoEditToken();
-    syncFieldPhotoTokenControls();
     const rawFallback = options.fallbackLatLng;
     fieldPhotoUploadFallbackLatLng = rawFallback && Number.isFinite(Number(rawFallback.lat)) && Number.isFinite(Number(rawFallback.lng))
         ? L.latLng(Number(rawFallback.lat), Number(rawFallback.lng))
@@ -200,6 +373,7 @@ function resetFieldPhotoUploadModal(options = {}) {
         submit.disabled = false;
         submit.querySelector('span').textContent = t('modal.fieldPhoto.submit');
     }
+    fieldPhotoUploadInProgress = false;
 }
 
 async function openFieldPhotoUploadModal(options = {}) {
@@ -269,7 +443,7 @@ function validateFieldPhotoFiles(files) {
 
 function fieldPhotoQueueStatusLabel(item) {
     if (item.status === 'saved') {
-        return adminAuthenticated ? t('modal.fieldPhoto.queueSaved') : t('modal.fieldPhoto.queueSubmittedForReview');
+        return adminAuthenticated ? t('modal.fieldPhoto.queueSaved') : t('modal.fieldPhoto.queuePrepared');
     }
     if (item.status === 'uploading') return t('modal.fieldPhoto.queueUploading');
     if (item.status === 'error') return item.message || t('fieldPhoto.saveError');
@@ -316,68 +490,86 @@ async function uploadFieldPhotoItems(items) {
     const submit = document.getElementById('field-photo-submit');
     const submittedEditToken = adminAuthenticated
         ? ''
-        : (items.find(item => item.editToken)?.editToken || fieldPhotoEditTokenValue());
+        : (fieldPhotoUploadEditToken || items.find(item => item.editToken)?.editToken || ensureFieldPhotoUploadEditToken());
     if (submit) {
         submit.disabled = true;
         submit.querySelector('span').textContent = t('modal.fieldPhoto.uploading');
     }
-    updateFieldPhotoRetryButton(true);
+    fieldPhotoUploadInProgress = true;
+    try {
+        updateFieldPhotoRetryButton(true);
 
-    let attempted = 0;
-    for (const item of items) {
-        item.status = 'uploading';
-        item.message = '';
-        renderFieldPhotoQueue(true);
-        if (status) status.textContent = t('modal.fieldPhoto.uploadProgress', { done: attempted + 1, total: items.length });
-        const formData = new FormData();
-        formData.append('fallback_lat', item.fallbackLat);
-        formData.append('fallback_lon', item.fallbackLon);
-        formData.append('ignore_exif_gps', item.ignoreExifGps ? '1' : '0');
-        formData.append('issue_type', item.issueType || FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
-        if (item.editToken) formData.append('edit_token', item.editToken);
-        formData.append('photo', item.file);
-        try {
-            const data = await apiJson(FIELD_PHOTOS_URL, { method: 'POST', body: formData });
-            if (data.status !== 'ok') {
-                throw new Error(data.error || t('fieldPhoto.saveError'));
-            }
-            item.status = 'saved';
-            item.photo = data.photo || null;
+        let attempted = 0;
+        for (const item of items) {
+            item.status = 'uploading';
             item.message = '';
-        } catch (err) {
-            item.status = 'error';
-            item.validationError = false;
-            item.message = err.message || t('fieldPhoto.saveError');
+            renderFieldPhotoQueue(true);
+            if (status) status.textContent = t('modal.fieldPhoto.uploadProgress', { done: attempted + 1, total: items.length });
+            const formData = new FormData();
+            formData.append('fallback_lat', item.fallbackLat);
+            formData.append('fallback_lon', item.fallbackLon);
+            formData.append('ignore_exif_gps', item.ignoreExifGps ? '1' : '0');
+            formData.append('issue_type', item.issueType || FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
+            item.editToken = item.editToken || submittedEditToken;
+            if (item.editToken) formData.append('edit_token', item.editToken);
+            formData.append('photo', item.file);
+            try {
+                const data = await apiJson(FIELD_PHOTOS_URL, { method: 'POST', body: formData });
+                if (data.status !== 'ok') {
+                    throw new Error(data.error || t('fieldPhoto.saveError'));
+                }
+                item.status = 'saved';
+                item.photo = data.photo || null;
+                item.message = '';
+            } catch (err) {
+                item.status = 'error';
+                item.validationError = false;
+                item.message = err.message || t('fieldPhoto.saveError');
+            }
+            attempted += 1;
+            renderFieldPhotoQueue(true);
         }
-        attempted += 1;
-        renderFieldPhotoQueue(true);
-    }
 
-    await loadFieldPhotos();
-    const summary = fieldPhotoUploadSummary();
-    if (status) {
-        status.textContent = summary.failed
-            ? t('modal.fieldPhoto.uploadSummaryWithErrors', summary)
-            : adminAuthenticated
-                ? t('modal.fieldPhoto.saved', { n: summary.saved })
-                : t('modal.fieldPhoto.submittedForReview', { n: summary.saved });
-    }
-    if (!summary.failed) {
-        if (input) {
-            input.value = '';
-            updateFilePickerSummary(input);
+        await loadFieldPhotos();
+        const summary = fieldPhotoUploadSummary();
+        if (status) {
+            status.textContent = summary.failed
+                ? t('modal.fieldPhoto.uploadSummaryWithErrors', summary)
+                : adminAuthenticated
+                    ? t('modal.fieldPhoto.saved', { n: summary.saved })
+                    : t('modal.fieldPhoto.prepared', { n: summary.saved });
         }
-        if (adminAuthenticated) {
-            closeModal(document.getElementById('modal-field-photo-upload'));
-        } else {
-            openFieldPhotoThanksModal({ saved: summary.saved, editToken: submittedEditToken });
+        const savedPhotoIds = fieldPhotoUploadSavedDraftPhotoIds();
+        if (!adminAuthenticated && savedPhotoIds.length) {
+            const partialMessage = summary.failed ? t('modal.fieldPhotoSummary.partialUpload') : '';
+            if (input) {
+                input.value = '';
+                updateFilePickerSummary(input);
+            }
+            openFieldPhotoThanksModal({
+                saved: savedPhotoIds.length,
+                editToken: submittedEditToken,
+                photoIds: savedPhotoIds,
+                submitted: false,
+                statusMessage: partialMessage,
+            });
+        } else if (!summary.failed) {
+            if (input) {
+                input.value = '';
+                updateFilePickerSummary(input);
+            }
+            if (adminAuthenticated) {
+                closeModal(document.getElementById('modal-field-photo-upload'));
+            }
         }
+    } finally {
+        if (submit) {
+            submit.disabled = false;
+            submit.querySelector('span').textContent = t('modal.fieldPhoto.submit');
+        }
+        fieldPhotoUploadInProgress = false;
+        renderFieldPhotoQueue(false);
     }
-    if (submit) {
-        submit.disabled = false;
-        submit.querySelector('span').textContent = t('modal.fieldPhoto.submit');
-    }
-    renderFieldPhotoQueue(false);
 }
 
 async function submitFieldPhotoUpload(event) {
@@ -393,12 +585,22 @@ async function submitFieldPhotoUpload(event) {
         if (status) status.textContent = err.message;
         return;
     }
+    const validationErrors = fieldPhotoUploadItems.filter(item => item.validationError);
+    if (validationErrors.length) {
+        renderFieldPhotoQueue();
+        if (status) {
+            status.textContent = validationErrors.length === 1
+                ? validationErrors[0].message
+                : t('modal.fieldPhoto.validationErrorHint');
+        }
+        return;
+    }
 
     const fallbackLatLng = currentFieldPhotoUploadFallbackLatLng();
     const ignoreExifGps = document.getElementById('field-photo-ignore-exif')?.checked === true;
     const selectedIssueType = document.getElementById('field-photo-issue-type')?.value || FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const issueType = FIELD_PHOTO_ISSUE_TYPES.has(selectedIssueType) ? selectedIssueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    const editToken = fieldPhotoEditTokenValue();
+    const editToken = ensureFieldPhotoUploadEditToken();
     const tokenError = validateFieldPhotoEditToken(editToken);
     if (tokenError) {
         if (status) status.textContent = tokenError;
@@ -427,7 +629,7 @@ async function submitFieldPhotoUpload(event) {
 async function retryFailedFieldPhotoUploads() {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
     const fallbackLatLng = currentFieldPhotoUploadFallbackLatLng();
-    const editToken = fieldPhotoEditTokenValue();
+    const editToken = ensureFieldPhotoUploadEditToken();
     const retryable = fieldPhotoUploadItems.filter(item => item.status === 'error' && !item.validationError);
     retryable.forEach(item => {
         item.status = 'pending';
@@ -450,4 +652,30 @@ async function retryFailedFieldPhotoUploads() {
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape') cancelFieldPhotoLocationPick({ clearStatus: true });
 });
+document.addEventListener('keydown', event => {
+    const uploadModal = document.getElementById('modal-field-photo-upload');
+    if (event.key !== 'Escape' || !uploadModal || uploadModal.hidden) return;
+    const confirmModal = document.getElementById('modal-confirm');
+    const adminModal = document.getElementById('modal-admin-login');
+    if ((confirmModal && !confirmModal.hidden) || (adminModal && !adminModal.hidden)) return;
+    if (fieldPhotoUploadInProgress) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        notifyFieldPhotoUploadBusy();
+        return;
+    }
+    if (!fieldPhotoUploadSavedDraftPhotoIds().length) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openFieldPhotoUploadSavedDraftSummary(t('modal.fieldPhotoSummary.closeUploadWithDrafts'));
+}, true);
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !fieldPhotoThanksDraftRequiresDecision()) return;
+    const confirmModal = document.getElementById('modal-confirm');
+    const adminModal = document.getElementById('modal-admin-login');
+    if ((confirmModal && !confirmModal.hidden) || (adminModal && !adminModal.hidden)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    notifyFieldPhotoThanksDecisionRequired();
+}, true);
 document.addEventListener('langchange', updatePanelFieldPhotoLocationPickUi);

@@ -17,6 +17,7 @@ from core import config
 from core.geo import external_map_links
 from core.json_io import write_json_atomic
 from core.photo_privacy import (
+    REVIEW_STATUSES,
     apply_review_update,
     ensure_review_fields,
     generate_public_derivatives,
@@ -336,7 +337,8 @@ def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> 
             record = _load_field_record(path.parent, private_root)
         except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
             continue
-        if isinstance(record, dict) and record.get("id") and review_status(record) != "rejected":
+        status = review_status(record)
+        if isinstance(record, dict) and record.get("id") and status not in {"draft", "rejected"}:
             records.append(_summary(record))
     return sorted(records, key=lambda item: str(item.get("created_at") or ""), reverse=True)
 
@@ -384,7 +386,7 @@ def list_field_photo_review_items(storage_dir: Path, *, private_dir: Path | None
             record = _load_field_record(path.parent, private_root)
         except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
             continue
-        if not isinstance(record, dict) or not record.get("id"):
+        if not isinstance(record, dict) or not record.get("id") or review_status(record) == "draft":
             continue
         photo_id = str(record["id"])
         records.append(
@@ -420,6 +422,7 @@ def save_field_photo(
     private_dir: Path | None = None,
     submission_owner: str | None = None,
     edit_token: Any = None,
+    public_review_status: Any = "pending",
 ) -> dict[str, Any]:
     private_root = _private_dir(private_dir)
     if upload.field_name != "photo":
@@ -430,6 +433,9 @@ def save_field_photo(
     if size > config.MAX_FIELD_PHOTO_BYTES:
         raise ValueError("Zdjęcie przekracza limit 10 MB.")
     issue_type_text = _issue_type(issue_type)
+    review_status_text = str(public_review_status or "pending").strip()
+    if review_status_text not in REVIEW_STATUSES:
+        raise ValueError("Nieprawidłowy status przeglądu zdjęcia.")
 
     try:
         with Image.open(io.BytesIO(upload.data)) as image:
@@ -469,7 +475,7 @@ def save_field_photo(
         "captured_at": _captured_at(exif),
         "exif": _limited_exif(exif),
         "private_original_file": private_original_file,
-        "public_review_status": "pending",
+        "public_review_status": review_status_text,
         "redactions": [],
         "reviewed_at": None,
         "submission_owner": submission_owner,
@@ -604,11 +610,12 @@ def review_field_photo_by_owner(
     record_dir = _record_dir_for(photo_id, storage_dir)
     record = _load_field_record(record_dir, _private_dir(private_dir))
     _require_edit_token(record, edit_token)
+    status = "draft" if review_status(record) == "draft" else "pending"
     apply_review_update(
         record,
         record_dir,
         _private_dir(private_dir),
-        status="pending",
+        status=status,
         redactions=redactions,
         thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
@@ -616,3 +623,82 @@ def review_field_photo_by_owner(
     record["owner_redactions_updated_at"] = _now_iso()
     _write_json(record_dir / "record.json", record)
     return {"status": "ok", "photo": _summary(record)}
+
+
+def submit_field_photos_by_owner(
+    photo_ids: list[Any],
+    edit_token: Any,
+    storage_dir: Path,
+    *,
+    private_dir: Path | None = None,
+) -> dict[str, Any]:
+    normalize_photo_edit_token(edit_token)
+    private_root = _private_dir(private_dir)
+    requested_ids: list[str] = []
+    for raw_photo_id in photo_ids:
+        photo_id = str(raw_photo_id or "").strip()
+        if photo_id and photo_id not in requested_ids:
+            requested_ids.append(_validate_photo_id(photo_id))
+    if not requested_ids:
+        raise ValueError("Wskaż zdjęcie do wysłania.")
+
+    photos: list[dict[str, Any]] = []
+    for photo_id in requested_ids:
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        if not (record_dir / "record.json").exists():
+            continue
+        record = _load_field_record(record_dir, private_root)
+        try:
+            _require_edit_token(record, edit_token)
+        except PermissionError:
+            continue
+        status = review_status(record)
+        if status == "draft":
+            record["public_review_status"] = "pending"
+            record["submitted_at"] = _now_iso()
+            record["reviewed_at"] = None
+            remove_public_derivatives(record, record_dir)
+            _write_json(record_dir / "record.json", record)
+            status = "pending"
+        if status == "pending":
+            photos.append(_summary(record))
+    if not photos:
+        raise PermissionError("Nieprawidłowy token edycji zdjęcia albo zdjęcie nie jest szkicem.")
+    return {"status": "ok", "photos": sorted(photos, key=lambda item: str(item.get("created_at") or ""), reverse=True)}
+
+
+def discard_field_photo_drafts_by_owner(
+    photo_ids: list[Any],
+    edit_token: Any,
+    storage_dir: Path,
+    *,
+    private_dir: Path | None = None,
+) -> dict[str, Any]:
+    normalize_photo_edit_token(edit_token)
+    private_root = _private_dir(private_dir)
+    draft_ids: list[str] = []
+    for raw_photo_id in photo_ids:
+        photo_id = str(raw_photo_id or "").strip()
+        if not photo_id or photo_id in draft_ids:
+            continue
+        photo_id = _validate_photo_id(photo_id)
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        if not (record_dir / "record.json").exists():
+            continue
+        record = _load_field_record(record_dir, private_root)
+        try:
+            _require_edit_token(record, edit_token)
+        except PermissionError:
+            continue
+        if review_status(record) == "draft":
+            draft_ids.append(photo_id)
+    if not draft_ids:
+        raise PermissionError("Nieprawidłowy token edycji zdjęcia albo szkic został już wysłany.")
+
+    deleted: list[str] = []
+    for photo_id in draft_ids:
+        result = delete_field_photo(photo_id, storage_dir, private_dir=private_root)
+        deleted_id = str(result.get("deleted") or "")
+        if deleted_id:
+            deleted.append(deleted_id)
+    return {"status": "ok", "deleted": deleted}

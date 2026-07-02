@@ -5,10 +5,12 @@ from app.http import responses as http_responses
 from app.http import static_files as http_static_files
 from core import config as core_config
 from core.field_photos import (
+    discard_field_photo_drafts_by_owner,
     field_photo_owner_original_asset,
     list_owner_field_photo_review_items,
     review_field_photo_by_owner,
     save_field_photo,
+    submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
 from core.report_models import ReportPhotoUpload
@@ -75,6 +77,60 @@ def handle_claim_field_photos(handler) -> None:
             "Field photo owner claim failed",
             exc,
             public_error="Nie udało się odblokować edycji zdjęcia.",
+        )
+
+
+def handle_submit_field_photos(handler) -> None:
+    try:
+        data = http_request_body.read_json_body(handler)
+        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+        result = submit_field_photos_by_owner(
+            photo_ids,
+            data.get("edit_token"),
+            core_config.FIELD_PHOTOS_DIR,
+            private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        )
+        http_responses.send_json(handler, 200, result)
+    except PermissionError as e:
+        http_responses.send_json(handler, 403, {"error": str(e)})
+    except FileNotFoundError as e:
+        http_responses.send_json(handler, 404, {"error": str(e)})
+    except ValueError as e:
+        http_responses.send_json(handler, 400, {"error": str(e)})
+    except Exception as exc:
+        http_responses.send_internal_error(
+            handler,
+            500,
+            "Field photo owner submit failed",
+            exc,
+            public_error="Nie udało się wysłać zdjęć do weryfikacji.",
+        )
+
+
+def handle_discard_field_photo_drafts(handler) -> None:
+    try:
+        data = http_request_body.read_json_body(handler)
+        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+        result = discard_field_photo_drafts_by_owner(
+            photo_ids,
+            data.get("edit_token"),
+            core_config.FIELD_PHOTOS_DIR,
+            private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        )
+        http_responses.send_json(handler, 200, result)
+    except PermissionError as e:
+        http_responses.send_json(handler, 403, {"error": str(e)})
+    except FileNotFoundError as e:
+        http_responses.send_json(handler, 404, {"error": str(e)})
+    except ValueError as e:
+        http_responses.send_json(handler, 400, {"error": str(e)})
+    except Exception as exc:
+        http_responses.send_internal_error(
+            handler,
+            500,
+            "Field photo draft discard failed",
+            exc,
+            public_error="Nie udało się porzucić szkicu zdjęć.",
         )
 
 
@@ -202,7 +258,7 @@ def handle_create_field_photo(handler) -> None:
             return
         edit_token = fields.get("edit_token")
         if not is_admin and not str(edit_token or "").strip():
-            raise ValueError("Wygeneruj i zachowaj token edycji przed dodaniem zdjęcia.")
+            raise ValueError("Nie udało się przygotować tokenu edycji zdjęcia. Spróbuj ponownie.")
         if not is_admin:
             access.ensure_public_submission_quota(
                 handler,
@@ -225,6 +281,7 @@ def handle_create_field_photo(handler) -> None:
             private_dir=core_config.PRIVATE_PHOTOS_DIR,
             submission_owner=None if is_admin else access.submission_owner(handler),
             edit_token=None if is_admin else edit_token,
+            public_review_status="pending" if is_admin else "draft",
         )
         http_responses.send_json(handler, 200, result)
     except ValueError as e:

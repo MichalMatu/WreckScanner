@@ -43,7 +43,7 @@ def _pending_record_owner(record: dict[str, Any]) -> str:
 
 
 def _is_pending(record: dict[str, Any]) -> bool:
-    return str(record.get("public_review_status") or "").strip().lower() == "pending"
+    return str(record.get("public_review_status") or "").strip().lower() in {"draft", "pending"}
 
 
 def pending_submission_usage(

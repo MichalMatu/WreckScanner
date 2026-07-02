@@ -8,13 +8,16 @@ from PIL import ExifTags, Image, TiffImagePlugin
 
 from core.config import MAX_FIELD_PHOTO_BYTES
 from core.field_photos import (
+    discard_field_photo_drafts_by_owner,
     field_photo_asset,
     field_photo_owner_original_asset,
+    list_field_photo_review_items,
     list_field_photos,
     list_owner_field_photo_review_items,
     review_field_photo,
     review_field_photo_by_owner,
     save_field_photo,
+    submit_field_photos_by_owner,
 )
 from core.uploads import UploadedFile
 
@@ -168,6 +171,86 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual([item["photo_id"] for item in items], [photo_id])
             self.assertEqual(content_type, "image/png")
             self.assertTrue(original_path.exists())
+
+    def test_public_draft_is_hidden_until_owner_submits_for_review(self):
+        with TemporaryDirectory() as tmp:
+            storage_dir = Path(tmp)
+            private_dir = storage_dir / "private"
+            token = "owner-token-123"
+            result = save_field_photo(
+                upload(image_bytes("PNG"), filename="teren.png"),
+                storage_dir,
+                fallback_lat="51.3",
+                fallback_lon="17.4",
+                private_dir=private_dir,
+                edit_token=token,
+                public_review_status="draft",
+            )
+            photo_id = result["photo"]["id"]
+
+            self.assertEqual(result["photo"]["public_review_status"], "draft")
+            self.assertEqual(list_field_photos(storage_dir, private_dir=private_dir), [])
+            self.assertEqual(list_field_photo_review_items(storage_dir, private_dir=private_dir), [])
+
+            owner_result = review_field_photo_by_owner(
+                photo_id,
+                token,
+                storage_dir,
+                redactions=[{"x": 0, "y": 0, "width": 0.5, "height": 0.5}],
+                private_dir=private_dir,
+            )
+            self.assertEqual(owner_result["photo"]["public_review_status"], "draft")
+            self.assertEqual(list_field_photos(storage_dir, private_dir=private_dir), [])
+            self.assertEqual(list_field_photo_review_items(storage_dir, private_dir=private_dir), [])
+
+            submit_result = submit_field_photos_by_owner([photo_id], token, storage_dir, private_dir=private_dir)
+            record = json.loads((storage_dir / photo_id / "record.json").read_text(encoding="utf-8"))
+
+            self.assertEqual(submit_result["photos"][0]["public_review_status"], "pending")
+            self.assertEqual(record["public_review_status"], "pending")
+            self.assertTrue(record["submitted_at"])
+            self.assertEqual(len(list_field_photos(storage_dir, private_dir=private_dir)), 1)
+            self.assertEqual(len(list_field_photo_review_items(storage_dir, private_dir=private_dir)), 1)
+
+    def test_owner_can_discard_draft_but_not_pending_photo(self):
+        with TemporaryDirectory() as tmp:
+            storage_dir = Path(tmp)
+            private_dir = storage_dir / "private"
+            token = "owner-token-123"
+            result = save_field_photo(
+                upload(image_bytes("PNG"), filename="teren.png"),
+                storage_dir,
+                fallback_lat="51.3",
+                fallback_lon="17.4",
+                private_dir=private_dir,
+                edit_token=token,
+                public_review_status="draft",
+            )
+            photo_id = result["photo"]["id"]
+            record_path = storage_dir / photo_id / "record.json"
+            private_original = private_dir / f"field_photos/{photo_id}/original.png"
+
+            discard_result = discard_field_photo_drafts_by_owner([photo_id], token, storage_dir, private_dir=private_dir)
+
+            self.assertEqual(discard_result["deleted"], [photo_id])
+            self.assertFalse(record_path.exists())
+            self.assertFalse(private_original.exists())
+
+            pending_result = save_field_photo(
+                upload(image_bytes("PNG"), filename="teren.png"),
+                storage_dir,
+                fallback_lat="51.3",
+                fallback_lon="17.4",
+                private_dir=private_dir,
+                edit_token=token,
+                public_review_status="draft",
+            )
+            pending_photo_id = pending_result["photo"]["id"]
+            submit_field_photos_by_owner([pending_photo_id], token, storage_dir, private_dir=private_dir)
+
+            with self.assertRaises(PermissionError):
+                discard_field_photo_drafts_by_owner([pending_photo_id], token, storage_dir, private_dir=private_dir)
+            self.assertTrue((storage_dir / pending_photo_id / "record.json").exists())
 
     def test_owner_review_saves_redactions_as_pending_for_admin_decision(self):
         with TemporaryDirectory() as tmp:

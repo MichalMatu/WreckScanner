@@ -186,6 +186,12 @@ def handle_post(handler) -> None:
     if request_path == "/api/field-photos/owner-claim":
         http_request_body.dispatch_json_request(handler, http_public.handle_claim_field_photos, handler)
         return
+    if request_path == "/api/field-photos/owner-submit":
+        http_request_body.dispatch_json_request(handler, http_public.handle_submit_field_photos, handler)
+        return
+    if request_path == "/api/field-photos/owner-discard":
+        http_request_body.dispatch_json_request(handler, http_public.handle_discard_field_photo_drafts, handler)
+        return
     if request_path == "/api/admin/photo-retention/run":
         http_request_body.dispatch_json_request(handler, http_retention.handle_run_photo_retention, handler)
         return

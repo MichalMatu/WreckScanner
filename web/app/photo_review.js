@@ -5,6 +5,7 @@ let photoReviewMode = 'admin';
 let ownerPhotoReviewToken = '';
 let ownerPhotoReviewObjectUrl = null;
 let ownerFieldPhotoIds = [];
+let ownerPhotoReviewReturnToSummary = false;
 let activePhotoReview = null;
 let photoReviewImage = null;
 let photoReviewRedactions = [];
@@ -50,16 +51,54 @@ function setPhotoReviewMode(mode = 'admin') {
     if (!ownerMode) {
         ownerPhotoReviewToken = '';
         ownerFieldPhotoIds = [];
+        ownerPhotoReviewReturnToSummary = false;
         revokeOwnerPhotoReviewObjectUrl();
     }
     const title = document.getElementById('photo-review-title');
     const controls = document.getElementById('photo-review-controls');
+    const saveButton = document.getElementById('photo-review-save');
+    const saveLabel = document.getElementById('photo-review-save-label');
     if (title) title.textContent = ownerMode ? t('modal.photoReview.ownerTitle') : t('modal.photoReview.title');
     if (controls) controls.hidden = ownerMode;
+    if (saveButton) {
+        const saveText = t(ownerMode ? 'modal.photoReview.saveOwner' : 'modal.photoReview.savePending');
+        saveButton.title = saveText;
+        saveButton.setAttribute('aria-label', saveText);
+    }
+    if (saveLabel) {
+        saveLabel.textContent = t(ownerMode ? 'modal.photoReview.saveOwnerShort' : 'modal.photoReview.savePendingShort');
+    }
     document.querySelectorAll('#modal-photo-review .admin-review-only').forEach(button => {
         button.hidden = ownerMode || (button.id === 'photo-review-delete');
     });
+    updatePhotoReviewReturnAction();
     updatePhotoReviewDeleteAction();
+}
+
+function updatePhotoReviewReturnAction() {
+    const button = document.getElementById('photo-review-return-summary');
+    const closeButton = document.getElementById('photo-review-close');
+    const summaryReturnFlow = photoReviewMode === 'owner' && ownerPhotoReviewReturnToSummary;
+    if (button) button.hidden = !summaryReturnFlow;
+    if (closeButton) closeButton.hidden = summaryReturnFlow;
+}
+
+function photoReviewRequiresSummaryReturn() {
+    const modal = document.getElementById('modal-photo-review');
+    return Boolean(modal && !modal.hidden && photoReviewMode === 'owner' && ownerPhotoReviewReturnToSummary);
+}
+
+function closePhotoReviewModal(target) {
+    if (photoReviewRequiresSummaryReturn()) {
+        returnPhotoReviewToFieldPhotoSummary();
+        return;
+    }
+    closeModal(target instanceof Element ? target : document.getElementById('modal-photo-review'));
+}
+
+function handlePhotoReviewBackdropClose(target) {
+    if (photoReviewRequiresSummaryReturn()) return;
+    closeModal(target);
 }
 
 function openFieldPhotoOwnerEditor(encodedPhotoIds) {
@@ -77,6 +116,47 @@ function openFieldPhotoOwnerEditor(encodedPhotoIds) {
     requestAnimationFrame(() => document.getElementById('field-photo-owner-token')?.focus());
 }
 
+async function openFieldPhotoOwnerReviewWithToken(photoIds, token, options = {}) {
+    const normalizedPhotoIds = (Array.isArray(photoIds) ? photoIds : [])
+        .map(safeFieldPhotoId)
+        .filter(Boolean);
+    const normalizedToken = String(token || '').trim();
+    const tokenError = validateFieldPhotoEditToken(normalizedToken, { required: true });
+    if (!normalizedPhotoIds.length) throw new Error(t('modal.fieldPhotoOwner.unlockError'));
+    if (tokenError) throw new Error(tokenError);
+
+    const data = await apiPostJson(`${FIELD_PHOTOS_URL}/owner-claim`, {
+        photo_ids: normalizedPhotoIds,
+        edit_token: normalizedToken,
+    });
+    if (data.status !== 'ok') {
+        throw new Error(data.error || t('modal.fieldPhotoOwner.unlockError'));
+    }
+    photoReviewItems = Array.isArray(data.photos) ? data.photos : [];
+    if (!photoReviewItems.length) throw new Error(t('modal.fieldPhotoOwner.unlockError'));
+    ownerFieldPhotoIds = normalizedPhotoIds;
+    ownerPhotoReviewToken = normalizedToken;
+    photoReviewExactPhotoIds = [];
+    activePhotoReview = null;
+    photoReviewImage = null;
+    photoReviewRedactions = [];
+    activePhotoReviewRedactionIndex = -1;
+    photoReviewDraftRect = null;
+    ownerPhotoReviewReturnToSummary = Boolean(options.returnToFieldPhotoSummary);
+    if (options.sourceModalId) closeModal(document.getElementById(options.sourceModalId));
+    setPhotoReviewMode('owner');
+    openModal('modal-photo-review');
+    renderPhotoReviewQueue();
+    clearPhotoReviewCanvas();
+    selectPhotoReview(photoReviewItems[0].id);
+}
+
+function returnPhotoReviewToFieldPhotoSummary() {
+    if (photoReviewMode !== 'owner' || !ownerPhotoReviewReturnToSummary) return;
+    closeModal(document.getElementById('modal-photo-review'));
+    openModal('modal-field-photo-thanks');
+}
+
 async function submitFieldPhotoOwnerToken(event) {
     event.preventDefault();
     const token = String(document.getElementById('field-photo-owner-token')?.value || '').trim();
@@ -90,28 +170,7 @@ async function submitFieldPhotoOwnerToken(event) {
     if (submit) submit.disabled = true;
     if (status) status.textContent = t('modal.fieldPhotoOwner.loading');
     try {
-        const data = await apiPostJson(`${FIELD_PHOTOS_URL}/owner-claim`, {
-            photo_ids: ownerFieldPhotoIds,
-            edit_token: token,
-        });
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('modal.fieldPhotoOwner.unlockError'));
-        }
-        photoReviewItems = Array.isArray(data.photos) ? data.photos : [];
-        if (!photoReviewItems.length) throw new Error(t('modal.fieldPhotoOwner.unlockError'));
-        ownerPhotoReviewToken = token;
-        photoReviewExactPhotoIds = [];
-        activePhotoReview = null;
-        photoReviewImage = null;
-        photoReviewRedactions = [];
-        activePhotoReviewRedactionIndex = -1;
-        photoReviewDraftRect = null;
-        closeModal(document.getElementById('modal-field-photo-owner'));
-        setPhotoReviewMode('owner');
-        openModal('modal-photo-review');
-        renderPhotoReviewQueue();
-        clearPhotoReviewCanvas();
-        selectPhotoReview(photoReviewItems[0].id);
+        await openFieldPhotoOwnerReviewWithToken(ownerFieldPhotoIds, token, { sourceModalId: 'modal-field-photo-owner' });
     } catch (err) {
         if (status) status.textContent = apiErrorMessage(err, t('modal.fieldPhotoOwner.unlockError'));
     } finally {
@@ -262,6 +321,16 @@ document.getElementById('modal-photo-review')?.addEventListener('modalclose', ()
     revokeOwnerPhotoReviewObjectUrl();
 });
 
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !photoReviewRequiresSummaryReturn()) return;
+    const confirmModal = document.getElementById('modal-confirm');
+    const adminModal = document.getElementById('modal-admin-login');
+    if ((confirmModal && !confirmModal.hidden) || (adminModal && !adminModal.hidden)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    returnPhotoReviewToFieldPhotoSummary();
+}, true);
+
 function clearPhotoReviewCanvas() {
     const canvas = document.getElementById('photo-review-canvas');
     const empty = document.getElementById('photo-review-empty');
@@ -358,10 +427,12 @@ async function savePhotoReviewStatus(publicReviewStatus) {
             throw new Error(data.error || t('modal.photoReview.saveError'));
         }
         if (status) status.textContent = photoReviewMode === 'owner'
-            ? t('modal.photoReview.ownerSaved')
+            ? t(data.photo?.public_review_status === 'draft'
+                ? 'modal.photoReview.ownerDraftSaved'
+                : 'modal.photoReview.ownerSaved')
             : t('modal.photoReview.saved');
         if (photoReviewMode === 'owner') {
-            activePhotoReview.public_review_status = 'pending';
+            activePhotoReview.public_review_status = data.photo?.public_review_status || 'pending';
             activePhotoReview.redactions = photoReviewRedactions;
             renderPhotoReviewQueue();
             await loadFieldPhotos();

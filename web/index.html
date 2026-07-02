@@ -474,12 +474,12 @@
     </div>
 
     <!-- ─── MODAL: ZDJĘCIA TERENOWE ─────────────────────── -->
-    <div class="modal-backdrop" id="modal-field-photo-upload" hidden onclick="closeModal(this)">
+    <div class="modal-backdrop" id="modal-field-photo-upload" hidden onclick="closeFieldPhotoUploadModal(this)">
         <div class="modal modal--field-photo draggable-modal" onclick="event.stopPropagation()">
             <div class="modal-header modal-drag-handle">
                 <h2 data-i18n="modal.fieldPhoto.title">Zdjęcia terenowe</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
+                <button type="button" class="modal-close" onclick="closeFieldPhotoUploadModal()"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
@@ -512,20 +512,6 @@
                         do 25 zdjęć naraz.</p>
                     <div class="field-photo-queue" id="field-photo-queue" hidden></div>
                 </section>
-                <section class="modal-section field-photo-token-section" id="field-photo-token-section">
-                    <div class="field-photo-token-label-row">
-                        <label class="modal-label" for="field-photo-edit-token"
-                            data-i18n="modal.fieldPhoto.editToken">Token edycji</label>
-                        <button type="button" class="report-copy-btn field-photo-token-btn"
-                            onclick="generateFieldPhotoEditToken()" data-i18n="modal.fieldPhoto.generateToken">Generuj</button>
-                        <button type="button" class="report-copy-btn field-photo-token-btn"
-                            onclick="copyFieldPhotoEditToken()" data-i18n="modal.fieldPhoto.copyToken">Kopiuj</button>
-                    </div>
-                    <input class="modal-input field-photo-token-input" id="field-photo-edit-token" type="text"
-                        autocomplete="off" spellcheck="false" maxlength="80">
-                    <p class="modal-hint" data-i18n="modal.fieldPhoto.editTokenHint">Zachowaj token. Pozwoli później
-                        otworzyć to zdjęcie i przygotować anonimizację przed decyzją administratora.</p>
-                </section>
                 <section class="modal-section">
                     <label class="modal-label" data-i18n="modal.fieldPhoto.location">Punkt fallback</label>
                     <p class="modal-hint field-photo-fallback" id="field-photo-fallback"></p>
@@ -549,12 +535,12 @@
         </div>
     </div>
 
-    <div class="modal-backdrop" id="modal-field-photo-thanks" hidden onclick="closeModal(this)">
+    <div class="modal-backdrop" id="modal-field-photo-thanks" hidden onclick="closeFieldPhotoThanksModal(this)">
         <div class="modal modal--field-photo-thanks draggable-modal" onclick="event.stopPropagation()">
             <div class="modal-header modal-drag-handle">
-                <h2 data-i18n="modal.fieldPhotoThanks.title">Dziękujemy za zdjęcie</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
+                <h2 id="field-photo-thanks-title" data-i18n="modal.fieldPhotoThanks.title">Dziękujemy za zdjęcie</h2>
+                <button type="button" class="modal-close" id="field-photo-thanks-close"
+                    onclick="closeFieldPhotoThanksModal()" data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
@@ -573,22 +559,35 @@
                     <input class="modal-input field-photo-token-input" id="field-photo-thanks-token" type="text"
                         readonly autocomplete="off" spellcheck="false">
                     <p class="modal-hint" data-i18n="modal.fieldPhotoThanks.tokenHint">Zachowaj token. Bez niego nie
-                        odblokujesz późniejszej edycji zdjęcia.</p>
+                        odblokujesz później edycji zdjęcia z mapy.</p>
                     <p class="modal-hint" id="field-photo-thanks-status"></p>
                 </section>
                 <section class="welcome-section field-photo-thanks-steps">
                     <h3 data-i18n="modal.fieldPhotoThanks.nextTitle">Co dalej?</h3>
                     <ol class="modal-steps">
-                        <li data-i18n="modal.fieldPhotoThanks.stepEdit">Kliknij pinezkę zdjęcia na mapie i wybierz
-                            „Edytuj moje zdjęcie”.</li>
-                        <li data-i18n="modal.fieldPhotoThanks.stepToken">Wpisz token, zaznacz obszary do zamazania i
-                            zapisz anonimizację.</li>
+                        <li data-i18n="modal.fieldPhotoThanks.stepEdit">Możesz od razu przygotować anonimizację bez
+                            ponownego wpisywania tokenu.</li>
+                        <li data-i18n="modal.fieldPhotoThanks.stepToken">Zachowaj token, jeśli później wrócisz do
+                            zdjęcia z pinezki na mapie.</li>
                         <li data-i18n="modal.fieldPhotoThanks.stepApproval">Administrator zatwierdzi zdjęcie przed
                             publikacją.</li>
                     </ol>
                 </section>
                 <div class="welcome-actions">
-                    <button type="button" class="btn-download welcome-start-btn" onclick="closeModal()">
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-review"
+                        onclick="openFieldPhotoThanksOwnerReview()">
+                        <span data-i18n="modal.fieldPhotoThanks.reviewNow">Anonimizuj teraz</span>
+                    </button>
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-submit"
+                        onclick="submitFieldPhotoThanksForReview()">
+                        <span data-i18n="modal.fieldPhotoSummary.submit">Wyślij do weryfikacji</span>
+                    </button>
+                    <button type="button" class="confirm-danger-btn welcome-start-btn" id="field-photo-thanks-discard"
+                        onclick="discardFieldPhotoThanksDraft()">
+                        <span data-i18n="modal.fieldPhotoSummary.discard">Porzuć szkic</span>
+                    </button>
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-done"
+                        onclick="closeModal()">
                         <span data-i18n="modal.fieldPhotoThanks.done">OK</span>
                     </button>
                 </div>
@@ -627,17 +626,22 @@
         </form>
     </div>
 
-    <div class="modal-backdrop" id="modal-photo-review" hidden onclick="closeModal(this)">
+    <div class="modal-backdrop" id="modal-photo-review" hidden onclick="handlePhotoReviewBackdropClose(this)">
         <div class="modal modal--photo-review draggable-modal" onclick="event.stopPropagation()">
             <div class="modal-header modal-drag-handle">
                 <h2 id="photo-review-title" data-i18n="modal.photoReview.title">Przegląd zdjęć</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
-                    </svg>
-                </button>
+                <div class="modal-header-actions">
+                    <button type="button" class="report-copy-btn field-photo-token-btn" id="photo-review-return-summary"
+                        onclick="returnPhotoReviewToFieldPhotoSummary()" data-i18n="modal.photoReview.backToSummary"
+                        hidden>Podsumowanie</button>
+                    <button type="button" class="modal-close" id="photo-review-close" onclick="closePhotoReviewModal()"
+                        data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="modal-body photo-review-body">
                 <section class="modal-section" id="photo-review-controls">
@@ -688,13 +692,14 @@
                                 </button>
                             </div>
                             <div class="review-decision-actions">
-                                <button type="button" class="report-copy-btn review-action-btn"
+                                <button type="button" class="report-copy-btn review-action-btn" id="photo-review-save"
                                     onclick="savePhotoReviewStatus('pending')"
                                     data-i18n-attr="title:modal.photoReview.savePending;aria-label:modal.photoReview.savePending">
                                     <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-2.3-5.7L15 9h7V2l-2.9 2.9A10 10 0 0 0 12 2zm1 5h-2v6l5 3 .9-1.6-3.9-2.3V7z" />
                                     </svg>
-                                    <span class="review-action-label" data-i18n="modal.photoReview.savePendingShort">Do weryfikacji</span>
+                                    <span class="review-action-label" id="photo-review-save-label"
+                                        data-i18n="modal.photoReview.savePendingShort">Do weryfikacji</span>
                                 </button>
                                 <button type="button" class="confirm-danger-btn review-action-btn admin-review-only"
                                     onclick="savePhotoReviewStatus('rejected')"
