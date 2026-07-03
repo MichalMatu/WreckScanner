@@ -22,7 +22,6 @@ from core.photo_privacy import (
     ensure_review_fields,
     generate_public_derivatives,
     is_approved,
-    migrate_private_original,
     remove_public_derivatives,
     review_status,
     safe_child,
@@ -158,24 +157,8 @@ def _private_dir(private_dir: Path | None) -> Path:
     return private_dir or config.PRIVATE_PHOTOS_DIR
 
 
-def _migrate_field_record(record_dir: Path, record: dict[str, Any], private_dir: Path) -> bool:
+def _prepare_field_record(record_dir: Path, record: dict[str, Any], private_dir: Path) -> bool:
     changed = ensure_review_fields(record)
-    photo_id = str(record.get("id") or "")
-    if photo_id:
-        changed = (
-            migrate_private_original(
-                record,
-                record_dir,
-                private_dir,
-                scope="field_photos",
-                photo_id=photo_id,
-            )
-            or changed
-        )
-    for legacy_key in ("thumbnail_file", "original_url", "original_path"):
-        if legacy_key in record:
-            record.pop(legacy_key, None)
-            changed = True
     if not is_approved(record):
         remove_public_derivatives(record, record_dir)
     elif not safe_existing_child(record_dir, record.get("public_image_file")) or not safe_existing_child(
@@ -199,7 +182,7 @@ def _load_field_record(record_dir: Path, private_dir: Path) -> dict[str, Any]:
     record = _read_json(record_path)
     if not isinstance(record, dict):
         raise ValueError("Nieprawidłowy format record.json.")
-    if _migrate_field_record(record_dir, record, private_dir):
+    if _prepare_field_record(record_dir, record, private_dir):
         _write_json(record_path, record)
     return record
 

@@ -83,7 +83,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("linear-gradient(135deg, var(--primary-soft)", admin_css)
         self.assertNotIn("background: rgba(255, 255, 255, 0.045);", admin_css)
 
-    def test_frontend_removes_legacy_vehicle_case_review_panel(self):
+    def test_frontend_removes_retired_vehicle_case_review_panel(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")

@@ -278,7 +278,7 @@
     justify-self: center;
 }
 
-.layer-pin--wreck {
+.layer-pin--vehicle {
     background: #111827;
     border: 2px solid #34d399;
     box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.14);
@@ -392,7 +392,7 @@
     border: 0;
 }
 
-.saved-wreck-pin {
+.vehicle-pin {
     width: 34px;
     height: 34px;
     border-radius: 50% 50% 50% 0;
@@ -408,24 +408,24 @@
     transform: rotate(-45deg);
 }
 
-.saved-wreck-pin--with-photos {
+.vehicle-pin--with-photos {
     border-color: #86efac;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(249, 115, 22, 0.24);
 }
 
-.saved-wreck-pin--pending {
+.vehicle-pin--pending {
     background: #422006;
     border-color: #fbbf24;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 191, 36, 0.26);
 }
 
-.saved-wreck-pin--rejected {
+.vehicle-pin--rejected {
     background: #450a0a;
     border-color: #fb7185;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 113, 133, 0.22);
 }
 
-.saved-wreck-pin::before {
+.vehicle-pin::before {
     content: '';
     position: absolute;
     inset: 7px;
@@ -433,8 +433,8 @@
     border: 1px solid rgba(52, 211, 153, 0.45);
 }
 
-.saved-wreck-pin::after {
-    content: 'W';
+.vehicle-pin::after {
+    content: 'V';
     color: #34d399;
     transform: rotate(45deg);
     position: absolute;
@@ -443,20 +443,20 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-.saved-wreck-pin--pending::before {
+.vehicle-pin--pending::before {
     border-color: rgba(251, 191, 36, 0.56);
 }
 
-.saved-wreck-pin--pending::after {
+.vehicle-pin--pending::after {
     content: '?';
     color: #fde68a;
 }
 
-.saved-wreck-pin--rejected::before {
+.vehicle-pin--rejected::before {
     border-color: rgba(251, 113, 133, 0.54);
 }
 
-.saved-wreck-pin--rejected::after {
+.vehicle-pin--rejected::after {
     content: 'X';
     color: #fecdd3;
 }
@@ -564,15 +564,15 @@
 }
 
 .marker-detail--dots .map-pin-count,
-.marker-detail--dots .saved-wreck-pin::before,
-.marker-detail--dots .saved-wreck-pin::after,
+.marker-detail--dots .vehicle-pin::before,
+.marker-detail--dots .vehicle-pin::after,
 .marker-detail--dots .pending-submission-pin::after,
 .marker-detail--dots .field-photo-pin::before,
 .marker-detail--dots .field-photo-pin::after {
     display: none;
 }
 
-.marker-detail--dots .saved-wreck-pin,
+.marker-detail--dots .vehicle-pin,
 .marker-detail--dots .pending-submission-pin,
 .marker-detail--dots .field-photo-pin {
     width: 12px;
@@ -582,17 +582,17 @@
     transform: translate(11px, 28px);
 }
 
-.marker-detail--dots .saved-wreck-pin {
+.marker-detail--dots .vehicle-pin {
     background: #34d399;
     border: 2px solid #ecfdf5;
 }
 
-.marker-detail--dots .saved-wreck-pin--pending {
+.marker-detail--dots .vehicle-pin--pending {
     background: #fbbf24;
     border-color: #fffbeb;
 }
 
-.marker-detail--dots .saved-wreck-pin--rejected {
+.marker-detail--dots .vehicle-pin--rejected {
     background: #fb7185;
     border-color: #fff1f2;
 }

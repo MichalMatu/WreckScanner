@@ -81,7 +81,7 @@ class DataDiagnosticsTests(unittest.TestCase):
             field_dir = root / "zdjecia_terenowe"
             private_dir = root / "prywatne_zdjecia"
 
-            write_field_photo_record(field_dir, private_dir, issue_type=None)
+            write_field_photo_record(field_dir, private_dir, issue_type="vehicle")
             write_field_photo_record(
                 field_dir,
                 private_dir,
@@ -95,7 +95,6 @@ class DataDiagnosticsTests(unittest.TestCase):
 
             self.assertEqual(report["status"], "ok")
             self.assertEqual(report["summary"]["field_photos"]["records"], 2)
-            self.assertEqual(report["summary"]["field_photos"]["legacy_without_issue_type"], 1)
             self.assertEqual(report["summary"]["field_photos"]["issue_types"]["vehicle"], 1)
             self.assertEqual(report["summary"]["field_photos"]["issue_types"]["smoke"], 1)
             self.assertNotIn("wrecks_dir", report["roots"])
@@ -113,7 +112,6 @@ class DataDiagnosticsTests(unittest.TestCase):
                 broken_field / "record.json",
                 {
                     "id": broken_field.name,
-                    "issue_type": "unknown",
                     "lat": 999,
                     "lon": 17.2,
                     "private_original_file": "field_photos/photo_20260604T200730Z_37885295/missing.jpg",
@@ -132,7 +130,7 @@ class DataDiagnosticsTests(unittest.TestCase):
 
             self.assertEqual(report["status"], "error")
             codes = {issue["code"] for issue in report["issues"]}
-            self.assertIn("field_photo_bad_issue_type", codes)
+            self.assertIn("field_photo_missing_issue_type", codes)
             self.assertIn("field_photo_bad_coordinates", codes)
             self.assertIn("field_photo_private_original_missing", codes)
 

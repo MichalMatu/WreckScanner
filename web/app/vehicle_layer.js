@@ -163,7 +163,7 @@ function placeVehicleMarkers() {
     buildVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
         const marker = L.marker([group.lat, group.lon], {
-            icon: wreckIcon(vehicleGroupPhotoCount(group)),
+            icon: vehicleIcon(vehicleGroupPhotoCount(group)),
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,

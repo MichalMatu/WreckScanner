@@ -63,7 +63,7 @@ async function openFieldPhotoGroupReport(lat, lon, encodedPhotoIds, button = nul
         const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
         await openFieldPhotoReportPackageModal(lat, lon, photoIds);
     } catch (err) {
-        statusEl.textContent = apiErrorMessage(err, t('fieldPhoto.prepareCaseError'));
+        statusEl.textContent = apiErrorMessage(err, t('modal.report.generateError'));
         statusEl.className = 'err';
     } finally {
         if (btn) btn.disabled = false;

@@ -25,11 +25,11 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 ## Zakres
 
 - mapa Leaflet z podkladami `POL`, `OSM` oraz rocznikami Wroclawia `2020-2025`,
-- reczne sprawy pojazdow tworzone z kliknietej lokalizacji na mapie,
-- automatyczne miniatury historyczne pobierane lekko z WMS dla miejsca sprawy,
-- pakiety ZIP/PDF i publiczny `index.html` dla zapisanych spraw,
-- zdjecia terenowe z kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
-- panel administratora dla zdjec, spraw, zgloszen prywatnosci i widocznosci warstw,
+- zdjecia terenowe z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
+- warstwa pojazdow budowana z zatwierdzonych zdjec terenowych,
+- automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
+- pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
+- panel administratora dla zdjec, zgloszen prywatnosci, retencji oryginalow i widocznosci warstw,
 - warstwa dzialek KIEG/EGiB,
 - lokalny backup danych przez `restic`.
 
@@ -42,6 +42,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 ## Dokumentacja
 
 - [docs/START.md](docs/START.md) - uruchamianie, zatrzymanie, smoke test i haslo administratora.
+- [docs/CURRENT_MODEL.md](docs/CURRENT_MODEL.md) - aktualny model danych, endpointy i audyt braku starych artefaktow.
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 

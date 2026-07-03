@@ -157,9 +157,7 @@ function placeFieldPhotos(photos = fieldPhotoLayerData) {
     groupFieldPhotos(filteredFieldPhotos(photos)).forEach(group => {
         const reviewStatus = fieldPhotoGroupReviewStatus(group);
         const marker = L.marker([group.lat, group.lon], {
-            icon: reviewStatus === 'pending'
-                ? pendingSubmissionIcon('photo')
-                : fieldPhotoIcon(group.photos.length, group.issueType),
+            icon: reviewStatus === 'pending' ? pendingSubmissionIcon() : fieldPhotoIcon(group.photos.length, group.issueType),
             zIndexOffset: 1400,
             draggable: adminAuthenticated,
             autoPan: adminAuthenticated,

@@ -1,19 +1,15 @@
-let pendingSubmissionLayer = L.layerGroup().addTo(map);
-let pendingSubmissionMarkers = [];
-const PENDING_SUBMISSION_MARKER_LIMIT = 25;
-
 function countBadge(count, className) {
     const numericCount = Math.max(0, Math.floor(Number(count) || 0));
     if (numericCount <= 0) return '';
     return `<span class="map-pin-count ${className}">${numericCount}</span>`;
 }
 
-function wreckIcon(photoCount = 0, reviewStatus = 'approved') {
+function vehicleIcon(photoCount = 0, reviewStatus = 'approved') {
     const numericCount = Math.max(0, Math.floor(Number(photoCount) || 0));
-    const badge = countBadge(numericCount, 'saved-wreck-pin-count');
+    const badge = countBadge(numericCount, 'vehicle-pin-count');
     const safeStatus = reviewStatus === 'pending' || reviewStatus === 'rejected' ? reviewStatus : 'approved';
-    const classes = ['saved-wreck-pin', `saved-wreck-pin--${safeStatus}`];
-    if (numericCount > 0) classes.push('saved-wreck-pin--with-photos');
+    const classes = ['vehicle-pin', `vehicle-pin--${safeStatus}`];
+    if (numericCount > 0) classes.push('vehicle-pin--with-photos');
     const className = classes.join(' ');
     const html = `<div class="${className}">${badge}</div>`;
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
@@ -27,22 +23,9 @@ function fieldPhotoIcon(count = 1, issueType = FIELD_PHOTO_ISSUE_TYPE_VEHICLE) {
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
 }
 
-function pendingSubmissionIcon(kind = 'wreck') {
-    const safeKind = kind === 'photo' ? 'photo' : 'wreck';
-    const html = `<div class="pending-submission-pin pending-submission-pin--${safeKind}"></div>`;
+function pendingSubmissionIcon() {
+    const html = '<div class="pending-submission-pin pending-submission-pin--photo"></div>';
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
-}
-
-function pendingWreckSubmissionPopup(lat, lon) {
-    return `
-        <div class="map-popup map-popup--pending-submission">
-            ${popupHeader(t('pendingSubmission.wreckTitle'), t('pendingSubmission.status'))}
-            ${popupMeta([
-                t('pendingSubmission.reviewHint'),
-                t('pendingSubmission.coords', { lat: Number(lat).toFixed(6), lon: Number(lon).toFixed(6) }),
-            ])}
-        </div>
-    `;
 }
 
 function pendingFieldPhotoPopup(group) {
@@ -67,27 +50,4 @@ function pendingFieldPhotoPopup(group) {
             ${popupActions([ownerButton])}
         </div>
     `;
-}
-
-function addPendingSubmissionMarker({ lat, lon } = {}) {
-    const latNumber = Number(lat);
-    const lonNumber = Number(lon);
-    if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber)) return null;
-
-    const marker = L.marker([latNumber, lonNumber], {
-        icon: pendingSubmissionIcon('wreck'),
-        zIndexOffset: 1800,
-    }).bindPopup(pendingWreckSubmissionPopup(latNumber, lonNumber), { maxWidth: 300 });
-    pendingSubmissionLayer.addLayer(marker);
-    pendingSubmissionMarkers.push(marker);
-    while (pendingSubmissionMarkers.length > PENDING_SUBMISSION_MARKER_LIMIT) {
-        pendingSubmissionLayer.removeLayer(pendingSubmissionMarkers.shift());
-    }
-    marker.openPopup();
-    return marker;
-}
-
-function clearPendingSubmissionMarkers() {
-    pendingSubmissionMarkers.forEach(marker => pendingSubmissionLayer.removeLayer(marker));
-    pendingSubmissionMarkers = [];
 }

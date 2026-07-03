@@ -11,6 +11,7 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("Aktualne wydanie: `v2.0`", readme)
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
+        self.assertIn("docs/CURRENT_MODEL.md", readme)
         self.assertIn("docs/BACKUP.md", readme)
         self.assertNotIn("docs/AUDIT.md", readme)
         self.assertNotIn("docs/README.en.md", readme)
@@ -27,6 +28,16 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("scripts/check.sh", doc)
         self.assertIn("make smoke", doc)
         self.assertIn("BACKUP.md", doc)
+
+    def test_current_model_doc_names_active_flow_and_retired_artifact_audit(self):
+        doc = (ROOT_DIR / "docs" / "CURRENT_MODEL.md").read_text(encoding="utf-8")
+
+        self.assertIn("`zdjecia_terenowe/` - jedyne rekordy obserwacji", doc)
+        self.assertIn("Kazde zdjecie terenowe musi miec jawne `issue_type`", doc)
+        self.assertIn("`POST /api/field-photo-reports/report-package`", doc)
+        self.assertIn("Nie ma publicznego ani administracyjnego API `/api/wrecks`.", doc)
+        self.assertIn("test ! -e zidentyfikowane_wraki", doc)
+        self.assertIn("scripts/check.sh", doc)
 
     def test_removed_development_docs_stay_removed(self):
         removed = (

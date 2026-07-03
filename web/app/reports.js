@@ -83,7 +83,7 @@ async function submitReportPackage(event) {
 
     try {
         const formData = new FormData(form);
-        if (target.type !== 'field-photos') throw new Error(t('wreck.reportPackageError'));
+        if (target.type !== 'field-photos') throw new Error(t('modal.report.generateError'));
         formData.set('photo_ids', JSON.stringify(target.photoIds || []));
         formData.set('lat', String(target.lat));
         formData.set('lon', String(target.lon));
@@ -93,10 +93,10 @@ async function submitReportPackage(event) {
             body: formData,
         });
         if (data.status !== 'ok') {
-            throw new Error(data.error || t('wreck.reportPackageError'));
+            throw new Error(data.error || t('modal.report.generateError'));
         }
         if (!data.zip_filename || !data.pdf_filename || !data.zip_base64 || !data.pdf_base64) {
-            throw new Error(t('wreck.reportPackageError'));
+            throw new Error(t('modal.report.generateError'));
         }
         revokeReportPackageDownloadUrls();
         const zipLink = document.getElementById('report-package-download');
@@ -115,7 +115,7 @@ async function submitReportPackage(event) {
     } catch (err) {
         if (result) result.hidden = true;
         if (submit) submit.hidden = false;
-        if (status) status.textContent = apiErrorMessage(err, t('wreck.reportPackageError'));
+        if (status) status.textContent = apiErrorMessage(err, t('modal.report.generateError'));
     } finally {
         if (submit) {
             submit.disabled = false;

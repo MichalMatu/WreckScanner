@@ -34,7 +34,7 @@ async function inspectLocationHistoryAt(latLng) {
             <div class="map-popup map-popup--manual-inspect">
                 ${popupHeader(t('inspect.title'))}
                 ${popupMeta([t('inspect.coords', { lat: inspectLat.toFixed(6), lon: inspectLon.toFixed(6) })])}
-                ${popupPhotoSection(t('wreck.popup.evidencePreviews'), cropPreviews)}
+                ${popupPhotoSection(t('inspect.evidencePreviews'), cropPreviews)}
             </div>
         `);
     } catch (err) {

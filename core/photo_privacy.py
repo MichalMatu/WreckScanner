@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -76,40 +75,6 @@ def ensure_review_fields(record: dict[str, Any]) -> bool:
 def private_original_rel(scope: Literal["field_photos"], photo_id: str, ext: str) -> str:
     ext = ext if ext.startswith(".") else f".{ext}"
     return f"field_photos/{photo_id}/original{ext.lower()}"
-
-
-def migrate_private_original(
-    record: dict[str, Any],
-    record_dir: Path,
-    private_dir: Path,
-    *,
-    scope: Literal["field_photos"],
-    photo_id: str,
-    old_key: str = "original_file",
-) -> bool:
-    changed = False
-    if record.get("private_original_file"):
-        if old_key in record:
-            record.pop(old_key, None)
-            changed = True
-        return changed
-
-    source = safe_existing_child(record_dir, record.get(old_key))
-    if source:
-        rel = private_original_rel(scope, photo_id, source.suffix or ".jpg")
-        destination = safe_child(private_dir, rel)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if not destination.exists():
-            shutil.move(str(source), destination)
-        elif source.exists() and source.resolve() != destination.resolve():
-            source.unlink()
-        record["private_original_file"] = rel
-        changed = True
-
-    if old_key in record:
-        record.pop(old_key, None)
-        changed = True
-    return changed
 
 
 def _clamped_point(raw_point: Any) -> dict[str, float]:

@@ -226,29 +226,29 @@ def _audit_review_fields(
             _issue(
                 issues,
                 "warning",
-                f"{code_prefix}_legacy_redactions",
+                f"{code_prefix}_retired_redactions",
                 record_path,
-                "Pole redactions używa starego formatu i zostanie zmigrowane przy odczycie.",
+                "Pole redactions używa wycofanego formatu.",
             )
     return status
 
 
-def _audit_legacy_photo_fields(
+def _audit_retired_photo_fields(
     record_path: Path,
     record: dict[str, Any],
     issues: list[dict[str, Any]],
     code_prefix: str,
 ) -> None:
-    legacy_keys = ("original_file", "thumbnail_file", "thumb_file", "original_url", "original_path")
-    present = [key for key in legacy_keys if key in record]
+    retired_keys = ("original_file", "thumbnail_file", "thumb_file", "original_url", "original_path")
+    present = [key for key in retired_keys if key in record]
     if present:
         _issue(
             issues,
             "error",
-            f"{code_prefix}_legacy_public_original",
+            f"{code_prefix}_retired_public_original",
             record_path,
-            "Rekord nadal zawiera stare publiczne pola zdjęcia.",
-            legacy_fields=present,
+            "Rekord nadal zawiera wycofane publiczne pola zdjęcia.",
+            retired_fields=present,
         )
 
 
@@ -261,7 +261,6 @@ def _audit_field_photos(
 ) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "records": 0,
-        "legacy_without_issue_type": 0,
         "issue_types": dict.fromkeys(config.FIELD_PHOTO_ISSUE_TYPES, 0),
         "unknown_issue_types": 0,
         "private_original_bytes": 0,
@@ -319,8 +318,8 @@ def _audit_field_photos(
             )
 
         if "issue_type" not in record:
-            issue_type = config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE
-            summary["legacy_without_issue_type"] += 1
+            issue_type = ""
+            _issue(issues, "error", "field_photo_missing_issue_type", record_path, "Brak typu pinezki.")
         else:
             issue_type = str(record.get("issue_type") or "").strip()
         if issue_type not in config.FIELD_PHOTO_ISSUE_TYPES:
@@ -339,7 +338,7 @@ def _audit_field_photos(
         if not _is_coord(record.get("lat"), -90, 90) or not _is_coord(record.get("lon"), -180, 180):
             _issue(issues, "error", "field_photo_bad_coordinates", record_path, "Nieprawidłowe współrzędne zdjęcia.")
 
-        _audit_legacy_photo_fields(record_path, record, issues, "field_photo")
+        _audit_retired_photo_fields(record_path, record, issues, "field_photo")
         status = _audit_review_fields(record_path, record, issues, "field_photo")
         _, original_bytes = _audit_private_photo_file(
             private_photos_dir,
@@ -432,7 +431,6 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
         + ", ".join(
             f"{config.FIELD_PHOTO_ISSUE_TYPES[key]}={issue_types.get(key, 0)}" for key in config.FIELD_PHOTO_ISSUE_TYPES
         ),
-        f"  stare rekordy bez issue_type: {field['legacy_without_issue_type']}",
         "  pliki: "
         f"prywatne oryginały {_human_bytes(field['private_original_bytes'])}, "
         f"publiczne kopie {_human_bytes(field['public_image_bytes'])}, "
