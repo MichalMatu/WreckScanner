@@ -175,6 +175,12 @@ def _escape_text(value: Any) -> str:
     return html.escape(str(value or ""), quote=False)
 
 
+def _url_label(raw_url: str) -> str:
+    if "photo=" in raw_url and ("lat=" in raw_url or "lon=" in raw_url):
+        return "Otwórz miejsce w WreckScanner"
+    return raw_url
+
+
 def _paragraph_text(value: str) -> str:
     text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
     parts: list[str] = []
@@ -183,7 +189,7 @@ def _paragraph_text(value: str) -> str:
         raw_url = match.group(0)
         parts.append(_escape_text(text[last : match.start()]))
         escaped_href = html.escape(raw_url, quote=True)
-        escaped_label = _escape_text(raw_url)
+        escaped_label = _escape_text(_url_label(raw_url))
         parts.append(f'<a href="{escaped_href}" color="{LINK.hexval()}">{escaped_label}</a>')
         last = match.end()
     parts.append(_escape_text(text[last:]))

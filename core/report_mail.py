@@ -5,10 +5,24 @@ from typing import Any
 
 from core.cadastral import cadastral_code_label
 
+DANGLING_SUBJECT_WORDS = {"i", "o", "u", "w", "z", "do", "na", "od", "po"}
+
 
 def _first_line(value: str, max_len: int = 90) -> str:
     text = " ".join(value.split())
-    return text[:max_len].rstrip() or "lokalizacja"
+    if not text:
+        return "lokalizacja"
+    if len(text) <= max_len:
+        return text
+    suffix = "..."
+    limit = max(max_len - len(suffix), 1)
+    trimmed = text[:limit].rsplit(" ", 1)[0].rstrip(" ,.;:-")
+    if not trimmed:
+        trimmed = text[:limit].rstrip(" ,.;:-")
+    words = trimmed.rsplit(" ", 1)
+    if len(words) == 2 and words[1].lower().strip(" ,.;:-") in DANGLING_SUBJECT_WORDS:
+        trimmed = words[0].rstrip(" ,.;:-")
+    return f"{trimmed}{suffix}" if trimmed else "lokalizacja"
 
 
 def _labels_text(record: dict[str, Any], evidence: dict[str, Any]) -> str:

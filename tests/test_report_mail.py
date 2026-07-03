@@ -50,6 +50,36 @@ class ReportMailTests(unittest.TestCase):
         self.assertNotIn("Street View", body)
         self.assertNotIn("https://example.test/street", body)
 
+    def test_build_mail_draft_shortens_subject_at_word_boundary(self):
+        subject, _body = build_mail_draft(
+            {
+                "id": "wreck_51100000_17200000",
+                "lat": 51.1,
+                "lon": 17.2,
+                "links": {},
+            },
+            {"labels_present": []},
+            {
+                "reporter_name": "Jan Kowalski",
+                "reporter_address": "ul. Testowa 1, Wrocław",
+                "reporter_phone": "500 600 700",
+                "reporter_email": "jan@example.com",
+                "location_description": (
+                    "Pojazd stoi przy wewnętrznym ciągu komunikacyjnym obok parkingu "
+                    "osiedlowego, w bezpośrednim sąsiedztwie przejścia dla pieszych"
+                ),
+                "observed_at": "2026-06-02T12:30",
+                "vehicle_description": "Pojazd długo stoi w tym samym miejscu.",
+            },
+        )
+
+        location_part = subject.removeprefix("Zgłoszenie pojazdu nieużytkowanego - ")
+        self.assertLessEqual(len(location_part), 90)
+        self.assertTrue(location_part.endswith("..."))
+        self.assertIn("parkingu osiedlowego...", location_part)
+        self.assertNotIn(" w...", location_part)
+        self.assertNotIn("bezpośredni...", location_part)
+
 
 if __name__ == "__main__":
     unittest.main()
