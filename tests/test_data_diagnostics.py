@@ -318,11 +318,11 @@ class DataDiagnosticsTests(unittest.TestCase):
 
             codes = {issue["code"] for issue in report["issues"]}
             self.assertEqual(report["status"], "error")
-            self.assertIn("attached_photo_still_loose", codes)
+            self.assertNotIn("attached_photo_still_loose", codes)
             self.assertIn("wreck_attached_photo_duplicate", codes)
             self.assertIn("wreck_attached_photo_bad_issue_type", codes)
 
-    def test_run_data_diagnostics_accepts_field_photo_marked_as_attached(self):
+    def test_run_data_diagnostics_flags_field_photo_marked_as_attached(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_dir = root / "zdjecia_terenowe"
@@ -342,9 +342,9 @@ class DataDiagnosticsTests(unittest.TestCase):
             )
 
             codes = {issue["code"] for issue in report["issues"]}
-            self.assertEqual(report["status"], "ok")
+            self.assertEqual(report["status"], "error")
             self.assertEqual(report["summary"]["field_photos"]["attached_records"], 1)
-            self.assertNotIn("attached_photo_still_loose", codes)
+            self.assertIn("field_photo_legacy_attached_wreck_id", codes)
 
     def test_run_data_diagnostics_finds_unsafe_evidence_paths_and_missing_links(self):
         with TemporaryDirectory() as tmp:

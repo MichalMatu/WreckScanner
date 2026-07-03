@@ -36,7 +36,6 @@ def prepare_root(root: Path) -> Path:
     (root / "zidentyfikowane_wraki").mkdir()
     (root / "zdjecia_terenowe").mkdir()
     (root / "prywatne_zdjecia").mkdir()
-    (root / "prywatne_zgloszenia").mkdir()
     (root / "zgloszenia_prywatnosci").mkdir()
     write_json(root / "settings.json", {"enhancement": {"enabled": True}})
     password_file = root / ".restic_password"
@@ -92,7 +91,6 @@ class DataBackupTests(unittest.TestCase):
             self.assertIn("zidentyfikowane_wraki", command)
             self.assertIn("zdjecia_terenowe", command)
             self.assertIn("prywatne_zdjecia", command)
-            self.assertIn("prywatne_zgloszenia", command)
             self.assertIn("zgloszenia_prywatnosci", command)
             self.assertIn("settings.json", command)
             self.assertIn("analiza/data_diagnostics.json", command)
@@ -220,7 +218,6 @@ class DataBackupTests(unittest.TestCase):
             self.assertIn("--dry-run", payload["argv"])
             self.assertIn("zidentyfikowane_wraki", payload["argv"])
             self.assertIn("prywatne_zdjecia", payload["argv"])
-            self.assertIn("prywatne_zgloszenia", payload["argv"])
             self.assertIn("zgloszenia_prywatnosci", payload["argv"])
             self.assertEqual(payload["repo"], str(root / "repo"))
             self.assertEqual(payload["password_file"], str(password_file))

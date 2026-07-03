@@ -328,8 +328,16 @@ def _audit_field_photos(
                         "Nieprawidłowy identyfikator sprawy podpiętej do zdjęcia terenowego.",
                         attached_wreck_id=attached_wreck_id,
                     )
-            else:
-                field_photo_ids.add(photo_id)
+                else:
+                    _issue(
+                        issues,
+                        "error",
+                        "field_photo_legacy_attached_wreck_id",
+                        record_path,
+                        "Rekord zdjęcia terenowego nadal używa starego przypięcia do sprawy.",
+                        attached_wreck_id=attached_wreck_id,
+                    )
+            field_photo_ids.add(photo_id)
         if photo_id and photo_id != child.name:
             _issue(
                 issues, "error", "field_photo_id_folder_mismatch", record_path, "ID nie zgadza się z nazwą katalogu."
@@ -560,15 +568,6 @@ def _audit_wrecks(
                     previous_wreck=previous_wreck,
                 )
             attached_photo_ids[photo_id] = wreck_id
-            if photo_id in field_photo_ids:
-                _issue(
-                    issues,
-                    "error",
-                    "attached_photo_still_loose",
-                    record_path,
-                    "Zdjęcie przeniesione do sprawy pojazdu nadal istnieje jako luźna pinezka terenowa.",
-                    photo_id=photo_id,
-                )
             if (
                 str(photo.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE)
                 != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE

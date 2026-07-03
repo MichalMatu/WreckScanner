@@ -16,12 +16,11 @@ Backup obejmuje dane uzytkowe:
 - `zidentyfikowane_wraki/`
 - `zdjecia_terenowe/`
 - `prywatne_zdjecia/`
-- `prywatne_zgloszenia/`
 - `zgloszenia_prywatnosci/`, jesli istnieje
 - `settings.json`, jesli istnieje
 - `analiza/data_diagnostics.json`, jesli istnieje
 
-Backup pomija zaleznosci, cache, `.backups/` i luzne raporty.
+Backup pomija zaleznosci, cache, `.backups/` i raporty wygenerowane do jednorazowego pobrania.
 
 ## Komendy
 

@@ -88,12 +88,38 @@ function localDatetimeValue(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+let reportPackageDownloadUrls = [];
+
+function revokeReportPackageDownloadUrls() {
+    for (const url of reportPackageDownloadUrls) {
+        URL.revokeObjectURL(url);
+    }
+    reportPackageDownloadUrls = [];
+}
+
+function reportPackageBlobUrl(base64, contentType) {
+    const binary = atob(base64 || '');
+    const chunks = [];
+    for (let offset = 0; offset < binary.length; offset += 8192) {
+        const slice = binary.slice(offset, offset + 8192);
+        const bytes = new Uint8Array(slice.length);
+        for (let index = 0; index < slice.length; index += 1) {
+            bytes[index] = slice.charCodeAt(index);
+        }
+        chunks.push(bytes);
+    }
+    const url = URL.createObjectURL(new Blob(chunks, { type: contentType }));
+    reportPackageDownloadUrls.push(url);
+    return url;
+}
+
 function resetReportPackageModal(wreckId) {
     const form = document.getElementById('report-package-form');
     const result = document.getElementById('report-package-result');
     const status = document.getElementById('report-package-status');
     const submit = document.getElementById('report-package-submit');
     form?.reset();
+    revokeReportPackageDownloadUrls();
     updatePublicFeatureAccess();
     document.getElementById('report-wreck-id').value = wreckId;
     const observedAt = form?.querySelector('[name="observed_at"]');
@@ -142,17 +168,18 @@ async function submitReportPackage(event) {
         if (data.status !== 'ok') {
             throw new Error(data.error || t('wreck.reportPackageError'));
         }
-        if (!data.zip_filename || !data.pdf_filename) {
+        if (!data.zip_filename || !data.pdf_filename || !data.zip_base64 || !data.pdf_base64) {
             throw new Error(t('wreck.reportPackageError'));
         }
+        revokeReportPackageDownloadUrls();
         const zipLink = document.getElementById('report-package-download');
         const pdfLink = document.getElementById('report-package-pdf');
         if (zipLink) {
-            zipLink.href = data.zip_url || '#';
+            zipLink.href = reportPackageBlobUrl(data.zip_base64, 'application/zip');
             zipLink.download = data.zip_filename;
         }
         if (pdfLink) {
-            pdfLink.href = data.pdf_url || '#';
+            pdfLink.href = reportPackageBlobUrl(data.pdf_base64, 'application/pdf');
             pdfLink.download = data.pdf_filename;
         }
         if (submit) submit.hidden = true;

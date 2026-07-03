@@ -412,26 +412,3 @@ def build_report_pdf(
 
     doc.build(story, onFirstPage=_page_background, onLaterPages=_page_background)
     return out.getvalue()
-
-
-def write_report_pdf(
-    pdf_path: Path,
-    *,
-    record: dict[str, Any],
-    evidence: dict[str, Any],
-    record_dir: Path,
-    evidence_base_dir: Path,
-    recipient: str,
-    subject: str,
-    mail_body: str,
-) -> None:
-    body = build_report_pdf(
-        record=record,
-        evidence=evidence,
-        record_dir=record_dir,
-        evidence_base_dir=evidence_base_dir,
-        recipient=recipient,
-        subject=subject,
-        mail_body=mail_body,
-    )
-    pdf_path.write_bytes(body)

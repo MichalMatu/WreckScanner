@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -47,8 +48,7 @@ def _archive_public_evidence_photos(
             archive.write(crop_path, f"{archive_root}/{label}")
 
 
-def write_public_zip(
-    zip_path: Path,
+def build_public_zip(
     record_dir: Path,
     evidence_base_dir: Path,
     record: dict[str, Any],
@@ -56,16 +56,17 @@ def write_public_zip(
     recipient: str,
     subject: str,
     mail_body: str,
-) -> None:
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr("raport.html", report_html.build_public_report_html(record, evidence, subject, mail_body))
         _archive_attached_photos(archive, record_dir, record)
         _archive_public_evidence_photos(archive, evidence_base_dir, evidence)
+    return buffer.getvalue()
 
 
-def write_admin_zip(
-    zip_path: Path,
+def build_admin_zip(
     record_dir: Path,
     evidence_base_dir: Path,
     record: dict[str, Any],
@@ -73,8 +74,9 @@ def write_admin_zip(
     recipient: str,
     subject: str,
     mail_body: str,
-) -> None:
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("zgloszenie.txt", f"Do: {recipient}\nTemat: {subject}\n\n{mail_body}")
         archive.writestr(
             "raport.html",
@@ -83,3 +85,4 @@ def write_admin_zip(
 
         _archive_attached_photos(archive, record_dir, record)
         _archive_public_evidence_photos(archive, evidence_base_dir, evidence)
+    return buffer.getvalue()

@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 import shutil
@@ -13,12 +14,7 @@ from PIL import Image
 import core.report_pdf as report_pdf
 from app.http.public import reject_report_package_files
 from core import config as core_config
-from core.report_assets import (
-    public_report_package_asset,
-    report_package_asset,
-    report_package_asset_from_download_name,
-    report_package_download_name,
-)
+from core.report_assets import report_package_download_name
 from core.report_models import validate_report_fields
 from core.report_packages import (
     create_public_report_package,
@@ -77,6 +73,8 @@ def create_wreck_fixture(root: Path) -> Path:
     (evidence_dir / "2025.jpg").write_bytes(image_bytes())
     (attached_photo_dir / "original.jpg").write_bytes(image_bytes())
     (attached_photo_dir / "thumb.jpg").write_bytes(image_bytes())
+    (attached_photo_dir / "public.jpg").write_bytes(image_bytes())
+    (attached_photo_dir / "public_thumb.jpg").write_bytes(image_bytes())
     (record_dir / "index.html").write_text(
         '<html><body><img src="evidence/abc123/2025.jpg"></body></html>',
         encoding="utf-8",
@@ -108,6 +106,11 @@ def create_wreck_fixture(root: Path) -> Path:
                     "original_filename": "teren.jpg",
                     "original_file": "photos/photo_20260603T000000Z_abcdef12/original.jpg",
                     "thumb_file": "photos/photo_20260603T000000Z_abcdef12/thumb.jpg",
+                    "public_image_file": "photos/photo_20260603T000000Z_abcdef12/public.jpg",
+                    "public_thumb_file": "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg",
+                    "public_review_status": "approved",
+                    "redactions": [],
+                    "reviewed_at": "2026-06-03T00:00:00Z",
                 }
             ],
             "evidences": [],
@@ -126,15 +129,8 @@ class ReportPackageTests(unittest.TestCase):
             report_package_download_name("report_20260702T142516Z_0b05a053", "pdf"),
             "raport_20260702_142516.pdf",
         )
-        self.assertEqual(
-            report_package_asset_from_download_name(
-                "report_20260702T142516Z_0b05a053",
-                "raport_20260702_142516.zip",
-            ),
-            "zip",
-        )
-        with self.assertRaisesRegex(ValueError, "nazwa pliku"):
-            report_package_asset_from_download_name("report_20260702T142516Z_0b05a053", "zip.zip")
+        with self.assertRaisesRegex(ValueError, "typ pliku"):
+            report_package_download_name("report_20260702T142516Z_0b05a053", "html")
 
     def test_validate_report_fields_requires_clean_email_and_short_values(self):
         fields = valid_fields()
@@ -161,21 +157,16 @@ class ReportPackageTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             wrecks_dir = create_wreck_fixture(root)
-            private_photos_dir = root / "private_photos"
-            private_reports_dir = root / "private_reports"
             public_index_path = wrecks_dir / "wreck_51100000_17200000" / "index.html"
             record_path = wrecks_dir / "wreck_51100000_17200000" / "record.json"
+            record_dir = wrecks_dir / "wreck_51100000_17200000"
+            original_record_text = record_path.read_text(encoding="utf-8")
+            original_index_text = public_index_path.read_text(encoding="utf-8")
+            original_evidence_paths = sorted(
+                path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+            )
 
-            with (
-                patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_photos_dir),
-                patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
-                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
-            ):
-                record = json.loads(record_path.read_text(encoding="utf-8"))
-                record["attached_photos"][0]["public_review_status"] = "approved"
-                record["attached_photos"][0]["redactions"] = []
-                record["attached_photos"][0]["reviewed_at"] = "2026-06-03T00:00:00Z"
-                write_json(record_path, record)
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
                 result = create_report_package(
                     "wreck_51100000_17200000",
                     valid_fields(),
@@ -186,23 +177,21 @@ class ReportPackageTests(unittest.TestCase):
             self.assertEqual(result["recipient"], "interwencje@smwroclaw.pl")
             self.assertIn("Zgłoszenie pojazdu nieużytkowanego", result["subject"])
             self.assertIn("Jan Kowalski", result["body"])
-            self.assertIn("/api/report-packages/", result["pdf_url"])
             self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
             self.assertEqual(result["pdf_filename"], report_package_download_name(result["package_id"], "pdf"))
-            self.assertTrue(result["zip_url"].endswith(f"/{result['zip_filename']}"))
-            self.assertTrue(result["pdf_url"].endswith(f"/{result['pdf_filename']}"))
-            self.assertNotIn("Jan Kowalski", public_index_path.read_text(encoding="utf-8"))
-            self.assertIn("metric-strip", public_index_path.read_text(encoding="utf-8"))
-            updated_record = json.loads(record_path.read_text(encoding="utf-8"))
-            self.assertNotIn('"original_file"', record_path.read_text(encoding="utf-8"))
-            self.assertEqual(updated_record["latest_evidence"]["source"], "report_package")
-            self.assertTrue(updated_record["latest_evidence"]["id"].startswith("report_"))
-            self.assertEqual([crop["label"] for crop in updated_record["latest_evidence"]["crops"]], ["2024", "2025"])
+            self.assertNotIn("zip_url", result)
+            self.assertNotIn("pdf_url", result)
+            self.assertIn("zip_base64", result)
+            self.assertIn("pdf_base64", result)
+            self.assertEqual(record_path.read_text(encoding="utf-8"), original_record_text)
+            self.assertEqual(public_index_path.read_text(encoding="utf-8"), original_index_text)
+            current_evidence_paths = sorted(
+                path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+            )
+            self.assertEqual(current_evidence_paths, original_evidence_paths)
 
-            with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
-                zip_path, _ = report_package_asset("wreck_51100000_17200000", result["package_id"], "zip")
-            self.assertTrue(zip_path.exists())
-            with zipfile.ZipFile(zip_path) as archive:
+            zip_bytes = base64.b64decode(result["zip_base64"])
+            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
@@ -254,37 +243,37 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("pakiet dowodowy ZIP", report_html)
                 self.assertNotIn("W załączniku", report_html)
 
-            package_dir = zip_path.with_suffix("")
-            self.assertFalse(package_dir.exists())
-            with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
-                pdf_path, _ = report_package_asset("wreck_51100000_17200000", result["package_id"], "pdf")
-            self.assertTrue(pdf_path.exists())
-            self.assertGreater(pdf_path.stat().st_size, 10_000)
-            self.assertEqual(pdf_path.read_bytes()[:5], b"%PDF-")
+            pdf_bytes = base64.b64decode(result["pdf_base64"])
+            self.assertGreater(len(pdf_bytes), 10_000)
+            self.assertEqual(pdf_bytes[:5], b"%PDF-")
+            self.assertEqual(result["zip_size_bytes"], len(zip_bytes))
             self.assertGreater(result["pdf_size_bytes"], 10_000)
 
     def test_create_report_package_generates_map_crops_for_photo_ready_case(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             wrecks_dir = root / "zidentyfikowane_wraki"
-            private_reports_dir = root / "private_reports"
             saved = save_vehicle_case(51.088784, 17.035782, wrecks_dir, dedupe_existing=True)
             wreck_id = saved["wreck"]["id"]
+            record_dir = wrecks_dir / wreck_id
+            record_path = record_dir / "record.json"
+            original_record_text = record_path.read_text(encoding="utf-8")
+            original_evidence_paths = sorted(
+                path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+            )
 
-            with (
-                patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
-                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
-            ):
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
                 result = create_report_package(wreck_id, valid_fields(), wrecks_dir)
 
             self.assertEqual(result["status"], "ok")
-            self.assertIn("/api/report-packages/", result["zip_url"])
             self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
-            self.assertTrue(result["zip_url"].endswith(f"/{result['zip_filename']}"))
-            with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
-                zip_path, _ = report_package_asset(wreck_id, result["package_id"], "zip")
-            self.assertTrue(zip_path.exists())
-            with zipfile.ZipFile(zip_path) as archive:
+            self.assertNotIn("zip_url", result)
+            self.assertEqual(record_path.read_text(encoding="utf-8"), original_record_text)
+            current_evidence_paths = sorted(
+                path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
+            )
+            self.assertEqual(current_evidence_paths, original_evidence_paths)
+            with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)
@@ -305,38 +294,16 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("pakiet dowodowy ZIP", draft_text)
                 self.assertNotIn("Linki do weryfikacji", report_html)
                 self.assertNotIn("pakiet dowodowy ZIP", report_html)
-            with patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir):
-                pdf_path, _ = report_package_asset(wreck_id, result["package_id"], "pdf")
-            self.assertTrue(pdf_path.exists())
-            self.assertEqual(pdf_path.read_bytes()[:5], b"%PDF-")
+            self.assertEqual(base64.b64decode(result["pdf_base64"])[:5], b"%PDF-")
 
     def test_create_public_report_package_uses_clean_assets_and_token(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             wrecks_dir = create_wreck_fixture(root)
-            private_photos_dir = root / "private_photos"
-            private_reports_dir = root / "private_reports"
             record_path = wrecks_dir / "wreck_51100000_17200000" / "record.json"
             record_dir = wrecks_dir / "wreck_51100000_17200000"
 
-            with (
-                patch.object(core_config, "PRIVATE_PHOTOS_DIR", private_photos_dir),
-                patch.object(core_config, "PRIVATE_REPORTS_DIR", private_reports_dir),
-                patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops),
-            ):
-                record = json.loads(record_path.read_text(encoding="utf-8"))
-                record["attached_photos"][0]["public_review_status"] = "approved"
-                record["attached_photos"][0]["redactions"] = []
-                record["attached_photos"][0]["reviewed_at"] = "2026-06-03T00:00:00Z"
-                record["attached_photos"][0].pop("original_file", None)
-                record["attached_photos"][0].pop("thumb_file", None)
-                record["attached_photos"][0]["public_image_file"] = "photos/photo_20260603T000000Z_abcdef12/public.jpg"
-                record["attached_photos"][0]["public_thumb_file"] = (
-                    "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg"
-                )
-                (record_dir / "photos/photo_20260603T000000Z_abcdef12/public.jpg").write_bytes(image_bytes())
-                (record_dir / "photos/photo_20260603T000000Z_abcdef12/public_thumb.jpg").write_bytes(image_bytes())
-                write_json(record_path, record)
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
                 original_record_text = record_path.read_text(encoding="utf-8")
                 original_evidence_paths = sorted(
                     path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
@@ -348,30 +315,18 @@ class ReportPackageTests(unittest.TestCase):
                 )
 
                 self.assertEqual(result["status"], "ok")
-                self.assertIn("/api/public-report-packages/", result["zip_url"])
-                self.assertIn("token=", result["zip_url"])
                 self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
                 self.assertEqual(result["pdf_filename"], report_package_download_name(result["package_id"], "pdf"))
-                self.assertIn(f"/{result['zip_filename']}?token=", result["zip_url"])
-                self.assertIn(f"/{result['pdf_filename']}?token=", result["pdf_url"])
-                with self.assertRaises(FileNotFoundError):
-                    public_report_package_asset("wreck_51100000_17200000", result["package_id"], "zip", "bad-token")
-                token = result["zip_url"].split("token=", 1)[1]
-                zip_path, _ = public_report_package_asset("wreck_51100000_17200000", result["package_id"], "zip", token)
-                pdf_path, _ = public_report_package_asset("wreck_51100000_17200000", result["package_id"], "pdf", token)
+                self.assertNotIn("zip_url", result)
+                self.assertNotIn("pdf_url", result)
+                self.assertNotIn("expires_at", result)
 
             self.assertEqual(record_path.read_text(encoding="utf-8"), original_record_text)
             current_evidence_paths = sorted(
                 path.relative_to(record_dir).as_posix() for path in (record_dir / "evidence").rglob("*")
             )
             self.assertEqual(current_evidence_paths, original_evidence_paths)
-            self.assertFalse(
-                (private_reports_dir / "wreck_51100000_17200000" / f"{result['package_id']}.work").exists()
-            )
-            self.assertTrue(zip_path.exists())
-            self.assertTrue(pdf_path.exists())
-            self.assertFalse((zip_path.with_suffix("") / "oryginalne_zdjecia").exists())
-            with zipfile.ZipFile(zip_path) as archive:
+            with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
                 names = set(archive.namelist())
                 self.assertIn("zgloszenie.txt", names)
                 self.assertIn("raport.html", names)

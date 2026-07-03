@@ -73,8 +73,6 @@ def handle_static_api_get(handler, path: str) -> bool:
 
 def handle_dynamic_api_get(handler, path: str) -> bool:
     route_handlers = (
-        (http_routes.report_package_asset_route, http_assets.handle_report_package_asset),
-        (http_routes.public_report_package_asset_route, http_assets.handle_public_report_package_asset),
         (http_routes.admin_photo_original_route, http_assets.handle_admin_photo_original),
         (http_routes.field_photo_asset_route, http_assets.handle_field_photo_asset),
     )

@@ -114,7 +114,6 @@ def collect_backup_paths(
         _resolve(root_dir, config.WRECKS_DIR),
         _resolve(root_dir, config.FIELD_PHOTOS_DIR),
         _resolve(root_dir, config.PRIVATE_PHOTOS_DIR),
-        _resolve(root_dir, config.PRIVATE_REPORTS_DIR),
         _resolve(root_dir, config.PRIVACY_REQUESTS_DIR),
         _resolve(root_dir, Path(config.SETTINGS_FILENAME)),
         _resolve(root_dir, diagnostics_output),

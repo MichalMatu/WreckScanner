@@ -1,17 +1,9 @@
-from urllib.parse import parse_qs, urlsplit
-
 from app import config
 from app.http import admin_session as http_admin_session
 from app.http import responses as http_responses
 from app.http import static_files as http_static_files
 from core import config as core_config
 from core.field_photos import field_photo_asset
-from core.report_assets import (
-    public_report_package_asset,
-    report_package_asset,
-    report_package_asset_from_download_name,
-    report_package_download_name,
-)
 from core.wrecks import refresh_wreck_report
 from core.wrecks_assets import public_wreck_asset, wreck_is_public, wreck_photo_original_asset
 
@@ -84,60 +76,6 @@ def handle_wreck_index(handler, wreck_id: str, *, include_body: bool = True) -> 
             exc,
             public_error="Nie udało się odświeżyć raportu sprawy pojazdu.",
             include_body=include_body,
-        )
-
-
-def handle_report_package_asset(handler, route: tuple[str, str, str]) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    wreck_id, package_id, file_name = route
-    try:
-        asset = report_package_asset_from_download_name(package_id, file_name)
-        file_path, content_type = report_package_asset(wreck_id, package_id, asset)
-        http_static_files.send_file(
-            handler,
-            file_path,
-            content_type,
-            download_name=report_package_download_name(package_id, asset),
-        )
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Report package asset lookup failed",
-            exc,
-            public_error="Nie udało się pobrać pliku pakietu raportu.",
-        )
-
-
-def handle_public_report_package_asset(handler, route: tuple[str, str, str]) -> None:
-    wreck_id, package_id, file_name = route
-    query = parse_qs(urlsplit(handler.path).query)
-    token = (query.get("token") or [""])[0]
-    try:
-        asset = report_package_asset_from_download_name(package_id, file_name)
-        file_path, content_type = public_report_package_asset(wreck_id, package_id, asset, token)
-        http_static_files.send_file(
-            handler,
-            file_path,
-            content_type,
-            download_name=report_package_download_name(package_id, asset),
-        )
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Public report package asset lookup failed",
-            exc,
-            public_error="Nie udało się pobrać publicznego pliku pakietu raportu.",
         )
 
 

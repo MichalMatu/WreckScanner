@@ -8,7 +8,6 @@ DIAGNOSTICS_DIR = Path("analiza")
 WRECKS_DIR = Path("zidentyfikowane_wraki")
 FIELD_PHOTOS_DIR = Path("zdjecia_terenowe")
 PRIVATE_PHOTOS_DIR = Path("prywatne_zdjecia")
-PRIVATE_REPORTS_DIR = Path("prywatne_zgloszenia")
 PRIVACY_REQUESTS_DIR = Path("zgloszenia_prywatnosci")
 
 ORTHO_WMS_BASE = "https://gis1.um.wroc.pl/arcgis/services/ogc"
@@ -73,7 +72,6 @@ WRECK_PHOTO_THUMB_QUALITY = 84
 
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"
 MAX_REPORT_PACKAGE_BODY_BYTES = 2 * BYTES_PER_MIB
-PUBLIC_REPORT_PACKAGE_TOKEN_TTL_SECONDS = 60 * 60
 
 # Publiczne dodawanie spraw/zdjęć zapisuje materiały jako "pending".
 # Limity chronią dysk przed zalaniem kolejki przed moderacją.

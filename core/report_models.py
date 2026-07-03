@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -14,12 +13,6 @@ REQUIRED_REPORT_FIELDS = {
     "observed_at": "data i godzina obserwacji",
     "vehicle_description": "opis stanu pojazdu",
 }
-
-
-@dataclass(frozen=True)
-class ReportPackageAccess:
-    token: str
-    expires_at: str
 
 
 def safe_text(value: Any, max_len: int = 4000) -> str:
