@@ -103,20 +103,53 @@ function groupFieldPhotos(photos) {
     return groups;
 }
 
-function countLingeringCars() {
+function countVehicleLayerGroups() {
     if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return 0;
     return buildVehicleGroups().filter(group => vehicleGroupPhotoCount(group) > 0).length;
 }
 
-function updateLingeringCarsCounter() {
-    const count = countLingeringCars();
-    const tooltip = t('panel.lingeringCarsTooltip');
-    const badgeEl = document.getElementById('lingering-cars-badge');
-    if (badgeEl) {
-        badgeEl.textContent = String(count);
-        badgeEl.title = tooltip;
-        badgeEl.setAttribute('aria-label', tooltip);
-    }
+function countFieldPhotoIssueLayerGroups(issueType) {
+    if (!publicLayerAllowed(fieldPhotoPublicLayerKey(issueType))) return 0;
+    return groupFieldPhotos((fieldPhotoLayerData || []).filter(photo =>
+        fieldPhotoIssueType(photo) === issueType
+        && fieldPhotoReviewStatus(photo) !== 'pending'
+    )).length;
+}
+
+function countPendingFieldPhotoLayerGroups() {
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoPending)) return 0;
+    return groupFieldPhotos((fieldPhotoLayerData || []).filter(photo =>
+        fieldPhotoReviewStatus(photo) === 'pending'
+    )).length;
+}
+
+function updateLayerCountBadge(id, count, tooltipKey) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    const safeCount = Number.isFinite(count) ? count : 0;
+    const tooltip = t(tooltipKey, { n: safeCount });
+    badge.textContent = String(safeCount);
+    badge.title = tooltip;
+    badge.setAttribute('aria-label', tooltip);
+}
+
+function updateLayerCounters() {
+    updateLayerCountBadge('layer-count-vehicles', countVehicleLayerGroups(), 'layers.countVehiclesTooltip');
+    updateLayerCountBadge(
+        'layer-count-field-photo-infrastructure',
+        countFieldPhotoIssueLayerGroups('infrastructure'),
+        'layers.countFieldPhotoInfrastructureTooltip'
+    );
+    updateLayerCountBadge(
+        'layer-count-field-photo-smoke',
+        countFieldPhotoIssueLayerGroups('smoke'),
+        'layers.countFieldPhotoSmokeTooltip'
+    );
+    updateLayerCountBadge(
+        'layer-count-field-photo-pending',
+        countPendingFieldPhotoLayerGroups(),
+        'layers.countFieldPhotoPendingTooltip'
+    );
 }
 
 function placeFieldPhotos(photos = fieldPhotoLayerData) {
@@ -146,7 +179,7 @@ async function loadFieldPhotos() {
             fieldPhotoLayerData = data.photos || [];
             placeFieldPhotos(fieldPhotoLayerData);
             placeVehicleMarkers();
-            updateLingeringCarsCounter();
+            updateLayerCounters();
         }
     } catch (_) {}
 }
@@ -156,9 +189,11 @@ function toggleFieldPhotoIssueFilter(issueType, visible) {
     fieldPhotoIssueFilters[safeIssueType] = Boolean(visible);
     placeFieldPhotos(fieldPhotoLayerData);
     updateFieldPhotoIssueOptions();
+    updateLayerCounters();
 }
 
 function togglePendingFieldPhotoLayer(visible) {
     pendingFieldPhotoLayerVisible = Boolean(visible);
     placeFieldPhotos(fieldPhotoLayerData);
+    updateLayerCounters();
 }

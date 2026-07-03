@@ -1,6 +1,6 @@
 :root {
     color-scheme: dark;
-    --user-accent: #3da5ff;
+    --color-accent: #0a84ff;
     --bg: #101114;
     --surface-canvas: #101114;
     --surface-card: rgba(38, 38, 42, 0.88);
@@ -19,7 +19,7 @@
     --text-soft: #d8e7f8;
     --muted: #a1a1aa;
     --muted-strong: #d4d4d8;
-    --primary: var(--user-accent);
+    --primary: var(--color-accent);
     --primary-hover: color-mix(in srgb, var(--primary) 82%, white);
     --primary-soft: color-mix(in srgb, var(--primary) 20%, transparent);
     --success: #10b981;

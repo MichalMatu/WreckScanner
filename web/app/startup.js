@@ -1,6 +1,6 @@
 refreshAdminStatus().finally(() => {
-    updateLingeringCarsCounter();
+    updateLayerCounters();
     loadSavedWrecks();
     loadFieldPhotos();
 });
-document.addEventListener('langchange', updateLingeringCarsCounter);
+document.addEventListener('langchange', updateLayerCounters);

@@ -2,12 +2,10 @@
 // przeglądarki; limity bezpieczeństwa backendu są osobno egzekwowane w Pythonie.
 
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
-const PANEL_COLLAPSED_KEY = 'wroclaw-ortho-panel-collapsed';
 const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
-const UI_ACCENT_STORAGE_KEY = 'wreckscanner.uiAccent.v1';
 
 // Endpointy są relatywne, żeby aplikacja działała przez tunel/proxy bez
 // twardego hosta i portu w JS.

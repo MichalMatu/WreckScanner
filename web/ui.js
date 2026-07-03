@@ -1,51 +1,5 @@
-// ─── COLLAPSE PANEL ─────────────────────────────
-// Zwijanie głównego panelu; stan trzymany w localStorage między reloadami.
-function updatePanelTitle() {
-    const title = document.getElementById('panel-title');
-    if (!title) return;
-    title.textContent = t('panel.title');
-}
-
-function updatePanelToggleState() {
-    const panel = document.getElementById('panel');
-    const toggle = document.getElementById('panel-header-toggle');
-    if (!panel || !toggle) return;
-    const collapsed = panel.classList.contains('collapsed');
-    toggle.title = collapsed ? t('icon.expand') : t('icon.fold');
-    toggle.setAttribute('aria-label', collapsed ? t('icon.expand') : t('icon.fold'));
-    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-}
-
-function togglePanel() {
-    const panel = document.getElementById('panel');
-    panel.classList.toggle('collapsed');
-    const collapsed = panel.classList.contains('collapsed');
-    try { localStorage.setItem(PANEL_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch (_) {}
-    updatePanelTitle();
-    updatePanelToggleState();
-}
-
-function handlePanelHeaderToggleKey(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    togglePanel();
-}
-// Stan startowy
-try {
-    if (localStorage.getItem(PANEL_COLLAPSED_KEY) === '1') {
-        document.getElementById('panel').classList.add('collapsed');
-    }
-} catch (_) {}
-updatePanelTitle();
-updatePanelToggleState();
-document.addEventListener('langchange', () => {
-    updatePanelTitle();
-    updatePanelToggleState();
-    updateAppMenuState();
-});
-
 // ─── APP MENU ───────────────────────────────────
-// Lekki shell nawigacyjny inspirowany PhotoMap: szybki rail + pełniejszy drawer.
+// Główne menu aplikacji łączy nawigację, akcje mapy i filtry warstw.
 function isAppMenuOpen() {
     return Boolean(document.body?.classList.contains('app-menu-open'));
 }
@@ -79,6 +33,7 @@ function closeAppMenu() {
 }
 
 updateAppMenuState();
+document.addEventListener('langchange', updateAppMenuState);
 
 // ─── LANGUAGE TOGGLE ────────────────────────────
 // Skrót PL/EN w ustawieniach — przełącza między językami.

@@ -35,8 +35,8 @@
 
 .year-arrow:hover {
     color: var(--text);
-    background: rgba(99, 102, 241, 0.18);
-    border-color: rgba(99, 102, 241, 0.45);
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
 .year-track {
@@ -74,7 +74,7 @@
 
 .year-tick.active {
     color: #fff;
-    background: rgba(99, 102, 241, 0.22);
+    background: var(--primary-soft);
 }
 
 .year-current {
@@ -84,8 +84,8 @@
     font: 700 16px var(--font-title, var(--font-display, sans-serif));
     color: #fff;
     padding: 4px 10px;
-    background: rgba(99, 102, 241, 0.18);
-    border: 1px solid rgba(99, 102, 241, 0.4);
+    background: var(--primary-soft);
+    border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
     border-radius: 8px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -148,16 +148,9 @@
     min-width: 0;
 }
 
-.panel-section-title {
-    color: var(--muted);
-    font-size: 0.66rem;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
 .map-layer-controls {
     display: grid;
-    gap: 6px;
+    gap: 7px;
     font-family: var(--font, var(--font-body));
     user-select: none;
 }
@@ -167,59 +160,92 @@
 }
 
 .layer-toggle {
-    min-height: 30px;
+    min-height: var(--control-height-compact);
     display: grid;
-    grid-template-columns: 15px 14px minmax(0, 1fr);
+    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 6px;
-    padding: 4px 7px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.18);
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.045);
     color: var(--text);
-    font-size: 12px;
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
-    white-space: nowrap;
+    line-height: 1.25;
+    white-space: normal;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
 }
 
 .layer-toggle:hover {
-    background: rgba(99, 102, 241, 0.12);
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
 }
 
 .layer-toggle input {
     appearance: none;
     -webkit-appearance: none;
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     margin: 0;
-    border: 1px solid rgba(148, 163, 184, 0.75);
-    border-radius: 4px;
-    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    background: rgba(15, 23, 42, 0.72);
     position: relative;
     cursor: pointer;
 }
 
 .layer-toggle input:checked {
-    border-color: rgba(129, 140, 248, 0.9);
-    background: #6366f1;
+    border-color: color-mix(in srgb, var(--primary) 74%, white);
+    background: var(--primary);
 }
 
 .layer-toggle input:checked::after {
     content: '';
     position: absolute;
-    left: 4px;
-    top: 1px;
-    width: 4px;
-    height: 8px;
+    left: 5px;
+    top: 2px;
+    width: 5px;
+    height: 9px;
     border: solid #fff;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
 
 .layer-toggle input:focus-visible {
-    outline: 2px solid rgba(129, 140, 248, 0.85);
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
     outline-offset: 2px;
+}
+
+.layer-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layer-count-badge {
+    justify-self: end;
+    min-width: 24px;
+    max-width: 58px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--text-soft);
+    font: 850 0.68rem var(--font);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .layer-status {

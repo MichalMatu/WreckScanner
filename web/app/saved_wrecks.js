@@ -187,14 +187,14 @@ function placeVehicleMarkers() {
 async function loadSavedWrecks() {
     savedWreckLayerData = [];
     if (!adminAuthenticated) {
-        updateLingeringCarsCounter();
+        updateLayerCounters();
         return;
     }
     try {
         const data = await apiJson(`${WRECKS_URL}?ts=${Date.now()}`, { cache: 'no-store' });
         if (data.status === 'ok') {
             savedWreckLayerData = data.wrecks || [];
-            updateLingeringCarsCounter();
+            updateLayerCounters();
         }
     } catch (_) {}
 }

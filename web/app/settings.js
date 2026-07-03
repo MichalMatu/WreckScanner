@@ -10,14 +10,6 @@ const enhancementControls = {
     outHigh: document.getElementById('enhancement-out-high'),
     decast: document.getElementById('enhancement-decast'),
 };
-const uiAccentControls = {
-    color: document.getElementById('ui-accent-color'),
-    value: document.getElementById('ui-accent-value'),
-};
-const uiAccentSwatches = Array.from(document.querySelectorAll('.accent-swatch[data-accent]'));
-const UI_ACCENT_DEFAULT = '#3da5ff';
-const UI_ACCENT_PATTERN = /^#?[0-9a-fA-F]{6}$/;
-
 const enhancementControlFields = {
     clahe: 'clahe_clip_limit',
     tile: 'clahe_tile_grid_size',
@@ -65,53 +57,6 @@ let publicLayerSettingsLoaded = false;
 let publicFeatureSettingsLoaded = false;
 let fieldPhotoIssueFilters = Object.fromEntries(Array.from(FIELD_PHOTO_ISSUE_TYPES, issueType => [issueType, true]));
 let pendingFieldPhotoLayerVisible = true;
-
-function normalizeUiAccentColor(value) {
-    const raw = String(value || '').trim();
-    if (!UI_ACCENT_PATTERN.test(raw)) return null;
-    return `#${raw.replace(/^#/, '').toLowerCase()}`;
-}
-
-function updateUiAccentControls(accent) {
-    if (uiAccentControls.color) uiAccentControls.color.value = accent;
-    if (uiAccentControls.value) uiAccentControls.value.value = accent;
-    uiAccentSwatches.forEach(button => {
-        const selected = normalizeUiAccentColor(button.dataset.accent) === accent;
-        button.classList.toggle('is-active', selected);
-        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-    });
-}
-
-function setUiAccentColor(value, options = {}) {
-    const accent = normalizeUiAccentColor(value) || UI_ACCENT_DEFAULT;
-    document.documentElement.style.setProperty('--user-accent', accent);
-    updateUiAccentControls(accent);
-    if (options.persist !== false) {
-        try { localStorage.setItem(UI_ACCENT_STORAGE_KEY, accent); } catch (_) {}
-    }
-}
-
-function loadUiAccentColor() {
-    let stored = null;
-    try { stored = localStorage.getItem(UI_ACCENT_STORAGE_KEY); } catch (_) {}
-    setUiAccentColor(normalizeUiAccentColor(stored) || UI_ACCENT_DEFAULT, { persist: false });
-}
-
-function initializeUiAccentControls() {
-    loadUiAccentColor();
-    uiAccentControls.color?.addEventListener('input', event => setUiAccentColor(event.target.value));
-    uiAccentControls.value?.addEventListener('input', event => {
-        const accent = normalizeUiAccentColor(event.target.value);
-        if (accent) setUiAccentColor(accent);
-    });
-    uiAccentControls.value?.addEventListener('blur', () => {
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--user-accent').trim();
-        updateUiAccentControls(normalizeUiAccentColor(accent) || UI_ACCENT_DEFAULT);
-    });
-    uiAccentSwatches.forEach(button => {
-        button.addEventListener('click', () => setUiAccentColor(button.dataset.accent));
-    });
-}
 
 function updateSettingsAccess() {
     const locked = !adminAuthenticated;
@@ -254,7 +199,7 @@ function applyPublicLayerSettings(settings) {
         clearVehicleMarkers();
     }
     placeFieldPhotos(fieldPhotoLayerData);
-    updateLingeringCarsCounter();
+    updateLayerCounters();
 }
 
 function setControlValue(id, value) {
@@ -497,7 +442,6 @@ document.getElementById('enhancement-reset')?.addEventListener('click', () => {
     queueEnhancementSettingsSave();
 });
 
-initializeUiAccentControls();
 updateSettingsAccess();
 loadAppSettings();
 setCadastralLayerVisible(cadastralLayerVisible);

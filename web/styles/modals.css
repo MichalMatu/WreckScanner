@@ -115,6 +115,14 @@
     max-width: 620px;
 }
 
+.modal--welcome .modal-body {
+    min-height: min(520px, calc(100dvh - 132px));
+}
+
+.modal--privacy-info {
+    max-width: 760px;
+}
+
 .modal--admin-panel {
     position: absolute;
     top: 72px;
@@ -169,6 +177,7 @@
     .modal--photo-review,
     .modal--wreck-review,
     .modal--privacy-requests,
+    .modal--privacy-info,
     .modal--report,
     .modal--field-photo,
     .modal--field-photo-thanks,
@@ -303,12 +312,6 @@
     padding: var(--space-3);
 }
 
-.settings-card--appearance {
-    background:
-        linear-gradient(135deg, var(--primary-soft), transparent 62%),
-        rgba(255, 255, 255, 0.045);
-}
-
 .settings-section-heading {
     align-items: center;
     display: flex;
@@ -323,65 +326,52 @@
     text-transform: uppercase;
 }
 
-.app-color-field {
-    align-items: center;
-    display: grid;
-    gap: var(--space-2);
-    grid-template-columns: 52px minmax(0, 1fr);
-}
-
-.app-color-field input[type="color"] {
-    width: 52px;
-    min-height: var(--control-height-comfortable);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-control);
-    background: var(--surface-control);
-    cursor: pointer;
-    padding: 4px;
-}
-
-.app-color-value {
-    font-family: var(--font-mono);
-    letter-spacing: 0;
-    text-transform: lowercase;
-}
-
-.accent-swatch-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.accent-swatch {
-    width: 34px;
-    height: 34px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-full);
-    background:
-        radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.78), transparent 25%),
-        var(--swatch);
-    cursor: pointer;
-    padding: 0;
-    transition: border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
-}
-
-.accent-swatch:hover,
-.accent-swatch:focus-visible {
-    border-color: rgba(255, 255, 255, 0.72);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.accent-swatch.is-active {
-    border-color: var(--text-strong);
-    box-shadow: 0 0 0 3px var(--primary-soft);
-}
-
 /* Sekcja w modalu — wspólny pattern */
 .modal-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.privacy-info-body {
+    gap: 12px;
+    padding-bottom: 22px;
+}
+
+.privacy-info-lead {
+    margin: 0;
+    color: #e5e7eb;
+    font-size: 0.93rem;
+    line-height: 1.55;
+}
+
+.privacy-info-section {
+    display: grid;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.privacy-info-section h3 {
+    margin: 0;
+    color: var(--text-strong);
+    font: 800 0.86rem var(--font-display);
+}
+
+.privacy-info-section p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    line-height: 1.56;
+}
+
+.privacy-info-section a {
+    color: var(--primary-hover);
+    text-decoration: none;
+}
+
+.privacy-info-section a:hover {
+    text-decoration: underline;
 }
 
 .welcome-lead {
@@ -418,6 +408,8 @@
     gap: 8px;
     align-items: center;
     justify-content: flex-end;
+    margin-top: auto;
+    padding-top: var(--space-2);
 }
 
 .welcome-start-btn {
@@ -590,11 +582,6 @@
     margin-top: 2px;
 }
 
-.modal-data-source {
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
-    padding-top: 10px;
-}
-
 /* Pomoc: ponumerowane kroki + legenda kolorów pinów */
 .modal-steps {
     list-style: none;
@@ -652,33 +639,4 @@
     border-radius: 50%;
     margin-right: 8px;
     vertical-align: middle;
-}
-
-/* ── MODAL FOOTER LINKS ──────────────────────── */
-
-.modal-footer-links {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-}
-
-.modal-footer-links a {
-    color: rgba(255, 255, 255, 0.55);
-    font-size: 0.75rem;
-    text-decoration: none;
-    transition: color 0.15s ease;
-}
-
-.modal-footer-links a:hover {
-    color: #fff;
-    text-decoration: underline;
-}
-
-.modal-footer-sep {
-    color: rgba(255, 255, 255, 0.25);
-    font-size: 0.75rem;
 }
