@@ -106,7 +106,10 @@ def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[t
             raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
         if not is_approved(record):
             raise ValueError("Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych.")
-        if str(record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE) != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        if (
+            str(record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE)
+            != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE
+        ):
             raise ValueError("Raport pojazdu można wygenerować tylko ze zdjęć pojazdów.")
         records.append((record_dir, record))
     if not records:

@@ -15,11 +15,11 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from core import config
-from core.field_photos import FIELD_PHOTO_ID_RE
-from core.geo import external_map_links
-from core.json_io import write_json_atomic
-from core.photo_privacy import (
+from core import config  # noqa: E402
+from core.field_photos import FIELD_PHOTO_ID_RE  # noqa: E402
+from core.geo import external_map_links  # noqa: E402
+from core.json_io import write_json_atomic  # noqa: E402
+from core.photo_privacy import (  # noqa: E402
     ensure_review_fields,
     generate_public_derivatives,
     is_approved,
@@ -123,12 +123,7 @@ def _record_from_attached(
     lat, lon = _lat_lon(wreck, photo)
     metadata = _image_metadata(private_source)
     image_format = photo.get("format") or metadata.get("format") or "JPEG"
-    created_at = (
-        photo.get("field_photo_created_at")
-        or photo.get("created_at")
-        or wreck.get("created_at")
-        or _now_iso()
-    )
+    created_at = photo.get("field_photo_created_at") or photo.get("created_at") or wreck.get("created_at") or _now_iso()
     record = {
         "id": photo_id,
         "created_at": created_at,
