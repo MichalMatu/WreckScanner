@@ -21,14 +21,7 @@ function vehiclePhotoIsApproved(photo) {
 }
 
 function emptyVehicleGroup(lat, lon) {
-    return { lat, lon, wreck: null, photos: [] };
-}
-
-function wreckHasVehiclePhotos(wreck) {
-    const approvedCount = Number(wreck?.photo_count || 0);
-    const reviewCount = Number(wreck?.review_photo_count || 0);
-    const previews = Array.isArray(wreck?.field_photo_previews) ? wreck.field_photo_previews : [];
-    return approvedCount > 0 || reviewCount > 0 || previews.length > 0;
+    return { lat, lon, photos: [] };
 }
 
 function nearestVehicleGroup(groups, lat, lon) {
@@ -43,13 +36,12 @@ function nearestVehicleGroup(groups, lat, lon) {
 
 function addVehiclePhotoToGroup(group, photo, lat, lon) {
     group.photos.push(photo);
-    if (group.wreck) return;
     const count = group.photos.length;
     group.lat = ((group.lat * (count - 1)) + lat) / count;
     group.lon = ((group.lon * (count - 1)) + lon) / count;
 }
 
-function buildVehicleGroups(wrecks = savedWreckLayerData, photos = fieldPhotoLayerData) {
+function buildVehicleGroups(photos = fieldPhotoLayerData) {
     const groups = [];
     (photos || []).filter(vehiclePhotoIsApproved).forEach(photo => {
         const lat = Number(photo.lat);
@@ -62,100 +54,11 @@ function buildVehicleGroups(wrecks = savedWreckLayerData, photos = fieldPhotoLay
         }
         addVehiclePhotoToGroup(group, photo, lat, lon);
     });
-    (wrecks || []).forEach(wreck => {
-        if (!wreckHasVehiclePhotos(wreck)) return;
-        const lat = Number(wreck.lat);
-        const lon = Number(wreck.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-        let group = nearestVehicleGroup(groups, lat, lon);
-        if (!group) {
-            group = emptyVehicleGroup(lat, lon);
-            group.lat = lat;
-            group.lon = lon;
-            groups.push(group);
-        }
-        if (!group.wreck) group.wreck = wreck;
-    });
     return groups;
 }
 
 function vehicleGroupPhotoCount(group) {
-    const approvedAttachedCount = Number(group?.wreck?.photo_count || 0);
-    const reviewAttachedCount = adminAuthenticated ? Number(group?.wreck?.review_photo_count || 0) : approvedAttachedCount;
-    const attachedCount = Math.max(approvedAttachedCount, reviewAttachedCount);
-    const looseCount = Array.isArray(group?.photos) ? group.photos.length : 0;
-    return attachedCount + looseCount;
-}
-
-async function openVehicleCasePhotoUpload(wreckId, lat, lon) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
-    const id = safeWreckId(wreckId);
-    const latNumber = Number(lat);
-    const lonNumber = Number(lon);
-    if (!id || !Number.isFinite(latNumber) || !Number.isFinite(lonNumber)) return;
-    if (adminAuthenticated) {
-        openWreckPhotoModal(id);
-        return;
-    }
-    await openFieldPhotoUploadModal({
-        mapLatLng: L.latLng(latNumber, lonNumber),
-        issueType: FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
-    });
-}
-
-function vehicleCaseActions(wreck) {
-    if (!wreck) return [];
-    const wreckId = safeWreckId(wreck.id);
-    const lat = Number(wreck.lat);
-    const lon = Number(wreck.lon);
-    const reviewPhotoCount = Number(wreck.review_photo_count || 0);
-    const reportButton = mapPopupIconAction(
-        'map-popup-action--report',
-        t('wreck.reportPackage'),
-        `openReportPackageModal('${wreckId}')`,
-        'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h8v2H8v-2zm0 4h8v2H8v-2z'
-    );
-    const photoButton = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
-        ? mapPopupIconAction(
-            'map-popup-action--photo',
-            t('wreck.addPhotos'),
-            `openVehicleCasePhotoUpload('${wreckId}', ${lat}, ${lon})`,
-            'M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-5h-2v2h-2v2h2v2h2v-2h2v-2h-2v-2z'
-        )
-        : '';
-    const reviewPhotosButton = adminAuthenticated && reviewPhotoCount > 0
-        ? mapPopupIconAction(
-            'map-popup-action--photo',
-            t('wreck.reviewPhotos'),
-            `openPhotoReviewForWreck('${wreckId}')`,
-            'M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15z'
-        )
-        : '';
-    const approveButton = adminAuthenticated && wreck.public_review_status === 'pending'
-        ? mapPopupIconAction(
-            'map-popup-action--approve',
-            t('wreck.approve'),
-            `reviewWreckStatus('${wreckId}', 'approved', this)`,
-            'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z'
-        )
-        : '';
-    const rejectButton = adminAuthenticated && wreck.public_review_status === 'pending'
-        ? mapPopupIconAction(
-            'map-popup-action--delete',
-            t('wreck.reject'),
-            `reviewWreckStatus('${wreckId}', 'rejected', this)`,
-            'M18.3 5.7 12 12l6.3 6.3-1.4 1.4-6.3-6.3-6.3 6.3-1.4-1.4L10.6 12 4.3 5.7l1.4-1.4 6.3 6.3 6.3-6.3 1.4 1.4z'
-        )
-        : '';
-    const deleteButton = adminAuthenticated
-        ? mapPopupIconAction(
-            'map-popup-action--delete',
-            t('wreck.delete'),
-            `deleteWreck('${wreckId}', this)`,
-            'M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z'
-        )
-        : '';
-    return [reportButton, photoButton, reviewPhotosButton, approveButton, rejectButton, deleteButton];
+    return Array.isArray(group?.photos) ? group.photos.length : 0;
 }
 
 function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload = true } = {}) {
@@ -165,7 +68,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
     const lon = Number(group.lon);
     const encodedPhotoIds = encodedFieldPhotoIdsForGroup(group);
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
-    const canCreateVehicleCase = includeReport
+    const canCreateReport = includeReport
         && coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks);
     const canAddFieldPhotosHere = includeUpload
@@ -180,7 +83,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
             'M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'
         )
         : '';
-    const reportButton = canCreateVehicleCase
+    const reportButton = canCreateReport
         ? mapPopupIconAction(
             'map-popup-action--report',
             t('fieldPhoto.reportPackage'),
@@ -216,8 +119,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
 }
 
 function vehicleGroupPreviews(group) {
-    const loosePreviews = fieldPhotoGroupPreviews(group.photos);
-    return [...(group.wreck?.field_photo_previews || []), ...loosePreviews];
+    return fieldPhotoGroupPreviews(group.photos);
 }
 
 function vehicleGroupMeta(group) {
@@ -230,27 +132,13 @@ function vehicleGroupMeta(group) {
     ]);
 }
 
-function vehicleGroupLinks(group, previews) {
+function vehicleGroupLinks(group) {
     const photos = group.photos || [];
-    if (photos.length) return fieldPhotoGroupLinks(group, photos);
-    const links = group.wreck?.links || {};
-    const publicImage = previews.length === 1
-        ? cacheBustedUrl(previews[0].public_image || previews[0].public_thumb || '')
-        : '';
-    return popupLinks([
-        popupCompactLink(links.street_view, 'SV', t('popup.streetView')),
-        popupCompactLink(links.google_maps_satellite, 'Sat', t('popup.gmapsSat')),
-        popupCompactLink(links.geoportal, 'Geoportal', t('popup.geoportal')),
-        publicImage ? `<a href="${escapeHtml(publicImage)}" download>${t('fieldPhoto.downloadPublic')}</a>` : '',
-    ]);
+    return fieldPhotoGroupLinks(group, photos);
 }
 
 function vehicleGroupActions(group) {
-    if (!group.wreck) return vehicleLoosePhotoActions(group);
-    return [
-        ...vehicleCaseActions(group.wreck),
-        ...vehicleLoosePhotoActions(group, { includeReport: false, includeUpload: false }),
-    ];
+    return vehicleLoosePhotoActions(group);
 }
 
 function vehiclePhotoPopup(group) {
@@ -264,7 +152,7 @@ function vehiclePhotoPopup(group) {
             ${popupHeader(title)}
             ${vehicleGroupMeta(group)}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
-            ${vehicleGroupLinks(group, previews)}
+            ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}
         </div>
     `;
@@ -278,9 +166,9 @@ function placeVehicleMarkers() {
     clearVehicleMarkers();
     if (!vehicleLayerAllowed()) return;
     buildVehicleGroups().forEach(group => {
-        const canDrag = adminAuthenticated && !group.wreck && group.photos.length > 0;
+        const canDrag = adminAuthenticated && group.photos.length > 0;
         const marker = L.marker([group.lat, group.lon], {
-            icon: wreckIcon(vehicleGroupPhotoCount(group), group.wreck?.public_review_status),
+            icon: wreckIcon(vehicleGroupPhotoCount(group)),
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,
@@ -297,11 +185,15 @@ function placeVehicleMarkers() {
 }
 
 async function loadSavedWrecks() {
+    savedWreckLayerData = [];
+    if (!adminAuthenticated) {
+        updateLingeringCarsCounter();
+        return;
+    }
     try {
         const data = await apiJson(`${WRECKS_URL}?ts=${Date.now()}`, { cache: 'no-store' });
         if (data.status === 'ok') {
             savedWreckLayerData = data.wrecks || [];
-            placeVehicleMarkers();
             updateLingeringCarsCounter();
         }
     } catch (_) {}

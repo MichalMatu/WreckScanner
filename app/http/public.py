@@ -1,3 +1,5 @@
+import json
+
 from app.http import access
 from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
@@ -13,7 +15,7 @@ from core.field_photos import (
     submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
-from core.report_packages import create_public_report_package, create_report_package
+from core.report_packages import create_field_photo_report_package, create_public_report_package, create_report_package
 from core.uploads import UploadedFile
 from core.wrecks import delete_wreck
 from core.wrecks_attachments import (
@@ -26,6 +28,17 @@ from core.wrecks_save import save_vehicle_case
 def reject_report_package_files(files: list[UploadedFile]) -> None:
     if any(file.filename or file.data for file in files):
         raise ValueError("Zdjęcia do zgłoszenia dodaj najpierw do sprawy i zanonimizuj przed wygenerowaniem raportu.")
+
+
+def _report_photo_ids(fields: dict[str, str]) -> list[str]:
+    raw = fields.get("photo_ids") or ""
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        parsed = [item.strip() for item in raw.split(",") if item.strip()]
+    if not isinstance(parsed, list):
+        raise ValueError("Nieprawidłowa lista zdjęć terenowych.")
+    return [str(item or "").strip() for item in parsed if str(item or "").strip()]
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -168,17 +181,20 @@ def handle_report_package(handler, wreck_id: str) -> None:
         )
 
 
-def handle_attach_field_photos_to_wreck(handler, wreck_id: str) -> None:
-    if not http_admin_session.require_admin(handler):
+def handle_field_photo_report_package(handler) -> None:
+    if not access.require_public_feature(
+        handler, "manual_wrecks", "Generowanie zgłoszeń przez niezalogowanych jest teraz wyłączone."
+    ):
         return
     try:
-        data = http_request_body.read_json_body(handler)
-        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
-        result = attach_field_photos_to_wreck(
-            wreck_id,
-            photo_ids,
-            core_config.FIELD_PHOTOS_DIR,
-            core_config.WRECKS_DIR,
+        fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
+        reject_report_package_files(files)
+        result = create_field_photo_report_package(
+            fields,
+            _report_photo_ids(fields),
+            lat=fields.get("lat"),
+            lon=fields.get("lon"),
+            field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
@@ -189,9 +205,9 @@ def handle_attach_field_photos_to_wreck(handler, wreck_id: str) -> None:
         http_responses.send_internal_error(
             handler,
             500,
-            "Attaching field photos to wreck failed",
+            "Field photo report package creation failed",
             exc,
-            public_error="Nie udało się przenieść zdjęć do sprawy pojazdu.",
+            public_error="Nie udało się przygotować raportu ze zdjęć terenowych.",
         )
 
 

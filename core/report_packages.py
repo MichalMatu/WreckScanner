@@ -3,13 +3,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import secrets
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip, wrecks_store
-from core.photo_privacy import is_approved
+from core.field_photos import FIELD_PHOTO_ID_RE
+from core.geo import external_map_links
+from core.photo_privacy import is_approved, safe_child
 from core.wrecks_evidence import first_last_year, save_report_evidence
 from core.wrecks_identity import links as location_links
 from core.wrecks_identity import validate_coordinates
@@ -69,6 +72,115 @@ def _approved_photo_count(record: dict[str, Any]) -> int:
         and is_approved(photo)
         and (photo.get("public_image_file") or photo.get("public_thumb_file"))
     )
+
+
+def _field_photo_record_dir(photo_id: Any, field_photos_dir: Path) -> Path:
+    photo_id_text = str(photo_id or "").strip()
+    if not FIELD_PHOTO_ID_RE.fullmatch(photo_id_text):
+        raise ValueError("Nieprawidłowy identyfikator zdjęcia terenowego.")
+    root = field_photos_dir.resolve()
+    record_dir = (field_photos_dir / photo_id_text).resolve()
+    if root != record_dir and root not in record_dir.parents:
+        raise ValueError("Nieprawidłowa ścieżka zdjęcia terenowego.")
+    if not (record_dir / "record.json").exists():
+        raise FileNotFoundError("Nie znaleziono zdjęcia terenowego.")
+    return record_dir
+
+
+def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
+    records: list[tuple[Path, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for raw_photo_id in photo_ids:
+        photo_id = str(raw_photo_id or "").strip()
+        if not photo_id or photo_id in seen:
+            continue
+        seen.add(photo_id)
+        record_dir = _field_photo_record_dir(photo_id, field_photos_dir)
+        record = wrecks_store.read_json(record_dir / "record.json")
+        if not isinstance(record, dict) or str(record.get("id") or "") != photo_id:
+            raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
+        if not is_approved(record):
+            raise ValueError("Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych.")
+        if str(record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE) != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+            raise ValueError("Raport pojazdu można wygenerować tylko ze zdjęć pojazdów.")
+        records.append((record_dir, record))
+    if not records:
+        raise ValueError("Wybierz co najmniej jedno zdjęcie terenowe do raportu.")
+    return records
+
+
+def _copy_public_field_photo(record_dir: Path, record: dict[str, Any], report_root: Path) -> dict[str, Any]:
+    photo_id = str(record.get("id") or "")
+    output_dir = report_root / "photos" / photo_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    copied: dict[str, str] = {}
+    for key, file_name in (("public_image_file", "public.jpg"), ("public_thumb_file", "public_thumb.jpg")):
+        source = safe_child(record_dir, record.get(key))
+        if not source.exists():
+            raise FileNotFoundError("Brak publicznej kopii zdjęcia terenowego.")
+        destination = output_dir / file_name
+        shutil.copy2(source, destination)
+        copied[key] = f"photos/{photo_id}/{file_name}"
+    return {
+        "id": photo_id,
+        "created_at": record.get("created_at"),
+        "original_filename": record.get("original_filename"),
+        "content_type": "image/jpeg",
+        "format": "JPEG",
+        "size_bytes": record.get("size_bytes"),
+        "image_width": record.get("image_width"),
+        "image_height": record.get("image_height"),
+        "issue_type": config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE,
+        "captured_at": record.get("captured_at"),
+        "public_review_status": record.get("public_review_status"),
+        "redactions": record.get("redactions") or [],
+        "reviewed_at": record.get("reviewed_at"),
+        "public_width": record.get("public_width"),
+        "public_height": record.get("public_height"),
+        **copied,
+    }
+
+
+def _float_coordinate(value: Any, label: str) -> float:
+    try:
+        coord = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Nieprawidłowa wartość {label}.") from exc
+    if not (-90 <= coord <= 90) and label == "lat":
+        raise ValueError("Nieprawidłowa szerokość geograficzna.")
+    if not (-180 <= coord <= 180) and label == "lon":
+        raise ValueError("Nieprawidłowa długość geograficzna.")
+    return coord
+
+
+def _field_photo_report_record(
+    *,
+    photo_records: list[tuple[Path, dict[str, Any]]],
+    lat: Any,
+    lon: Any,
+    report_root: Path,
+) -> dict[str, Any]:
+    lat_float = _float_coordinate(lat, "lat")
+    lon_float = _float_coordinate(lon, "lon")
+    attached_photos = [
+        _copy_public_field_photo(record_dir, record, report_root) for record_dir, record in photo_records
+    ]
+    digest = hashlib.sha1(
+        ":".join(str(photo.get("id") or "") for _, photo in photo_records).encode(),
+        usedforsecurity=False,
+    ).hexdigest()[:12]
+    return {
+        "id": f"field_photo_group_{digest}",
+        "status": "field_photo_group",
+        "lat": lat_float,
+        "lon": lon_float,
+        "labels_present": [],
+        "first_seen_year": None,
+        "last_seen_year": None,
+        "links": external_map_links(lat_float, lon_float),
+        "evidences": [],
+        "attached_photos": attached_photos,
+    }
 
 
 def _download_payload(
@@ -171,3 +283,56 @@ def create_public_report_package(
     wrecks_dir: Path,
 ) -> dict[str, Any]:
     return _create_report_package(wreck_id, fields, wrecks_dir, public=True)
+
+
+def create_field_photo_report_package(
+    fields: dict[str, str],
+    photo_ids: list[Any],
+    *,
+    lat: Any,
+    lon: Any,
+    field_photos_dir: Path,
+) -> dict[str, Any]:
+    fields = report_models.validate_report_fields(fields)
+    package_id = _package_id("field_photo_group", fields)
+    photo_records = _field_photo_records(photo_ids, field_photos_dir)
+
+    with TemporaryDirectory(prefix=f"{package_id}_") as work_dir_name:
+        work_dir = Path(work_dir_name)
+        report_record = _field_photo_report_record(
+            photo_records=photo_records,
+            lat=lat,
+            lon=lon,
+            report_root=work_dir,
+        )
+        evidence = _build_report_evidence(report_record, work_dir)
+        report_record = _record_with_report_evidence(report_record, evidence)
+        subject, mail_body = report_mail.build_mail_draft(report_record, evidence, fields)
+        zip_bytes = report_zip.build_public_zip(
+            work_dir,
+            work_dir,
+            report_record,
+            evidence,
+            config.REPORT_RECIPIENT,
+            subject,
+            mail_body,
+        )
+        pdf_bytes = report_pdf.build_report_pdf(
+            record=report_record,
+            evidence=evidence,
+            record_dir=work_dir,
+            evidence_base_dir=work_dir,
+            recipient=config.REPORT_RECIPIENT,
+            subject=subject,
+            mail_body=mail_body,
+        )
+
+    return _download_payload(
+        package_id=package_id,
+        recipient=config.REPORT_RECIPIENT,
+        subject=subject,
+        mail_body=mail_body,
+        photo_count=_approved_photo_count(report_record),
+        zip_bytes=zip_bytes,
+        pdf_bytes=pdf_bytes,
+    )

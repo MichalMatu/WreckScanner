@@ -44,31 +44,6 @@ function photoIdsForGroup(group) {
     return (group.photos || []).map(photo => safeFieldPhotoId(photo.id)).filter(Boolean);
 }
 
-function nearestWreckForAttachment(lat, lon) {
-    let nearest = null;
-    savedWreckLayerData.forEach(wreck => {
-        const wreckLat = Number(wreck.lat);
-        const wreckLon = Number(wreck.lon);
-        if (!Number.isFinite(wreckLat) || !Number.isFinite(wreckLon)) return;
-        const distanceM = metersBetween(lat, lon, wreckLat, wreckLon);
-        if (distanceM > FIELD_PHOTO_ATTACH_TO_WRECK_RADIUS_M) return;
-        if (!nearest || distanceM < nearest.distanceM) nearest = { wreck, distanceM };
-    });
-    return nearest;
-}
-
-async function attachFieldPhotoGroupToWreck(group, wreck) {
-    const photoIds = photoIdsForGroup(group);
-    const wreckId = safeWreckId(wreck.id);
-    if (!photoIds.length || !wreckId) return;
-    const data = await apiPostJson(`${WRECKS_URL}/${encodeURIComponent(wreckId)}/field-photos/attach`, {
-        photo_ids: photoIds,
-    });
-    if (data.status !== 'ok') {
-        throw new Error(data.error || t('fieldPhoto.attachToWreckError'));
-    }
-}
-
 function decodeFieldPhotoIds(encodedPhotoIds) {
     try {
         const ids = JSON.parse(decodeURIComponent(String(encodedPhotoIds || '[]')));
@@ -78,62 +53,15 @@ function decodeFieldPhotoIds(encodedPhotoIds) {
     }
 }
 
-async function createManualWreckForFieldPhotoGroup(lat, lon, encodedPhotoIds) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks)) return null;
-    const latNumber = Number(lat);
-    const lonNumber = Number(lon);
-    const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
-    if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber) || !photoIds.length) {
-        throw new Error(t('fieldPhoto.prepareCaseError'));
-    }
-
-    const saveData = await apiPostJson(WRECKS_URL, { lat: latNumber, lon: lonNumber, field_photo_ids: photoIds });
-    if (saveData.status !== 'ok') {
-        throw new Error(saveData.error || t('fieldPhoto.prepareCaseError'));
-    }
-    const wreckId = safeWreckId(saveData.wreck?.id);
-    if (!wreckId) throw new Error(t('fieldPhoto.prepareCaseError'));
-    await loadSavedWrecks();
-    await loadFieldPhotos();
-    return wreckId;
-}
-
-async function createWreckForFieldPhotoGroup(lat, lon, encodedPhotoIds) {
-    if (!(await ensureAdmin())) return null;
-    const latNumber = Number(lat);
-    const lonNumber = Number(lon);
-    const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
-    if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber) || !photoIds.length) {
-        throw new Error(t('fieldPhoto.prepareCaseError'));
-    }
-
-    const saveData = await apiPostJson(WRECKS_URL, { lat: latNumber, lon: lonNumber, field_photo_ids: photoIds });
-    if (saveData.status !== 'ok') {
-        throw new Error(saveData.error || t('fieldPhoto.prepareCaseError'));
-    }
-    const wreckId = safeWreckId(saveData.wreck?.id);
-    if (!wreckId) throw new Error(t('fieldPhoto.prepareCaseError'));
-
-    await loadSavedWrecks();
-    await loadFieldPhotos();
-    return wreckId;
-}
-
 async function openFieldPhotoGroupReport(lat, lon, encodedPhotoIds, button = null) {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks)) return;
     const btn = button instanceof HTMLElement ? button : null;
     if (btn) btn.disabled = true;
-    statusEl.textContent = t('fieldPhoto.prepareCaseSaving');
+    statusEl.textContent = '';
     statusEl.className = '';
     try {
-        if (typeof refreshAdminStatus === 'function') await refreshAdminStatus();
-        const wreckId = adminAuthenticated
-            ? await createWreckForFieldPhotoGroup(lat, lon, encodedPhotoIds)
-            : await createManualWreckForFieldPhotoGroup(lat, lon, encodedPhotoIds);
-        if (!wreckId) return;
-        statusEl.textContent = t('fieldPhoto.prepareCaseSaved');
-        statusEl.className = 'ok';
-        openReportPackageModal(wreckId);
+        const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
+        await openFieldPhotoReportPackageModal(lat, lon, photoIds);
     } catch (err) {
         statusEl.textContent = apiErrorMessage(err, t('fieldPhoto.prepareCaseError'));
         statusEl.className = 'err';
@@ -177,27 +105,6 @@ async function updateFieldPhotoGroupLocation(group, marker) {
     const photos = (group.photos || []).filter(photo => safeFieldPhotoId(photo.id));
     if (!photos.length) {
         await loadFieldPhotos();
-        return;
-    }
-
-    const nearWreck = group.issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE
-        ? nearestWreckForAttachment(latlng.lat, latlng.lng)
-        : null;
-    if (nearWreck) {
-        marker.dragging?.disable();
-        statusEl.textContent = t('fieldPhoto.attachToWreckSaving', { n: photos.length });
-        statusEl.className = '';
-        try {
-            await attachFieldPhotoGroupToWreck(group, nearWreck.wreck);
-            statusEl.textContent = t('fieldPhoto.attachToWreckSaved', { n: photos.length });
-            statusEl.className = 'ok';
-        } catch (err) {
-            statusEl.textContent = apiErrorMessage(err, t('fieldPhoto.attachToWreckError'));
-            statusEl.className = 'err';
-        } finally {
-            await loadSavedWrecks();
-            await loadFieldPhotos();
-        }
         return;
     }
 

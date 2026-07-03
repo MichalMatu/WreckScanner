@@ -26,19 +26,6 @@ def wreck_photo_upload_wreck_id(request_path: str) -> str | None:
     return None
 
 
-def wreck_field_photo_attach_wreck_id(request_path: str) -> str | None:
-    parts = path_parts(request_path)
-    if (
-        len(parts) == 5
-        and parts[0] == "api"
-        and parts[1] == "wrecks"
-        and parts[3] == "field-photos"
-        and parts[4] == "attach"
-    ):
-        return parts[2]
-    return None
-
-
 def wreck_index_wreck_id(request_path: str) -> str | None:
     parts = path_parts(request_path)
     if len(parts) == 3 and parts[0] == config.WRECKS_ROUTE and parts[2] == "index.html":

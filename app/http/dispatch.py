@@ -193,6 +193,9 @@ def handle_post(handler) -> None:
     if request_path == "/api/admin/photo-retention/run":
         http_request_body.dispatch_json_request(handler, http_retention.handle_run_photo_retention, handler)
         return
+    if request_path == "/api/field-photo-reports/report-package":
+        http_public.handle_field_photo_report_package(handler)
+        return
     public_report_package_wreck_id = http_routes.public_report_package_wreck_id(request_path)
     if public_report_package_wreck_id:
         http_public.handle_public_report_package(handler, public_report_package_wreck_id)
@@ -200,12 +203,6 @@ def handle_post(handler) -> None:
     report_package_wreck_id = http_routes.report_package_wreck_id(request_path)
     if report_package_wreck_id:
         http_public.handle_report_package(handler, report_package_wreck_id)
-        return
-    wreck_field_photo_attach_wreck_id = http_routes.wreck_field_photo_attach_wreck_id(request_path)
-    if wreck_field_photo_attach_wreck_id:
-        http_request_body.dispatch_json_request(
-            handler, http_public.handle_attach_field_photos_to_wreck, handler, wreck_field_photo_attach_wreck_id
-        )
         return
     wreck_photo_upload_wreck_id = http_routes.wreck_photo_upload_wreck_id(request_path)
     if wreck_photo_upload_wreck_id:

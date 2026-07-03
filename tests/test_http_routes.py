@@ -12,7 +12,6 @@ class HttpRouteParsingTests(unittest.TestCase):
             "wreck-1",
         )
         self.assertEqual(routes.wreck_photo_upload_wreck_id("/api/wrecks/wreck-1/photos"), "wreck-1")
-        self.assertEqual(routes.wreck_field_photo_attach_wreck_id("/api/wrecks/wreck-1/field-photos/attach"), "wreck-1")
         self.assertIsNone(routes.report_package_wreck_id("/api/wrecks/wreck-1/report-package/extra"))
 
     def test_asset_routes_return_expected_identifiers(self):

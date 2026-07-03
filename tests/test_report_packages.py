@@ -17,6 +17,7 @@ from core import config as core_config
 from core.report_assets import report_package_download_name
 from core.report_models import validate_report_fields
 from core.report_packages import (
+    create_field_photo_report_package,
     create_public_report_package,
     create_report_package,
 )
@@ -117,6 +118,43 @@ def create_wreck_fixture(root: Path) -> Path:
         },
     )
     return wrecks_dir
+
+
+def create_field_photo_fixture(root: Path) -> tuple[Path, str]:
+    field_dir = root / "zdjecia_terenowe"
+    photo_id = "photo_20260604T201000Z_11111111"
+    photo_dir = field_dir / photo_id
+    photo_dir.mkdir(parents=True)
+    (photo_dir / "public.jpg").write_bytes(image_bytes())
+    (photo_dir / "public_thumb.jpg").write_bytes(image_bytes())
+    write_json(
+        photo_dir / "record.json",
+        {
+            "id": photo_id,
+            "created_at": "2026-06-04T20:10:00Z",
+            "original_filename": "teren.jpg",
+            "content_type": "image/jpeg",
+            "format": "JPEG",
+            "size_bytes": len(image_bytes()),
+            "image_width": 32,
+            "image_height": 24,
+            "issue_type": "vehicle",
+            "lat": 51.1,
+            "lon": 17.2,
+            "coordinate_source": "map",
+            "captured_at": "2026-06-04T20:00:00",
+            "private_original_file": f"field_photos/{photo_id}/original.jpg",
+            "public_review_status": "approved",
+            "redactions": [],
+            "reviewed_at": "2026-06-04T20:12:00Z",
+            "public_image_file": "public.jpg",
+            "public_thumb_file": "public_thumb.jpg",
+            "public_width": 32,
+            "public_height": 24,
+            "links": {},
+        },
+    )
+    return field_dir, photo_id
 
 
 class ReportPackageTests(unittest.TestCase):
@@ -356,6 +394,37 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
                 self.assertNotIn("pakiet dowodowy ZIP", report_html)
+
+    def test_create_field_photo_report_package_uses_field_photo_group_without_wreck_record(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, photo_id = create_field_photo_fixture(root)
+
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=fake_save_location_crops):
+                result = create_field_photo_report_package(
+                    valid_fields(),
+                    [photo_id],
+                    lat=51.1,
+                    lon=17.2,
+                    field_photos_dir=field_dir,
+                )
+
+            self.assertEqual(result["status"], "ok")
+            self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
+            self.assertNotIn("zip_url", result)
+            self.assertNotIn("pdf_url", result)
+            self.assertEqual(base64.b64decode(result["pdf_base64"])[:5], b"%PDF-")
+            self.assertFalse((root / "zidentyfikowane_wraki").exists())
+            with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
+                names = set(archive.namelist())
+                self.assertIn("zgloszenie.txt", names)
+                self.assertIn("raport.html", names)
+                self.assertIn(f"photos/{photo_id}/public.jpg", names)
+                self.assertIn(f"photos/{photo_id}/public_thumb.jpg", names)
+                self.assertIn("miniatury_historyczne/2024.jpg", names)
+                self.assertIn("miniatury_historyczne/2025.jpg", names)
+                self.assertNotIn(f"field_photos/{photo_id}/original.jpg", names)
+                self.assertFalse(any(name.endswith(".json") for name in names))
 
     def test_report_pdf_starts_with_formal_letter_before_evidence(self):
         with TemporaryDirectory() as tmp:

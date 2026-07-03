@@ -89,6 +89,7 @@ function localDatetimeValue(date = new Date()) {
 }
 
 let reportPackageDownloadUrls = [];
+let reportPackageTarget = null;
 
 function revokeReportPackageDownloadUrls() {
     for (const url of reportPackageDownloadUrls) {
@@ -113,15 +114,16 @@ function reportPackageBlobUrl(base64, contentType) {
     return url;
 }
 
-function resetReportPackageModal(wreckId) {
+function resetReportPackageModal(target) {
     const form = document.getElementById('report-package-form');
     const result = document.getElementById('report-package-result');
     const status = document.getElementById('report-package-status');
     const submit = document.getElementById('report-package-submit');
     form?.reset();
     revokeReportPackageDownloadUrls();
+    reportPackageTarget = target;
     updatePublicFeatureAccess();
-    document.getElementById('report-wreck-id').value = wreckId;
+    document.getElementById('report-wreck-id').value = target?.wreckId || '';
     const observedAt = form?.querySelector('[name="observed_at"]');
     if (observedAt) observedAt.value = localDatetimeValue();
     if (result) result.hidden = true;
@@ -136,18 +138,32 @@ function resetReportPackageModal(wreckId) {
 async function openReportPackageModal(wreckId) {
     const id = safeWreckId(wreckId);
     if (!id) return;
-    resetReportPackageModal(id);
+    resetReportPackageModal({ type: 'wreck', wreckId: id });
+    openModal('modal-report-package');
+}
+
+async function openFieldPhotoReportPackageModal(lat, lon, photoIds) {
+    const latNumber = Number(lat);
+    const lonNumber = Number(lon);
+    const safePhotoIds = (photoIds || []).map(safeFieldPhotoId).filter(Boolean);
+    if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber) || !safePhotoIds.length) return;
+    resetReportPackageModal({
+        type: 'field-photos',
+        lat: latNumber,
+        lon: lonNumber,
+        photoIds: safePhotoIds,
+    });
     openModal('modal-report-package');
 }
 
 async function submitReportPackage(event) {
     event.preventDefault();
     const form = document.getElementById('report-package-form');
-    const wreckId = safeWreckId(document.getElementById('report-wreck-id')?.value);
     const status = document.getElementById('report-package-status');
     const submit = document.getElementById('report-package-submit');
     const result = document.getElementById('report-package-result');
-    if (!form || !wreckId) return;
+    const target = reportPackageTarget;
+    if (!form || !target) return;
     if (!form.reportValidity()) return;
 
     if (submit) {
@@ -159,9 +175,20 @@ async function submitReportPackage(event) {
     if (result) result.hidden = true;
 
     try {
-        const reportPath = adminAuthenticated ? 'report-package' : 'public-report-package';
         const formData = new FormData(form);
-        const data = await apiJson(`${WRECKS_URL}/${encodeURIComponent(wreckId)}/${reportPath}`, {
+        let reportUrl = '';
+        if (target.type === 'field-photos') {
+            formData.set('photo_ids', JSON.stringify(target.photoIds || []));
+            formData.set('lat', String(target.lat));
+            formData.set('lon', String(target.lon));
+            reportUrl = '/api/field-photo-reports/report-package';
+        } else {
+            const wreckId = safeWreckId(target.wreckId || document.getElementById('report-wreck-id')?.value);
+            if (!wreckId) throw new Error(t('wreck.reportPackageError'));
+            const reportPath = adminAuthenticated ? 'report-package' : 'public-report-package';
+            reportUrl = `${WRECKS_URL}/${encodeURIComponent(wreckId)}/${reportPath}`;
+        }
+        const data = await apiJson(reportUrl, {
             method: 'POST',
             body: formData,
         });
