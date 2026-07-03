@@ -292,6 +292,22 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("modal.fieldPhotoSummary.discard", i18n_js)
         self.assertIn("returnToFieldPhotoSummary", review_js)
 
+    def test_field_photo_panel_pick_uses_map_hint_after_closing_menu(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
+        map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
+        map_css = (ROOT_DIR / "web" / "styles" / "map.css").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="map-field-photo-pick-hint"', html)
+        self.assertIn("updateFieldPhotoLocationPickHintUi", upload_js)
+        self.assertIn("if (typeof closeAppMenu === 'function') closeAppMenu();", upload_js)
+        self.assertIn("is-picking-field-photo-location", upload_js + map_css)
+        self.assertIn("cursor: crosshair !important;", map_css)
+        self.assertIn("cancelFieldPhotoLocationPick({ clearStatus: true })", html + map_context_js)
+        self.assertIn("panel.addPhotoPickCancel", html + i18n_js)
+        self.assertNotIn("statusEl.textContent = t('panel.addPhotoPickStatus')", upload_js)
+
     def test_approved_field_photo_popups_hide_redundant_metadata(self):
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")

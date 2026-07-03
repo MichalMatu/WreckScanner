@@ -280,6 +280,14 @@ function currentFieldPhotoUploadMapLatLng() {
     return fieldPhotoUploadMapLatLng || map.getCenter();
 }
 
+function updateFieldPhotoLocationPickHintUi() {
+    const hint = document.getElementById('map-field-photo-pick-hint');
+    if (!hint) return;
+    hint.hidden = !fieldPhotoLocationPickActive;
+    const label = hint.querySelector('[data-map-pick-hint-label]');
+    if (label) label.textContent = t('panel.addPhotoPickStatus');
+}
+
 function updatePanelFieldPhotoLocationPickUi() {
     const button = document.getElementById('panel-add-field-photo');
     if (button) {
@@ -290,10 +298,7 @@ function updatePanelFieldPhotoLocationPickUi() {
         if (label) label.textContent = t(fieldPhotoLocationPickActive ? 'panel.addPhotoPicking' : 'panel.addPhoto');
     }
     map?.getContainer()?.classList.toggle('is-picking-field-photo-location', fieldPhotoLocationPickActive);
-    if (fieldPhotoLocationPickActive) {
-        statusEl.textContent = t('panel.addPhotoPickStatus');
-        statusEl.className = 'ok';
-    }
+    updateFieldPhotoLocationPickHintUi();
 }
 
 function cancelFieldPhotoLocationPick(options = {}) {
@@ -314,11 +319,10 @@ function startFieldPhotoLocationPick() {
         return;
     }
     closeMapContextMenu?.();
+    if (typeof closeAppMenu === 'function') closeAppMenu();
     fieldPhotoLocationPickActive = true;
     map.on('click', handlePanelFieldPhotoLocationPick);
     updatePanelFieldPhotoLocationPickUi();
-    statusEl.textContent = t('panel.addPhotoPickStatus');
-    statusEl.className = 'ok';
 }
 
 function isFieldPhotoLocationPickActive() {

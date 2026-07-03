@@ -60,6 +60,7 @@ const TRANSLATIONS = {
         'panel.addPhotoTitle': 'Wskaż miejsce zdjęcia na mapie',
         'panel.addPhotoPickingTitle': 'Kliknij punkt na mapie',
         'panel.addPhotoPickStatus': 'Kliknij miejsce na mapie, w którym chcesz dodać zdjęcie.',
+        'panel.addPhotoPickCancel': 'Anuluj wybór miejsca',
 
         'layers.vehicles': 'Pojazdy',
         'layers.cadastral': 'Granice działek',
@@ -487,6 +488,7 @@ const TRANSLATIONS = {
         'panel.addPhotoTitle': 'Pick the photo location on the map',
         'panel.addPhotoPickingTitle': 'Click a point on the map',
         'panel.addPhotoPickStatus': 'Click the map location where you want to add the photo.',
+        'panel.addPhotoPickCancel': 'Cancel location pick',
 
         'layers.vehicles': 'Vehicles',
         'layers.cadastral': 'Parcel boundaries',

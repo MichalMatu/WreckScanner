@@ -387,6 +387,102 @@
     background: #0d1117;
 }
 
+.leaflet-container.is-picking-field-photo-location,
+.leaflet-container.is-picking-field-photo-location .leaflet-pane,
+.leaflet-container.is-picking-field-photo-location .leaflet-tile,
+.leaflet-container.is-picking-field-photo-location .leaflet-marker-icon {
+    cursor: crosshair !important;
+}
+
+.map-pick-hint {
+    position: fixed;
+    top: var(--space-4);
+    left: 50%;
+    z-index: 930;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 96px));
+    min-height: var(--control-hit-target);
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 7px 7px 7px var(--space-3);
+    border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+    border-radius: var(--radius-full);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--text-strong) 8%, transparent), transparent),
+        var(--surface-overlay);
+    color: var(--text);
+    box-shadow: var(--shadow-floating);
+    transform: translateX(-50%);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
+    font: 800 0.82rem/1.25 var(--font);
+}
+
+.map-pick-hint[hidden] {
+    display: none;
+}
+
+.map-pick-hint-icon {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--primary) 36%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--primary-soft);
+    color: var(--text-strong);
+}
+
+.map-pick-hint-icon svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+}
+
+.map-pick-hint span[data-map-pick-hint-label] {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.map-pick-hint-close {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--surface-on-media-hover);
+    color: var(--muted-strong);
+    cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        color var(--duration-fast),
+        transform var(--duration-fast);
+}
+
+.map-pick-hint-close:hover,
+.map-pick-hint-close:focus-visible {
+    background: var(--primary-soft);
+    color: var(--text-strong);
+    outline: none;
+    transform: scale(1.04);
+}
+
+.map-pick-hint-close svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+@media (max-width: 640px) {
+    .map-pick-hint {
+        top: calc(var(--space-4) + var(--control-hit-target) + var(--space-2));
+        max-width: calc(100vw - 24px);
+    }
+}
+
 .map-pin-icon {
     background: transparent;
     border: 0;

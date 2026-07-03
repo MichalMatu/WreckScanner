@@ -40,6 +40,7 @@ function closeMapContextMenu() {
 function openMapContextMenu(e) {
     if (!mapContextMenu || !contextMenuCoords) return;
     if (typeof closeAppMenu === 'function') closeAppMenu();
+    if (typeof cancelFieldPhotoLocationPick === 'function') cancelFieldPhotoLocationPick({ clearStatus: true });
     contextMenuLatLng = e.latlng;
     contextMenuCoords.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
     mapContextMenu.hidden = false;
