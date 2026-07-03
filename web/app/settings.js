@@ -40,7 +40,6 @@ const publicLayerToggleRows = {
     [PUBLIC_LAYER_KEYS.cadastral]: document.getElementById('toggle-cadastral-parcels')?.closest('.layer-toggle'),
 };
 const adminSettingsControls = [
-    document.getElementById('crop-select'),
     document.getElementById('enhancement-reset'),
     document.getElementById('photo-retention-refresh'),
     document.getElementById('photo-retention-dry-run'),

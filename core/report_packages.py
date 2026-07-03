@@ -12,6 +12,7 @@ from typing import Any
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip, wrecks_store
 from core.field_photos import FIELD_PHOTO_ID_RE
 from core.geo import external_map_links
+from core.map_crops import validate_crop_m
 from core.photo_privacy import is_approved, safe_child
 from core.wrecks_evidence import first_last_year, save_report_evidence
 from core.wrecks_identity import links as location_links
@@ -35,7 +36,11 @@ def _package_id(wreck_id: str, fields: dict[str, str]) -> str:
     return f"report_{stamp}_{digest}"
 
 
-def _build_report_evidence(record: dict[str, Any], evidence_base_dir: Path) -> dict[str, Any]:
+def _report_crop_m(fields: dict[str, str]) -> float:
+    return validate_crop_m(fields.get("crop_m") or config.REVIEW_CROP_M)
+
+
+def _build_report_evidence(record: dict[str, Any], evidence_base_dir: Path, *, crop_m: float) -> dict[str, Any]:
     lat, lon = validate_coordinates(record.get("lat"), record.get("lon"))
     map_links = record.get("links") if isinstance(record.get("links"), dict) else location_links(lat, lon)
     return save_report_evidence(
@@ -43,7 +48,7 @@ def _build_report_evidence(record: dict[str, Any], evidence_base_dir: Path) -> d
         lon=lon,
         record_dir=evidence_base_dir,
         created_at=_iso(_now_utc()),
-        crop_m=config.REVIEW_CROP_M,
+        crop_m=crop_m,
         links=map_links,
     )
 
@@ -216,6 +221,7 @@ def _create_report_package(
     *,
     public: bool,
 ) -> dict[str, Any]:
+    crop_m = _report_crop_m(fields)
     fields = report_models.validate_report_fields(fields)
     record_dir = wrecks_store.record_dir_for(wreck_id, wrecks_dir)
     record = wrecks_store.read_json(record_dir / "record.json")
@@ -225,7 +231,7 @@ def _create_report_package(
 
     with TemporaryDirectory(prefix=f"{package_id}_") as work_dir_name:
         evidence_base_dir = Path(work_dir_name)
-        evidence = _build_report_evidence(record, evidence_base_dir)
+        evidence = _build_report_evidence(record, evidence_base_dir, crop_m=crop_m)
         report_record = _record_with_report_evidence(record, evidence)
         subject, mail_body = report_mail.build_mail_draft(report_record, evidence, fields)
         if public:
@@ -293,6 +299,7 @@ def create_field_photo_report_package(
     lon: Any,
     field_photos_dir: Path,
 ) -> dict[str, Any]:
+    crop_m = _report_crop_m(fields)
     fields = report_models.validate_report_fields(fields)
     package_id = _package_id("field_photo_group", fields)
     photo_records = _field_photo_records(photo_ids, field_photos_dir)
@@ -305,7 +312,7 @@ def create_field_photo_report_package(
             lon=lon,
             report_root=work_dir,
         )
-        evidence = _build_report_evidence(report_record, work_dir)
+        evidence = _build_report_evidence(report_record, work_dir, crop_m=crop_m)
         report_record = _record_with_report_evidence(report_record, evidence)
         subject, mail_body = report_mail.build_mail_draft(report_record, evidence, fields)
         zip_bytes = report_zip.build_public_zip(

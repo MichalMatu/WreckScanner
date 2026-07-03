@@ -48,16 +48,17 @@ def valid_fields() -> dict[str, str]:
     }
 
 
-def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **_kwargs):
+def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **kwargs):
     output_dir.mkdir(parents=True, exist_ok=True)
     for year in (2024, 2025):
         (output_dir / f"{year}.jpg").write_bytes(image_bytes())
+    crop_m = float(kwargs.get("crop_m", 7.5))
     return (
         [{"label": "2024", "file": "2024.jpg"}, {"label": "2025", "file": "2025.jpg"}],
         {
             "center_lat": lat,
             "center_lon": lon,
-            "crop_meters": 7.5,
+            "crop_meters": crop_m,
             "years": [2024, 2025],
             "source": "wroclaw_wms_location_crops",
         },
@@ -394,6 +395,47 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Street View", report_html)
                 self.assertNotIn("https://example.test/street", report_html)
                 self.assertNotIn("pakiet dowodowy ZIP", report_html)
+
+    def test_report_packages_use_crop_m_from_report_form(self):
+        captured_crop_m: list[float] = []
+
+        def capture_save_location_crops(lat: float, lon: float, output_dir: Path, **kwargs):
+            captured_crop_m.append(float(kwargs["crop_m"]))
+            return fake_save_location_crops(lat, lon, output_dir, **kwargs)
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wrecks_dir = create_wreck_fixture(root)
+            field_dir, photo_id = create_field_photo_fixture(root)
+
+            with patch("core.wrecks_evidence.save_location_crops", side_effect=capture_save_location_crops):
+                wreck_result = create_report_package(
+                    "wreck_51100000_17200000",
+                    {**valid_fields(), "crop_m": "5"},
+                    wrecks_dir,
+                )
+                field_photo_result = create_field_photo_report_package(
+                    {**valid_fields(), "crop_m": "20"},
+                    [photo_id],
+                    lat=51.1,
+                    lon=17.2,
+                    field_photos_dir=field_dir,
+                )
+
+            self.assertEqual(wreck_result["status"], "ok")
+            self.assertEqual(field_photo_result["status"], "ok")
+            self.assertEqual(captured_crop_m, [5.0, 20.0])
+
+    def test_report_package_rejects_invalid_crop_m(self):
+        with TemporaryDirectory() as tmp:
+            wrecks_dir = create_wreck_fixture(Path(tmp))
+
+            with self.assertRaisesRegex(ValueError, "zakres"):
+                create_report_package(
+                    "wreck_51100000_17200000",
+                    {**valid_fields(), "crop_m": "200"},
+                    wrecks_dir,
+                )
 
     def test_create_field_photo_report_package_uses_field_photo_group_without_wreck_record(self):
         with TemporaryDirectory() as tmp:

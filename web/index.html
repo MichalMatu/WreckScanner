@@ -278,22 +278,6 @@
                     Zaloguj administratora, żeby edytować ustawienia.</p>
 
                 <section class="modal-section settings-card">
-                    <div class="settings-section-heading">
-                        <h3 data-i18n="modal.settings.report">Raport</h3>
-                    </div>
-                    <label class="modal-label" for="crop-select" data-i18n="modal.settings.crop">Zoom miniatur w
-                        raporcie</label>
-                    <select id="crop-select">
-                        <option value="5" data-i18n="modal.settings.crop5">5 m — ciasny</option>
-                        <option value="7.5" selected data-i18n="modal.settings.crop75">7.5 m — standard</option>
-                        <option value="10" data-i18n="modal.settings.crop10">10 m — szerzej</option>
-                        <option value="15" data-i18n="modal.settings.crop15">15 m — szeroki</option>
-                        <option value="20" data-i18n="modal.settings.crop20">20 m — kontekst</option>
-                    </select>
-                    <p class="modal-hint" data-i18n="modal.settings.cropHint">Wielkość wycinka zapisywanego w sprawie.</p>
-                </section>
-
-                <section class="modal-section settings-card">
                     <div class="setting-toggle-row">
                         <label class="modal-label" for="enhancement-enabled"
                             data-i18n="modal.settings.enhancement">Filtr ortofoto</label>
@@ -1066,6 +1050,24 @@
                             <textarea name="vehicle_description" rows="3" maxlength="2000" required></textarea>
                         </label>
                     </div>
+                </section>
+
+                <section class="modal-section">
+                    <label class="modal-label" for="report-crop-select" data-i18n="modal.report.mapEvidence">Miniatury
+                        ortofoto</label>
+                    <div class="report-grid">
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="modal.report.crop">Zoom miniatur w raporcie</span>
+                            <select class="modal-input" id="report-crop-select" name="crop_m">
+                                <option value="5" data-i18n="modal.report.crop5">5 m — ciasny</option>
+                                <option value="7.5" selected data-i18n="modal.report.crop75">7.5 m — standard</option>
+                                <option value="10" data-i18n="modal.report.crop10">10 m — szerzej</option>
+                                <option value="15" data-i18n="modal.report.crop15">15 m — szeroki</option>
+                                <option value="20" data-i18n="modal.report.crop20">20 m — kontekst</option>
+                            </select>
+                        </label>
+                    </div>
+                    <p class="modal-hint" data-i18n="modal.report.cropHint">Wielkość wycinka w generowanym pakiecie.</p>
                 </section>
 
                 <div class="report-actions">

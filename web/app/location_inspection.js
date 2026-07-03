@@ -1,5 +1,5 @@
 function selectedReviewCropM() {
-    const cropM = parseFloat(document.getElementById('crop-select')?.value);
+    const cropM = parseFloat(document.getElementById('report-crop-select')?.value);
     return Number.isFinite(cropM) ? cropM : 7.5;
 }
 

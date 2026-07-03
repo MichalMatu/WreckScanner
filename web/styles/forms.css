@@ -35,6 +35,7 @@
 
 .modal-input,
 .report-form input,
+.report-form select,
 .report-form textarea {
     width: 100%;
     border: 1px solid var(--border-strong);
@@ -63,6 +64,7 @@ select.modal-input {
 
 .modal-input:focus,
 .report-form input:focus,
+.report-form select:focus,
 .report-form textarea:focus {
     border-color: color-mix(in srgb, var(--primary) 72%, transparent);
     box-shadow: var(--shadow-focus);
