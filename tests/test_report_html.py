@@ -47,6 +47,10 @@ class ReportHtmlTests(unittest.TestCase):
             ).decode("utf-8")
 
         self.assertIn("data-report-package-style", body)
+        self.assertIn('<meta name="viewport" content="width=device-width, initial-scale=1">', body)
+        self.assertIn("width: min(1080px, calc(100vw - 72px));", body)
+        self.assertIn("width: 100%;", body)
+        self.assertIn("text-wrap: pretty;", body)
         self.assertIn("Zgłoszenie dotyczące pojazdu nieużytkowanego", body)
         self.assertIn("Data zgłoszenia: 02.07.2026, godz.", body)
         self.assertIn("interwencje@example.test", body)
@@ -92,7 +96,7 @@ class ReportHtmlTests(unittest.TestCase):
             },
             {"crops": [{"label": "2025", "file": "2025.jpg"}]},
             "Raport",
-            "Mail body",
+            "Link do miejsca:\nhttps://wreckscanner.pl/?lat=51.100000&lon=17.200000&z=20&photo=photo_test",
         ).decode("utf-8")
 
         self.assertIn("miniatury_historyczne/2025.jpg", body)
@@ -101,7 +105,13 @@ class ReportHtmlTests(unittest.TestCase):
         self.assertNotIn("zdjecia_z_miejsca", body)
         self.assertNotIn("photos/pending/public.jpg", body)
         self.assertNotIn("photos/pending/public_thumb.jpg", body)
-        self.assertLess(body.index("Mail body"), body.index("Miniatury historyczne"))
+        self.assertIn("Otwórz miejsce w WreckScanner", body)
+        self.assertIn('class="report-inline-link"', body)
+        self.assertIn(
+            'href="https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000&amp;z=20&amp;photo=photo_test"',
+            body,
+        )
+        self.assertLess(body.index("Otwórz miejsce w WreckScanner"), body.index("Miniatury historyczne"))
 
 
 if __name__ == "__main__":

@@ -218,6 +218,8 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Użytek:", text)
                 self.assertNotIn("Geoportal działki", text)
                 self.assertIn("Link do miejsca w WreckScanner", report_html)
+                self.assertIn("Otwórz miejsce w WreckScanner", report_html)
+                self.assertIn('class="report-inline-link"', report_html)
                 self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", report_html)
                 self.assertIn("Typ terenu: B - tereny mieszkaniowe", report_html)
                 self.assertNotIn("Powierzchnia:", report_html)

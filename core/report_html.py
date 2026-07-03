@@ -44,11 +44,20 @@ def _linkify_urls(value: Any) -> str:
         raw_url = match.group(0)
         parts.append(html.escape(text[last : match.start()], quote=False))
         escaped_href = html.escape(raw_url, quote=True)
-        escaped_label = html.escape(raw_url, quote=False)
-        parts.append(f'<a href="{escaped_href}" target="_blank" rel="noopener">{escaped_label}</a>')
+        escaped_label = html.escape(_url_label(raw_url), quote=False)
+        parts.append(
+            f'<a class="report-inline-link" href="{escaped_href}" target="_blank" rel="noopener" '
+            f'title="{escaped_href}">{escaped_label}</a>'
+        )
         last = match.end()
     parts.append(html.escape(text[last:], quote=False))
     return "".join(parts)
+
+
+def _url_label(raw_url: str) -> str:
+    if "photo=" in raw_url and ("lat=" in raw_url or "lon=" in raw_url):
+        return "Otwórz miejsce w WreckScanner"
+    return raw_url
 
 
 def _text_block(value: str) -> str:
@@ -141,8 +150,13 @@ def build_report_html(
 <html lang="pl">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zgłoszenie dotyczące pojazdu nieużytkowanego</title>
 <style data-report-package-style>
+  @page {{
+    size: A4;
+    margin: 14mm;
+  }}
   :root {{
     color-scheme: light;
     --page-bg: #f8fafc;
@@ -158,23 +172,24 @@ def build_report_html(
     background: var(--page-bg);
     color: var(--text);
     font-family: DejaVu Sans, Arial, system-ui, sans-serif;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 15px;
+    line-height: 1.62;
   }}
   main {{
-    max-width: 760px;
+    width: min(1080px, calc(100vw - 72px));
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 34px 38px 56px;
+    padding: 46px 0 72px;
   }}
   h1 {{
     margin: 0 0 6px;
-    font-size: 29px;
+    font-size: 34px;
     line-height: 1.18;
     letter-spacing: 0;
   }}
   h2 {{
-    margin: 26px 0 12px;
-    font-size: 24px;
+    margin: 34px 0 14px;
+    font-size: 27px;
     line-height: 1.2;
     letter-spacing: 0;
   }}
@@ -183,15 +198,34 @@ def build_report_html(
   button {{ font: inherit; }}
   .muted {{ color: var(--muted); }}
   .recipient, .subject, .letter-body {{
-    margin-top: 12px;
+    margin-top: 14px;
   }}
   .letter-body {{
+    width: 100%;
+    margin-top: 22px;
+    padding: 26px 30px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
     white-space: pre-wrap;
+    text-wrap: pretty;
+    overflow-wrap: break-word;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  }}
+  .report-inline-link {{
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 700;
+    white-space: normal;
     overflow-wrap: anywhere;
   }}
   .evidence-section {{
     break-inside: avoid;
-    margin-top: 28px;
+    margin-top: 36px;
   }}
   .photo-grid {{
     display: grid;
@@ -319,10 +353,25 @@ def build_report_html(
     cursor: default;
   }}
   @media print {{
-    main {{ max-width: none; padding: 14mm; }}
+    main {{ width: auto; max-width: none; padding: 14mm; }}
     h1 {{ font-size: 18pt; }}
     h2 {{ font-size: 15pt; }}
     body {{ font-size: 9pt; }}
+    .letter-body {{
+      max-width: none;
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }}
+    .report-inline-link {{
+      display: inline;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--link);
+      font-weight: inherit;
+    }}
     img {{ height: 48mm; }}
     .evidence-section--crops img {{ height: 40mm; }}
     .report-photo-figure,
@@ -332,6 +381,16 @@ def build_report_html(
     .report-lightbox {{ display: none !important; }}
   }}
   @media (max-width: 640px) {{
+    main {{
+      width: min(100% - 24px, 1080px);
+      padding: 24px 0 44px;
+    }}
+    h1 {{
+      font-size: 27px;
+    }}
+    .letter-body {{
+      padding: 18px;
+    }}
     .report-lightbox {{
       padding: 12px;
     }}
