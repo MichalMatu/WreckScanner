@@ -39,6 +39,7 @@ function closeMapContextMenu() {
 
 function openMapContextMenu(e) {
     if (!mapContextMenu || !contextMenuCoords) return;
+    if (typeof closeAppMenu === 'function') closeAppMenu();
     contextMenuLatLng = e.latlng;
     contextMenuCoords.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
     mapContextMenu.hidden = false;
@@ -51,7 +52,9 @@ function openMapContextMenu(e) {
     const y = Math.min(originalEvent.clientY, window.innerHeight - menuHeight - margin);
     mapContextMenu.style.left = `${Math.max(margin, x)}px`;
     mapContextMenu.style.top = `${Math.max(margin, y)}px`;
-
+    requestAnimationFrame(() => {
+        mapContextMenu.querySelector('button:not([hidden])')?.focus({ preventScroll: true });
+    });
 }
 
 map.on('contextmenu', (e) => {

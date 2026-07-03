@@ -1,12 +1,187 @@
+/* ── APP MENU ───────────────────────── */
+.app-menu {
+    position: fixed;
+    top: var(--space-4);
+    left: var(--space-4);
+    z-index: 920;
+    display: grid;
+    gap: var(--space-3);
+    justify-items: center;
+}
+
+.app-menu-button,
+.app-menu-rail-item,
+.app-menu-drawer-item {
+    border: 0;
+    font-family: var(--font);
+    cursor: pointer;
+}
+
+.app-menu-button {
+    width: var(--control-hit-target);
+    height: var(--control-hit-target);
+    border-radius: var(--radius-full);
+    background: rgba(245, 245, 247, 0.86);
+    color: #18181b;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+    transition: color var(--duration-fast), transform var(--duration-fast), background var(--duration-fast);
+}
+
+.app-menu-button:hover,
+.app-menu-button:focus-visible {
+    color: var(--primary);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.app-menu-icon {
+    grid-area: 1 / 1;
+    width: 23px;
+    height: 23px;
+    fill: currentColor;
+}
+
+.app-menu-icon--close,
+.app-menu-open .app-menu-icon--open {
+    display: none;
+}
+
+.app-menu-open .app-menu-icon--close {
+    display: block;
+}
+
+.app-menu-rail {
+    width: 54px;
+    padding: var(--space-2);
+    display: grid;
+    gap: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-panel);
+    background: var(--surface-elevated);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
+    box-shadow: var(--shadow-panel);
+}
+
+.app-menu-rail-item {
+    width: var(--control-height-compact);
+    height: var(--control-height-compact);
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--muted-strong);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    transition: background var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
+}
+
+.app-menu-rail-item:hover,
+.app-menu-rail-item:focus-visible {
+    background: var(--primary-soft);
+    color: var(--primary);
+    outline: none;
+}
+
+.app-menu-rail-item.is-admin {
+    background: var(--success-soft);
+    color: #86efac;
+}
+
+.app-menu-rail-item svg,
+.app-menu-drawer-item svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.app-menu-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 880;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.30);
+    padding: 0;
+}
+
+.app-menu-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 910;
+    width: min(360px, calc(100vw - 44px));
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    background: var(--surface-overlay);
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow-floating);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
+}
+
+.app-menu-drawer-header {
+    min-height: 76px;
+    padding: 0 var(--space-6) 0 84px;
+    display: flex;
+    align-items: center;
+}
+
+.app-menu-brand {
+    border: 0;
+    background: transparent;
+    color: var(--text-strong);
+    cursor: pointer;
+    font: 800 1.05rem var(--font-display);
+    padding: 0;
+}
+
+.app-menu-brand:hover {
+    color: var(--primary);
+}
+
+.app-menu-drawer-section {
+    display: grid;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--border);
+}
+
+.app-menu-drawer-item {
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0 var(--space-7);
+    background: transparent;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 650;
+    text-align: left;
+    text-decoration: none;
+}
+
+.app-menu-drawer-item:hover,
+.app-menu-drawer-item:focus-visible {
+    background: var(--surface-subtle);
+    color: var(--primary);
+    outline: none;
+}
+
 /* ── FLOATING PANEL ─────────────────── */
 #panel {
     position: fixed;
     top: 16px;
-    left: 16px;
+    left: 86px;
     width: 300px;
     z-index: 800;
     background: var(--surface-elevated);
-    backdrop-filter: blur(20px);
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
     border: 1px solid var(--border);
     border-radius: var(--radius-panel);
     padding: 14px;
@@ -21,7 +196,7 @@
     align-items: center;
     gap: 10px;
     min-height: 32px;
-    padding-right: 106px;
+    padding-right: 0;
 }
 
 .panel-header-toggle {
@@ -43,7 +218,7 @@
     width: 26px;
     height: 26px;
     border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--primary), #a855f7);
+    background: linear-gradient(135deg, var(--primary), #2dd4bf);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,7 +243,7 @@
     font-family: var(--font-title);
     font-size: 1rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #fff, #a5b4fc);
+    background: linear-gradient(135deg, #fff, #b7e5ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -114,7 +289,7 @@ hr.sep {
     min-height: 42px;
     border: 0;
     border-radius: 10px;
-    background: linear-gradient(135deg, #0ea5e9, #10b981);
+    background: linear-gradient(135deg, var(--primary), #10b981);
     color: #fff;
     box-shadow: 0 8px 24px rgba(14, 165, 233, 0.24);
     cursor: pointer;
@@ -136,7 +311,7 @@ hr.sep {
 }
 
 .panel-photo-cta.is-picking-location {
-    background: linear-gradient(135deg, #f97316, #0ea5e9);
+    background: linear-gradient(135deg, #f97316, var(--primary));
     box-shadow: 0 12px 30px rgba(249, 115, 22, 0.30);
 }
 
@@ -160,7 +335,7 @@ hr.sep {
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--surface-inset);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 7px 9px;
@@ -179,7 +354,7 @@ hr.sep {
     font-size: 0.74rem;
     font-weight: 700;
     font-family: 'SF Mono', 'Menlo', monospace;
-    color: #e0e7ff;
+    color: var(--text-soft);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -246,7 +421,7 @@ input[type=range]::-webkit-slider-thumb {
 select {
     appearance: none;
     -webkit-appearance: none;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--surface-control);
     background-image: var(--select-chevron);
     background-repeat: no-repeat;
     background-position: right 11px center;
@@ -299,13 +474,13 @@ select:focus {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+    box-shadow: var(--shadow-primary);
     transition: all 0.2s;
 }
 
 .btn-download:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.35);
+    box-shadow: var(--shadow-primary);
 }
 
 .btn-download:active {
@@ -345,16 +520,6 @@ select:focus {
     color: var(--danger);
 }
 
-/* Ikony akcji panelu (prawy górny róg) — pomoc + ustawienia + admin */
-.panel-icons {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    gap: 6px;
-    z-index: 1;
-}
-
 /* Body panelu — wszystko poza nagłówkiem; zwijane */
 .panel-body {
     display: flex;
@@ -374,41 +539,26 @@ select:focus {
     pointer-events: none;
 }
 
-.btn-icon {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    padding: 0;
-}
-
-.btn-icon:hover {
-    color: var(--text);
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.35);
-}
-
-.btn-icon.is-admin {
-    color: #bbf7d0;
-    border-color: rgba(16, 185, 129, 0.55);
-    background: rgba(16, 185, 129, 0.16);
-}
-
-.btn-icon svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
-}
-
 .btn-lang .lang-label {
     font: 700 11px var(--font-display);
     letter-spacing: 0.5px;
     color: inherit;
+}
+
+@media (max-width: 720px) {
+    .app-menu {
+        top: 10px;
+        left: 10px;
+        gap: 8px;
+    }
+
+    .app-menu-rail {
+        display: none;
+    }
+
+    #panel {
+        top: 64px;
+        left: 10px;
+        width: min(300px, calc(100vw - 20px));
+    }
 }

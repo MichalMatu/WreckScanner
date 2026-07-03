@@ -41,7 +41,44 @@ updatePanelToggleState();
 document.addEventListener('langchange', () => {
     updatePanelTitle();
     updatePanelToggleState();
+    updateAppMenuState();
 });
+
+// ─── APP MENU ───────────────────────────────────
+// Lekki shell nawigacyjny inspirowany PhotoMap: szybki rail + pełniejszy drawer.
+function isAppMenuOpen() {
+    return Boolean(document.body?.classList.contains('app-menu-open'));
+}
+
+function updateAppMenuState() {
+    const isOpen = isAppMenuOpen();
+    const toggle = document.getElementById('app-menu-toggle');
+    const drawer = document.getElementById('app-menu-drawer');
+    const scrim = document.getElementById('app-menu-scrim');
+    if (toggle) {
+        const label = isOpen ? t('appMenu.close') : t('appMenu.open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        toggle.setAttribute('aria-label', label);
+        toggle.title = label;
+    }
+    if (drawer) drawer.hidden = !isOpen;
+    if (scrim) scrim.hidden = !isOpen;
+}
+
+function setAppMenuOpen(open) {
+    document.body?.classList.toggle('app-menu-open', Boolean(open));
+    updateAppMenuState();
+}
+
+function toggleAppMenu() {
+    setAppMenuOpen(!isAppMenuOpen());
+}
+
+function closeAppMenu() {
+    setAppMenuOpen(false);
+}
+
+updateAppMenuState();
 
 // ─── LANGUAGE TOGGLE ────────────────────────────
 // Skrót PL/EN w ustawieniach — przełącza między językami.
@@ -89,6 +126,10 @@ function closeModal(target) {
 }
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        if (isAppMenuOpen()) {
+            closeAppMenu();
+            return;
+        }
         const confirmModal = document.getElementById('modal-confirm');
         if (confirmModal && !confirmModal.hidden) {
             closeConfirmModal(false);

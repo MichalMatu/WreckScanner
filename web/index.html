@@ -26,6 +26,83 @@
 
 <body>
 
+    <!-- App menu -->
+    <div class="app-menu" id="app-menu">
+        <button type="button" class="app-menu-button" id="app-menu-toggle"
+            data-i18n-attr="title:appMenu.open;aria-label:appMenu.open" title="Otwórz menu"
+            aria-label="Otwórz menu" aria-controls="app-menu-drawer" aria-expanded="false"
+            onclick="toggleAppMenu()">
+            <svg class="app-menu-icon app-menu-icon--open" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z" />
+            </svg>
+            <svg class="app-menu-icon app-menu-icon--close" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+            </svg>
+        </button>
+        <nav class="app-menu-rail" aria-label="Skróty">
+            <button type="button" class="app-menu-rail-item" id="open-help"
+                data-i18n-attr="title:icon.help;aria-label:icon.help" title="Jak korzystać"
+                aria-label="Jak korzystać" onclick="openModal('modal-help'); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+            </button>
+            <button type="button" class="app-menu-rail-item" id="open-settings"
+                data-i18n-attr="title:icon.settings;aria-label:icon.settings" title="Ustawienia"
+                aria-label="Ustawienia" onclick="openSettingsModal(); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19.14 12.94c.04-.31.06-.62.06-.94 0-.32-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96a7.026 7.026 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.07.49.12.61l2.03 1.58c-.04.31-.07.62-.07.94 0 .32.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .43-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                </svg>
+            </button>
+            <button type="button" class="app-menu-rail-item" id="open-admin-panel"
+                data-i18n-attr="title:icon.adminPanel;aria-label:icon.adminPanel" title="Panel administratora"
+                aria-label="Panel administratora" onclick="openAdminPanel(); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
+                </svg>
+            </button>
+        </nav>
+    </div>
+    <button class="app-menu-scrim" id="app-menu-scrim" type="button" hidden
+        data-i18n-attr="aria-label:appMenu.close" aria-label="Zamknij menu" onclick="closeAppMenu()"></button>
+    <aside class="app-menu-drawer" id="app-menu-drawer" hidden aria-label="Menu aplikacji">
+        <div class="app-menu-drawer-header">
+            <button type="button" class="app-menu-brand" onclick="closeAppMenu()">WreckScanner</button>
+        </div>
+        <nav class="app-menu-drawer-section" aria-label="Menu aplikacji">
+            <button type="button" class="app-menu-drawer-item" onclick="openModal('modal-help'); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+                <span data-i18n="icon.help">Jak korzystać</span>
+            </button>
+            <button type="button" class="app-menu-drawer-item" onclick="openSettingsModal(); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19.14 12.94c.04-.31.06-.62.06-.94 0-.32-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96a7.026 7.026 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.07.49.12.61l2.03 1.58c-.04.31-.07.62-.07.94 0 .32.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .43-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                </svg>
+                <span data-i18n="icon.settings">Ustawienia</span>
+            </button>
+            <button type="button" class="app-menu-drawer-item" onclick="openAdminPanel(); closeAppMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
+                </svg>
+                <span data-i18n="icon.adminPanel">Panel administratora</span>
+            </button>
+            <a class="app-menu-drawer-item" href="/privacy">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3zm0 2.2 6 2.25V11c0 3.9-2.45 7.65-6 8.85C8.45 18.65 6 14.9 6 11V6.45l6-2.25z" />
+                </svg>
+                <span data-i18n="footer.privacy">Prywatność</span>
+            </a>
+            <a class="app-menu-drawer-item" href="/report">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z" />
+                </svg>
+                <span data-i18n="footer.report">Zgłoś problem</span>
+            </a>
+        </nav>
+    </aside>
+
     <!-- Interactive Map -->
     <div id="map"></div>
 
@@ -41,37 +118,39 @@
     </div>
 
     <!-- Map right-click menu -->
-    <div id="map-context-menu" class="map-context-menu" hidden>
+    <div id="map-context-menu" class="map-context-menu" role="menu" aria-label="Menu punktu mapy" hidden>
         <div class="context-menu-coords" id="context-menu-coords"></div>
-        <button type="button" id="context-identify-parcel" onclick="identifyCadastralParcelAtContextPoint()" hidden>
+        <button type="button" id="context-identify-parcel" role="menuitem"
+            onclick="identifyCadastralParcelAtContextPoint()" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M4 4h16v16H4V4zm2 2v5h5V6H6zm7 0v5h5V6h-5zM6 13v5h5v-5H6zm7 0v5h5v-5h-5z" />
             </svg>
             <span data-i18n="context.identifyParcel">Sprawdź działkę</span>
         </button>
-        <button type="button" id="context-add-field-photos" onclick="openFieldPhotoUploadAtContextPoint()" hidden>
+        <button type="button" id="context-add-field-photos" role="menuitem"
+            onclick="openFieldPhotoUploadAtContextPoint()" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-5h-2v2h-2v2h2v2h2v-2h2v-2h-2v-2z" />
             </svg>
             <span data-i18n="context.addFieldPhotos">Dodaj zdjęcia tutaj</span>
         </button>
-        <button type="button" id="context-inspect-location" onclick="openLocationInspectionAtContextPoint()">
+        <button type="button" id="context-inspect-location" role="menuitem" onclick="openLocationInspectionAtContextPoint()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M4 5h16v2H4V5zm1 4h4v10H5V9zm5 0h4v10h-4V9zm5 0h4v10h-4V9zM3 20h18v2H3v-2z" />
             </svg>
             <span data-i18n="context.inspectLocation">Pokaż historię miejsca</span>
         </button>
-        <button type="button" class="map-context-secondary" onclick="copyContextCoords()">
+        <button type="button" class="map-context-secondary" role="menuitem" onclick="copyContextCoords()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
             </svg>
             <span data-i18n="context.copyCoords">Kopiuj współrzędne</span>
         </button>
-        <button type="button" onclick="copyContextPlaceLink()">
+        <button type="button" role="menuitem" onclick="copyContextPlaceLink()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M3.9 12a5 5 0 0 1 5-5h4v2h-4a3 3 0 0 0 0 6h4v2h-4a5 5 0 0 1-5-5zm5.1 1h6v-2H9v2zm2-6h4a5 5 0 0 1 0 10h-4v-2h4a3 3 0 0 0 0-6h-4V7z" />
@@ -82,29 +161,6 @@
 
     <!-- Floating Control Panel -->
     <div id="panel">
-        <!-- Akcje panelu: pomoc + ustawienia + panel administratora -->
-        <div class="panel-icons">
-            <button type="button" class="btn-icon" id="open-help"
-                data-i18n-attr="title:icon.help" title="Jak korzystać" onclick="openModal('modal-help')">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                </svg>
-            </button>
-            <button type="button" class="btn-icon" id="open-settings" data-i18n-attr="title:icon.settings"
-                title="Ustawienia" onclick="openSettingsModal()">
-                <svg viewBox="0 0 24 24">
-                    <path
-                        d="M19.14 12.94c.04-.31.06-.62.06-.94 0-.32-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96a7.026 7.026 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.07.49.12.61l2.03 1.58c-.04.31-.07.62-.07.94 0 .32.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .43-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-                </svg>
-            </button>
-            <button type="button" class="btn-icon" id="open-admin-panel" data-i18n-attr="title:icon.adminPanel"
-                title="Panel administratora" onclick="openAdminPanel()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
-                </svg>
-            </button>
-        </div>
-
         <div class="panel-header panel-header-toggle" id="panel-header-toggle" role="button" tabindex="0"
             data-i18n-attr="title:icon.fold;aria-label:icon.fold" title="Zwiń panel" aria-label="Zwiń panel"
             aria-expanded="true" onclick="togglePanel()" onkeydown="handlePanelHeaderToggleKey(event)">
@@ -266,7 +322,42 @@
                 <p class="modal-hint settings-lock-hint" id="settings-lock-hint" data-i18n="modal.settings.lockedHint">
                     Zaloguj administratora, żeby edytować ustawienia.</p>
 
-                <section class="modal-section">
+                <section class="modal-section settings-card settings-card--appearance">
+                    <div class="settings-section-heading">
+                        <h3 data-i18n="modal.settings.appearance">Wygląd</h3>
+                    </div>
+                    <label class="modal-label" for="ui-accent-color" data-i18n="modal.settings.accentColor">Kolor akcentu</label>
+                    <div class="app-color-field">
+                        <input type="color" id="ui-accent-color" value="#3da5ff"
+                            data-i18n-attr="aria-label:modal.settings.accentColor" aria-label="Kolor akcentu">
+                        <input class="modal-input app-color-value" id="ui-accent-value" type="text" value="#3da5ff"
+                            maxlength="7" spellcheck="false" autocomplete="off"
+                            data-i18n-attr="aria-label:modal.settings.accentHex" aria-label="Wartość koloru">
+                    </div>
+                    <div class="accent-swatch-row" data-i18n-attr="aria-label:modal.settings.accentPresets"
+                        aria-label="Gotowe kolory">
+                        <button type="button" class="accent-swatch" data-accent="#3da5ff" style="--swatch: #3da5ff"
+                            data-i18n-attr="title:modal.settings.accentBlue;aria-label:modal.settings.accentBlue"
+                            title="Niebieski" aria-label="Niebieski"></button>
+                        <button type="button" class="accent-swatch" data-accent="#2dd4bf" style="--swatch: #2dd4bf"
+                            data-i18n-attr="title:modal.settings.accentTeal;aria-label:modal.settings.accentTeal"
+                            title="Turkusowy" aria-label="Turkusowy"></button>
+                        <button type="button" class="accent-swatch" data-accent="#f59e0b" style="--swatch: #f59e0b"
+                            data-i18n-attr="title:modal.settings.accentAmber;aria-label:modal.settings.accentAmber"
+                            title="Bursztynowy" aria-label="Bursztynowy"></button>
+                        <button type="button" class="accent-swatch" data-accent="#f97316" style="--swatch: #f97316"
+                            data-i18n-attr="title:modal.settings.accentOrange;aria-label:modal.settings.accentOrange"
+                            title="Pomarańczowy" aria-label="Pomarańczowy"></button>
+                        <button type="button" class="accent-swatch" data-accent="#a78bfa" style="--swatch: #a78bfa"
+                            data-i18n-attr="title:modal.settings.accentViolet;aria-label:modal.settings.accentViolet"
+                            title="Fioletowy" aria-label="Fioletowy"></button>
+                    </div>
+                </section>
+
+                <section class="modal-section settings-card">
+                    <div class="settings-section-heading">
+                        <h3 data-i18n="modal.settings.report">Raport</h3>
+                    </div>
                     <label class="modal-label" for="crop-select" data-i18n="modal.settings.crop">Zoom miniatur w
                         raporcie</label>
                     <select id="crop-select">
@@ -279,7 +370,7 @@
                     <p class="modal-hint" data-i18n="modal.settings.cropHint">Wielkość wycinka zapisywanego w sprawie.</p>
                 </section>
 
-                <section class="modal-section">
+                <section class="modal-section settings-card">
                     <div class="setting-toggle-row">
                         <label class="modal-label" for="enhancement-enabled"
                             data-i18n="modal.settings.enhancement">Filtr ortofoto</label>
@@ -355,7 +446,7 @@
                 </div>
             </div>
             <div class="modal-body admin-panel-body">
-                <section class="modal-section admin-panel-section">
+                <section class="modal-section admin-panel-section admin-panel-section--tools">
                     <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
                     <div class="admin-panel-actions">
                         <button type="button" class="admin-panel-action admin-only" id="open-field-photo-upload"
@@ -396,7 +487,7 @@
                     </div>
                 </section>
 
-                <section class="modal-section admin-panel-section">
+                <section class="modal-section admin-panel-section admin-panel-section--layers">
                     <div class="setting-toggle-row">
                         <h3 data-i18n="modal.adminPanel.publicLayers">Warstwy dla niezalogowanych</h3>
                         <button type="button" class="settings-reset-btn" id="admin-public-layers-save"
@@ -438,7 +529,7 @@
                         data-i18n="modal.adminPanel.publicLayersHint">Administrator nadal widzi wszystkie warstwy; ustawienie ogranicza tylko widok niezalogowanych.</p>
                 </section>
 
-                <section class="modal-section admin-panel-section">
+                <section class="modal-section admin-panel-section admin-panel-section--features">
                     <div class="setting-toggle-row">
                         <h3 data-i18n="modal.adminPanel.publicFeatures">Funkcje dla niezalogowanych</h3>
                         <button type="button" class="settings-reset-btn" id="admin-public-features-save"
@@ -550,7 +641,7 @@
             </div>
             <div class="modal-body field-photo-thanks-body">
                 <p class="field-photo-thanks-lead" id="field-photo-thanks-count">Zdjęcie trafiło do weryfikacji.</p>
-                <section class="modal-section field-photo-thanks-token-section" id="field-photo-thanks-token-section">
+                <section class="modal-section field-photo-thanks-token-section token-card" id="field-photo-thanks-token-section">
                     <div class="field-photo-token-label-row">
                         <label class="modal-label" for="field-photo-thanks-token"
                             data-i18n="modal.fieldPhotoThanks.token">Token edycji</label>
@@ -610,7 +701,7 @@
                 </button>
             </div>
             <div class="modal-body report-form">
-                <section class="modal-section">
+                <section class="modal-section token-card">
                     <label class="modal-label" for="field-photo-owner-token"
                         data-i18n="modal.fieldPhotoOwner.token">Token edycji</label>
                     <input class="modal-input field-photo-token-input" id="field-photo-owner-token" type="text"

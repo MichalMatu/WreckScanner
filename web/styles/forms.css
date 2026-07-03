@@ -28,7 +28,7 @@
 }
 
 .report-field span {
-    color: #cbd5e1;
+    color: var(--muted-strong);
     font-size: 0.76rem;
     font-weight: 700;
 }
@@ -37,9 +37,9 @@
 .report-form input,
 .report-form textarea {
     width: 100%;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    border-radius: 8px;
-    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface-control);
     color: #f8fafc;
     font: 600 0.86rem var(--font);
     padding: 9px 10px;
@@ -53,7 +53,7 @@
 }
 
 select.modal-input {
-    background-color: rgba(15, 23, 42, 0.92);
+    background-color: var(--surface-control);
     background-image: var(--select-chevron);
     background-repeat: no-repeat;
     background-position: right 11px center;
@@ -64,8 +64,8 @@ select.modal-input {
 .modal-input:focus,
 .report-form input:focus,
 .report-form textarea:focus {
-    border-color: rgba(99, 102, 241, 0.72);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18);
+    border-color: color-mix(in srgb, var(--primary) 72%, transparent);
+    box-shadow: var(--shadow-focus);
 }
 
 .modal-input:-webkit-autofill,
@@ -73,7 +73,7 @@ select.modal-input {
 .modal-input:-webkit-autofill:focus {
     -webkit-text-fill-color: #f8fafc;
     caret-color: #f8fafc;
-    box-shadow: 0 0 0 1000px #111827 inset, 0 0 0 2px rgba(99, 102, 241, 0.18);
+    box-shadow: 0 0 0 1000px var(--surface-elevated-solid) inset, var(--shadow-focus);
     transition: background-color 9999s ease-out;
 }
 
@@ -105,9 +105,9 @@ select.modal-input {
     align-items: center;
     justify-content: center;
     padding: 0 13px;
-    border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.42);
-    background: rgba(99, 102, 241, 0.12);
+    border-radius: var(--radius-control);
+    border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+    background: var(--primary-soft);
     color: #dbeafe;
     font: 800 0.78rem var(--font);
     cursor: pointer;
@@ -115,14 +115,14 @@ select.modal-input {
 }
 
 .file-picker-button:hover {
-    background: rgba(99, 102, 241, 0.22);
-    border-color: rgba(129, 140, 248, 0.66);
+    background: color-mix(in srgb, var(--primary) 26%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 64%, transparent);
     color: #fff;
     transform: translateY(-1px);
 }
 
 .file-picker-input:focus-visible + .file-picker-button {
-    outline: 2px solid rgba(99, 102, 241, 0.72);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
@@ -134,7 +134,7 @@ select.modal-input {
 }
 
 .file-picker-summary:not(.is-empty) {
-    color: #c4b5fd;
+    color: var(--text-soft);
 }
 
 .field-photo-map-point {
@@ -144,7 +144,7 @@ select.modal-input {
 
 .field-photo-token-label-row {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 8px;
     flex-wrap: wrap;
 }
@@ -156,6 +156,7 @@ select.modal-input {
 .field-photo-token-input {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     letter-spacing: 0;
+    min-height: var(--control-height-comfortable);
 }
 
 .field-photo-token-btn {
@@ -185,10 +186,23 @@ select.modal-input {
 }
 
 .field-photo-thanks-token-section {
-    border: 1px solid rgba(99, 102, 241, 0.28);
-    border-radius: 8px;
-    padding: 12px;
-    background: rgba(99, 102, 241, 0.08);
+    border: 0;
+    border-radius: var(--radius-control);
+    padding: 0;
+    background: transparent;
+}
+
+.token-card {
+    border: 1px solid color-mix(in srgb, var(--primary) 26%, transparent);
+    border-radius: var(--radius-control);
+    padding: var(--space-3);
+    background:
+        linear-gradient(135deg, var(--primary-soft), transparent 66%),
+        rgba(255, 255, 255, 0.045);
+}
+
+.token-card .modal-hint {
+    margin: 0;
 }
 
 .field-photo-thanks-steps {
