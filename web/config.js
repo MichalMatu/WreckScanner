@@ -4,6 +4,7 @@
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
 const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
+const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v1';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
@@ -38,12 +39,8 @@ const PUBLIC_FEATURE_KEYS = {
 // Źródła podkładu mapy w UI; frontend steruje tutaj wyłącznie podglądem w Leaflet.
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const CARTO_LABELS_TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png';
-const GEOPORTAL_STANDARD_WMTS_TILE_URL =
-    'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution' +
-    '?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
-    '&LAYER=ORTOFOTOMAPA&STYLE=default&FORMAT=image/jpeg' +
-    '&TILEMATRIXSET=EPSG:3857&TILEMATRIX=EPSG:3857:{z}' +
-    '&TILEROW={y}&TILECOL={x}';
+const GEOPORTAL_STANDARD_TILE_PROXY_URL =
+    '/tile_proxy/geoportal-standard/{z}/{x}/{y}?enhancementSettings={enhancementSettings}';
 const MAP_SOURCES = [
     { key: 'wroclaw-2020', shortLabel: '2020', label: 'Wrocław 2020', type: 'wroclaw', year: 2020 },
     { key: 'wroclaw-2021', shortLabel: '2021', label: 'Wrocław 2021', type: 'wroclaw', year: 2021 },
@@ -67,7 +64,7 @@ const MAP_SOURCES = [
         shortLabel: 'POL',
         label: 'Polska ortofoto',
         type: 'tile',
-        url: GEOPORTAL_STANDARD_WMTS_TILE_URL,
+        url: GEOPORTAL_STANDARD_TILE_PROXY_URL,
         maxNativeZoom: 19,
         attribution: 'Geoportal.gov.pl / GUGiK',
     },

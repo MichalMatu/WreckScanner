@@ -7,6 +7,38 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 
 class FrontendContracts(unittest.TestCase):
+    def test_problem_report_uses_modal_instead_of_standalone_page(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        report_js = (ROOT_DIR / "web" / "app" / "problem_report.js").read_text(encoding="utf-8")
+        static_files_py = (ROOT_DIR / "app" / "http" / "static_files.py").read_text(encoding="utf-8")
+
+        self.assertFalse((ROOT_DIR / "web" / "report.html").exists())
+        self.assertFalse((ROOT_DIR / "web" / "privacy.html").exists())
+        self.assertIn('id="modal-problem-report"', html)
+        self.assertIn('id="privacy-request-form"', html)
+        self.assertIn("apiPostJson('/api/privacy-requests'", report_js)
+        self.assertIn("window.location.pathname === '/report'", report_js)
+        self.assertIn("openProblemReportModal()", report_js)
+        self.assertNotIn('<a class="app-menu-drawer-item" href="/report">', html)
+        self.assertIn('onclick="openProblemReportModal(); closeAppMenu()"', html)
+        self.assertIn('path in {"/privacy", "/report"}', static_files_py)
+        self.assertIn('send_web_file(handler, "index.html"', static_files_py)
+
+    def test_orthophoto_filter_is_local_user_preview_setting(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        bootstrap_js = (ROOT_DIR / "web" / "app" / "bootstrap.js").read_text(encoding="utf-8")
+        settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
+        styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
+
+        self.assertIn("ENHANCEMENT_SETTINGS_STORAGE_KEY", config_js + bootstrap_js + settings_js)
+        self.assertIn("localStorage.setItem(ENHANCEMENT_SETTINGS_STORAGE_KEY", settings_js)
+        self.assertIn("enhancementSettingsRevision = token", settings_js)
+        self.assertIn("refreshOrthoLayer()", settings_js)
+        self.assertNotIn("settings-lock-hint", html + styles + settings_js)
+        self.assertNotIn("saveEnhancementSettings", settings_js)
+        self.assertNotIn("enhancement: enhancementFormSettings()", settings_js)
+
     def test_frontend_uses_location_inspection_as_preview_only(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")

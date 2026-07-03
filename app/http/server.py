@@ -18,7 +18,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format: str, *args) -> None:
         request_path = self.path.split("?", 1)[0]
-        if request_path.startswith("/wms_proxy/"):
+        if request_path.startswith(("/wms_proxy/", "/tile_proxy/")):
             return
         super().log_message(format, *args)
 

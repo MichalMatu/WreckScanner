@@ -57,6 +57,7 @@ function buildMapSourceLayer(source) {
         return L.tileLayer(source.url, {
             maxZoom: MAX_MAP_ZOOM,
             maxNativeZoom: source.maxNativeZoom || MAX_MAP_ZOOM,
+            enhancementSettings: enhancementSettingsRevision,
             attribution: source.attribution || '',
         });
     }

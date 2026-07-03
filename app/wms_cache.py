@@ -11,7 +11,6 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from app import config
 from core.config import BYTES_PER_GIB
-from core.settings_store import load_app_settings
 
 _cleanup_lock = threading.Lock()
 _last_cleanup = 0.0
@@ -30,8 +29,8 @@ def strip_proxy_only_params(upstream_path: str) -> str:
     return urlunsplit(("", "", parts.path, query, parts.fragment))
 
 
-def enhancement_fingerprint() -> str:
-    payload = json.dumps(load_app_settings().get("enhancement", {}), sort_keys=True, separators=(",", ":"))
+def enhancement_fingerprint(settings: dict) -> str:
+    payload = json.dumps(settings, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 

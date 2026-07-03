@@ -26,6 +26,10 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertEqual(core_config.ORTHO_CROP_MAX_PX, 800)
         self.assertEqual(core_config.ORTHO_CROP_MAX_WORKERS, 4)
         self.assertEqual(app_config.WMS_UPSTREAM_BASE, core_config.ORTHO_WMS_BASE)
+        self.assertEqual(
+            app_config.GEOPORTAL_STANDARD_WMTS_URL,
+            "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution",
+        )
         self.assertEqual(app_config.WMS_TIMEOUT, core_config.ORTHO_WMS_TIMEOUT)
         self.assertTrue(app_config.ADMIN_COOKIE_SECURE)
         self.assertEqual(app_config.CORS_ALLOWED_ORIGINS, ("https://wreckscanner.pl",))
@@ -46,10 +50,10 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertIn("shortLabel: '2025'", config_js)
         self.assertIn("key: 'poland-ortho'", config_js)
         self.assertIn("shortLabel: 'POL'", config_js)
-        self.assertIn("const GEOPORTAL_STANDARD_WMTS_TILE_URL =", config_js)
-        self.assertIn("ORTO/WMTS/StandardResolution", config_js)
-        self.assertIn("&LAYER=ORTOFOTOMAPA", config_js)
-        self.assertIn("&TILEMATRIX=EPSG:3857:{z}", config_js)
+        self.assertIn("const GEOPORTAL_STANDARD_TILE_PROXY_URL =", config_js)
+        self.assertIn("/tile_proxy/geoportal-standard/{z}/{x}/{y}", config_js)
+        self.assertIn("enhancementSettings={enhancementSettings}", config_js)
+        self.assertNotIn("mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution", config_js)
         self.assertNotIn("ORTO/WMS/StandardResolution", config_js)
         self.assertNotIn("key: 'geoportal-high'", config_js)
         self.assertNotIn("shortLabel: 'HIGH'", config_js)
@@ -58,6 +62,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertNotIn("PrawdziwaOrtofotomapa", config_js)
         self.assertIn("const DEFAULT_MAP_SOURCE_KEY = 'poland-ortho'", config_js)
         self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2'", config_js)
+        self.assertIn("const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v1'", config_js)
         self.assertIn("const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1'", config_js)
         self.assertIn("center: [52.1, 19.4]", config_js)
         self.assertIn("zoom: 7", config_js)
@@ -90,6 +95,7 @@ class ConfigModuleContractTests(unittest.TestCase):
     def test_frontend_map_sources_are_structured_and_match_slider_contract(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")
         block = frontend_map_source_block(config_js)
 
         keys = re.findall(r"key: '([^']+)'", block)
@@ -117,9 +123,10 @@ class ConfigModuleContractTests(unittest.TestCase):
         poland_source = re.search(r"\{\s*key: 'poland-ortho'.*?\n\s*\}", block, re.S).group(0)
         self.assertIn("shortLabel: 'POL'", poland_source)
         self.assertIn("type: 'tile'", poland_source)
-        self.assertIn("url: GEOPORTAL_STANDARD_WMTS_TILE_URL", poland_source)
+        self.assertIn("url: GEOPORTAL_STANDARD_TILE_PROXY_URL", poland_source)
         self.assertIn("maxNativeZoom: 19", poland_source)
         self.assertNotIn("layers: 'Raster'", poland_source)
+        self.assertIn("enhancementSettings: enhancementSettingsRevision", map_sources_js)
         osm_source = re.search(r"\{\s*key: 'openstreetmap'.*?\n\s*\}", block, re.S).group(0)
         self.assertIn("shortLabel: 'OSM'", osm_source)
         self.assertIn("type: 'tile'", osm_source)

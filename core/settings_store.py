@@ -118,10 +118,6 @@ def load_app_settings() -> dict[str, Any]:
     return settings
 
 
-def load_enhancement_settings() -> EnhancementSettings:
-    return enhancement_settings_from_dict(load_app_settings().get("enhancement"))
-
-
 def save_app_settings(raw: dict[str, Any]) -> dict[str, Any]:
     current = load_app_settings()
     if "enhancement" in raw:

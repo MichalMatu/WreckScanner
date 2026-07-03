@@ -55,10 +55,7 @@ def translate_path(path: str) -> str:
 
 
 def handle_web_page(handler, path: str, *, include_body: bool = True) -> bool:
-    if path == "/privacy":
-        send_web_file(handler, "privacy.html", include_body=include_body)
-        return True
-    if path == "/report":
-        send_web_file(handler, "report.html", include_body=include_body)
+    if path in {"/privacy", "/report"}:
+        send_web_file(handler, "index.html", include_body=include_body)
         return True
     return False

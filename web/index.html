@@ -122,12 +122,12 @@
                 </svg>
                 <span data-i18n="footer.privacy">Prywatność</span>
             </button>
-            <a class="app-menu-drawer-item" href="/report">
+            <button type="button" class="app-menu-drawer-item" onclick="openProblemReportModal(); closeAppMenu()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z" />
                 </svg>
                 <span data-i18n="footer.report">Zgłoś problem</span>
-            </a>
+            </button>
         </nav>
         <div class="app-menu-drawer-footer">
             <button type="button" class="app-menu-admin-icon" id="open-admin-panel"
@@ -274,9 +274,6 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p class="modal-hint settings-lock-hint" id="settings-lock-hint" data-i18n="modal.settings.lockedHint">
-                    Zaloguj administratora, żeby edytować ustawienia.</p>
-
                 <section class="modal-section settings-card">
                     <div class="setting-toggle-row">
                         <label class="modal-label" for="enhancement-enabled"
@@ -873,7 +870,7 @@
                     <h3 data-i18n="page.privacy.adminTitle">Administrator i kontakt</h3>
                     <p data-i18n="page.privacy.adminBody" data-i18n-html>Administratorem danych jest operator serwisu
                         WreckScanner. Kontakt w sprawach prywatności: <a href="mailto:privacy@wreckscanner.pl">privacy@wreckscanner.pl</a>
-                        albo formularz <a href="/report">/report</a>.</p>
+                        albo <a href="/report">formularz zgłoszenia problemu</a>.</p>
                 </section>
 
                 <section class="privacy-info-section">
@@ -922,8 +919,8 @@
                 <section class="privacy-info-section">
                     <h3 data-i18n="page.privacy.requestsTitle">Żądania korekty lub usunięcia</h3>
                     <p data-i18n="page.privacy.requestsBody" data-i18n-html>Jeżeli publiczny wpis albo zdjęcie zawiera dane,
-                        które powinny zostać usunięte, ograniczone lub poprawione, użyj formularza na stronie
-                        <a href="/report">/report</a>. Zgłoszenie trafi do kolejki administracyjnej.</p>
+                        które powinny zostać usunięte, ograniczone lub poprawione, użyj
+                        <a href="/report">formularza zgłoszenia problemu</a>. Zgłoszenie trafi do kolejki administracyjnej.</p>
                 </section>
 
                 <section class="privacy-info-section">
@@ -954,6 +951,51 @@
                         bezpieczeństwa, diagnozowaniu błędów i ochronie przed nadużyciami.</p>
                 </section>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-problem-report" hidden onclick="closeModal(this)">
+        <div class="modal modal--problem-report draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="page.report.heading">Zgłoś problem z wpisem lub zdjęciem</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-body report-form problem-report-body" id="privacy-request-form"
+                onsubmit="submitPrivacyRequest(event)">
+                <p class="problem-report-lead" data-i18n="page.report.intro">Użyj formularza, jeżeli chcesz zgłosić
+                    prośbę o usunięcie, anonimizację albo korektę publicznego wpisu. Podaj link do wpisu, identyfikator
+                    zdjęcia albo inny opis, który pozwoli administratorowi znaleźć sprawę.</p>
+
+                <section class="modal-section">
+                    <div class="report-grid">
+                        <label class="report-field">
+                            <span data-i18n="page.report.email">E-mail do kontaktu</span>
+                            <input type="email" name="email" maxlength="180" autocomplete="email" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="page.report.target">Link albo identyfikator wpisu</span>
+                            <input type="text" name="target" maxlength="500" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="page.report.reason">Opis żądania</span>
+                            <textarea class="problem-report-textarea" name="reason" maxlength="4000" required></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="report-actions">
+                    <button type="submit" class="btn-download report-submit-btn" id="privacy-request-submit">
+                        <span data-i18n="page.report.submit">Wyślij zgłoszenie</span>
+                    </button>
+                </div>
+                <p class="modal-hint problem-report-status" id="privacy-request-submit-status"></p>
+            </form>
         </div>
     </div>
 
@@ -1205,6 +1247,7 @@
     <!-- App logic -->
     <script src="/app.js"></script>
     <script src="/app/api.js"></script>
+    <script src="/app/problem_report.js"></script>
     <script src="/app/saved_wrecks.js"></script>
     <script src="/app/field_photos.js"></script>
     <script src="/app/field_photo_actions.js"></script>

@@ -87,14 +87,6 @@
     margin-top: 0;
 }
 
-.settings-lock-hint {
-    border: 1px solid rgba(251, 191, 36, 0.24);
-    border-radius: var(--radius-control);
-    padding: 7px 9px;
-    background: rgba(251, 191, 36, 0.08);
-    color: #fde68a;
-}
-
 .modal--report {
     max-width: 760px;
 }
@@ -121,6 +113,10 @@
 
 .modal--privacy-info {
     max-width: 760px;
+}
+
+.modal--problem-report {
+    max-width: 620px;
 }
 
 .modal--admin-panel {
@@ -178,6 +174,7 @@
     .modal--wreck-review,
     .modal--privacy-requests,
     .modal--privacy-info,
+    .modal--problem-report,
     .modal--report,
     .modal--field-photo,
     .modal--field-photo-thanks,
@@ -372,6 +369,25 @@
 
 .privacy-info-section a:hover {
     text-decoration: underline;
+}
+
+.problem-report-body {
+    gap: 14px;
+}
+
+.problem-report-lead {
+    margin: 0;
+    color: #dbe4f0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.problem-report-textarea {
+    min-height: 140px;
+}
+
+.problem-report-status {
+    min-height: 22px;
 }
 
 .welcome-lead {

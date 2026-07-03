@@ -1,5 +1,5 @@
-// Ustawienia filtra są zapisywane na backendzie, żeby mapa używała
-// tych samych parametrów na wszystkich urządzeniach.
+// Filtr ortofoto jest prywatnym ustawieniem przeglądarki. Panel admina nadal
+// zapisuje globalne widoczności warstw i funkcji na backendzie.
 const enhancementControls = {
     enabled: document.getElementById('enhancement-enabled'),
     clahe: document.getElementById('enhancement-clahe'),
@@ -40,7 +40,6 @@ const publicLayerToggleRows = {
     [PUBLIC_LAYER_KEYS.cadastral]: document.getElementById('toggle-cadastral-parcels')?.closest('.layer-toggle'),
 };
 const adminSettingsControls = [
-    document.getElementById('enhancement-reset'),
     document.getElementById('photo-retention-refresh'),
     document.getElementById('photo-retention-dry-run'),
     document.getElementById('photo-retention-apply'),
@@ -48,7 +47,6 @@ const adminSettingsControls = [
     document.getElementById('admin-public-features-save'),
     ...Object.values(publicLayerControls),
     ...Object.values(publicFeatureControls),
-    ...Object.values(enhancementControls),
 ].filter(Boolean);
 let publicLayerSettings = Object.fromEntries(Object.values(PUBLIC_LAYER_KEYS).map(key => [key, true]));
 let publicFeatureSettings = Object.fromEntries(Object.values(PUBLIC_FEATURE_KEYS).map(key => [key, true]));
@@ -59,10 +57,6 @@ let pendingFieldPhotoLayerVisible = true;
 
 function updateSettingsAccess() {
     const locked = !adminAuthenticated;
-    const settingsModal = document.getElementById('modal-settings');
-    const lockHint = document.getElementById('settings-lock-hint');
-    settingsModal?.classList.toggle('settings-locked', locked);
-    if (lockHint) lockHint.hidden = !locked;
     adminSettingsControls.forEach(control => { control.disabled = locked; });
     updatePublicLayerAccess();
     updatePublicFeatureAccess();
@@ -275,17 +269,116 @@ function snapEnhancementControlToDefault(control) {
     }
 }
 
+function normalizedEnhancementNumber(raw, field, controlId, options = {}) {
+    const control = enhancementControls[controlId];
+    const fallback = parseFloat(defaultEnhancementSettings?.[field] ?? control?.defaultValue ?? control?.value ?? '0');
+    let value = parseFloat(raw?.[field]);
+    if (!Number.isFinite(value)) value = fallback;
+
+    const min = parseFloat(control?.min ?? value);
+    const max = parseFloat(control?.max ?? value);
+    if (Number.isFinite(min)) value = Math.max(min, value);
+    if (Number.isFinite(max)) value = Math.min(max, value);
+    return options.integer ? Math.round(value) : value;
+}
+
+function normalizeEnhancementSettings(settings) {
+    const raw = settings && typeof settings === 'object' ? settings : {};
+    const defaultsEnabled = defaultEnhancementSettings?.enabled ?? enhancementControls.enabled?.defaultChecked ?? true;
+    const normalized = {
+        enabled: 'enabled' in raw ? Boolean(raw.enabled) : Boolean(defaultsEnabled),
+        clahe_clip_limit: normalizedEnhancementNumber(raw, 'clahe_clip_limit', 'clahe'),
+        clahe_tile_grid_size: normalizedEnhancementNumber(raw, 'clahe_tile_grid_size', 'tile', { integer: true }),
+        l_percentile_low: normalizedEnhancementNumber(raw, 'l_percentile_low', 'pLow'),
+        l_percentile_high: normalizedEnhancementNumber(raw, 'l_percentile_high', 'pHigh'),
+        l_output_low: normalizedEnhancementNumber(raw, 'l_output_low', 'outLow'),
+        l_output_high: normalizedEnhancementNumber(raw, 'l_output_high', 'outHigh'),
+        decast_strength: normalizedEnhancementNumber(raw, 'decast_strength', 'decast'),
+    };
+
+    if (normalized.l_percentile_low >= normalized.l_percentile_high) {
+        normalized.l_percentile_low = normalizedEnhancementNumber(defaultEnhancementSettings, 'l_percentile_low', 'pLow');
+        normalized.l_percentile_high = normalizedEnhancementNumber(defaultEnhancementSettings, 'l_percentile_high', 'pHigh');
+    }
+    if (normalized.l_output_low >= normalized.l_output_high) {
+        normalized.l_output_low = normalizedEnhancementNumber(defaultEnhancementSettings, 'l_output_low', 'outLow');
+        normalized.l_output_high = normalizedEnhancementNumber(defaultEnhancementSettings, 'l_output_high', 'outHigh');
+    }
+    return normalized;
+}
+
+function encodeEnhancementSettings(settings) {
+    try {
+        return btoa(JSON.stringify(normalizeEnhancementSettings(settings)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+    } catch (_) {
+        return '';
+    }
+}
+
+function decodeEnhancementSettings(token) {
+    if (!token || typeof token !== 'string') return null;
+    try {
+        const base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+        return JSON.parse(atob(padded));
+    } catch (_) {
+        return null;
+    }
+}
+
+function readStoredEnhancementSettings() {
+    try {
+        return decodeEnhancementSettings(localStorage.getItem(ENHANCEMENT_SETTINGS_STORAGE_KEY));
+    } catch (_) {
+        return null;
+    }
+}
+
+function persistEnhancementSettings(settings) {
+    const token = encodeEnhancementSettings(settings);
+    enhancementSettingsRevision = token;
+    try {
+        localStorage.setItem(ENHANCEMENT_SETTINGS_STORAGE_KEY, token);
+    } catch (_) {
+        // Brak localStorage nie blokuje użycia filtra w bieżącej sesji.
+    }
+}
+
+function saveLocalEnhancementSettings(options = {}) {
+    const previousRevision = enhancementSettingsRevision;
+    const settings = normalizeEnhancementSettings(enhancementFormSettings());
+    applyEnhancementSettings(settings);
+    persistEnhancementSettings(settings);
+
+    if (options.refresh !== false && previousRevision !== enhancementSettingsRevision) {
+        refreshOrthoLayer();
+    }
+    const status = document.getElementById('settings-save-status');
+    if (status) status.textContent = t('modal.settings.enhancementHint');
+}
+
 async function loadAppSettings() {
     let loadedPublicLayers = false;
     try {
         const data = await apiJson(SETTINGS_URL);
         defaultEnhancementSettings = data.defaults?.enhancement || data.enhancement;
-        applyEnhancementSettings(data.enhancement);
+        applyEnhancementSettings(readStoredEnhancementSettings() || defaultEnhancementSettings || data.enhancement);
+        saveLocalEnhancementSettings({ refresh: false });
         applyPublicLayerSettings(data.public_layers);
         applyPublicFeatureSettings(data.public_features);
         loadedPublicLayers = true;
     } catch (_) {
-        updateEnhancementLabels();
+        const storedSettings = readStoredEnhancementSettings();
+        if (storedSettings) {
+            applyEnhancementSettings(storedSettings);
+            saveLocalEnhancementSettings({ refresh: false });
+        } else {
+            updateEnhancementLabels();
+            saveLocalEnhancementSettings({ refresh: false });
+        }
     }
     if (!loadedPublicLayers) {
         publicLayerSettingsLoaded = true;
@@ -296,7 +389,7 @@ async function loadAppSettings() {
 }
 
 async function saveSettings(payload, onSaved, options = {}) {
-    const status = document.getElementById(options.statusId || 'settings-save-status');
+    const status = options.statusId ? document.getElementById(options.statusId) : null;
     if (!adminAuthenticated) {
         updateSettingsAccess();
         return;
@@ -307,15 +400,6 @@ async function saveSettings(payload, onSaved, options = {}) {
     } catch (err) {
         if (status) status.textContent = apiErrorMessage(err, options.errorMessage || t('modal.settings.saveError'));
     }
-}
-
-async function saveEnhancementSettings() {
-    await saveSettings({ enhancement: enhancementFormSettings() }, data => {
-        applyEnhancementSettings(data.enhancement);
-        enhancementSettingsRevision = Date.now();
-        refreshOrthoLayer();
-        document.getElementById('settings-save-status').textContent = t('modal.settings.enhancementHint');
-    });
 }
 
 async function savePublicLayerSettings() {
@@ -418,16 +502,12 @@ async function runPhotoRetention(dryRun = true) {
 }
 
 function queueEnhancementSettingsSave(event = null) {
-    if (!adminAuthenticated) {
-        updateSettingsAccess();
-        return;
-    }
     if (event?.target instanceof HTMLInputElement) {
         snapEnhancementControlToDefault(event.target);
     }
     updateEnhancementLabels();
     if (settingsSaveTimer) clearTimeout(settingsSaveTimer);
-    settingsSaveTimer = setTimeout(saveEnhancementSettings, ENHANCEMENT_SETTINGS_SAVE_DEBOUNCE_MS);
+    settingsSaveTimer = setTimeout(saveLocalEnhancementSettings, ENHANCEMENT_SETTINGS_SAVE_DEBOUNCE_MS);
 }
 
 Object.values(enhancementControls).forEach(control => {
@@ -436,9 +516,9 @@ Object.values(enhancementControls).forEach(control => {
     control.addEventListener(eventName, queueEnhancementSettingsSave);
 });
 document.getElementById('enhancement-reset')?.addEventListener('click', () => {
-    if (!defaultEnhancementSettings) return;
-    applyEnhancementSettings(defaultEnhancementSettings);
-    queueEnhancementSettingsSave();
+    applyEnhancementSettings(defaultEnhancementSettings || {});
+    if (settingsSaveTimer) clearTimeout(settingsSaveTimer);
+    saveLocalEnhancementSettings();
 });
 
 updateSettingsAccess();

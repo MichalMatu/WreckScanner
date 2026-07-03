@@ -88,6 +88,9 @@ def handle_passthrough_get(handler, path: str) -> bool:
     if handler.path.startswith("/wms_proxy/"):
         http_wms_proxy.handle_wms_proxy(handler)
         return True
+    if handler.path.startswith("/tile_proxy/"):
+        http_wms_proxy.handle_geoportal_tile_proxy(handler)
+        return True
     if path.startswith(f"/{config.WRECKS_ROUTE}/"):
         http_assets.handle_public_wreck_asset(handler, path)
         return True

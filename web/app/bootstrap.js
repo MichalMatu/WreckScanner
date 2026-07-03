@@ -1,5 +1,10 @@
 // ─── STATE ──────────────────────────────────────
-let enhancementSettingsRevision = Date.now();
+let enhancementSettingsRevision = '';
+try {
+    enhancementSettingsRevision = localStorage.getItem(ENHANCEMENT_SETTINGS_STORAGE_KEY) || '';
+} catch (_) {
+    enhancementSettingsRevision = '';
+}
 let settingsSaveTimer = null;
 let defaultEnhancementSettings = null;
 

@@ -22,6 +22,7 @@ PORT = int(os.environ.get("WRECKSCANNER_PORT", "8001"))
 
 WMS_UPSTREAM_BASE = ORTHO_WMS_BASE
 WMS_TIMEOUT = ORTHO_WMS_TIMEOUT
+GEOPORTAL_STANDARD_WMTS_URL = "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution"
 
 # Cache tile'i po wspólnym filtrze ortofoto. Większy limit przyspiesza mapę,
 # ale rośnie zużycie dysku pod `.cache/wms_tiles`.

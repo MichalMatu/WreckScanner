@@ -48,6 +48,27 @@ class HttpDispatchContractTests(unittest.TestCase):
         self.assertFalse(handled)
         self.assertIsNone(handler.status)
 
+    def test_get_tile_proxy_routes_to_geoportal_proxy(self):
+        handler = FakeHandler("/tile_proxy/geoportal-standard/7/65/42?enhancementSettings=123")
+
+        with patch.object(dispatch.http_wms_proxy, "handle_geoportal_tile_proxy") as tile_proxy:
+            handled = dispatch.handle_get(handler)
+
+        self.assertTrue(handled)
+        tile_proxy.assert_called_once_with(handler)
+
+    def test_report_route_serves_app_shell_with_problem_report_modal(self):
+        handler = FakeHandler("/report")
+
+        handled = dispatch.handle_get(handler)
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertIn(("Content-Type", "text/html; charset=utf-8"), handler.response_headers)
+        body = handler.wfile.getvalue().decode("utf-8")
+        self.assertIn('id="modal-problem-report"', body)
+        self.assertIn('<script src="/app/problem_report.js"></script>', body)
+
     def test_post_settings_uses_json_dispatch_preflight(self):
         handler = FakeHandler("/api/settings")
 
