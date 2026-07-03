@@ -372,22 +372,22 @@
 }
 
 .problem-report-body {
-    gap: 14px;
+    gap: var(--space-4);
 }
 
 .problem-report-lead {
     margin: 0;
-    color: #dbe4f0;
+    color: var(--text-soft);
     font-size: 0.9rem;
     line-height: 1.55;
 }
 
 .problem-report-textarea {
-    min-height: 140px;
+    min-height: calc(var(--control-height-comfortable) * 3);
 }
 
 .problem-report-status {
-    min-height: 22px;
+    min-height: var(--space-6);
 }
 
 .welcome-lead {

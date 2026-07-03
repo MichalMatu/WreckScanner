@@ -24,15 +24,15 @@ ORTHO_BLANK_IMAGE_STD_THRESHOLD = 10.0
 class EnhancementSettings:
     """Konfiguracja filtra ortofoto używanego w podglądzie mapy."""
 
-    enabled: bool = True
-    clahe_clip_limit: float = 1.5
-    clahe_tile_grid_size: int = 8
-    l_percentile_low: float = 2.0
-    l_percentile_high: float = 98.0
-    l_output_low: float = 10.0
-    l_output_high: float = 245.0
+    enabled: bool = False
+    clahe_clip_limit: float = 0.8
+    clahe_tile_grid_size: int = 12
+    l_percentile_low: float = 1.0
+    l_percentile_high: float = 99.0
+    l_output_low: float = 5.0
+    l_output_high: float = 250.0
     l_min_percentile_span: float = 5.0
-    decast_strength: float = 0.4
+    decast_strength: float = 0.2
 
 
 DEFAULT_ENHANCEMENT_SETTINGS = EnhancementSettings()

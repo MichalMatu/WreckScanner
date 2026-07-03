@@ -4,7 +4,7 @@
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
 const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
-const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v1';
+const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 

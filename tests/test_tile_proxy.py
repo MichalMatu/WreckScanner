@@ -79,9 +79,9 @@ class TileProxyTests(unittest.TestCase):
     def test_tile_proxy_uses_default_enhancement_settings_for_invalid_request_token(self):
         settings = wms_proxy._request_enhancement_settings("geoportal-standard/7/65/42?enhancementSettings=bad")
 
-        self.assertTrue(settings.enabled)
-        self.assertEqual(settings.clahe_clip_limit, 1.5)
-        self.assertEqual(settings.clahe_tile_grid_size, 8)
+        self.assertFalse(settings.enabled)
+        self.assertEqual(settings.clahe_clip_limit, 0.8)
+        self.assertEqual(settings.clahe_tile_grid_size, 12)
 
     def test_geoportal_tile_proxy_builds_standard_wmts_request(self):
         handler = FakeHandler("/tile_proxy/geoportal-standard/7/65/42?enhancementSettings=123")

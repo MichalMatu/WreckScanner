@@ -11,6 +11,7 @@ class FrontendContracts(unittest.TestCase):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         report_js = (ROOT_DIR / "web" / "app" / "problem_report.js").read_text(encoding="utf-8")
         static_files_py = (ROOT_DIR / "app" / "http" / "static_files.py").read_text(encoding="utf-8")
+        modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
 
         self.assertFalse((ROOT_DIR / "web" / "report.html").exists())
         self.assertFalse((ROOT_DIR / "web" / "privacy.html").exists())
@@ -23,6 +24,9 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('onclick="openProblemReportModal(); closeAppMenu()"', html)
         self.assertIn('path in {"/privacy", "/report"}', static_files_py)
         self.assertIn('send_web_file(handler, "index.html"', static_files_py)
+        self.assertIn("gap: var(--space-4);", modals_css)
+        self.assertIn("color: var(--text-soft);", modals_css)
+        self.assertIn("min-height: calc(var(--control-height-comfortable) * 3);", modals_css)
 
     def test_orthophoto_filter_is_local_user_preview_setting(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
@@ -38,6 +42,15 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("settings-lock-hint", html + styles + settings_js)
         self.assertNotIn("saveEnhancementSettings", settings_js)
         self.assertNotIn("enhancement: enhancementFormSettings()", settings_js)
+        self.assertIn('id="enhancement-enabled"', html)
+        self.assertNotIn('id="enhancement-enabled" checked', html)
+        self.assertIn('id="enhancement-clahe" min="0.1" max="5" step="0.1" value="0.8"', html)
+        self.assertIn('id="enhancement-tile" min="1" max="32" step="1" value="12"', html)
+        self.assertIn('id="enhancement-p-low" min="0" max="40" step="0.5" value="1"', html)
+        self.assertIn('id="enhancement-p-high" min="60" max="100" step="0.5" value="99"', html)
+        self.assertIn('id="enhancement-out-low" min="0" max="120" step="1" value="5"', html)
+        self.assertIn('id="enhancement-out-high" min="135" max="255" step="1" value="250"', html)
+        self.assertIn('id="enhancement-decast" min="0" max="1" step="0.05" value="0.2"', html)
 
     def test_frontend_uses_location_inspection_as_preview_only(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")

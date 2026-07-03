@@ -25,6 +25,14 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertEqual(core_config.ORTHO_CROP_MIN_PX, 180)
         self.assertEqual(core_config.ORTHO_CROP_MAX_PX, 800)
         self.assertEqual(core_config.ORTHO_CROP_MAX_WORKERS, 4)
+        self.assertFalse(core_config.DEFAULT_ENHANCEMENT_SETTINGS.enabled)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.clahe_clip_limit, 0.8)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.clahe_tile_grid_size, 12)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.l_percentile_low, 1.0)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.l_percentile_high, 99.0)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.l_output_low, 5.0)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.l_output_high, 250.0)
+        self.assertEqual(core_config.DEFAULT_ENHANCEMENT_SETTINGS.decast_strength, 0.2)
         self.assertEqual(app_config.WMS_UPSTREAM_BASE, core_config.ORTHO_WMS_BASE)
         self.assertEqual(
             app_config.GEOPORTAL_STANDARD_WMTS_URL,
@@ -62,7 +70,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertNotIn("PrawdziwaOrtofotomapa", config_js)
         self.assertIn("const DEFAULT_MAP_SOURCE_KEY = 'poland-ortho'", config_js)
         self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2'", config_js)
-        self.assertIn("const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v1'", config_js)
+        self.assertIn("const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2'", config_js)
         self.assertIn("const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1'", config_js)
         self.assertIn("center: [52.1, 19.4]", config_js)
         self.assertIn("zoom: 7", config_js)
