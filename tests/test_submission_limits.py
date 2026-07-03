@@ -17,7 +17,6 @@ class PendingSubmissionLimitTests(unittest.TestCase):
             root = Path(tmp)
             private_dir = root / "private"
             field_dir = root / "field"
-            wrecks_dir = root / "wrecks"
             (private_dir / "field_photos/pending/original.jpg").parent.mkdir(parents=True)
             (private_dir / "field_photos/pending/original.jpg").write_bytes(b"a" * 10)
             (private_dir / "field_photos/rejected/original.jpg").parent.mkdir(parents=True)
@@ -43,7 +42,6 @@ class PendingSubmissionLimitTests(unittest.TestCase):
 
             usage = pending_submission_usage(
                 owner="public:a",
-                wrecks_dir=wrecks_dir,
                 field_photos_dir=field_dir,
                 private_dir=private_dir,
             )

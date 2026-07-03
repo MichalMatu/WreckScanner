@@ -13,22 +13,6 @@ let activePhotoReviewRedactionIndex = -1;
 let photoReviewDraftRect = null;
 let photoReviewDrawing = false;
 
-async function openPhotoReviewForWreck(wreckId) {
-    if (!(await ensureAdmin())) return;
-    setPhotoReviewMode('admin');
-    const id = safeWreckId(wreckId);
-    if (!id) return;
-    photoReviewExactPhotoIds = [];
-    openModal('modal-photo-review');
-    const filter = document.getElementById('photo-review-filter');
-    const scope = document.getElementById('photo-review-scope');
-    const search = document.getElementById('photo-review-search');
-    if (filter) filter.value = 'all';
-    if (scope) scope.value = 'wreck';
-    if (search) search.value = id;
-    await loadPhotoReviewQueue();
-}
-
 async function openPhotoReviewForFieldPhotoGroup(encodedPhotoIds) {
     if (!(await ensureAdmin())) return;
     setPhotoReviewMode('admin');
@@ -205,9 +189,6 @@ function photoReviewEndpoint(item) {
     if (item.scope === 'field') {
         return `${ADMIN_PHOTOS_URL}/field/${encodeURIComponent(item.photo_id)}/review`;
     }
-    if (item.scope === 'wreck') {
-        return `${ADMIN_PHOTOS_URL}/wreck/${encodeURIComponent(item.wreck_id)}/${encodeURIComponent(item.photo_id)}/review`;
-    }
     return null;
 }
 
@@ -215,9 +196,6 @@ function photoReviewDeleteEndpoint(item) {
     if (!item) return null;
     if (item.scope === 'field') {
         return `${ADMIN_PHOTOS_URL}/field/${encodeURIComponent(item.photo_id)}`;
-    }
-    if (item.scope === 'wreck') {
-        return `${ADMIN_PHOTOS_URL}/wreck/${encodeURIComponent(item.wreck_id)}/${encodeURIComponent(item.photo_id)}`;
     }
     return null;
 }
@@ -244,7 +222,7 @@ function renderPhotoReviewQueue() {
     }
     list.innerHTML = photoReviewItems.map((item, index) => {
         const active = activePhotoReview?.id === item.id;
-        const scope = item.scope === 'wreck' ? t('modal.photoReview.scopeWreck') : t('modal.photoReview.scopeField');
+        const scope = t('modal.photoReview.scopeField');
         const display = photoReviewQueueDisplay(item, index);
         const detailHtml = display.detail
             ? `<span class="photo-review-detail">${escapeHtml(display.detail)}</span>`
@@ -253,7 +231,7 @@ function renderPhotoReviewQueue() {
             <button type="button" class="photo-review-item ${active ? 'is-active' : ''}" onclick="selectPhotoReview('${escapeHtml(item.id)}')">
                 <strong>${escapeHtml(display.title)}</strong>
                 <span class="photo-review-pill">${escapeHtml(photoReviewStatusLabel(item.public_review_status))}</span>
-                <span>${escapeHtml(scope)}${item.wreck_id ? ` · ${escapeHtml(item.wreck_id)}` : ''}</span>
+                <span>${escapeHtml(scope)}</span>
                 ${detailHtml}
             </button>
         `;
@@ -438,7 +416,6 @@ async function savePhotoReviewStatus(publicReviewStatus) {
             await loadFieldPhotos();
             return;
         }
-        await loadSavedWrecks();
         await loadFieldPhotos();
         await loadPhotoReviewQueue();
     } catch (err) {
@@ -463,7 +440,6 @@ async function deletePhotoReviewItem() {
             throw new Error(data.error || t('modal.photoReview.deleteError'));
         }
         if (status) status.textContent = t('modal.photoReview.deleted');
-        await loadSavedWrecks();
         await loadFieldPhotos();
         await loadPhotoReviewQueue();
     } catch (err) {

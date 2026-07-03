@@ -54,7 +54,7 @@ function decodeFieldPhotoIds(encodedPhotoIds) {
 }
 
 async function openFieldPhotoGroupReport(lat, lon, encodedPhotoIds, button = null) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks)) return;
+    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages)) return;
     const btn = button instanceof HTMLElement ? button : null;
     if (btn) btn.disabled = true;
     statusEl.textContent = '';

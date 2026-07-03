@@ -36,7 +36,7 @@ class FutureDatabaseContractTests(unittest.TestCase):
 
         self.assertIn("Nie importuj `prywatne_zgloszenia/`", doc)
         self.assertIn("Nie importuj `evidence/report_*`", doc)
-        self.assertIn("Nie twórz tabel dla `zidentyfikowane_wraki/`", doc)
+        self.assertIn("Nie importuj dawnych katalogów archiwalnych teczek pojazdów", doc)
         self.assertIn("Raportowanie ma działać przez listę `field_photo.id`", doc)
 
 

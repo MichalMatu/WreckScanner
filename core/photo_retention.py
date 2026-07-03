@@ -182,7 +182,6 @@ def _count(summary: dict[str, int], action: str) -> None:
 def retire_private_originals(
     *,
     field_photos_dir: Path = config.FIELD_PHOTOS_DIR,
-    wrecks_dir: Path = config.WRECKS_DIR,
     private_photos_dir: Path = config.PRIVATE_PHOTOS_DIR,
     retention_days: int = config.PRIVATE_ORIGINAL_RETENTION_DAYS,
     now: datetime | None = None,
@@ -198,7 +197,6 @@ def retire_private_originals(
         "retention_days": retention_days,
         "generated_at": _now_iso(current),
         "field_photos": _summary(),
-        "wreck_photos": _summary(),
         "items": [],
     }
 
@@ -224,40 +222,5 @@ def retire_private_originals(
             _write_json(record_path, record)
         if action in {"replaced", "deleted"}:
             report["items"].append({"scope": "field", "id": record.get("id"), **result})
-
-    for record_path in sorted(wrecks_dir.glob("*/record.json")):
-        try:
-            record = _read_json(record_path)
-        except (OSError, json.JSONDecodeError):
-            continue
-        if not isinstance(record, dict):
-            continue
-        record_changed = False
-        record_dir = record_path.parent
-        wreck_id = str(record.get("id") or record_dir.name)
-        attached = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
-        for photo in attached:
-            if not isinstance(photo, dict):
-                continue
-            photo_id = str(photo.get("id") or "")
-            result = _retire_record_private_original(
-                photo,
-                record_dir=record_dir,
-                private_photos_dir=private_photos_dir,
-                public_image_file=photo.get("public_image_file"),
-                now=current,
-                retention_days=retention_days,
-                dry_run=dry_run,
-            )
-            action = str(result.get("action") or "skipped")
-            _count(report["wreck_photos"], action)
-            if action in {"replaced", "deleted"}:
-                record_changed = True
-                report["items"].append({"scope": "wreck", "wreck_id": wreck_id, "id": photo_id, **result})
-                if not dry_run and photo_id:
-                    _write_json(record_dir / "photos" / photo_id / "record.json", photo)
-        if record_changed and not dry_run:
-            record["updated_at"] = _now_iso(current)
-            _write_json(record_path, record)
 
     return report

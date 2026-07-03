@@ -29,7 +29,7 @@ const publicLayerControls = {
     [PUBLIC_LAYER_KEYS.baseMapOsm]: document.getElementById('admin-layer-base-map-osm'),
 };
 const publicFeatureControls = {
-    [PUBLIC_FEATURE_KEYS.manualWrecks]: document.getElementById('admin-feature-manual-wrecks'),
+    [PUBLIC_FEATURE_KEYS.reportPackages]: document.getElementById('admin-feature-report-packages'),
     [PUBLIC_FEATURE_KEYS.photoUploads]: document.getElementById('admin-feature-photo-uploads'),
 };
 const publicLayerToggleRows = {
@@ -54,6 +54,7 @@ let publicLayerSettingsLoaded = false;
 let publicFeatureSettingsLoaded = false;
 let fieldPhotoIssueFilters = Object.fromEntries(Array.from(FIELD_PHOTO_ISSUE_TYPES, issueType => [issueType, true]));
 let pendingFieldPhotoLayerVisible = true;
+let photoRetentionState = {};
 
 function updateSettingsAccess() {
     const locked = !adminAuthenticated;
@@ -407,7 +408,6 @@ async function savePublicLayerSettings() {
         applyPublicLayerSettings(data.public_layers);
         const status = document.getElementById('admin-public-layers-status');
         if (status) status.textContent = t('modal.adminPanel.publicLayersSaved');
-        loadSavedWrecks();
         loadFieldPhotos();
         updateMapSourceAvailability();
     }, {
@@ -421,7 +421,6 @@ async function savePublicFeatureSettings() {
         applyPublicFeatureSettings(data.public_features);
         const status = document.getElementById('admin-public-features-status');
         if (status) status.textContent = t('modal.adminPanel.publicFeaturesSaved');
-        loadSavedWrecks();
         loadFieldPhotos();
     }, {
         statusId: 'admin-public-features-status',
@@ -429,29 +428,95 @@ async function savePublicFeatureSettings() {
     });
 }
 
-function photoRetentionReportSummary(report, state = {}) {
-    if (!report) return t('modal.settings.photoRetentionIdle');
+function retentionReportTotals(report) {
     const field = report.field_photos || {};
-    const wreck = report.wreck_photos || {};
-    const scanned = Number(field.scanned || 0) + Number(wreck.scanned || 0);
-    const replaced = Number(field.replaced || 0) + Number(wreck.replaced || 0);
-    const deleted = Number(field.deleted || 0) + Number(wreck.deleted || 0);
-    const skipped = Number(field.skipped || 0) + Number(wreck.skipped || 0);
-    const modeKey = report.dry_run
-        ? 'modal.settings.photoRetentionSummaryDryRun'
-        : 'modal.settings.photoRetentionSummaryApplied';
-    return t(modeKey, {
-        scanned,
-        replaced,
-        deleted,
-        skipped,
-        finished: state.last_finished_at || report.generated_at || '-',
-    });
+    return {
+        scanned: Number(field.scanned || 0),
+        replaced: Number(field.replaced || 0),
+        deleted: Number(field.deleted || 0),
+        skipped: Number(field.skipped || 0),
+    };
+}
+
+function formatRetentionFinishedAt(value) {
+    if (!value) return '-';
+    const finishedAt = new Date(value);
+    if (Number.isNaN(finishedAt.getTime())) return value;
+    return new Intl.DateTimeFormat(document.documentElement.lang || 'pl', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(finishedAt);
+}
+
+function retentionMetric(labelKey, value, variant = '') {
+    const item = document.createElement('div');
+    item.className = `photo-retention-metric${variant ? ` photo-retention-metric--${variant}` : ''}`;
+
+    const number = document.createElement('strong');
+    number.textContent = String(value);
+
+    const label = document.createElement('span');
+    label.textContent = t(labelKey);
+
+    item.replaceChildren(number, label);
+    return item;
+}
+
+function renderPhotoRetentionReport(status, report, state = {}) {
+    if (!report) {
+        status.textContent = t('modal.settings.photoRetentionIdle');
+        return;
+    }
+
+    const totals = retentionReportTotals(report);
+    const card = document.createElement('div');
+    card.className = 'photo-retention-card';
+
+    const header = document.createElement('div');
+    header.className = 'photo-retention-card-header';
+
+    const title = document.createElement('strong');
+    title.textContent = t('modal.settings.photoRetentionLastRun');
+
+    const mode = document.createElement('span');
+    mode.className = `photo-retention-mode${report.dry_run ? '' : ' photo-retention-mode--applied'}`;
+    mode.textContent = t(report.dry_run
+        ? 'modal.settings.photoRetentionModeDryRun'
+        : 'modal.settings.photoRetentionModeApplied');
+
+    header.replaceChildren(title, mode);
+
+    const finished = document.createElement('div');
+    finished.className = 'photo-retention-finished';
+    const finishedLabel = document.createElement('span');
+    finishedLabel.textContent = t('modal.settings.photoRetentionFinishedAt');
+    const finishedValue = document.createElement('strong');
+    finishedValue.textContent = formatRetentionFinishedAt(state.last_finished_at || report.generated_at);
+    finished.replaceChildren(finishedLabel, finishedValue);
+
+    const metrics = document.createElement('div');
+    metrics.className = 'photo-retention-metrics';
+    metrics.replaceChildren(
+        retentionMetric('modal.settings.photoRetentionScanned', totals.scanned),
+        retentionMetric('modal.settings.photoRetentionReplaced', totals.replaced, 'positive'),
+        retentionMetric('modal.settings.photoRetentionDeleted', totals.deleted, 'danger'),
+        retentionMetric('modal.settings.photoRetentionSkipped', totals.skipped),
+    );
+
+    card.replaceChildren(header, finished, metrics);
+    if (totals.replaced === 0 && totals.deleted === 0) {
+        const note = document.createElement('p');
+        note.className = 'photo-retention-note';
+        note.textContent = t('modal.settings.photoRetentionNoChanges');
+        card.append(note);
+    }
+    status.replaceChildren(card);
 }
 
 function updatePhotoRetentionStatus(state = {}) {
     const status = document.getElementById('photo-retention-status');
     if (!status) return;
+    photoRetentionState = state;
     if (state.running) {
         status.textContent = t('modal.settings.photoRetentionRunning');
         return;
@@ -460,8 +525,10 @@ function updatePhotoRetentionStatus(state = {}) {
         status.textContent = t('modal.settings.photoRetentionLastError', { error: state.last_error });
         return;
     }
-    status.textContent = photoRetentionReportSummary(state.last_report, state);
+    renderPhotoRetentionReport(status, state.last_report, state);
 }
+
+document.addEventListener('langchange', () => updatePhotoRetentionStatus(photoRetentionState));
 
 async function loadPhotoRetentionStatus() {
     if (!adminAuthenticated && !(await ensureAdmin())) return;

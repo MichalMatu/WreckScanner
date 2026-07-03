@@ -232,10 +232,6 @@ def _summary(record: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _attached_wreck_id(record: dict[str, Any]) -> str:
-    return str(record.get("attached_wreck_id") or "").strip()
-
-
 def _owner_review_item(record: dict[str, Any]) -> dict[str, Any]:
     photo_id = str(record["id"])
     return {
@@ -273,12 +269,7 @@ def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> 
         except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
             continue
         status = review_status(record)
-        if (
-            isinstance(record, dict)
-            and record.get("id")
-            and not _attached_wreck_id(record)
-            and status not in {"draft", "rejected"}
-        ):
+        if isinstance(record, dict) and record.get("id") and status not in {"draft", "rejected"}:
             records.append(_summary(record))
     return sorted(records, key=lambda item: str(item.get("created_at") or ""), reverse=True)
 
@@ -310,8 +301,6 @@ def list_owner_field_photo_review_items(
             _require_edit_token(record, edit_token)
         except PermissionError:
             continue
-        if _attached_wreck_id(record):
-            continue
         items.append(_owner_review_item(record))
     if not items:
         raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
@@ -328,12 +317,7 @@ def list_field_photo_review_items(storage_dir: Path, *, private_dir: Path | None
             record = _load_field_record(path.parent, private_root)
         except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
             continue
-        if (
-            not isinstance(record, dict)
-            or not record.get("id")
-            or _attached_wreck_id(record)
-            or review_status(record) == "draft"
-        ):
+        if not isinstance(record, dict) or not record.get("id") or review_status(record) == "draft":
             continue
         photo_id = str(record["id"])
         records.append(

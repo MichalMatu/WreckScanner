@@ -42,6 +42,21 @@ def meters_between(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return math.hypot(d_lat, d_lon)
 
 
+def validate_coordinates(lat: object, lon: object) -> tuple[float, float]:
+    try:
+        lat_float = float(lat)
+        lon_float = float(lon)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Nieprawidłowe współrzędne.") from exc
+    if not math.isfinite(lat_float) or not math.isfinite(lon_float):
+        raise ValueError("Nieprawidłowe współrzędne.")
+    if not (-90 <= lat_float <= 90):
+        raise ValueError("Szerokość geograficzna poza zakresem.")
+    if not (-180 <= lon_float <= 180):
+        raise ValueError("Długość geograficzna poza zakresem.")
+    return lat_float, lon_float
+
+
 def external_map_links(lat: float, lon: float) -> dict[str, str]:
     return {
         "street_view": f"https://www.google.com/maps/@{lat},{lon},3a,75y,90h,75t/data=!3m6!1e1",

@@ -1,6 +1,5 @@
 from urllib.parse import unquote, urlsplit
 
-from app import config
 from app.http import admin as http_admin
 from app.http import assets as http_assets
 from app.http import health as http_health
@@ -28,25 +27,10 @@ def handle_head(handler) -> bool:
     path = unquote(urlsplit(handler.path).path)
     if http_static_files.handle_web_page(handler, path, include_body=False):
         return True
-    wreck_index_wreck_id = http_routes.wreck_index_wreck_id(path)
-    if wreck_index_wreck_id:
-        http_assets.handle_wreck_index(handler, wreck_index_wreck_id, include_body=False)
-        return True
-    if path.startswith(f"/{config.WRECKS_ROUTE}/"):
-        http_assets.handle_public_wreck_asset(handler, path, include_body=False)
-        return True
     if path.startswith("/api/"):
         http_responses.send_api_not_found(handler, include_body=False)
         return True
     return False
-
-
-def handle_wreck_index_get(handler, path: str) -> bool:
-    wreck_index_wreck_id = http_routes.wreck_index_wreck_id(path)
-    if not wreck_index_wreck_id:
-        return False
-    http_assets.handle_wreck_index(handler, wreck_index_wreck_id)
-    return True
 
 
 def handle_static_api_get(handler, path: str) -> bool:
@@ -54,14 +38,12 @@ def handle_static_api_get(handler, path: str) -> bool:
         "/api/health": lambda: http_health.handle_health(handler),
         "/api/admin/status": lambda: http_admin.handle_admin_status(handler),
         "/api/admin/photos": lambda: http_admin.handle_admin_photos(handler),
-        "/api/admin/wrecks": lambda: http_admin.handle_admin_wrecks(handler),
         "/api/admin/privacy-requests": lambda: http_admin.handle_admin_privacy_requests(handler),
         "/api/admin/photo-retention": lambda: http_admin.handle_photo_retention_status(
             handler, http_retention.snapshot()
         ),
         "/api/settings": lambda: http_settings.handle_get_settings(handler),
         "/api/cadastral/identify": lambda: http_public_data.handle_cadastral_identify(handler),
-        "/api/wrecks": lambda: http_public_data.handle_get_wrecks(handler),
         "/api/field-photos": lambda: http_public_data.handle_field_photos(handler),
     }
     route_handler = handlers.get(path)
@@ -91,17 +73,12 @@ def handle_passthrough_get(handler, path: str) -> bool:
     if handler.path.startswith("/tile_proxy/"):
         http_wms_proxy.handle_geoportal_tile_proxy(handler)
         return True
-    if path.startswith(f"/{config.WRECKS_ROUTE}/"):
-        http_assets.handle_public_wreck_asset(handler, path)
-        return True
     return False
 
 
 def handle_get(handler) -> bool:
     path = unquote(urlsplit(handler.path).path)
     if http_static_files.handle_web_page(handler, path):
-        return True
-    if handle_wreck_index_get(handler, path):
         return True
     if handle_static_api_get(handler, path):
         return True
@@ -126,22 +103,11 @@ def handle_delete(handler) -> None:
         http_admin.handle_delete_field_photo(handler, request_path)
         return
 
-    if request_path.startswith("/api/wrecks/"):
-        http_admin.handle_delete_wreck(handler, request_path)
-        return
-
     http_responses.send_api_not_found(handler)
 
 
 def handle_patch(handler) -> None:
     request_path = unquote(urlsplit(handler.path).path)
-    admin_wreck_review_route = http_routes.admin_wreck_review_route(request_path)
-    if admin_wreck_review_route:
-        http_request_body.dispatch_json_request(
-            handler, http_admin.handle_review_wreck, handler, admin_wreck_review_route
-        )
-        return
-
     admin_photo_review_route = http_routes.admin_photo_review_route(request_path)
     if admin_photo_review_route:
         http_request_body.dispatch_json_request(
@@ -199,18 +165,6 @@ def handle_post(handler) -> None:
     if request_path == "/api/field-photo-reports/report-package":
         http_public.handle_field_photo_report_package(handler)
         return
-    public_report_package_wreck_id = http_routes.public_report_package_wreck_id(request_path)
-    if public_report_package_wreck_id:
-        http_public.handle_public_report_package(handler, public_report_package_wreck_id)
-        return
-    report_package_wreck_id = http_routes.report_package_wreck_id(request_path)
-    if report_package_wreck_id:
-        http_public.handle_report_package(handler, report_package_wreck_id)
-        return
-    wreck_photo_upload_wreck_id = http_routes.wreck_photo_upload_wreck_id(request_path)
-    if wreck_photo_upload_wreck_id:
-        http_public.handle_wreck_photo_upload(handler, wreck_photo_upload_wreck_id)
-        return
     field_photo_owner_original_route = http_routes.field_photo_owner_original_route(request_path)
     if field_photo_owner_original_route:
         http_request_body.dispatch_json_request(
@@ -225,8 +179,5 @@ def handle_post(handler) -> None:
         return
     if request_path == "/api/inspect":
         http_request_body.dispatch_json_request(handler, http_location.handle_inspect, handler)
-        return
-    if request_path == "/api/wrecks":
-        http_request_body.dispatch_json_request(handler, http_public.handle_save_wreck, handler)
         return
     http_responses.send_api_not_found(handler)

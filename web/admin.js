@@ -17,7 +17,6 @@ function setAdminAuthenticated(value) {
         panelBtn.classList.toggle('is-admin', adminAuthenticated);
     }
     if (previous !== adminAuthenticated) {
-        if (typeof loadSavedWrecks === 'function') loadSavedWrecks();
         if (typeof loadFieldPhotos === 'function') {
             loadFieldPhotos();
         }

@@ -21,7 +21,6 @@ from core.data_diagnostics import format_data_diagnostics, run_data_diagnostics 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sprawdza spójność lokalnych danych WreckScanner.")
     parser.add_argument("--field-photos-dir", type=Path, default=config.FIELD_PHOTOS_DIR)
-    parser.add_argument("--wrecks-dir", type=Path, default=config.WRECKS_DIR)
     parser.add_argument("--private-photos-dir", type=Path, default=config.PRIVATE_PHOTOS_DIR)
     parser.add_argument("--json", action="store_true", help="Wypisz pełny raport JSON zamiast podsumowania tekstowego.")
     parser.add_argument("--output-json", type=Path, help="Zapisz pełny raport JSON do pliku.")
@@ -36,7 +35,6 @@ def main() -> int:
     args = parse_args()
     report = run_data_diagnostics(
         field_photos_dir=args.field_photos_dir,
-        wrecks_dir=args.wrecks_dir,
         private_photos_dir=args.private_photos_dir,
         check_images=not args.no_image_check,
     )

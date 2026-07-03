@@ -5,8 +5,12 @@ import secrets
 from pathlib import Path
 from typing import Any
 
+from core.json_io import write_json_atomic
 from core.map_crops import save_location_crops
-from core.wrecks_store import write_json
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    write_json_atomic(path, payload)
 
 
 def _location_evidence_id(prefix: str, lat: float, lon: float, created_at: str) -> str:
@@ -15,7 +19,7 @@ def _location_evidence_id(prefix: str, lat: float, lon: float, created_at: str) 
     return f"{prefix}_{digest}"
 
 
-def save_location_evidence(
+def save_report_evidence(
     *,
     lat: float,
     lon: float,
@@ -23,10 +27,8 @@ def save_location_evidence(
     created_at: str,
     crop_m: Any,
     links: dict[str, str],
-    source: str,
-    id_prefix: str,
 ) -> dict[str, Any]:
-    evidence_id_value = _location_evidence_id(id_prefix, lat, lon, created_at)
+    evidence_id_value = _location_evidence_id("report", lat, lon, created_at)
     evidence_rel = f"evidence/{evidence_id_value}"
     evidence_dir = record_dir / evidence_rel
     crops, metadata = save_location_crops(lat, lon, evidence_dir, crop_m=crop_m)
@@ -40,15 +42,15 @@ def save_location_evidence(
         "path": evidence_rel,
         "crops": crops,
         "links": links,
-        "source": source,
+        "source": "report_package",
         "crop_m": float(crop_m),
     }
-    write_json(evidence_dir / "links.json", links)
-    write_json(evidence_dir / "metadata.json", metadata)
-    write_json(
-        evidence_dir / f"{source}.json",
+    _write_json(evidence_dir / "links.json", links)
+    _write_json(evidence_dir / "metadata.json", metadata)
+    _write_json(
+        evidence_dir / "report_package.json",
         {
-            "source": source,
+            "source": "report_package",
             "created_at": created_at,
             "lat": lat,
             "lon": lon,
@@ -58,27 +60,6 @@ def save_location_evidence(
         },
     )
     return evidence
-
-
-def save_report_evidence(
-    *,
-    lat: float,
-    lon: float,
-    record_dir: Path,
-    created_at: str,
-    crop_m: Any,
-    links: dict[str, str],
-) -> dict[str, Any]:
-    return save_location_evidence(
-        lat=lat,
-        lon=lon,
-        record_dir=record_dir,
-        created_at=created_at,
-        crop_m=crop_m,
-        links=links,
-        source="report_package",
-        id_prefix="report",
-    )
 
 
 def first_last_year(labels: list[Any]) -> tuple[int | None, int | None]:

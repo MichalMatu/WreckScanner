@@ -9,13 +9,10 @@ from core.config import (
     BYTES_PER_MIB,
     ORTHO_WMS_BASE,
     ORTHO_WMS_TIMEOUT,
-    WRECKS_DIR,
 )
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT_DIR / "web"
-
-WRECKS_ROUTE = WRECKS_DIR.as_posix()
 
 HOST = os.environ.get("WRECKSCANNER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("WRECKSCANNER_PORT", "8001"))

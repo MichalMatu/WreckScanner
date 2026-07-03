@@ -13,7 +13,6 @@ Dane aplikacji sa plikami w katalogach projektu. Lokalny backup uzywa `restic`.
 
 Backup obejmuje dane uzytkowe:
 
-- `zidentyfikowane_wraki/`
 - `zdjecia_terenowe/`
 - `prywatne_zdjecia/`
 - `zgloszenia_prywatnosci/`, jesli istnieje

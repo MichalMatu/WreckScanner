@@ -50,7 +50,6 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 Te katalogi i pliki sa lokalna baza aplikacji albo cache i nie powinny trafic do repozytorium:
 
 - `analiza/` - lokalne raporty diagnostyczne uruchamiane przez `scripts/check.sh`,
-- `zidentyfikowane_wraki/` - zapisane sprawy pojazdow,
 - `zdjecia_terenowe/` - rekordy zdjec terenowych i publiczne pochodne,
 - `prywatne_zdjecia/` - prywatne oryginaly zdjec,
 - `prywatne_zgloszenia/` - prywatne pakiety zgloszen,

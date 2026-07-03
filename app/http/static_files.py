@@ -43,13 +43,8 @@ def translate_path(path: str) -> str:
     if request_path == "/":
         return str(config.WEB_DIR / "index.html")
 
-    if request_path.startswith(f"/{config.WRECKS_ROUTE}/"):
-        base_dir = config.ROOT_DIR
-        relative_path = request_path.lstrip("/")
-    else:
-        base_dir = config.WEB_DIR
-        relative_path = request_path.lstrip("/")
-
+    base_dir = config.WEB_DIR
+    relative_path = request_path.lstrip("/")
     parts = [part for part in relative_path.split("/") if part and part not in {".", ".."}]
     return str(base_dir.joinpath(*parts))
 

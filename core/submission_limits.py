@@ -13,20 +13,6 @@ def _read_json(path: Path) -> Any:
         return json.load(f)
 
 
-def _dir_size(path: Path) -> int:
-    total = 0
-    if not path.exists():
-        return 0
-    for item in path.rglob("*"):
-        if not item.is_file():
-            continue
-        try:
-            total += item.stat().st_size
-        except OSError:
-            continue
-    return total
-
-
 def _private_size(record: dict[str, Any], private_dir: Path) -> int:
     try:
         path = safe_child(private_dir, record.get("private_original_file"))
@@ -49,7 +35,6 @@ def _is_pending(record: dict[str, Any]) -> bool:
 def pending_submission_usage(
     *,
     owner: str | None,
-    wrecks_dir: Path,
     field_photos_dir: Path,
     private_dir: Path,
 ) -> dict[str, int]:
@@ -70,26 +55,6 @@ def pending_submission_usage(
             total_items += 1
             total_bytes += _private_size(record, private_dir)
 
-    if wrecks_dir.is_dir():
-        for record_path in wrecks_dir.glob("*/record.json"):
-            try:
-                record = _read_json(record_path)
-            except (OSError, json.JSONDecodeError):
-                continue
-            if not isinstance(record, dict):
-                continue
-            owner_matches = not owner or _pending_record_owner(record) == owner
-            if _is_pending(record) and owner_matches:
-                total_items += 1
-                total_bytes += _dir_size(record_path.parent)
-            for photo in record.get("attached_photos") or []:
-                if not isinstance(photo, dict) or not _is_pending(photo):
-                    continue
-                if owner and _pending_record_owner(photo) != owner:
-                    continue
-                total_items += 1
-                total_bytes += _private_size(photo, private_dir)
-
     return {
         "bytes": total_bytes,
         "items": total_items,
@@ -103,13 +68,11 @@ def assert_pending_submission_quota(
     owner: str,
     additional_bytes: int = 0,
     additional_items: int = 1,
-    wrecks_dir: Path,
     field_photos_dir: Path,
     private_dir: Path,
 ) -> dict[str, int]:
     usage = pending_submission_usage(
         owner=owner,
-        wrecks_dir=wrecks_dir,
         field_photos_dir=field_photos_dir,
         private_dir=private_dir,
     )

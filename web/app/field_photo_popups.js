@@ -46,9 +46,9 @@ function fieldPhotoGroupActions(group) {
     const lon = Number(group.lon);
     const encodedPhotoIds = encodedFieldPhotoIdsForGroup(group);
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
-    const manualWrecksAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks);
+    const reportPackagesAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
     const issueType = FIELD_PHOTO_ISSUE_TYPES.has(group.issueType) ? group.issueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    const canCreateVehicleCase = coordinatesOk && manualWrecksAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    const canCreateVehicleCase = coordinatesOk && reportPackagesAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const canAddFieldPhotosHere = coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
         && fieldPhotoIssueAllowed(issueType);

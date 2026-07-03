@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,8 +12,6 @@ from PIL import Image, UnidentifiedImageError
 from core import config
 from core.field_photos import FIELD_PHOTO_ID_RE
 from core.photo_privacy import REVIEW_STATUSES, normalize_redactions
-
-WRECK_ID_RE = re.compile(r"wreck_-?\d+_-?\d+")
 
 
 def _now_iso() -> str:
@@ -270,7 +267,6 @@ def _audit_field_photos(
         "private_original_bytes": 0,
         "public_image_bytes": 0,
         "public_thumb_bytes": 0,
-        "attached_records": 0,
         "orphan_directories": 0,
         "orphan_files": 0,
     }
@@ -316,27 +312,6 @@ def _audit_field_photos(
                 issues, "error", "field_photo_bad_id", record_path, "Nieprawidłowy identyfikator zdjęcia.", id=photo_id
             )
         else:
-            attached_wreck_id = str(record.get("attached_wreck_id") or "").strip()
-            if attached_wreck_id:
-                summary["attached_records"] += 1
-                if not WRECK_ID_RE.fullmatch(attached_wreck_id):
-                    _issue(
-                        issues,
-                        "error",
-                        "field_photo_bad_attached_wreck_id",
-                        record_path,
-                        "Nieprawidłowy identyfikator sprawy podpiętej do zdjęcia terenowego.",
-                        attached_wreck_id=attached_wreck_id,
-                    )
-                else:
-                    _issue(
-                        issues,
-                        "error",
-                        "field_photo_legacy_attached_wreck_id",
-                        record_path,
-                        "Rekord zdjęcia terenowego nadal używa starego przypięcia do sprawy.",
-                        attached_wreck_id=attached_wreck_id,
-                    )
             field_photo_ids.add(photo_id)
         if photo_id and photo_id != child.name:
             _issue(
@@ -413,239 +388,15 @@ def _audit_field_photos(
     return summary
 
 
-def _audit_wreck_asset(
-    record_dir: Path,
-    record_path: Path,
-    relative_path: Any,
-    issues: list[dict[str, Any]],
-    code_prefix: str,
-    *,
-    check_images: bool,
-) -> tuple[Path | None, int]:
-    file_path = _safe_child(record_dir, relative_path)
-    if not file_path:
-        _issue(issues, "error", f"{code_prefix}_unsafe_path", record_path, "Niebezpieczna ścieżka w sprawie pojazdu.")
-        return None, 0
-    if not file_path.exists():
-        _issue(issues, "error", f"{code_prefix}_missing", file_path, "Brakuje pliku wskazanego w record.json.")
-        return file_path, 0
-    if check_images and file_path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
-        _image_info(file_path, issues)
-    return file_path, _count_bytes(file_path)
-
-
-def _audit_wrecks(
-    wrecks_dir: Path,
-    private_photos_dir: Path,
-    field_photo_ids: set[str],
-    issues: list[dict[str, Any]],
-    *,
-    check_images: bool,
-) -> dict[str, Any]:
-    summary = {
-        "records": 0,
-        "with_attached_photos": 0,
-        "attached_photos": 0,
-        "attached_private_original_bytes": 0,
-        "attached_public_image_bytes": 0,
-        "attached_public_thumb_bytes": 0,
-        "evidences": 0,
-        "evidence_crops": 0,
-        "missing_index_html": 0,
-        "orphan_directories": 0,
-        "orphan_files": 0,
-    }
-    attached_photo_ids: dict[str, str] = {}
-
-    if not wrecks_dir.exists():
-        _issue(issues, "warning", "wrecks_dir_missing", wrecks_dir, "Katalog teczek pojazdów nie istnieje.")
-        return summary
-
-    for child in sorted(wrecks_dir.iterdir()):
-        if child.is_file():
-            summary["orphan_files"] += 1
-            _issue(issues, "warning", "wreck_orphan_file", child, "Plik leży bezpośrednio w katalogu teczek pojazdów.")
-            continue
-        if not child.is_dir():
-            continue
-
-        record_path = child / "record.json"
-        if not record_path.exists():
-            summary["orphan_directories"] += 1
-            _issue(issues, "error", "wreck_record_missing", child, "Katalog sprawy pojazdu nie ma record.json.")
-            continue
-        try:
-            record = _read_json(record_path)
-        except (OSError, json.JSONDecodeError) as exc:
-            _issue(issues, "error", "wreck_record_unreadable", record_path, f"Nie da się odczytać record.json: {exc}")
-            continue
-        if not isinstance(record, dict):
-            _issue(issues, "error", "wreck_record_not_object", record_path, "record.json nie jest obiektem JSON.")
-            continue
-
-        summary["records"] += 1
-        wreck_id = str(record.get("id") or "")
-        if not WRECK_ID_RE.fullmatch(wreck_id):
-            _issue(
-                issues, "error", "wreck_bad_id", record_path, "Nieprawidłowy identyfikator sprawy pojazdu.", id=wreck_id
-            )
-        if wreck_id and wreck_id != child.name:
-            _issue(issues, "error", "wreck_id_folder_mismatch", record_path, "ID nie zgadza się z nazwą katalogu.")
-        if not _is_coord(record.get("lat"), -90, 90) or not _is_coord(record.get("lon"), -180, 180):
-            _issue(issues, "error", "wreck_bad_coordinates", record_path, "Nieprawidłowe współrzędne sprawy pojazdu.")
-        if not (child / "index.html").exists():
-            summary["missing_index_html"] += 1
-            _issue(
-                issues, "warning", "wreck_index_missing", child / "index.html", "Brakuje lokalnego index.html sprawy."
-            )
-
-        evidences = record.get("evidences") if isinstance(record.get("evidences"), list) else []
-        summary["evidences"] += len(evidences)
-        for evidence in evidences:
-            if not isinstance(evidence, dict):
-                _issue(issues, "error", "wreck_evidence_not_object", record_path, "Wpis evidence nie jest obiektem.")
-                continue
-            evidence_path = evidence.get("path")
-            evidence_dir = _safe_child(child, evidence_path)
-            if not evidence_dir:
-                _issue(issues, "error", "wreck_evidence_unsafe_path", record_path, "Niebezpieczna ścieżka dowodu.")
-                continue
-            if not evidence_dir.is_dir():
-                _issue(issues, "error", "wreck_evidence_dir_missing", evidence_dir, "Brakuje katalogu dowodu.")
-                continue
-            for required in ("links.json",):
-                if not (evidence_dir / required).exists():
-                    _issue(
-                        issues,
-                        "warning",
-                        "wreck_evidence_metadata_missing",
-                        evidence_dir / required,
-                        "Brakuje metadanych dowodu.",
-                    )
-            crops = evidence.get("crops") if isinstance(evidence.get("crops"), list) else []
-            summary["evidence_crops"] += len(crops)
-            for crop in crops:
-                if not isinstance(crop, dict):
-                    _issue(issues, "error", "wreck_crop_not_object", record_path, "Wpis crop nie jest obiektem.")
-                    continue
-                _audit_wreck_asset(
-                    evidence_dir,
-                    record_path,
-                    crop.get("file"),
-                    issues,
-                    "wreck_evidence_crop",
-                    check_images=check_images,
-                )
-
-        attached = record.get("attached_photos") if isinstance(record.get("attached_photos"), list) else []
-        if attached:
-            summary["with_attached_photos"] += 1
-        summary["attached_photos"] += len(attached)
-        for photo in attached:
-            if not isinstance(photo, dict):
-                _issue(
-                    issues,
-                    "error",
-                    "wreck_attached_photo_not_object",
-                    record_path,
-                    "Wpis attached_photo nie jest obiektem.",
-                )
-                continue
-            photo_id = str(photo.get("id") or "")
-            if not FIELD_PHOTO_ID_RE.fullmatch(photo_id):
-                _issue(
-                    issues, "error", "wreck_attached_photo_bad_id", record_path, "Nieprawidłowe ID zdjęcia w teczce."
-                )
-            previous_wreck = attached_photo_ids.get(photo_id)
-            if previous_wreck:
-                _issue(
-                    issues,
-                    "error",
-                    "wreck_attached_photo_duplicate",
-                    record_path,
-                    "To samo zdjęcie jest przypisane do więcej niż jednej sprawy.",
-                    photo_id=photo_id,
-                    previous_wreck=previous_wreck,
-                )
-            attached_photo_ids[photo_id] = wreck_id
-            if (
-                str(photo.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE)
-                != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE
-            ):
-                _issue(
-                    issues,
-                    "error",
-                    "wreck_attached_photo_bad_issue_type",
-                    record_path,
-                    "Do sprawy pojazdu przypięto niepojazdowy typ zdjęcia.",
-                )
-
-            _audit_legacy_photo_fields(record_path, photo, issues, "wreck_attached_photo")
-            status = _audit_review_fields(record_path, photo, issues, "wreck_attached_photo")
-            _, original_bytes = _audit_private_photo_file(
-                private_photos_dir,
-                record_path,
-                photo,
-                issues,
-                "wreck_attached_photo",
-                check_images=check_images,
-            )
-            summary["attached_private_original_bytes"] += original_bytes
-            if status == "approved":
-                _, public_bytes = _audit_public_photo_file(
-                    child,
-                    record_path,
-                    photo,
-                    "public_image_file",
-                    issues,
-                    "wreck_attached_public_image",
-                    check_images=check_images,
-                )
-                _, thumb_bytes = _audit_public_photo_file(
-                    child,
-                    record_path,
-                    photo,
-                    "public_thumb_file",
-                    issues,
-                    "wreck_attached_public_thumb",
-                    check_images=check_images,
-                    expected_thumbnail=True,
-                    thumb_max_edge=config.WRECK_PHOTO_THUMB_MAX_EDGE_PX,
-                )
-                summary["attached_public_image_bytes"] += public_bytes
-                summary["attached_public_thumb_bytes"] += thumb_bytes
-            elif photo.get("public_image_file") or photo.get("public_thumb_file"):
-                _issue(
-                    issues,
-                    "error",
-                    "wreck_attached_public_asset_without_approval",
-                    record_path,
-                    "Niezatwierdzone zdjęcie w teczce wskazuje publiczne pliki.",
-                )
-            record_json = _safe_child(child, f"photos/{photo_id}/record.json")
-            if record_json and not record_json.exists():
-                _issue(
-                    issues,
-                    "warning",
-                    "wreck_attached_photo_record_missing",
-                    record_json,
-                    "Brakuje record.json zdjęcia w teczce.",
-                )
-
-    return summary
-
-
 def run_data_diagnostics(
     *,
     field_photos_dir: Path = config.FIELD_PHOTOS_DIR,
-    wrecks_dir: Path = config.WRECKS_DIR,
     private_photos_dir: Path = config.PRIVATE_PHOTOS_DIR,
     check_images: bool = True,
 ) -> dict[str, Any]:
     issues: list[dict[str, Any]] = []
     field_summary = _audit_field_photos(field_photos_dir, private_photos_dir, issues, check_images=check_images)
-    field_photo_ids = set(field_summary.pop("ids", []))
-    wreck_summary = _audit_wrecks(wrecks_dir, private_photos_dir, field_photo_ids, issues, check_images=check_images)
+    field_summary.pop("ids", None)
     by_severity = Counter(issue["severity"] for issue in issues)
     status = "error" if by_severity.get("error", 0) else "warning" if by_severity.get("warning", 0) else "ok"
     return {
@@ -653,7 +404,6 @@ def run_data_diagnostics(
         "status": status,
         "roots": {
             "field_photos_dir": field_photos_dir.as_posix(),
-            "wrecks_dir": wrecks_dir.as_posix(),
             "private_photos_dir": private_photos_dir.as_posix(),
         },
         "checks": {
@@ -661,7 +411,6 @@ def run_data_diagnostics(
         },
         "summary": {
             "field_photos": field_summary,
-            "wrecks": wreck_summary,
             "issues": {
                 "total": len(issues),
                 "by_severity": {key: int(by_severity.get(key, 0)) for key in ("error", "warning", "info")},
@@ -673,7 +422,6 @@ def run_data_diagnostics(
 
 def format_data_diagnostics(report: dict[str, Any]) -> str:
     field = report["summary"]["field_photos"]
-    wrecks = report["summary"]["wrecks"]
     issue_summary = report["summary"]["issues"]
     issue_types = field["issue_types"]
     lines = [
@@ -685,16 +433,10 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
             f"{config.FIELD_PHOTO_ISSUE_TYPES[key]}={issue_types.get(key, 0)}" for key in config.FIELD_PHOTO_ISSUE_TYPES
         ),
         f"  stare rekordy bez issue_type: {field['legacy_without_issue_type']}",
-        f"  podpięte do spraw: {field['attached_records']}",
         "  pliki: "
         f"prywatne oryginały {_human_bytes(field['private_original_bytes'])}, "
         f"publiczne kopie {_human_bytes(field['public_image_bytes'])}, "
         f"publiczne miniatury {_human_bytes(field['public_thumb_bytes'])}",
-        f"Sprawy pojazdów: {wrecks['records']} spraw, {wrecks['evidences']} dowodów, {wrecks['attached_photos']} zdjęć z miejsca",
-        "  pliki zdjęć w sprawach: "
-        f"prywatne oryginały {_human_bytes(wrecks['attached_private_original_bytes'])}, "
-        f"publiczne kopie {_human_bytes(wrecks['attached_public_image_bytes'])}, "
-        f"publiczne miniatury {_human_bytes(wrecks['attached_public_thumb_bytes'])}",
         "Problemy: "
         f"{issue_summary['by_severity']['error']} error, "
         f"{issue_summary['by_severity']['warning']} warning, "

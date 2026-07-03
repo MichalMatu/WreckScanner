@@ -141,7 +141,6 @@ def run_smoke(base_url: str, *, timeout: float = 5.0) -> list[str]:
         check_static_asset(base_url, "/app/field_photo_upload.js", timeout),
         check_static_asset(base_url, "/app/settings.js", timeout),
         check_health(base_url, timeout),
-        check_public_json_list(base_url, "/api/wrecks", "wrecks", timeout),
         check_public_json_list(base_url, "/api/field-photos", "photos", timeout),
         check_json_404(base_url, timeout),
     ]

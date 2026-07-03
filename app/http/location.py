@@ -2,8 +2,8 @@ from app import config
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from core import config as core_config
+from core.geo import validate_coordinates
 from core.map_crops import crop_to_data_url, fetch_location_crops, validate_crop_m
-from core.wrecks_identity import validate_coordinates
 
 
 def handle_inspect(handler) -> None:

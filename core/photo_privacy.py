@@ -73,13 +73,9 @@ def ensure_review_fields(record: dict[str, Any]) -> bool:
     return changed
 
 
-def private_original_rel(
-    scope: Literal["field_photos", "wreck_photos"], photo_id: str, ext: str, owner_id: str = ""
-) -> str:
+def private_original_rel(scope: Literal["field_photos"], photo_id: str, ext: str) -> str:
     ext = ext if ext.startswith(".") else f".{ext}"
-    if scope == "field_photos":
-        return f"field_photos/{photo_id}/original{ext.lower()}"
-    return f"wreck_photos/{owner_id}/{photo_id}/original{ext.lower()}"
+    return f"field_photos/{photo_id}/original{ext.lower()}"
 
 
 def migrate_private_original(
@@ -87,9 +83,8 @@ def migrate_private_original(
     record_dir: Path,
     private_dir: Path,
     *,
-    scope: Literal["field_photos", "wreck_photos"],
+    scope: Literal["field_photos"],
     photo_id: str,
-    owner_id: str = "",
     old_key: str = "original_file",
 ) -> bool:
     changed = False
@@ -101,7 +96,7 @@ def migrate_private_original(
 
     source = safe_existing_child(record_dir, record.get(old_key))
     if source:
-        rel = private_original_rel(scope, photo_id, source.suffix or ".jpg", owner_id=owner_id)
+        rel = private_original_rel(scope, photo_id, source.suffix or ".jpg")
         destination = safe_child(private_dir, rel)
         destination.parent.mkdir(parents=True, exist_ok=True)
         if not destination.exists():

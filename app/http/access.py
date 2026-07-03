@@ -27,7 +27,6 @@ def ensure_public_submission_quota(handler, *, additional_bytes: int = 0, additi
         owner=submission_owner(handler),
         additional_bytes=additional_bytes,
         additional_items=additional_items,
-        wrecks_dir=core_config.WRECKS_DIR,
         field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         private_dir=core_config.PRIVATE_PHOTOS_DIR,
     )

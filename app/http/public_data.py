@@ -7,7 +7,6 @@ from app.http import responses as http_responses
 from core import config as core_config
 from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
 from core.field_photos import list_field_photos
-from core.wrecks import list_wrecks
 
 
 def handle_field_photos(handler) -> None:
@@ -75,21 +74,3 @@ def handle_cadastral_identify(handler) -> None:
         )
         return
     http_responses.send_json(handler, 200, {"status": "ok", "parcel": parcel})
-
-
-def handle_get_wrecks(handler) -> None:
-    try:
-        wrecks = (
-            list_wrecks(core_config.WRECKS_DIR, include_pending=http_admin_session.is_admin(handler))
-            if access.public_layer_allowed(handler, "vehicles")
-            else []
-        )
-        http_responses.send_json(handler, 200, {"status": "ok", "wrecks": wrecks})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Wreck list lookup failed",
-            exc,
-            public_error="Nie udało się pobrać spraw pojazdów.",
-        )

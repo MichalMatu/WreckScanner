@@ -1,14 +1,9 @@
 let vehicleMarkers = [];
-let savedWreckLayerData = [];
 let vehicleLayerVisible = true;
 
 function clearVehicleMarkers() {
     vehicleMarkers.forEach(marker => map.removeLayer(marker));
     vehicleMarkers = [];
-}
-
-function safeWreckId(value) {
-    return String(value ?? '').replace(/[^A-Za-z0-9_-]/g, '');
 }
 
 function vehicleLayerAllowed() {
@@ -70,7 +65,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
     const canCreateReport = includeReport
         && coordinatesOk
-        && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.manualWrecks);
+        && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
     const canAddFieldPhotosHere = includeUpload
         && coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
@@ -184,80 +179,12 @@ function placeVehicleMarkers() {
     });
 }
 
-async function loadSavedWrecks() {
-    savedWreckLayerData = [];
-    if (!adminAuthenticated) {
-        updateLayerCounters();
-        return;
-    }
-    try {
-        const data = await apiJson(`${WRECKS_URL}?ts=${Date.now()}`, { cache: 'no-store' });
-        if (data.status === 'ok') {
-            savedWreckLayerData = data.wrecks || [];
-            updateLayerCounters();
-        }
-    } catch (_) {}
+function refreshVehicleLayer() {
+    placeVehicleMarkers();
+    updateLayerCounters();
 }
 
 function toggleVehicleLayer(visible) {
     vehicleLayerVisible = Boolean(visible);
-    placeVehicleMarkers();
-}
-
-async function deleteWreck(wreckId, button = null) {
-    if (!(await ensureAdmin())) return;
-    const id = safeWreckId(wreckId);
-    if (!id) return;
-    const confirmed = await confirmAction({
-        title: t('wreck.deleteTitle'),
-        message: t('wreck.deleteConfirm'),
-        confirmLabel: t('wreck.delete'),
-    });
-    if (!confirmed) return;
-
-    const btn = button instanceof HTMLElement ? button : null;
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = t('wreck.deleting');
-    }
-    try {
-        const data = await apiDeleteJson(`${WRECKS_URL}/${encodeURIComponent(id)}`);
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('wreck.deleteError'));
-        }
-        await loadSavedWrecks();
-        statusEl.textContent = t('wreck.deleted');
-        statusEl.className = 'ok';
-    } catch (err) {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = t('wreck.delete');
-        }
-        statusEl.textContent = apiErrorMessage(err, t('wreck.deleteError'));
-        statusEl.className = 'err';
-    }
-}
-
-async function reviewWreckStatus(wreckId, publicReviewStatus, button = null) {
-    if (!(await ensureAdmin())) return;
-    const id = safeWreckId(wreckId);
-    if (!id) return;
-    const btn = button instanceof HTMLElement ? button : null;
-    if (btn) btn.disabled = true;
-    try {
-        const data = await apiPatchJson(`${ADMIN_WRECKS_URL}/${encodeURIComponent(id)}/review`, {
-            public_review_status: publicReviewStatus,
-        });
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('wreck.reviewError'));
-        }
-        await loadSavedWrecks();
-        statusEl.textContent = publicReviewStatus === 'approved' ? t('wreck.approved') : t('wreck.rejected');
-        statusEl.className = 'ok';
-    } catch (err) {
-        statusEl.textContent = apiErrorMessage(err, t('wreck.reviewError'));
-        statusEl.className = 'err';
-    } finally {
-        if (btn) btn.disabled = false;
-    }
+    refreshVehicleLayer();
 }

@@ -52,23 +52,89 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('id="enhancement-out-high" min="135" max="255" step="1" value="250"', html)
         self.assertIn('id="enhancement-decast" min="0" max="1" step="0.05" value="0.2"', html)
 
+    def test_photo_retention_admin_status_uses_friendly_card(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
+        admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        frontend = html + settings_js + admin_css + i18n_js
+
+        self.assertIn('id="photo-retention-status" role="status"', html)
+        self.assertIn("renderPhotoRetentionReport", settings_js)
+        self.assertIn("photo-retention-card", settings_js + admin_css)
+        self.assertIn("photo-retention-metrics", settings_js + admin_css)
+        self.assertIn("'modal.settings.photoRetention': 'Porządkowanie oryginałów'", i18n_js)
+        self.assertIn("'modal.settings.photoRetentionDryRun': 'Sprawdź bez zmian'", i18n_js)
+        self.assertIn("'modal.settings.photoRetentionApply': 'Wykonaj'", i18n_js)
+        self.assertIn("'modal.settings.photoRetentionScanned': 'Sprawdzone zdjęcia'", i18n_js)
+        self.assertIn("'modal.settings.photoRetentionReplaced': 'Zastąpione kopią publiczną'", i18n_js)
+        self.assertNotIn("Dry-run: scanned", frontend)
+        self.assertNotIn("Applied: scanned", frontend)
+        self.assertNotIn("Original retention", frontend)
+
+    def test_admin_panel_sections_share_tokenized_surface(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
+
+        self.assertIn("background: var(--surface-subtle);", admin_css)
+        self.assertIn("color: var(--text);", admin_css)
+        self.assertIn("color: var(--text-strong);", admin_css)
+        self.assertNotIn("admin-panel-section--tools", html + admin_css)
+        self.assertNotIn("linear-gradient(135deg, var(--primary-soft)", admin_css)
+        self.assertNotIn("background: rgba(255, 255, 255, 0.045);", admin_css)
+
+    def test_frontend_removes_legacy_vehicle_case_review_panel(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
+        dispatch_py = (ROOT_DIR / "app" / "http" / "dispatch.py").read_text(encoding="utf-8")
+        routes_py = (ROOT_DIR / "app" / "http" / "routes.py").read_text(encoding="utf-8")
+        frontend = html + config_js + vehicle_layer_js + i18n_js + review_css
+
+        self.assertFalse((ROOT_DIR / "web" / "app" / "wreck_review.js").exists())
+        self.assertFalse((ROOT_DIR / "web" / "app" / "saved_wrecks.js").exists())
+        self.assertIn("function refreshVehicleLayer", vehicle_layer_js)
+        for retired in (
+            "open-wreck-review",
+            "openWreckReviewModal",
+            "modal-wreck-review",
+            "modal.wreckReview",
+            "icon.wreckReview",
+            "wreck-review",
+            "ADMIN_WRECKS_URL",
+            "WRECKS_URL",
+            "loadSavedWrecks",
+            "savedWreckLayerData",
+            "reviewWreckStatus",
+        ):
+            self.assertNotIn(retired, frontend)
+        self.assertNotIn("/api/admin/wrecks", dispatch_py + routes_py)
+        self.assertNotIn("/api/wrecks", dispatch_py + routes_py + config_js + html)
+
     def test_frontend_uses_location_inspection_as_preview_only(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         location_js = (ROOT_DIR / "web" / "app" / "location_inspection.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
-        saved_wrecks_js = (ROOT_DIR / "web" / "app" / "saved_wrecks.js").read_text(encoding="utf-8")
+        vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        frontend = html + config_js + location_js + settings_js + vehicle_layer_js + i18n_js
 
         self.assertIn('<script src="/app/location_inspection.js"></script>', html)
         self.assertIn("apiPostJson('/api/inspect'", location_js)
         self.assertIn('id="context-inspect-location"', html)
         self.assertIn("openLocationInspectionAtContextPoint", location_js)
         self.assertNotIn("map.on('click'", location_js)
-        self.assertNotIn("saveManualWreck", location_js + saved_wrecks_js)
+        self.assertNotIn("saveManualWreck", location_js + vehicle_layer_js)
         self.assertNotIn("inspect.saveWreck", i18n_js)
         self.assertNotIn("map-popup-text-action", location_js)
-        self.assertIn("manualWrecks: 'manual_wrecks'", config_js)
+        self.assertIn("reportPackages: 'report_packages'", config_js)
+        self.assertNotIn("manual_wrecks", frontend)
+        self.assertNotIn("manualWrecks", frontend)
+        self.assertNotIn("featureManualWrecks", frontend)
+        self.assertNotIn("admin-feature-manual-wrecks", frontend)
         self.assertNotIn("/api/download", config_js + html)
         self.assertNotIn("/api/analyze", config_js + html)
         self.assertNotIn("scan_analysis", config_js + settings_js + html)
@@ -107,31 +173,36 @@ class FrontendContracts(unittest.TestCase):
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
-        saved_wrecks_js = (ROOT_DIR / "web" / "app" / "saved_wrecks.js").read_text(encoding="utf-8")
+        vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         reports_js = (ROOT_DIR / "web" / "app" / "reports.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
-        frontend = html + config_js + settings_js + field_photos_js + saved_wrecks_js + reports_js + i18n_js + styles
+        frontend = html + config_js + settings_js + field_photos_js + vehicle_layer_js + reports_js + i18n_js + styles
 
         self.assertIn('id="toggle-vehicles"', html)
         self.assertIn('id="admin-layer-vehicles"', html)
         self.assertIn("vehicles: 'vehicles'", config_js)
         self.assertIn("vehicle: PUBLIC_LAYER_KEYS.vehicles", config_js)
-        self.assertIn("function buildVehicleGroups", saved_wrecks_js)
-        self.assertIn("function placeVehicleMarkers", saved_wrecks_js)
-        self.assertIn("function toggleVehicleLayer", saved_wrecks_js)
+        self.assertIn("function buildVehicleGroups", vehicle_layer_js)
+        self.assertIn("function placeVehicleMarkers", vehicle_layer_js)
+        self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
         self.assertIn("openFieldPhotoUploadModal", frontend)
         self.assertIn("issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false", field_photos_js)
-        self.assertIn("function vehiclePhotoPopup", saved_wrecks_js)
+        self.assertIn("function vehiclePhotoPopup", vehicle_layer_js)
         self.assertIn("openFieldPhotoReportPackageModal", reports_js)
         self.assertIn("/api/field-photo-reports/report-package", reports_js)
-        self.assertNotIn("function vehicleCasePopup", saved_wrecks_js)
-        self.assertNotIn("function vehicleCaseActions", saved_wrecks_js)
-        self.assertNotIn("function openVehicleCasePhotoUpload", saved_wrecks_js)
+        self.assertNotIn("openReportPackageModal", reports_js)
+        self.assertNotIn("openWreckPhotoModal", reports_js)
+        self.assertNotIn("modal-wreck-photo-upload", html)
+        self.assertNotIn("modal.wreckPhoto", i18n_js)
+        self.assertNotIn("scopeWreck", frontend)
+        self.assertNotIn("function vehicleCasePopup", vehicle_layer_js)
+        self.assertNotIn("function vehicleCaseActions", vehicle_layer_js)
+        self.assertNotIn("function openVehicleCasePhotoUpload", vehicle_layer_js)
         self.assertNotIn("createWreckForFieldPhotoGroup", frontend)
         self.assertNotIn("attachFieldPhotoGroupToWreck", frontend)
-        self.assertNotIn("function vehiclePhotoOnlyPopup", saved_wrecks_js)
-        self.assertNotIn("wreck.evidence_previews", saved_wrecks_js)
+        self.assertNotIn("function vehiclePhotoOnlyPopup", vehicle_layer_js)
+        self.assertNotIn("wreck.evidence_previews", vehicle_layer_js)
         self.assertNotIn("extraPhotos", reports_js)
         self.assertNotIn("report-package-extra-photos", html)
         self.assertNotIn("report-package-recipient", html + reports_js)
@@ -147,9 +218,9 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("data.pdf_filename", reports_js)
         self.assertNotIn("reportDownloadName", reports_js)
         self.assertIn("submit.hidden = true", reports_js)
-        self.assertIn("showHeader: false", saved_wrecks_js)
-        self.assertNotIn("fieldPhotoGroupMeta(group, photos)", saved_wrecks_js)
-        self.assertNotIn("toFixed(6)", saved_wrecks_js)
+        self.assertIn("showHeader: false", vehicle_layer_js)
+        self.assertNotIn("fieldPhotoGroupMeta(group, photos)", vehicle_layer_js)
+        self.assertNotIn("toFixed(6)", vehicle_layer_js)
 
         for retired in (
             "toggle-saved-wrecks",
@@ -239,6 +310,6 @@ class FrontendContracts(unittest.TestCase):
             html.index('<script src="/app/location_inspection.js"></script>'),
         )
         self.assertLess(
-            html.index('<script src="/app/saved_wrecks.js"></script>'),
+            html.index('<script src="/app/vehicle_layer.js"></script>'),
             html.index('<script src="/app/location_inspection.js"></script>'),
         )

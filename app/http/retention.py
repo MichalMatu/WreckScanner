@@ -49,7 +49,6 @@ def run(*, dry_run: bool, source: str) -> dict:
             )
         report = retire_private_originals(
             field_photos_dir=core_config.FIELD_PHOTOS_DIR,
-            wrecks_dir=core_config.WRECKS_DIR,
             private_photos_dir=core_config.PRIVATE_PHOTOS_DIR,
             dry_run=dry_run,
         )

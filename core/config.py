@@ -5,7 +5,6 @@ BYTES_PER_MIB = 1024 * 1024
 BYTES_PER_GIB = 1024 * BYTES_PER_MIB
 
 DIAGNOSTICS_DIR = Path("analiza")
-WRECKS_DIR = Path("zidentyfikowane_wraki")
 FIELD_PHOTOS_DIR = Path("zdjecia_terenowe")
 PRIVATE_PHOTOS_DIR = Path("prywatne_zdjecia")
 PRIVACY_REQUESTS_DIR = Path("zgloszenia_prywatnosci")
@@ -40,7 +39,6 @@ REVIEW_CROP_M = 7.5
 REVIEW_CROP_M_MIN = 5.0
 REVIEW_CROP_M_MAX = 20.0
 REVIEW_JPEG_QUALITY = 95
-WRECK_DEDUPE_M = 3.0
 
 # Uploady i raporty. Zwiększenie limitów poprawia wygodę, ale podnosi zużycie
 # pamięci przy parsowaniu multipart i rozmiar lokalnych paczek zgłoszeniowych.
@@ -56,24 +54,16 @@ FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY = 82
 PUBLIC_PHOTO_JPEG_QUALITY = 88
 PRIVATE_ORIGINAL_RETENTION_DAYS = 180
 DEFAULT_FIELD_PHOTO_ISSUE_TYPE = "vehicle"
-# Typ obserwacji zapisany przy zdjęciu terenowym. Dodanie nowego typu tutaj
-# pozwala rozróżniać pinezki bez mieszania ich z logiką teczek pojazdów.
 FIELD_PHOTO_ISSUE_TYPES = {
     "vehicle": "zdjęcie pojazdu",
     "infrastructure": "niebezpieczna infrastruktura",
     "smoke": "dym papierosowy",
 }
 
-MAX_WRECK_PHOTO_BYTES = 10 * BYTES_PER_MIB
-MAX_WRECK_PHOTOS_PER_UPLOAD = 25
-MAX_WRECK_PHOTO_BODY_BYTES = (MAX_WRECK_PHOTOS_PER_UPLOAD * MAX_WRECK_PHOTO_BYTES) + (2 * BYTES_PER_MIB)
-WRECK_PHOTO_THUMB_MAX_EDGE_PX = 900
-WRECK_PHOTO_THUMB_QUALITY = 84
-
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"
 MAX_REPORT_PACKAGE_BODY_BYTES = 2 * BYTES_PER_MIB
 
-# Publiczne dodawanie spraw/zdjęć zapisuje materiały jako "pending".
+# Publiczne dodawanie zdjęć zapisuje materiały jako "pending".
 # Limity chronią dysk przed zalaniem kolejki przed moderacją.
 PENDING_SUBMISSION_MAX_BYTES = 512 * BYTES_PER_MIB
 PENDING_SUBMISSION_MAX_ITEMS = 100

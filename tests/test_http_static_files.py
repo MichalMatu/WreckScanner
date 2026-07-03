@@ -62,7 +62,6 @@ class HttpStaticFilesContractTests(unittest.TestCase):
             with (
                 patch.object(config, "WEB_DIR", web_dir),
                 patch.object(config, "ROOT_DIR", root_dir),
-                patch.object(config, "WRECKS_ROUTE", "wraki"),
             ):
                 translated = static_files.translate_path("/../app.js")
 

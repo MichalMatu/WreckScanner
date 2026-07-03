@@ -130,13 +130,8 @@
 }
 
 .modal--photo-review,
-.modal--wreck-review,
 .modal--privacy-requests {
     max-width: 1100px;
-}
-
-.modal--wreck-photo {
-    max-width: 520px;
 }
 
 .modal--photo-preview {
@@ -171,7 +166,6 @@
     }
 
     .modal--photo-review,
-    .modal--wreck-review,
     .modal--privacy-requests,
     .modal--privacy-info,
     .modal--problem-report,
@@ -179,7 +173,6 @@
     .modal--field-photo,
     .modal--field-photo-thanks,
     .modal--field-photo-owner,
-    .modal--wreck-photo,
     .modal--photo-preview,
     .modal--confirm,
     .modal--admin-login {

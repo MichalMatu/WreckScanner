@@ -33,7 +33,6 @@ def write_json(path: Path, payload):
 
 
 def prepare_root(root: Path) -> Path:
-    (root / "zidentyfikowane_wraki").mkdir()
     (root / "zdjecia_terenowe").mkdir()
     (root / "prywatne_zdjecia").mkdir()
     (root / "zgloszenia_prywatnosci").mkdir()
@@ -88,7 +87,6 @@ class DataBackupTests(unittest.TestCase):
             self.assertEqual(command[:2], ["restic", "backup"])
             self.assertIn("--tag", command)
             self.assertIn("wreckscanner", command)
-            self.assertIn("zidentyfikowane_wraki", command)
             self.assertIn("zdjecia_terenowe", command)
             self.assertIn("prywatne_zdjecia", command)
             self.assertIn("zgloszenia_prywatnosci", command)
@@ -216,7 +214,7 @@ class DataBackupTests(unittest.TestCase):
             payload = json.loads(restic_log.read_text(encoding="utf-8"))
             self.assertEqual(payload["argv"][0], "backup")
             self.assertIn("--dry-run", payload["argv"])
-            self.assertIn("zidentyfikowane_wraki", payload["argv"])
+            self.assertNotIn("zidentyfikowane_wraki", payload["argv"])
             self.assertIn("prywatne_zdjecia", payload["argv"])
             self.assertIn("zgloszenia_prywatnosci", payload["argv"])
             self.assertEqual(payload["repo"], str(root / "repo"))

@@ -79,8 +79,6 @@ class RuntimeSmokeTests(unittest.TestCase):
                     "wms_tile_cache": {"count": 1},
                 }
             )
-        if path == "/api/wrecks":
-            return json_response({"status": "ok", "wrecks": []})
         if path == "/api/field-photos":
             return json_response({"status": "ok", "photos": []})
         if path == "/api/__runtime_smoke_missing__":
@@ -113,7 +111,6 @@ class RuntimeSmokeTests(unittest.TestCase):
                 "/app/field_photo_upload.js",
                 "/app/settings.js",
                 "health",
-                "/api/wrecks",
                 "/api/field-photos",
                 "api 404",
             ],

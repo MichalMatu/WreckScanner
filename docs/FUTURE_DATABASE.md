@@ -28,8 +28,6 @@ Następujące rzeczy nie mogą stać się tabelami ani trwałym API bazy:
 - `cases` - ogólny model spraw nie jest potrzebny w tym produkcie.
 - `evidences` - dowody raportowe są składane tymczasowo z danych zdjęć terenowych i map.
 
-Jeżeli stary katalog `zidentyfikowane_wraki/` jest potrzebny podczas przejścia, traktuj go jako archiwum importowe albo materiał porównawczy, nie jako tabelę.
-
 ## Minimalny szkic tabel
 
 `field_photos`
@@ -68,6 +66,6 @@ Jeżeli stary katalog `zidentyfikowane_wraki/` jest potrzebny podczas przejścia
 3. Importuj `zgloszenia_prywatnosci/` do `privacy_requests`.
 4. Nie importuj `prywatne_zgloszenia/`.
 5. Nie importuj `evidence/report_*` ani wygenerowanych cropów map.
-6. Nie twórz tabel dla `zidentyfikowane_wraki/`; zdjęcia z tego wzorca muszą najpierw istnieć jako `field_photos`.
+6. Nie importuj dawnych katalogów archiwalnych teczek pojazdów; zdjęcia muszą istnieć jako `field_photos`.
 
 Raportowanie ma działać przez listę `field_photo.id` oraz współrzędne grupy zdjęć. Pliki ZIP/PDF i cropy mapy pozostają wynikiem jednorazowym, zwracanym użytkownikowi bez zapisu w bazie.

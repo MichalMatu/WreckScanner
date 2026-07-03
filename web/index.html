@@ -350,7 +350,7 @@
                 </div>
             </div>
             <div class="modal-body admin-panel-body">
-                <section class="modal-section admin-panel-section admin-panel-section--tools">
+                <section class="modal-section admin-panel-section">
                     <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
                     <div class="admin-panel-actions">
                         <button type="button" class="admin-panel-action admin-only" id="open-field-photo-upload"
@@ -366,13 +366,6 @@
                                 <path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm7.5-6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
                             </svg>
                             <span data-i18n="icon.photoReview">Przegląd zdjęć</span>
-                        </button>
-                        <button type="button" class="admin-panel-action admin-only" id="open-wreck-review"
-                            onclick="openWreckReviewModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm-3 8h6v2H9v-2zm1-3h4v2h-4V7z" />
-                            </svg>
-                            <span data-i18n="icon.wreckReview">Przegląd spraw</span>
                         </button>
                         <button type="button" class="admin-panel-action admin-only" id="open-privacy-requests"
                             onclick="openPrivacyRequestsModal()" hidden>
@@ -440,13 +433,19 @@
                             onclick="savePublicFeatureSettings()" data-i18n="modal.adminPanel.savePublicFeatures">Zapisz</button>
                     </div>
                     <div class="admin-layer-grid admin-feature-grid">
-                        <label class="admin-layer-toggle">
-                            <input type="checkbox" id="admin-feature-manual-wrecks" checked>
-                            <span data-i18n="modal.adminPanel.featureManualWrecks">Ręczne pinezki pojazdów</span>
+                        <label class="admin-layer-toggle admin-feature-toggle">
+                            <input type="checkbox" id="admin-feature-report-packages" checked>
+                            <span class="admin-feature-copy">
+                                <span data-i18n="modal.adminPanel.featureReportPackages">Raporty ze zdjęć pojazdów</span>
+                                <small data-i18n="modal.adminPanel.featureReportPackagesHint">Generowanie PDF/ZIP z zatwierdzonych zdjęć.</small>
+                            </span>
                         </label>
-                        <label class="admin-layer-toggle">
+                        <label class="admin-layer-toggle admin-feature-toggle">
                             <input type="checkbox" id="admin-feature-photo-uploads" checked>
-                            <span data-i18n="modal.adminPanel.featurePhotoUploads">Dodawanie zdjęć</span>
+                            <span class="admin-feature-copy">
+                                <span data-i18n="modal.adminPanel.featurePhotoUploads">Dodawanie nowych zdjęć</span>
+                                <small data-i18n="modal.adminPanel.featurePhotoUploadsHint">Wysyłanie zdjęć terenowych z mapy.</small>
+                            </span>
                         </label>
                     </div>
                     <p class="modal-hint" id="admin-public-features-status"
@@ -462,14 +461,14 @@
                                 data-i18n="modal.settings.photoRetentionRefresh">Odśwież</button>
                             <button type="button" class="settings-reset-btn" id="photo-retention-dry-run"
                                 onclick="runPhotoRetention(true)"
-                                data-i18n="modal.settings.photoRetentionDryRun">Dry-run</button>
+                                data-i18n="modal.settings.photoRetentionDryRun">Sprawdź bez zmian</button>
                             <button type="button" class="confirm-danger-btn settings-danger-btn"
                                 id="photo-retention-apply" onclick="runPhotoRetention(false)"
-                                data-i18n="modal.settings.photoRetentionApply">Uruchom</button>
+                                data-i18n="modal.settings.photoRetentionApply">Wykonaj</button>
                         </div>
                     </div>
-                    <p class="modal-hint photo-retention-status" id="photo-retention-status"
-                        data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</p>
+                    <div class="modal-hint photo-retention-status" id="photo-retention-status" role="status"
+                        data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</div>
                 </section>
             </div>
         </div>
@@ -652,7 +651,6 @@
                     <select class="modal-input" id="photo-review-scope" onchange="loadPhotoReviewQueue()">
                         <option value="all" data-i18n="modal.photoReview.scopeAll">Wszystkie źródła</option>
                         <option value="field" data-i18n="modal.photoReview.scopeField">zdjęcie terenowe</option>
-                        <option value="wreck" data-i18n="modal.photoReview.scopeWreck">sprawa pojazdu</option>
                     </select>
                     <input class="modal-input" id="photo-review-search" type="search"
                         data-i18n-attr="placeholder:modal.photoReview.search" placeholder="Szukaj id / sprawy">
@@ -724,90 +722,6 @@
                             </div>
                         </div>
                         <p class="modal-hint" id="photo-review-status"></p>
-                    </section>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-backdrop" id="modal-wreck-review" hidden onclick="closeModal(this)">
-        <div class="modal modal--wreck-review draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
-                <h2 data-i18n="modal.wreckReview.title">Przegląd spraw pojazdów</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body photo-review-body">
-                <section class="modal-section">
-                    <label class="modal-label" for="wreck-review-filter"
-                        data-i18n="modal.wreckReview.filter">Status</label>
-                    <select class="modal-input" id="wreck-review-filter" onchange="loadWreckReviewQueue()">
-                        <option value="pending" data-i18n="modal.wreckReview.pending">Do weryfikacji</option>
-                        <option value="approved" data-i18n="modal.wreckReview.approved">Zatwierdzone</option>
-                        <option value="rejected" data-i18n="modal.wreckReview.rejected">Odrzucone</option>
-                        <option value="all" data-i18n="modal.wreckReview.all">Wszystkie</option>
-                    </select>
-                    <input class="modal-input" id="wreck-review-search" type="search"
-                        data-i18n-attr="placeholder:modal.wreckReview.search" placeholder="Szukaj id / współrzędnych">
-                </section>
-                <div class="photo-review-layout">
-                    <div class="photo-review-list" id="wreck-review-list"></div>
-                    <section class="photo-review-editor">
-                        <div class="wreck-review-detail" id="wreck-review-detail">
-                            <p class="modal-hint" id="wreck-review-empty" data-i18n="modal.wreckReview.empty">Wybierz
-                                sprawę z kolejki.</p>
-                        </div>
-                        <div class="photo-review-actions">
-                            <div class="review-tool-actions">
-                                <button type="button" class="report-copy-btn review-icon-btn" onclick="focusWreckReviewOnMap()"
-                                    data-i18n-attr="title:modal.wreckReview.showOnMap;aria-label:modal.wreckReview.showOnMap"
-                                    title="Pokaż na mapie" aria-label="Pokaż na mapie">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 10.5A3.5 3.5 0 1 1 12 5a3.5 3.5 0 0 1 0 7.5z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="review-decision-actions">
-                                <button type="button" class="report-copy-btn review-action-btn"
-                                    onclick="saveWreckReviewStatus('pending')"
-                                    data-i18n-attr="title:modal.wreckReview.savePending;aria-label:modal.wreckReview.savePending">
-                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-2.3-5.7L15 9h7V2l-2.9 2.9A10 10 0 0 0 12 2zm1 5h-2v6l5 3 .9-1.6-3.9-2.3V7z" />
-                                    </svg>
-                                    <span class="review-action-label" data-i18n="modal.wreckReview.savePendingShort">Do weryfikacji</span>
-                                </button>
-                                <button type="button" class="confirm-danger-btn review-action-btn"
-                                    onclick="saveWreckReviewStatus('rejected')"
-                                    data-i18n-attr="title:modal.wreckReview.reject;aria-label:modal.wreckReview.reject">
-                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M18.3 5.7 16.9 4.3 12 9.2 7.1 4.3 5.7 5.7l4.9 4.9-4.9 4.9 1.4 1.4 4.9-4.9 4.9 4.9 1.4-1.4-4.9-4.9 4.9-4.9z" />
-                                    </svg>
-                                    <span class="review-action-label" data-i18n="modal.wreckReview.reject">Odrzuć</span>
-                                </button>
-                                <button type="button" class="confirm-danger-btn review-action-btn"
-                                    onclick="deleteWreckReviewItem()"
-                                    data-i18n-attr="title:modal.wreckReview.delete;aria-label:modal.wreckReview.delete">
-                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M9 3v1H4v2h16V4h-5V3H9zm-3 5 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z" />
-                                    </svg>
-                                    <span class="review-action-label" data-i18n="modal.wreckReview.deleteShort">Usuń</span>
-                                </button>
-                                <button type="button" class="btn-download report-submit-btn review-approve-btn"
-                                    onclick="saveWreckReviewStatus('approved')"
-                                    data-i18n-attr="title:modal.wreckReview.approve;aria-label:modal.wreckReview.approve">
-                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
-                                    </svg>
-                                    <span class="review-action-label" data-i18n="modal.wreckReview.approve">Zatwierdź</span>
-                                </button>
-                            </div>
-                        </div>
-                        <p class="modal-hint" id="wreck-review-status"></p>
                     </section>
                 </div>
             </div>
@@ -999,45 +913,6 @@
         </div>
     </div>
 
-    <!-- ─── MODAL: ZDJĘCIA DO TECZKI POJAZDU ───────────────── -->
-    <div class="modal-backdrop" id="modal-wreck-photo-upload" hidden onclick="closeModal(this)">
-        <div class="modal modal--wreck-photo draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
-                <h2 data-i18n="modal.wreckPhoto.title">Zdjęcia do sprawy pojazdu</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
-                    </svg>
-                </button>
-            </div>
-            <form class="modal-body report-form" id="wreck-photo-form" onsubmit="submitWreckPhotoUpload(event)">
-                <input type="hidden" id="wreck-photo-wreck-id">
-                <section class="modal-section">
-                    <label class="modal-label" for="wreck-photo-files" data-i18n="modal.wreckPhoto.files">Pliki
-                        zdjęć</label>
-                    <div class="file-picker">
-                        <input type="file" class="file-picker-input" id="wreck-photo-files" name="photos[]"
-                            accept="image/jpeg,image/png,image/webp" multiple>
-                        <label class="file-picker-button" for="wreck-photo-files"
-                            data-i18n="modal.wreckPhoto.chooseFiles">Wybierz zdjęcia do sprawy</label>
-                        <span class="file-picker-summary" data-file-summary-for="wreck-photo-files"
-                            data-i18n="filePicker.empty">Nie wybrano plików</span>
-                    </div>
-                    <p class="modal-hint" data-i18n="modal.wreckPhoto.fileHint">JPG, PNG albo WebP, maks. 10 MB każde,
-                        do 25 zdjęć naraz.</p>
-                </section>
-                <div class="report-actions">
-                    <button type="submit" class="btn-download report-submit-btn" id="wreck-photo-submit">
-                        <span data-i18n="modal.wreckPhoto.submit">Dodaj do sprawy</span>
-                    </button>
-                </div>
-                <p class="modal-hint" id="wreck-photo-status"></p>
-            </form>
-        </div>
-    </div>
-
     <!-- ─── MODAL: GENERATOR ZGŁOSZENIA ─────────────────── -->
     <div class="modal-backdrop" id="modal-report-package" hidden onclick="closeModal(this)">
         <div class="modal modal--report draggable-modal" onclick="event.stopPropagation()">
@@ -1052,8 +927,6 @@
                 </button>
             </div>
             <form class="modal-body report-form" id="report-package-form" onsubmit="submitReportPackage(event)">
-                <input type="hidden" id="report-wreck-id">
-
                 <section class="modal-section">
                     <label class="modal-label" data-i18n="modal.report.reporter">Dane zgłaszającego</label>
                     <div class="report-grid">
@@ -1248,14 +1121,13 @@
     <script src="/app.js"></script>
     <script src="/app/api.js"></script>
     <script src="/app/problem_report.js"></script>
-    <script src="/app/saved_wrecks.js"></script>
+    <script src="/app/vehicle_layer.js"></script>
     <script src="/app/field_photos.js"></script>
     <script src="/app/field_photo_actions.js"></script>
     <script src="/app/location_inspection.js"></script>
     <script src="/app/field_photo_popups.js"></script>
     <script src="/app/field_photo_upload.js"></script>
     <script src="/app/photo_review.js"></script>
-    <script src="/app/wreck_review.js"></script>
     <script src="/app/photo_review_canvas.js"></script>
     <script src="/app/settings.js"></script>
     <script src="/app/reports.js"></script>

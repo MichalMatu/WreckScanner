@@ -45,16 +45,16 @@ class PublicFeatureSettingsTests(unittest.TestCase):
         self.assertEqual(
             public_feature_settings_from_dict({}),
             {
-                "manual_wrecks": True,
+                "report_packages": True,
                 "photo_uploads": True,
             },
         )
 
     def test_public_feature_settings_accept_booleans_per_feature(self):
         self.assertEqual(
-            public_feature_settings_from_dict({"manual_wrecks": False, "photo_uploads": False}),
+            public_feature_settings_from_dict({"report_packages": False, "photo_uploads": False}),
             {
-                "manual_wrecks": False,
+                "report_packages": False,
                 "photo_uploads": False,
             },
         )

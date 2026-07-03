@@ -21,7 +21,6 @@ from core.photo_retention import retire_private_originals  # noqa: E402
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Zastępuje albo usuwa prywatne oryginały zdjęć po terminie retencji.")
     parser.add_argument("--field-photos-dir", type=Path, default=config.FIELD_PHOTOS_DIR)
-    parser.add_argument("--wrecks-dir", type=Path, default=config.WRECKS_DIR)
     parser.add_argument("--private-photos-dir", type=Path, default=config.PRIVATE_PHOTOS_DIR)
     parser.add_argument("--retention-days", type=int, default=config.PRIVATE_ORIGINAL_RETENTION_DAYS)
     parser.add_argument("--apply", action="store_true", help="Zapisz zmiany. Bez tej flagi działa tylko dry-run.")
@@ -31,7 +30,6 @@ def parse_args() -> argparse.Namespace:
 
 def _format(report: dict) -> str:
     field = report["field_photos"]
-    wreck = report["wreck_photos"]
     lines = [
         "Retencja prywatnych oryginałów zdjęć",
         f"Tryb: {'apply' if not report['dry_run'] else 'dry-run'}",
@@ -41,18 +39,11 @@ def _format(report: dict) -> str:
             f"sprawdzone={field['scanned']}, zastąpione={field['replaced']}, "
             f"usunięte={field['deleted']}, pominięte={field['skipped']}"
         ),
-        (
-            "Zdjęcia w sprawach: "
-            f"sprawdzone={wreck['scanned']}, zastąpione={wreck['replaced']}, "
-            f"usunięte={wreck['deleted']}, pominięte={wreck['skipped']}"
-        ),
     ]
     if report["items"]:
         lines.append("Zmiany:")
         for item in report["items"]:
             label = item.get("id") or "-"
-            if item.get("scope") == "wreck":
-                label = f"{item.get('wreck_id')}/{label}"
             lines.append(f"  - {item.get('scope')}: {label}: {item.get('action')}")
     return "\n".join(lines)
 
@@ -61,7 +52,6 @@ def main() -> int:
     args = parse_args()
     report = retire_private_originals(
         field_photos_dir=args.field_photos_dir,
-        wrecks_dir=args.wrecks_dir,
         private_photos_dir=args.private_photos_dir,
         retention_days=args.retention_days,
         dry_run=not args.apply,

@@ -15,14 +15,8 @@ from core.field_photos import (
     submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
-from core.report_packages import create_field_photo_report_package, create_public_report_package, create_report_package
+from core.report_packages import create_field_photo_report_package
 from core.uploads import UploadedFile
-from core.wrecks import delete_wreck
-from core.wrecks_attachments import (
-    attach_field_photos_to_wreck,
-    attach_wreck_photos,
-)
-from core.wrecks_save import save_vehicle_case
 
 
 def reject_report_package_files(files: list[UploadedFile]) -> None:
@@ -139,51 +133,9 @@ def handle_discard_field_photo_drafts(handler) -> None:
         )
 
 
-def handle_public_report_package(handler, wreck_id: str) -> None:
-    try:
-        fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
-        reject_report_package_files(files)
-        result = create_public_report_package(wreck_id, fields, core_config.WRECKS_DIR)
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Public report package creation failed",
-            exc,
-            public_error="Nie udało się przygotować publicznego pakietu raportu.",
-        )
-
-
-def handle_report_package(handler, wreck_id: str) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    try:
-        fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
-        reject_report_package_files(files)
-        result = create_report_package(wreck_id, fields, core_config.WRECKS_DIR)
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Admin report package creation failed",
-            exc,
-            public_error="Nie udało się przygotować pakietu raportu.",
-        )
-
-
 def handle_field_photo_report_package(handler) -> None:
     if not access.require_public_feature(
-        handler, "manual_wrecks", "Generowanie zgłoszeń przez niezalogowanych jest teraz wyłączone."
+        handler, "report_packages", "Generowanie raportów przez niezalogowanych jest teraz wyłączone."
     ):
         return
     try:
@@ -208,37 +160,6 @@ def handle_field_photo_report_package(handler) -> None:
             "Field photo report package creation failed",
             exc,
             public_error="Nie udało się przygotować raportu ze zdjęć terenowych.",
-        )
-
-
-def handle_wreck_photo_upload(handler, wreck_id: str) -> None:
-    if not access.require_public_feature(
-        handler, "photo_uploads", "Dodawanie zdjec przez niezalogowanych jest teraz wylaczone."
-    ):
-        return
-    if not http_admin_session.is_admin(handler):
-        http_responses.send_json(
-            handler,
-            403,
-            {"error": "Dodaj zdjęcie terenowe z tokenem edycji zamiast dopinać plik bezpośrednio do sprawy."},
-        )
-        return
-    try:
-        _, files = http_request_body.read_multipart_form(handler, core_config.MAX_WRECK_PHOTO_BODY_BYTES)
-        photos = [file for file in files if file.field_name in {"photos", "photos[]", "photo"}]
-        result = attach_wreck_photos(wreck_id, photos, core_config.WRECKS_DIR)
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Wreck photo upload failed",
-            exc,
-            public_error="Nie udało się zapisać zdjęć sprawy pojazdu.",
         )
 
 
@@ -343,54 +264,4 @@ def handle_owner_review_field_photo(handler, photo_id: str) -> None:
             "Field photo owner review update failed",
             exc,
             public_error="Nie udało się zapisać anonimizacji zdjęcia.",
-        )
-
-
-def handle_save_wreck(handler) -> None:
-    try:
-        data = http_request_body.read_json_body(handler)
-        if not access.require_public_feature(
-            handler, "manual_wrecks", "Dodawanie pinezek jest teraz wylaczone dla niezalogowanych."
-        ):
-            return
-        photo_ids = data.get("field_photo_ids") if isinstance(data.get("field_photo_ids"), list) else []
-        if not photo_ids:
-            raise ValueError("Utworzenie sprawy pojazdu wymaga co najmniej jednego zatwierdzonego zdjęcia z miejsca.")
-        is_admin = http_admin_session.is_admin(handler)
-        review_status = "approved" if is_admin else "pending"
-        submission_owner = None if is_admin else access.submission_owner(handler)
-        if not is_admin:
-            access.ensure_public_submission_quota(handler, additional_bytes=0, additional_items=1)
-        result = save_vehicle_case(
-            data.get("lat"),
-            data.get("lon"),
-            core_config.WRECKS_DIR,
-            dedupe_existing=is_admin,
-            public_review_status=review_status,
-            submission_owner=submission_owner,
-        )
-        wreck_id = str(result.get("wreck", {}).get("id") or "")
-        try:
-            attach_result = attach_field_photos_to_wreck(
-                wreck_id,
-                photo_ids,
-                core_config.FIELD_PHOTOS_DIR,
-                core_config.WRECKS_DIR,
-            )
-        except Exception:
-            if result.get("created") and wreck_id:
-                delete_wreck(wreck_id, core_config.WRECKS_DIR)
-            raise
-        result["wreck"] = attach_result["wreck"]
-        result["attached_count"] = attach_result["attached_count"]
-        http_responses.send_json(handler, 200, result)
-    except (FileNotFoundError, TypeError, ValueError) as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Wreck save failed",
-            exc,
-            public_error="Nie udało się zapisać sprawy pojazdu.",
         )

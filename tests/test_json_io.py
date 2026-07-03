@@ -9,8 +9,7 @@ from core import (
     json_io,
     photo_retention,
     privacy_requests,
-    wreck_photo_transfers,
-    wrecks_store,
+    report_evidence,
 )
 
 
@@ -44,8 +43,7 @@ class AtomicJsonWriteTests(unittest.TestCase):
             (field_photos, "_write_json"),
             (photo_retention, "_write_json"),
             (privacy_requests, "_write_json"),
-            (wreck_photo_transfers, "_write_json"),
-            (wrecks_store, "write_json"),
+            (report_evidence, "_write_json"),
         )
 
         with TemporaryDirectory() as tmp:

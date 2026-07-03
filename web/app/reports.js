@@ -1,88 +1,3 @@
-function resetWreckPhotoModal(wreckId) {
-    const form = document.getElementById('wreck-photo-form');
-    const status = document.getElementById('wreck-photo-status');
-    const submit = document.getElementById('wreck-photo-submit');
-    const filesInput = document.getElementById('wreck-photo-files');
-    form?.reset();
-    updateFilePickerSummary(filesInput);
-    document.getElementById('wreck-photo-wreck-id').value = wreckId;
-    if (status) status.textContent = '';
-    if (submit) {
-        submit.disabled = false;
-        submit.querySelector('span').textContent = t('modal.wreckPhoto.submit');
-    }
-}
-
-async function openWreckPhotoModal(wreckId) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
-    const id = safeWreckId(wreckId);
-    if (!id) return;
-    resetWreckPhotoModal(id);
-    openModal('modal-wreck-photo-upload');
-}
-
-function validateWreckPhotoFiles(files) {
-    const photoFiles = Array.from(files || []);
-    if (!photoFiles.length) {
-        throw new Error(t('modal.wreckPhoto.noFiles'));
-    }
-    if (photoFiles.length > WRECK_PHOTO_MAX_COUNT) {
-        throw new Error(t('modal.wreckPhoto.fileCountError', { n: WRECK_PHOTO_MAX_COUNT }));
-    }
-    for (const file of photoFiles) {
-        if (file.size > WRECK_PHOTO_MAX_BYTES) {
-            throw new Error(t('modal.wreckPhoto.fileLimitError'));
-        }
-        if (file.type && !FIELD_PHOTO_ALLOWED_TYPES.has(file.type)) {
-            throw new Error(t('modal.wreckPhoto.fileTypeError'));
-        }
-    }
-}
-
-async function submitWreckPhotoUpload(event) {
-    event.preventDefault();
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
-    const form = document.getElementById('wreck-photo-form');
-    const wreckId = safeWreckId(document.getElementById('wreck-photo-wreck-id')?.value);
-    const status = document.getElementById('wreck-photo-status');
-    const submit = document.getElementById('wreck-photo-submit');
-    if (!form || !wreckId) return;
-
-    try {
-        validateWreckPhotoFiles(document.getElementById('wreck-photo-files')?.files);
-    } catch (err) {
-        if (status) status.textContent = err.message;
-        return;
-    }
-
-    if (submit) {
-        submit.disabled = true;
-        submit.querySelector('span').textContent = t('modal.wreckPhoto.uploading');
-    }
-    if (status) status.textContent = t('modal.wreckPhoto.uploading');
-
-    try {
-        const data = await apiJson(`${WRECKS_URL}/${encodeURIComponent(wreckId)}/photos`, {
-            method: 'POST',
-            body: new FormData(form),
-        });
-        if (data.status !== 'ok') {
-            throw new Error(data.error || t('modal.wreckPhoto.saveError'));
-        }
-        await loadSavedWrecks();
-        closeModal();
-        statusEl.textContent = t('modal.wreckPhoto.saved', { n: data.photo_count || 0 });
-        statusEl.className = 'ok';
-    } catch (err) {
-        if (status) status.textContent = apiErrorMessage(err, t('modal.wreckPhoto.saveError'));
-    } finally {
-        if (submit) {
-            submit.disabled = false;
-            submit.querySelector('span').textContent = t('modal.wreckPhoto.submit');
-        }
-    }
-}
-
 function localDatetimeValue(date = new Date()) {
     const pad = n => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -123,7 +38,6 @@ function resetReportPackageModal(target) {
     revokeReportPackageDownloadUrls();
     reportPackageTarget = target;
     updatePublicFeatureAccess();
-    document.getElementById('report-wreck-id').value = target?.wreckId || '';
     const observedAt = form?.querySelector('[name="observed_at"]');
     if (observedAt) observedAt.value = localDatetimeValue();
     if (result) result.hidden = true;
@@ -133,13 +47,6 @@ function resetReportPackageModal(target) {
         submit.disabled = false;
         submit.querySelector('span').textContent = t('modal.report.submit');
     }
-}
-
-async function openReportPackageModal(wreckId) {
-    const id = safeWreckId(wreckId);
-    if (!id) return;
-    resetReportPackageModal({ type: 'wreck', wreckId: id });
-    openModal('modal-report-package');
 }
 
 async function openFieldPhotoReportPackageModal(lat, lon, photoIds) {
@@ -176,18 +83,11 @@ async function submitReportPackage(event) {
 
     try {
         const formData = new FormData(form);
-        let reportUrl = '';
-        if (target.type === 'field-photos') {
-            formData.set('photo_ids', JSON.stringify(target.photoIds || []));
-            formData.set('lat', String(target.lat));
-            formData.set('lon', String(target.lon));
-            reportUrl = '/api/field-photo-reports/report-package';
-        } else {
-            const wreckId = safeWreckId(target.wreckId || document.getElementById('report-wreck-id')?.value);
-            if (!wreckId) throw new Error(t('wreck.reportPackageError'));
-            const reportPath = adminAuthenticated ? 'report-package' : 'public-report-package';
-            reportUrl = `${WRECKS_URL}/${encodeURIComponent(wreckId)}/${reportPath}`;
-        }
+        if (target.type !== 'field-photos') throw new Error(t('wreck.reportPackageError'));
+        formData.set('photo_ids', JSON.stringify(target.photoIds || []));
+        formData.set('lat', String(target.lat));
+        formData.set('lon', String(target.lon));
+        const reportUrl = '/api/field-photo-reports/report-package';
         const data = await apiJson(reportUrl, {
             method: 'POST',
             body: formData,

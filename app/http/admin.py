@@ -14,15 +14,8 @@ from core.field_photos import (
 )
 from core.privacy_requests import list_privacy_requests, update_privacy_request
 from core.submission_limits import pending_submission_usage
-from core.wrecks import (
-    delete_wreck,
-    list_wreck_photo_review_items,
-    list_wreck_review_items,
-    review_wreck,
-)
-from core.wrecks_attachments import delete_wreck_photo, review_wreck_photo
 
-_ADMIN_PHOTO_SEARCH_FIELDS = ("id", "photo_id", "wreck_id", "original_filename", "issue_type")
+_ADMIN_PHOTO_SEARCH_FIELDS = ("id", "photo_id", "original_filename", "issue_type")
 
 
 def handle_admin_status(handler) -> None:
@@ -36,7 +29,6 @@ def handle_admin_status(handler) -> None:
         if authenticated:
             payload["pending_submissions"] = pending_submission_usage(
                 owner=None,
-                wrecks_dir=core_config.WRECKS_DIR,
                 field_photos_dir=core_config.FIELD_PHOTOS_DIR,
                 private_dir=core_config.PRIVATE_PHOTOS_DIR,
             )
@@ -85,9 +77,7 @@ def handle_admin_logout(handler) -> None:
 
 
 def admin_photo_review_items() -> list[dict]:
-    return list_field_photo_review_items(core_config.FIELD_PHOTOS_DIR) + list_wreck_photo_review_items(
-        core_config.WRECKS_DIR
-    )
+    return list_field_photo_review_items(core_config.FIELD_PHOTOS_DIR)
 
 
 def admin_photo_exact_ids(query: dict[str, list[str]]) -> set[str]:
@@ -101,7 +91,7 @@ def filter_admin_photos_by_status(photos: list[dict], status_filter: str) -> lis
 
 
 def filter_admin_photos_by_scope(photos: list[dict], scope_filter: str) -> list[dict]:
-    if scope_filter not in {"field", "wreck"}:
+    if scope_filter != "field":
         return photos
     return [photo for photo in photos if photo.get("scope") == scope_filter]
 
@@ -163,28 +153,6 @@ def handle_admin_photos(handler) -> None:
         )
 
 
-def handle_admin_wrecks(handler) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    query = parse_qs(urlsplit(handler.path).query)
-    status_filter = (query.get("status") or ["pending"])[0]
-    try:
-        wrecks = list_wreck_review_items(core_config.WRECKS_DIR, status=status_filter)
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-        return
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Admin wreck queue lookup failed",
-            exc,
-            public_error="Nie udało się pobrać kolejki spraw pojazdów.",
-        )
-        return
-    http_responses.send_json(handler, 200, {"status": "ok", "wrecks": wrecks})
-
-
 def handle_admin_privacy_requests(handler) -> None:
     if not http_admin_session.require_admin(handler):
         return
@@ -218,14 +186,13 @@ def handle_delete_admin_photo(handler, route: tuple[str, tuple[str, ...]]) -> No
         return
     try:
         scope, ids = route
-        if scope == "field":
-            result = delete_field_photo(
-                ids[0],
-                core_config.FIELD_PHOTOS_DIR,
-                private_dir=core_config.PRIVATE_PHOTOS_DIR,
-            )
-        else:
-            result = delete_wreck_photo(ids[0], ids[1], core_config.WRECKS_DIR)
+        if scope != "field":
+            raise ValueError("Nieprawidłowy zakres zdjęcia.")
+        result = delete_field_photo(
+            ids[0],
+            core_config.FIELD_PHOTOS_DIR,
+            private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        )
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})
@@ -269,77 +236,21 @@ def handle_delete_field_photo(handler, request_path: str) -> None:
         )
 
 
-def handle_delete_wreck(handler, request_path: str) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    wreck_id = request_path.removeprefix("/api/wrecks/").strip("/")
-    if not wreck_id or "/" in wreck_id:
-        http_responses.send_json(handler, 400, {"error": "Nieprawidłowy identyfikator sprawy pojazdu."})
-        return
-    try:
-        result = delete_wreck(wreck_id, core_config.WRECKS_DIR)
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Wreck delete failed",
-            exc,
-            public_error="Nie udało się usunąć sprawy pojazdu.",
-        )
-
-
-def handle_review_wreck(handler, wreck_id: str) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    try:
-        data = http_request_body.read_json_body(handler)
-        result = review_wreck(
-            wreck_id,
-            core_config.WRECKS_DIR,
-            status=data.get("public_review_status"),
-        )
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Wreck review update failed",
-            exc,
-            public_error="Nie udało się zapisać decyzji przeglądu sprawy.",
-        )
-
-
 def handle_review_photo(handler, route: tuple[str, tuple[str, ...]]) -> None:
     if not http_admin_session.require_admin(handler):
         return
     try:
         data = http_request_body.read_json_body(handler)
         scope, ids = route
-        if scope == "field":
-            result = review_field_photo(
-                ids[0],
-                core_config.FIELD_PHOTOS_DIR,
-                status=data.get("public_review_status"),
-                redactions=data.get("redactions") or [],
-                private_dir=core_config.PRIVATE_PHOTOS_DIR,
-            )
-        else:
-            result = review_wreck_photo(
-                ids[0],
-                ids[1],
-                core_config.WRECKS_DIR,
-                status=data.get("public_review_status"),
-                redactions=data.get("redactions") or [],
-            )
+        if scope != "field":
+            raise ValueError("Nieprawidłowy zakres zdjęcia.")
+        result = review_field_photo(
+            ids[0],
+            core_config.FIELD_PHOTOS_DIR,
+            status=data.get("public_review_status"),
+            redactions=data.get("redactions") or [],
+            private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        )
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})

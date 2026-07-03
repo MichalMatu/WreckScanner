@@ -8,7 +8,6 @@ extend-exclude = [
     "analiza",
     "node_modules",
     "output",
-    "zidentyfikowane_wraki",
 ]
 
 [tool.ruff.lint]

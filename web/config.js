@@ -11,14 +11,12 @@ const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 // Endpointy są relatywne, żeby aplikacja działała przez tunel/proxy bez
 // twardego hosta i portu w JS.
 const SETTINGS_URL = '/api/settings';
-const WRECKS_URL = '/api/wrecks';
 const FIELD_PHOTOS_URL = '/api/field-photos';
 const CADASTRAL_IDENTIFY_URL = '/api/cadastral/identify';
 const ADMIN_STATUS_URL = '/api/admin/status';
 const ADMIN_LOGIN_URL = '/api/admin/login';
 const ADMIN_LOGOUT_URL = '/api/admin/logout';
 const ADMIN_PHOTOS_URL = '/api/admin/photos';
-const ADMIN_WRECKS_URL = '/api/admin/wrecks';
 const ADMIN_PRIVACY_REQUESTS_URL = '/api/admin/privacy-requests';
 const ADMIN_PHOTO_RETENTION_URL = '/api/admin/photo-retention';
 
@@ -32,7 +30,7 @@ const PUBLIC_LAYER_KEYS = {
 };
 
 const PUBLIC_FEATURE_KEYS = {
-    manualWrecks: 'manual_wrecks',
+    reportPackages: 'report_packages',
     photoUploads: 'photo_uploads',
 };
 
@@ -86,8 +84,6 @@ const MAP_POPUP_PREVIEW_MAX_IMAGES = 6;
 
 // Uploady: backend dalej waliduje te same limity, frontend tylko daje szybszy
 // komunikat przed wysłaniem formularza.
-const WRECK_PHOTO_MAX_COUNT = 25;
-const WRECK_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FIELD_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FIELD_PHOTO_MAX_FILES = 25;
 const FIELD_PHOTO_EDIT_TOKEN_MIN_LENGTH = 8;
@@ -108,9 +104,6 @@ const FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
 // Grupowanie zdjęć terenowych na mapie. 1 m jest celowo ciasne: większy promień
 // scalał zdjęcia z sąsiednich pojazdów albo różnych stron tego samego parkingu.
 const FIELD_PHOTO_GROUP_RADIUS_M = 1;
-// Maksymalna odległość przeciągniętej pinezki zdjęć od sprawy pojazdu, przy której zdjęcia
-// są przenoszone do tej sprawy i znikają z warstwy zdjęć terenowych.
-const FIELD_PHOTO_ATTACH_TO_WRECK_RADIUS_M = 1;
 
 // Timery UI. Krótsze wartości dają szybszą reakcję kosztem większej liczby
 // requestów/przełączeń warstw; dłuższe uspokajają słabsze urządzenia.

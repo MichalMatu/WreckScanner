@@ -4,7 +4,6 @@ from io import BytesIO
 from unittest.mock import patch
 
 from app.http import access
-from app.http import public as http_public
 
 
 class FakeHandler:
@@ -101,19 +100,6 @@ class HttpAccessContractTests(unittest.TestCase):
         ):
             self.assertFalse(access.public_field_photo_allowed(handler, draft_photo))
 
-    def test_public_wreck_photo_upload_requires_tokenized_field_photo_flow(self):
-        handler = FakeHandler()
-
-        with (
-            patch.object(http_public.http_admin_session, "is_admin", return_value=False),
-            patch.object(http_public.http_request_body, "read_multipart_form") as read_form,
-        ):
-            http_public.handle_wreck_photo_upload(handler, "wreck_51100000_17200000")
-
-        self.assertEqual(handler.status, 403)
-        self.assertIn("tokenem edycji", handler.payload["error"])
-        read_form.assert_not_called()
-
     def test_public_submission_quota_uses_hashed_owner(self):
         handler = FakeHandler()
 
@@ -127,71 +113,6 @@ class HttpAccessContractTests(unittest.TestCase):
         self.assertTrue(kwargs["owner"].startswith("public:"))
         self.assertEqual(kwargs["additional_bytes"], 12)
         self.assertEqual(kwargs["additional_items"], 2)
-
-    def test_public_save_wreck_disables_dedupe_to_existing_case(self):
-        handler = FakeHandler()
-        wreck_id = "wreck_51100000_17200000"
-
-        with (
-            patch.object(
-                http_public.http_request_body,
-                "read_json_body",
-                return_value={"lat": 51.1, "lon": 17.2, "field_photo_ids": ["photo_20260604T201000Z_11111111"]},
-            ),
-            patch.object(http_public.access, "require_public_feature", return_value=True),
-            patch.object(http_public.http_admin_session, "is_admin", return_value=False),
-            patch.object(http_public.access, "submission_owner", return_value="public:test"),
-            patch.object(http_public.access, "ensure_public_submission_quota") as quota,
-            patch.object(
-                http_public,
-                "save_vehicle_case",
-                return_value={"status": "ok", "created": True, "wreck": {"id": wreck_id}},
-            ) as save_case,
-            patch.object(
-                http_public,
-                "attach_field_photos_to_wreck",
-                return_value={"wreck": {"id": wreck_id}, "attached_count": 1},
-            ),
-        ):
-            http_public.handle_save_wreck(handler)
-
-        self.assertEqual(handler.status, 200)
-        self.assertFalse(save_case.call_args.kwargs["dedupe_existing"])
-        self.assertEqual(save_case.call_args.kwargs["public_review_status"], "pending")
-        self.assertEqual(save_case.call_args.kwargs["submission_owner"], "public:test")
-        quota.assert_called_once()
-
-    def test_admin_save_wreck_keeps_dedupe_enabled(self):
-        handler = FakeHandler()
-        wreck_id = "wreck_51100000_17200000"
-
-        with (
-            patch.object(
-                http_public.http_request_body,
-                "read_json_body",
-                return_value={"lat": 51.1, "lon": 17.2, "field_photo_ids": ["photo_20260604T201000Z_11111111"]},
-            ),
-            patch.object(http_public.access, "require_public_feature", return_value=True),
-            patch.object(http_public.http_admin_session, "is_admin", return_value=True),
-            patch.object(http_public.access, "ensure_public_submission_quota") as quota,
-            patch.object(
-                http_public,
-                "save_vehicle_case",
-                return_value={"status": "ok", "created": False, "wreck": {"id": wreck_id}},
-            ) as save_case,
-            patch.object(
-                http_public,
-                "attach_field_photos_to_wreck",
-                return_value={"wreck": {"id": wreck_id}, "attached_count": 1},
-            ),
-        ):
-            http_public.handle_save_wreck(handler)
-
-        self.assertEqual(handler.status, 200)
-        self.assertTrue(save_case.call_args.kwargs["dedupe_existing"])
-        self.assertEqual(save_case.call_args.kwargs["public_review_status"], "approved")
-        self.assertIsNone(save_case.call_args.kwargs["submission_owner"])
-        quota.assert_not_called()
 
 
 if __name__ == "__main__":
