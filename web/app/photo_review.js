@@ -21,10 +21,8 @@ async function openPhotoReviewForFieldPhotoGroup(encodedPhotoIds) {
     photoReviewExactPhotoIds = photoIds;
     openModal('modal-photo-review');
     const filter = document.getElementById('photo-review-filter');
-    const scope = document.getElementById('photo-review-scope');
     const search = document.getElementById('photo-review-search');
     if (filter) filter.value = 'all';
-    if (scope) scope.value = 'field';
     if (search) search.value = photoIds.join(', ');
     await loadPhotoReviewQueue();
 }
@@ -222,7 +220,6 @@ function renderPhotoReviewQueue() {
     }
     list.innerHTML = photoReviewItems.map((item, index) => {
         const active = activePhotoReview?.id === item.id;
-        const scope = t('modal.photoReview.scopeField');
         const display = photoReviewQueueDisplay(item, index);
         const detailHtml = display.detail
             ? `<span class="photo-review-detail">${escapeHtml(display.detail)}</span>`
@@ -231,7 +228,6 @@ function renderPhotoReviewQueue() {
             <button type="button" class="photo-review-item ${active ? 'is-active' : ''}" onclick="selectPhotoReview('${escapeHtml(item.id)}')">
                 <strong>${escapeHtml(display.title)}</strong>
                 <span class="photo-review-pill">${escapeHtml(photoReviewStatusLabel(item.public_review_status))}</span>
-                <span>${escapeHtml(scope)}</span>
                 ${detailHtml}
             </button>
         `;
@@ -243,10 +239,8 @@ async function openPhotoReviewModal() {
     setPhotoReviewMode('admin');
     photoReviewExactPhotoIds = [];
     const filter = document.getElementById('photo-review-filter');
-    const scope = document.getElementById('photo-review-scope');
     const search = document.getElementById('photo-review-search');
     if (filter) filter.value = 'pending';
-    if (scope) scope.value = 'all';
     if (search) search.value = '';
     openModal('modal-photo-review');
     await loadPhotoReviewQueue();
@@ -256,14 +250,12 @@ async function loadPhotoReviewQueue() {
     if (photoReviewMode !== 'admin') return;
     if (!adminAuthenticated && !(await ensureAdmin())) return;
     const filter = document.getElementById('photo-review-filter')?.value || 'pending';
-    const scope = document.getElementById('photo-review-scope')?.value || 'all';
     const query = document.getElementById('photo-review-search')?.value || '';
     const status = document.getElementById('photo-review-status');
     if (status) status.textContent = t('modal.photoReview.loading');
     try {
         const params = new URLSearchParams({
             status: filter,
-            scope,
             q: photoReviewExactPhotoIds.length ? '' : query,
             ts: String(Date.now()),
         });

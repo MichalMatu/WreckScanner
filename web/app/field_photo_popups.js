@@ -48,7 +48,7 @@ function fieldPhotoGroupActions(group) {
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
     const reportPackagesAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
     const issueType = FIELD_PHOTO_ISSUE_TYPES.has(group.issueType) ? group.issueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    const canCreateVehicleCase = coordinatesOk && reportPackagesAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    const canCreateVehicleReport = coordinatesOk && reportPackagesAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const canAddFieldPhotosHere = coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
         && fieldPhotoIssueAllowed(issueType);
@@ -60,7 +60,7 @@ function fieldPhotoGroupActions(group) {
             'M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'
         )
         : '';
-    const reportButton = canCreateVehicleCase
+    const reportButton = canCreateVehicleReport
         ? mapPopupIconAction(
             'map-popup-action--report',
             t('fieldPhoto.reportPackage'),

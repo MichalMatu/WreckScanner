@@ -1,4 +1,4 @@
-// Wrocław and Geoportal sources are preview-only base layers; saved cases fetch
+// Wroclaw and Geoportal sources are preview-only base layers; reports fetch
 // their own small historical crops by location.
 let currentMapSourceIndex = Math.max(0, MAP_SOURCES.findIndex(source => source.key === DEFAULT_MAP_SOURCE_KEY));
 let mapSourceLayer = null;

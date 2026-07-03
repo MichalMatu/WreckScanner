@@ -664,12 +664,8 @@
                         <option value="rejected" data-i18n="modal.photoReview.rejected">Odrzucone</option>
                         <option value="all" data-i18n="modal.photoReview.all">Wszystkie</option>
                     </select>
-                    <select class="modal-input" id="photo-review-scope" onchange="loadPhotoReviewQueue()">
-                        <option value="all" data-i18n="modal.photoReview.scopeAll">Wszystkie źródła</option>
-                        <option value="field" data-i18n="modal.photoReview.scopeField">zdjęcie terenowe</option>
-                    </select>
                     <input class="modal-input" id="photo-review-search" type="search"
-                        data-i18n-attr="placeholder:modal.photoReview.search" placeholder="Szukaj id / sprawy">
+                        data-i18n-attr="placeholder:modal.photoReview.search" placeholder="Szukaj id zdjęcia / nazwy pliku">
                 </section>
                 <div class="photo-review-layout">
                     <div class="photo-review-list" id="photo-review-list"></div>
@@ -900,7 +896,7 @@
                 onsubmit="submitPrivacyRequest(event)">
                 <p class="problem-report-lead" data-i18n="page.report.intro">Użyj formularza, jeżeli chcesz zgłosić
                     prośbę o usunięcie, anonimizację albo korektę publicznego wpisu. Podaj link do wpisu, identyfikator
-                    zdjęcia albo inny opis, który pozwoli administratorowi znaleźć sprawę.</p>
+                    zdjęcia albo inny opis, który pozwoli administratorowi znaleźć zgłoszenie.</p>
 
                 <section class="modal-section">
                     <div class="report-grid">
@@ -966,7 +962,7 @@
                 </section>
 
                 <section class="modal-section">
-                    <label class="modal-label" data-i18n="modal.report.case">Opis sprawy</label>
+                    <label class="modal-label" data-i18n="modal.report.description">Opis zgłoszenia</label>
                     <div class="report-grid">
                         <label class="report-field report-field--wide">
                             <span data-i18n="modal.report.location">Dokładne miejsce pojazdu</span>
@@ -1060,8 +1056,8 @@
                 </section>
 
                 <section class="welcome-section">
-                    <h3 data-i18n="modal.help.caseTitle">Jak przygotować zgłoszenie</h3>
-                    <p data-i18n="modal.help.caseBody" data-i18n-html>Kliknij pinezkę pojazdu lub zdjęcia i wybierz
+                    <h3 data-i18n="modal.help.reportTitle">Jak przygotować zgłoszenie</h3>
+                    <p data-i18n="modal.help.reportBody" data-i18n-html>Kliknij pinezkę pojazdu lub zdjęcia i wybierz
                         generowanie zgłoszenia. Aplikacja dołączy aktualne dane i wycinki ortofoto.</p>
                 </section>
 

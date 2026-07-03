@@ -86,12 +86,14 @@ class FrontendContracts(unittest.TestCase):
     def test_frontend_removes_retired_vehicle_case_review_panel(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
         review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
+        admin_py = (ROOT_DIR / "app" / "http" / "admin.py").read_text(encoding="utf-8")
         dispatch_py = (ROOT_DIR / "app" / "http" / "dispatch.py").read_text(encoding="utf-8")
         routes_py = (ROOT_DIR / "app" / "http" / "routes.py").read_text(encoding="utf-8")
-        frontend = html + config_js + vehicle_layer_js + i18n_js + review_css
+        frontend = html + config_js + photo_review_js + vehicle_layer_js + i18n_js + review_css
 
         self.assertFalse((ROOT_DIR / "web" / "app" / "wreck_review.js").exists())
         self.assertFalse((ROOT_DIR / "web" / "app" / "saved_wrecks.js").exists())
@@ -112,6 +114,19 @@ class FrontendContracts(unittest.TestCase):
             self.assertNotIn(retired, frontend)
         self.assertNotIn("/api/admin/wrecks", dispatch_py + routes_py)
         self.assertNotIn("/api/wrecks", dispatch_py + routes_py + config_js + html)
+        self.assertIn("Szukaj id zdjęcia / nazwy pliku", html + i18n_js)
+        self.assertIn("Search photo id / filename", i18n_js)
+        for retired in (
+            "photo-review-scope",
+            "modal.photoReview.scopeAll",
+            "modal.photoReview.scopeField",
+            "Search id / case",
+            "Szukaj id / sprawy",
+            "filter_admin_photos_by_scope",
+            "scope_filter",
+            "params.set('scope'",
+        ):
+            self.assertNotIn(retired, frontend + admin_py)
 
     def test_frontend_uses_location_inspection_as_preview_only(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")

@@ -134,7 +134,7 @@ class ReportPackageTests(unittest.TestCase):
         self.assertEqual(safe_report_url("javascript:alert(1)"), "")
 
     def test_reject_report_package_files_rejects_uploaded_files(self):
-        with self.assertRaisesRegex(ValueError, "Zdjęcia do zgłoszenia"):
+        with self.assertRaisesRegex(ValueError, "zatwierdzonych zdjęć terenowych"):
             reject_report_package_files([UploadedFile("photos", "car.jpg", "image/jpeg", b"x")])
 
         reject_report_package_files([])

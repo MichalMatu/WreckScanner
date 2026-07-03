@@ -90,12 +90,6 @@ def filter_admin_photos_by_status(photos: list[dict], status_filter: str) -> lis
     return [photo for photo in photos if photo.get("public_review_status") == status_filter]
 
 
-def filter_admin_photos_by_scope(photos: list[dict], scope_filter: str) -> list[dict]:
-    if scope_filter != "field":
-        return photos
-    return [photo for photo in photos if photo.get("scope") == scope_filter]
-
-
 def filter_admin_photos_by_issue(photos: list[dict], issue_filter: str) -> list[dict]:
     if issue_filter == "all":
         return photos
@@ -125,12 +119,10 @@ def filter_admin_photos_by_search(photos: list[dict], search: str) -> list[dict]
 
 def filter_admin_photos(photos: list[dict], query: dict[str, list[str]]) -> list[dict]:
     status_filter = (query.get("status") or ["all"])[0]
-    scope_filter = (query.get("scope") or ["all"])[0]
     issue_filter = (query.get("issue_type") or ["all"])[0]
     search = str((query.get("q") or [""])[0]).strip().lower()
 
     photos = filter_admin_photos_by_status(photos, status_filter)
-    photos = filter_admin_photos_by_scope(photos, scope_filter)
     photos = filter_admin_photos_by_issue(photos, issue_filter)
     photos = filter_admin_photos_by_ids(photos, admin_photo_exact_ids(query))
     return filter_admin_photos_by_search(photos, search)

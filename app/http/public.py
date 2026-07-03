@@ -22,7 +22,10 @@ from core.uploads import UploadedFile
 
 def reject_report_package_files(files: list[UploadedFile]) -> None:
     if any(file.filename or file.data for file in files):
-        raise ValueError("Zdjęcia do zgłoszenia dodaj najpierw do sprawy i zanonimizuj przed wygenerowaniem raportu.")
+        raise ValueError(
+            "Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych. "
+            "Dodaj i zanonimizuj zdjęcia na mapie przed wygenerowaniem raportu."
+        )
 
 
 def _report_photo_ids(fields: dict[str, str]) -> list[str]:
