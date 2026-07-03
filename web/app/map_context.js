@@ -79,14 +79,8 @@ function cadastralCodeLabel(code) {
     return labelKey ? `${sourceCode} - ${t(labelKey)}` : sourceCode;
 }
 
-function cadastralParcelGeoportalUrl(parcel = {}) {
-    const parcelId = String(parcel.parcel_id || '').trim();
-    return parcelId ? `https://mapy.geoportal.gov.pl/mobile/?identifyParcel=${encodeURIComponent(parcelId)}` : '';
-}
-
 function cadastralParcelClipboardText(parcel = {}) {
     const primaryTerrain = cadastralCodeLabel(parcel.land_use || parcel.contour);
-    const geoportalUrl = cadastralParcelGeoportalUrl(parcel);
     const lines = [
         `${t('context.parcelTitle')}: ${parcel.parcel_number || '-'}`,
         `${t('context.parcelTerrainType')}: ${primaryTerrain || '-'}`,
@@ -97,7 +91,6 @@ function cadastralParcelClipboardText(parcel = {}) {
         `${t('context.parcelArea')}: ${parcel.area_ha ? `${parcel.area_ha} ha` : '-'}`,
         parcel.registry_group ? `${t('context.parcelRegistryGroup')}: ${parcel.registry_group}` : '',
         `${t('context.parcelPublishedAt')}: ${parcel.published_at || '-'}`,
-        geoportalUrl ? `Geoportal: ${geoportalUrl}` : '',
     ];
     return lines.filter(Boolean).join('\n');
 }
@@ -140,10 +133,6 @@ function cadastralParcelPopup(parcel = {}) {
             <strong>${escapeHtml(value)}</strong>
         </div>
     `).join('');
-    const geoportalUrl = cadastralParcelGeoportalUrl(parcel);
-    const links = popupLinks([
-        popupCompactLink(geoportalUrl, t('context.parcelOpenGeoportal'), t('context.parcelOpenGeoportal')),
-    ]);
     const actions = popupActions([
         `<button type="button" class="map-popup-text-action" onclick="copyActiveCadastralParcel()">${escapeHtml(t('context.parcelCopyData'))}</button>`,
     ]);
@@ -151,7 +140,6 @@ function cadastralParcelPopup(parcel = {}) {
         <div class="map-popup map-popup--parcel">
             ${popupHeader(t('context.parcelTitle'), parcel.parcel_number || '')}
             <div class="parcel-popup-rows">${rowHtml}</div>
-            ${links}
             ${actions}
         </div>
     `;

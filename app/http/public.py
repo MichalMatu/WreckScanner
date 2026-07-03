@@ -5,6 +5,7 @@ from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from app.http import static_files as http_static_files
+from app.http.public_data import lookup_cadastral_parcel
 from core import config as core_config
 from core.field_photos import (
     discard_field_photo_drafts_by_owner,
@@ -33,6 +34,20 @@ def _report_photo_ids(fields: dict[str, str]) -> list[str]:
     if not isinstance(parsed, list):
         raise ValueError("Nieprawidłowa lista zdjęć terenowych.")
     return [str(item or "").strip() for item in parsed if str(item or "").strip()]
+
+
+def _report_cadastral_context(lat: str | None, lon: str | None) -> tuple[dict | None, str]:
+    try:
+        lat_float = float(lat or "")
+        lon_float = float(lon or "")
+    except ValueError:
+        return None, ""
+    try:
+        return lookup_cadastral_parcel(lat_float, lon_float), ""
+    except LookupError as exc:
+        return None, str(exc)
+    except Exception:
+        return None, "Nie udało się automatycznie pobrać danych działki ewidencyjnej."
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -141,11 +156,15 @@ def handle_field_photo_report_package(handler) -> None:
     try:
         fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
         reject_report_package_files(files)
+        parcel, parcel_error = _report_cadastral_context(fields.get("lat"), fields.get("lon"))
         result = create_field_photo_report_package(
             fields,
             _report_photo_ids(fields),
             lat=fields.get("lat"),
             lon=fields.get("lon"),
+            place_url=fields.get("place_url"),
+            parcel=parcel,
+            parcel_error=parcel_error,
             field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)

@@ -10,9 +10,10 @@ from unittest.mock import patch
 from PIL import Image
 
 import core.report_pdf as report_pdf
+from app.http import public as http_public
 from app.http.public import reject_report_package_files
 from core.report_assets import report_package_download_name
-from core.report_models import validate_report_fields
+from core.report_models import safe_report_url, validate_report_fields
 from core.report_packages import create_field_photo_report_package
 from core.uploads import UploadedFile
 
@@ -126,16 +127,48 @@ class ReportPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "zbyt długie"):
             validate_report_fields({**valid_fields(), "vehicle_description": "x" * 4001})
 
+        self.assertEqual(
+            safe_report_url("https://wreckscanner.pl/?lat=51&lon=17"),
+            "https://wreckscanner.pl/?lat=51&lon=17",
+        )
+        self.assertEqual(safe_report_url("javascript:alert(1)"), "")
+
     def test_reject_report_package_files_rejects_uploaded_files(self):
         with self.assertRaisesRegex(ValueError, "Zdjęcia do zgłoszenia"):
             reject_report_package_files([UploadedFile("photos", "car.jpg", "image/jpeg", b"x")])
 
         reject_report_package_files([])
 
+    def test_report_cadastral_context_is_best_effort(self):
+        with patch("app.http.public.lookup_cadastral_parcel", return_value={"parcel_number": "87"}):
+            parcel, error = http_public._report_cadastral_context("51.1", "17.2")
+
+        self.assertEqual(parcel, {"parcel_number": "87"})
+        self.assertEqual(error, "")
+
+        with patch("app.http.public.lookup_cadastral_parcel", side_effect=RuntimeError("upstream")):
+            parcel, error = http_public._report_cadastral_context("51.1", "17.2")
+
+        self.assertIsNone(parcel)
+        self.assertIn("automatycznie pobrać", error)
+
     def test_create_field_photo_report_package_uses_field_photo_group_without_archived_case(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_dir, photo_id = create_field_photo_fixture(root)
+            place_url = f"https://wreckscanner.pl/?lat=51.100000&lon=17.200000&z=20&photo={photo_id}"
+            parcel = {
+                "parcel_number": "87",
+                "parcel_id": "026401_1.0022.AR_27.87",
+                "district": "Południe",
+                "municipality": "Wrocław",
+                "county": "Wrocław",
+                "voivodeship": "dolnośląskie",
+                "area_ha": "0.5964",
+                "registry_group": "7.1",
+                "contour": "B",
+                "published_at": "2026-06-05",
+            }
 
             with patch("core.report_evidence.save_location_crops", side_effect=fake_save_location_crops):
                 result = create_field_photo_report_package(
@@ -143,6 +176,8 @@ class ReportPackageTests(unittest.TestCase):
                     [photo_id],
                     lat=51.1,
                     lon=17.2,
+                    place_url=place_url,
+                    parcel=parcel,
                     field_photos_dir=field_dir,
                 )
 
@@ -150,7 +185,18 @@ class ReportPackageTests(unittest.TestCase):
             self.assertEqual(result["zip_filename"], report_package_download_name(result["package_id"], "zip"))
             self.assertNotIn("zip_url", result)
             self.assertNotIn("pdf_url", result)
-            self.assertEqual(base64.b64decode(result["pdf_base64"])[:5], b"%PDF-")
+            self.assertIn(place_url, result["body"])
+            self.assertIn("Dane działki ewidencyjnej", result["body"])
+            self.assertIn("- Numer działki: 87", result["body"])
+            self.assertIn("- Typ terenu: B - tereny mieszkaniowe", result["body"])
+            self.assertNotIn("- Powierzchnia:", result["body"])
+            self.assertNotIn("- Kontur:", result["body"])
+            self.assertNotIn("- Użytek:", result["body"])
+            self.assertNotIn("Geoportal działki", result["body"])
+            self.assertNotIn("identifyParcel", result["body"])
+            pdf_bytes = base64.b64decode(result["pdf_base64"])
+            self.assertEqual(pdf_bytes[:5], b"%PDF-")
+            self.assertIn(b"https://wreckscanner.pl/?lat=51.100000", pdf_bytes)
             self.assertFalse((root / "zidentyfikowane_wraki").exists())
             with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
                 names = set(archive.namelist())
@@ -162,6 +208,21 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertIn("miniatury_historyczne/2025.jpg", names)
                 self.assertNotIn(f"field_photos/{photo_id}/original.jpg", names)
                 self.assertFalse(any(name.endswith(".json") for name in names))
+                text = archive.read("zgloszenie.txt").decode("utf-8")
+                report_html = archive.read("raport.html").decode("utf-8")
+                self.assertIn(place_url, text)
+                self.assertIn("Identyfikator działki: 026401_1.0022.AR_27.87", text)
+                self.assertIn("Typ terenu: B - tereny mieszkaniowe", text)
+                self.assertNotIn("Powierzchnia:", text)
+                self.assertNotIn("Kontur:", text)
+                self.assertNotIn("Użytek:", text)
+                self.assertNotIn("Geoportal działki", text)
+                self.assertIn("Link do miejsca w WreckScanner", report_html)
+                self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", report_html)
+                self.assertIn("Typ terenu: B - tereny mieszkaniowe", report_html)
+                self.assertNotIn("Powierzchnia:", report_html)
+                self.assertNotIn("Kontur:", report_html)
+                self.assertNotIn("identifyParcel", report_html)
 
     def test_create_field_photo_report_package_requires_approved_vehicle_photos(self):
         with TemporaryDirectory() as tmp:

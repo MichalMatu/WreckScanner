@@ -1,6 +1,6 @@
 import unittest
 
-from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
+from core.cadastral import cadastral_code_label, cadastral_feature_info_params, parse_cadastral_feature_info
 
 
 class CadastralFeatureInfoTests(unittest.TestCase):
@@ -40,6 +40,10 @@ class CadastralFeatureInfoTests(unittest.TestCase):
         self.assertEqual(params["I"], "256")
         self.assertEqual(params["J"], "256")
         self.assertIn("1896", params["BBOX"])
+
+    def test_cadastral_code_label_expands_land_type_codes(self):
+        self.assertEqual(cadastral_code_label("B"), "B - tereny mieszkaniowe")
+        self.assertEqual(cadastral_code_label("Bi"), "Bi - inne tereny zabudowane")
 
 
 if __name__ == "__main__":

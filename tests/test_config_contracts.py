@@ -95,7 +95,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertIn("new URLSearchParams(window.location.search)", map_helpers_js)
         self.assertIn("params.has('lat') && params.has('lon') && params.has('z')", map_helpers_js)
         self.assertIn("const urlZoom = Number(params.get('z'))", map_helpers_js)
-        self.assertIn("function appPlaceUrl(lat, lon, zoom)", map_helpers_js)
+        self.assertIn("function appPlaceUrl(lat, lon, zoom, options = {})", map_helpers_js)
         self.assertIn("function squareBounds(start, end)", map_helpers_js)
         self.assertNotIn("function readStoredMapView()", app_js)
         self.assertNotIn("function squareBounds(start, end)", app_js)

@@ -1,5 +1,16 @@
 let vehicleMarkers = [];
 let vehicleLayerVisible = true;
+let pendingVehiclePhotoFocusId = '';
+let vehiclePhotoFocusDone = false;
+
+try {
+    pendingVehiclePhotoFocusId = String(new URLSearchParams(window.location.search).get('photo') || '')
+        .replace(/[^A-Za-z0-9_-]/g, '');
+    vehiclePhotoFocusDone = !pendingVehiclePhotoFocusId;
+} catch (_) {
+    pendingVehiclePhotoFocusId = '';
+    vehiclePhotoFocusDone = true;
+}
 
 function clearVehicleMarkers() {
     vehicleMarkers.forEach(marker => map.removeLayer(marker));
@@ -54,6 +65,24 @@ function buildVehicleGroups(photos = fieldPhotoLayerData) {
 
 function vehicleGroupPhotoCount(group) {
     return Array.isArray(group?.photos) ? group.photos.length : 0;
+}
+
+function vehicleGroupHasPhotoId(group, photoId) {
+    const safePhotoId = String(photoId || '').replace(/[^A-Za-z0-9_-]/g, '');
+    return Boolean(safePhotoId) && (group.photos || []).some(photo => safeFieldPhotoId(photo.id) === safePhotoId);
+}
+
+function focusVehicleMarkerFromUrl(group, marker) {
+    if (vehiclePhotoFocusDone || !pendingVehiclePhotoFocusId || !vehicleGroupHasPhotoId(group, pendingVehiclePhotoFocusId)) {
+        return;
+    }
+    vehiclePhotoFocusDone = true;
+    requestAnimationFrame(() => {
+        if (!map.hasLayer(marker)) return;
+        const targetZoom = Math.max(Number(map.getZoom()) || 0, 19);
+        map.setView([group.lat, group.lon], targetZoom, { animate: false });
+        marker.openPopup();
+    });
 }
 
 function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload = true } = {}) {
@@ -176,6 +205,7 @@ function placeVehicleMarkers() {
             ));
         }
         vehicleMarkers.push(marker);
+        focusVehicleMarkerFromUrl(group, marker);
     });
 }
 

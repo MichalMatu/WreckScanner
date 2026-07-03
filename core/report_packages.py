@@ -17,6 +17,20 @@ from core.map_crops import validate_crop_m
 from core.photo_privacy import is_approved, safe_child
 from core.report_evidence import first_last_year, save_report_evidence
 
+REPORT_PARCEL_KEYS = (
+    "parcel_number",
+    "parcel_id",
+    "district",
+    "municipality",
+    "county",
+    "voivodeship",
+    "area_ha",
+    "registry_group",
+    "land_use",
+    "contour",
+    "published_at",
+)
+
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc).replace(microsecond=0)
@@ -37,6 +51,21 @@ def _package_id(source_id: str, fields: dict[str, str]) -> str:
 
 def _report_crop_m(fields: dict[str, str]) -> float:
     return validate_crop_m(fields.get("crop_m") or config.REVIEW_CROP_M)
+
+
+def _report_context_text(value: Any, *, max_len: int = 240) -> str:
+    return str(value or "").replace("\x00", "").strip()[:max_len]
+
+
+def _normalize_report_parcel(parcel: dict[str, Any] | None) -> dict[str, str]:
+    if not isinstance(parcel, dict):
+        return {}
+    normalized: dict[str, str] = {}
+    for key in REPORT_PARCEL_KEYS:
+        value = _report_context_text(parcel.get(key), max_len=240)
+        if value:
+            normalized[key] = value
+    return normalized
 
 
 def _build_report_evidence(record: dict[str, Any], evidence_base_dir: Path, *, crop_m: float) -> dict[str, Any]:
@@ -171,10 +200,19 @@ def _field_photo_report_record(
     photo_records: list[tuple[Path, dict[str, Any]]],
     lat: Any,
     lon: Any,
+    place_url: Any = "",
+    parcel: dict[str, Any] | None = None,
+    parcel_error: Any = "",
     report_root: Path,
 ) -> dict[str, Any]:
     lat_float = _float_coordinate(lat, "lat")
     lon_float = _float_coordinate(lon, "lon")
+    safe_place_url = report_models.safe_report_url(place_url)
+    safe_parcel = _normalize_report_parcel(parcel)
+    safe_parcel_error = _report_context_text(parcel_error, max_len=500)
+    links = external_map_links(lat_float, lon_float)
+    if safe_place_url:
+        links["wreckscanner_place"] = safe_place_url
     attached_photos = [
         _copy_public_field_photo(record_dir, record, report_root) for record_dir, record in photo_records
     ]
@@ -190,7 +228,10 @@ def _field_photo_report_record(
         "labels_present": [],
         "first_seen_year": None,
         "last_seen_year": None,
-        "links": external_map_links(lat_float, lon_float),
+        "links": links,
+        "place_url": safe_place_url,
+        "parcel": safe_parcel,
+        "parcel_error": "" if safe_parcel else safe_parcel_error,
         "evidences": [],
         "attached_photos": attached_photos,
     }
@@ -228,6 +269,9 @@ def create_field_photo_report_package(
     *,
     lat: Any,
     lon: Any,
+    place_url: Any = "",
+    parcel: dict[str, Any] | None = None,
+    parcel_error: Any = "",
     field_photos_dir: Path,
 ) -> dict[str, Any]:
     crop_m = _report_crop_m(fields)
@@ -241,6 +285,9 @@ def create_field_photo_report_package(
             photo_records=photo_records,
             lat=lat,
             lon=lon,
+            place_url=place_url,
+            parcel=parcel,
+            parcel_error=parcel_error,
             report_root=work_dir,
         )
         evidence = _build_report_evidence(report_record, work_dir, crop_m=crop_m)

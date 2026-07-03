@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import html
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from core import config, report_models
 from core.photo_privacy import is_approved
+
+URL_RE = re.compile(r"https?://[^\s<]+")
 
 
 def _report_datetime_text(value: Any) -> str:
@@ -33,8 +36,23 @@ def _recipient_lines(recipient: str) -> list[str]:
     return ["Adresat:", recipient]
 
 
+def _linkify_urls(value: Any) -> str:
+    text = str(value or "")
+    parts: list[str] = []
+    last = 0
+    for match in URL_RE.finditer(text):
+        raw_url = match.group(0)
+        parts.append(html.escape(text[last : match.start()], quote=False))
+        escaped_href = html.escape(raw_url, quote=True)
+        escaped_label = html.escape(raw_url, quote=False)
+        parts.append(f'<a href="{escaped_href}" target="_blank" rel="noopener">{escaped_label}</a>')
+        last = match.end()
+    parts.append(html.escape(text[last:], quote=False))
+    return "".join(parts)
+
+
 def _text_block(value: str) -> str:
-    return html.escape(str(value or ""), quote=False)
+    return _linkify_urls(value)
 
 
 def _line_block(lines: list[str]) -> str:

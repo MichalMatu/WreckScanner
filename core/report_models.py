@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 REQUIRED_REPORT_FIELDS = {
     "reporter_name": "imię i nazwisko",
@@ -19,6 +20,16 @@ def safe_text(value: Any, max_len: int = 4000) -> str:
     text = str(value or "").replace("\x00", "").strip()
     if len(text) > max_len:
         raise ValueError("Jedno z pól formularza jest zbyt długie.")
+    return text
+
+
+def safe_report_url(value: Any, max_len: int = 1000) -> str:
+    text = safe_text(value, max_len=max_len)
+    if not text:
+        return ""
+    parsed = urlsplit(text)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
     return text
 
 

@@ -23,6 +23,42 @@ CADASTRAL_FIELD_KEYS = {
     "Data publikacji danych": "published_at",
 }
 
+CADASTRAL_LAND_USE_LABELS = {
+    "B": "tereny mieszkaniowe",
+    "Ba": "tereny przemysłowe",
+    "Bi": "inne tereny zabudowane",
+    "Bp": "zurbanizowane tereny niezabudowane lub w trakcie zabudowy",
+    "Bz": "tereny rekreacyjno-wypoczynkowe",
+    "dr": "droga / pas drogowy",
+    "K": "użytki kopalne",
+    "Ls": "lasy",
+    "Lz": "grunty zadrzewione i zakrzewione",
+    "N": "nieużytki",
+    "R": "grunty orne",
+    "S": "sady",
+    "Tk": "tereny kolejowe",
+    "Ti": "inne tereny komunikacyjne",
+    "Tp": "grunty przeznaczone pod budowę dróg lub kolei",
+    "Tr": "tereny różne",
+    "W": "rowy",
+    "Wp": "grunty pod wodami powierzchniowymi płynącymi",
+    "Ws": "grunty pod wodami powierzchniowymi stojącymi",
+    "Ł": "łąki trwałe",
+    "Ps": "pastwiska trwałe",
+}
+
+
+def cadastral_code_label(code: Any) -> str:
+    source_code = str(code or "").strip()
+    if not source_code:
+        return ""
+    label = (
+        CADASTRAL_LAND_USE_LABELS.get(source_code)
+        or CADASTRAL_LAND_USE_LABELS.get(source_code.lower())
+        or CADASTRAL_LAND_USE_LABELS.get(source_code.upper())
+    )
+    return f"{source_code} - {label}" if label else source_code
+
 
 class _FeatureInfoTableParser(HTMLParser):
     def __init__(self) -> None:

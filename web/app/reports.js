@@ -54,11 +54,13 @@ async function openFieldPhotoReportPackageModal(lat, lon, photoIds) {
     const lonNumber = Number(lon);
     const safePhotoIds = (photoIds || []).map(safeFieldPhotoId).filter(Boolean);
     if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber) || !safePhotoIds.length) return;
+    const placeZoom = Math.max(Number(map?.getZoom?.()) || 0, 19);
     resetReportPackageModal({
         type: 'field-photos',
         lat: latNumber,
         lon: lonNumber,
         photoIds: safePhotoIds,
+        placeUrl: appPlaceUrl(latNumber, lonNumber, placeZoom, { photoId: safePhotoIds[0] }),
     });
     openModal('modal-report-package');
 }
@@ -87,6 +89,7 @@ async function submitReportPackage(event) {
         formData.set('photo_ids', JSON.stringify(target.photoIds || []));
         formData.set('lat', String(target.lat));
         formData.set('lon', String(target.lon));
+        formData.set('place_url', target.placeUrl || '');
         const reportUrl = '/api/field-photo-reports/report-package';
         const data = await apiJson(reportUrl, {
             method: 'POST',

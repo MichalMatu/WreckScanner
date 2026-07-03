@@ -1,3 +1,4 @@
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from app import config, map_downloads
@@ -25,21 +26,9 @@ def handle_field_photos(handler) -> None:
         )
 
 
-def handle_cadastral_identify(handler) -> None:
-    if not access.require_public_layer(
-        handler, "cadastral", "Warstwa dzialek jest teraz wylaczona dla niezalogowanych."
-    ):
-        return
-    query = parse_qs(urlsplit(handler.path).query)
-    try:
-        lat = float((query.get("lat") or [""])[0])
-        lon = float((query.get("lon") or [""])[0])
-    except ValueError:
-        http_responses.send_json(handler, 400, {"status": "error", "error": "Nieprawidłowe współrzędne."})
-        return
+def lookup_cadastral_parcel(lat: float, lon: float) -> dict[str, Any]:
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-        http_responses.send_json(handler, 400, {"status": "error", "error": "Współrzędne poza zakresem."})
-        return
+        raise ValueError("Współrzędne poza zakresem.")
 
     params = cadastral_feature_info_params(lat, lon)
     last_error: Exception | None = None
@@ -57,20 +46,43 @@ def handle_cadastral_identify(handler) -> None:
             last_error = exc
             response = None
     if response is None:
-        http_responses.send_internal_error(
-            handler,
-            502,
-            "Cadastral upstream request failed",
-            last_error or RuntimeError("No cadastral response"),
-            public_error="Nie udało się pobrać danych działki.",
-        )
-        return
+        raise RuntimeError("Nie udało się pobrać danych działki.") from last_error
 
     response.encoding = "utf-8"
     parcel = parse_cadastral_feature_info(response.text)
     if not parcel.get("parcel_id") and not parcel.get("parcel_number"):
-        http_responses.send_json(
-            handler, 404, {"status": "not_found", "error": "Nie znaleziono działki w tym punkcie."}
+        raise LookupError("Nie znaleziono działki w tym punkcie.")
+    return parcel
+
+
+def handle_cadastral_identify(handler) -> None:
+    if not access.require_public_layer(
+        handler, "cadastral", "Warstwa dzialek jest teraz wylaczona dla niezalogowanych."
+    ):
+        return
+    query = parse_qs(urlsplit(handler.path).query)
+    try:
+        lat = float((query.get("lat") or [""])[0])
+        lon = float((query.get("lon") or [""])[0])
+    except ValueError:
+        http_responses.send_json(handler, 400, {"status": "error", "error": "Nieprawidłowe współrzędne."})
+        return
+
+    try:
+        parcel = lookup_cadastral_parcel(lat, lon)
+    except ValueError as exc:
+        http_responses.send_json(handler, 400, {"status": "error", "error": str(exc)})
+        return
+    except LookupError as exc:
+        http_responses.send_json(handler, 404, {"status": "not_found", "error": str(exc)})
+        return
+    except RuntimeError as exc:
+        http_responses.send_internal_error(
+            handler,
+            502,
+            "Cadastral upstream request failed",
+            exc,
+            public_error="Nie udało się pobrać danych działki.",
         )
         return
     http_responses.send_json(handler, 200, {"status": "ok", "parcel": parcel})

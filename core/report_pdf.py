@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import io
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +27,7 @@ CARD_BORDER = colors.HexColor("#cbd5e1")
 TEXT = colors.HexColor("#0f172a")
 MUTED = colors.HexColor("#475569")
 LINK = colors.HexColor("#2563eb")
+URL_RE = re.compile(r"https?://[^\s<]+")
 
 PAGE_MARGIN = 14 * mm
 GAP = 6 * mm
@@ -174,7 +176,18 @@ def _escape_text(value: Any) -> str:
 
 
 def _paragraph_text(value: str) -> str:
-    return _escape_text(value).replace("\r\n", "\n").replace("\n", "<br/>")
+    text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
+    parts: list[str] = []
+    last = 0
+    for match in URL_RE.finditer(text):
+        raw_url = match.group(0)
+        parts.append(_escape_text(text[last : match.start()]))
+        escaped_href = html.escape(raw_url, quote=True)
+        escaped_label = _escape_text(raw_url)
+        parts.append(f'<a href="{escaped_href}" color="{LINK.hexval()}">{escaped_label}</a>')
+        last = match.end()
+    parts.append(_escape_text(text[last:]))
+    return "".join(parts).replace("\n", "<br/>")
 
 
 def _mail_body_flowables(mail_body: str, styles: dict[str, ParagraphStyle]) -> list[Any]:

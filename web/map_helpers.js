@@ -53,14 +53,17 @@ function saveMapView() {
     }
 }
 
-function appPlaceUrl(lat, lon, zoom) {
+function appPlaceUrl(lat, lon, zoom, options = {}) {
     const url = new URL(window.location.href);
     const placeLat = Number(lat);
     const placeLon = Number(lon);
     const placeZoom = Number(zoom);
+    const photoId = String(options.photoId ?? '').replace(/[^A-Za-z0-9_-]/g, '');
     url.searchParams.set('lat', Number.isFinite(placeLat) ? placeLat.toFixed(6) : DEFAULT_MAP_VIEW.center[0].toFixed(6));
     url.searchParams.set('lon', Number.isFinite(placeLon) ? placeLon.toFixed(6) : DEFAULT_MAP_VIEW.center[1].toFixed(6));
     url.searchParams.set('z', String(Number.isFinite(placeZoom) ? Math.round(placeZoom) : DEFAULT_MAP_VIEW.zoom));
+    if (photoId) url.searchParams.set('photo', photoId);
+    else url.searchParams.delete('photo');
     return url.toString();
 }
 

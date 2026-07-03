@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from core.cadastral import cadastral_code_label
+
 
 def _first_line(value: str, max_len: int = 90) -> str:
     text = " ".join(value.split())
@@ -12,6 +14,38 @@ def _first_line(value: str, max_len: int = 90) -> str:
 def _labels_text(record: dict[str, Any], evidence: dict[str, Any]) -> str:
     labels = record.get("labels_present") or evidence.get("labels_present") or []
     return ", ".join(str(label) for label in labels) or "brak danych"
+
+
+def _place_url_text(record: dict[str, Any]) -> str:
+    return str(record.get("place_url") or "").strip()
+
+
+def _parcel_line(label: str, value: Any, suffix: str = "") -> str:
+    text = str(value or "").strip()
+    return f"- {label}: {text}{suffix}" if text else ""
+
+
+def _parcel_context_text(record: dict[str, Any]) -> str:
+    parcel = record.get("parcel") if isinstance(record.get("parcel"), dict) else {}
+    if parcel:
+        terrain_type = cadastral_code_label(parcel.get("land_use") or parcel.get("contour"))
+        lines = [
+            "Dane działki ewidencyjnej (pomocniczo, bez danych właściciela):",
+            _parcel_line("Numer działki", parcel.get("parcel_number")),
+            _parcel_line("Typ terenu", terrain_type),
+            _parcel_line("Identyfikator działki", parcel.get("parcel_id")),
+            _parcel_line("Obręb", parcel.get("district")),
+            _parcel_line("Gmina", parcel.get("municipality")),
+            _parcel_line("Powiat", parcel.get("county")),
+            _parcel_line("Województwo", parcel.get("voivodeship")),
+            _parcel_line("Grupa rejestrowa", parcel.get("registry_group")),
+            _parcel_line("Data publikacji danych", parcel.get("published_at")),
+        ]
+        return "\n".join(line for line in lines if line)
+    parcel_error = str(record.get("parcel_error") or "").strip()
+    if parcel_error:
+        return f"Dane działki ewidencyjnej (pomocniczo):\n- {parcel_error}"
+    return ""
 
 
 def _field_datetime_text(value: str) -> str:
@@ -44,6 +78,10 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
+    place_url = _place_url_text(record)
+    place_section = f"\nLink do miejsca w WreckScanner:\n{place_url}\n" if place_url else ""
+    parcel_context = _parcel_context_text(record)
+    parcel_section = f"\n{parcel_context}\n" if parcel_context else ""
     subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(fields['location_description'])}"
     body = f"""Dzień dobry,
 
@@ -60,6 +98,7 @@ Miejsce pojazdu:
 
 Współrzędne GPS:
 {lat:.6f}, {lon:.6f}
+{place_section}{parcel_section}
 
 Data i godzina obserwacji:
 {_field_datetime_text(fields["observed_at"])}

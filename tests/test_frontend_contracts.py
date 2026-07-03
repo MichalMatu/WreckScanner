@@ -171,13 +171,24 @@ class FrontendContracts(unittest.TestCase):
     def test_frontend_uses_one_vehicle_layer_for_cases_and_vehicle_photos(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         reports_js = (ROOT_DIR / "web" / "app" / "reports.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
-        frontend = html + config_js + settings_js + field_photos_js + vehicle_layer_js + reports_js + i18n_js + styles
+        frontend = (
+            html
+            + config_js
+            + map_helpers_js
+            + settings_js
+            + field_photos_js
+            + vehicle_layer_js
+            + reports_js
+            + i18n_js
+            + styles
+        )
 
         self.assertIn('id="toggle-vehicles"', html)
         self.assertIn('id="admin-layer-vehicles"', html)
@@ -191,6 +202,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function vehiclePhotoPopup", vehicle_layer_js)
         self.assertIn("openFieldPhotoReportPackageModal", reports_js)
         self.assertIn("/api/field-photo-reports/report-package", reports_js)
+        self.assertIn("formData.set('place_url', target.placeUrl || '')", reports_js)
+        self.assertIn("appPlaceUrl(latNumber, lonNumber, placeZoom, { photoId: safePhotoIds[0] })", reports_js)
+        self.assertIn("url.searchParams.set('photo', photoId)", map_helpers_js)
+        self.assertIn("url.searchParams.delete('photo')", map_helpers_js)
+        self.assertIn("pendingVehiclePhotoFocusId", vehicle_layer_js)
+        self.assertIn("focusVehicleMarkerFromUrl(group, marker)", vehicle_layer_js)
         self.assertNotIn("openReportPackageModal", reports_js)
         self.assertNotIn("openWreckPhotoModal", reports_js)
         self.assertNotIn("modal-wreck-photo-upload", html)
@@ -307,6 +324,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("cancelFieldPhotoLocationPick({ clearStatus: true })", html + map_context_js)
         self.assertIn("panel.addPhotoPickCancel", html + i18n_js)
         self.assertNotIn("statusEl.textContent = t('panel.addPhotoPickStatus')", upload_js)
+
+    def test_cadastral_popup_uses_ready_data_without_blocked_geoportal_link(self):
+        map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+
+        self.assertIn("function cadastralParcelClipboardText", map_context_js)
+        self.assertIn("function cadastralParcelPopup", map_context_js)
+        self.assertIn("context.parcelCopyData", map_context_js + i18n_js)
+        self.assertNotIn("cadastralParcelGeoportalUrl", map_context_js)
+        self.assertNotIn("parcelOpenGeoportal", map_context_js + i18n_js)
+        self.assertNotIn("identifyParcel=", map_context_js)
 
     def test_approved_field_photo_popups_hide_redundant_metadata(self):
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
