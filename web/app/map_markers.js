@@ -11,7 +11,7 @@ function vehicleIcon(photoCount = 0, reviewStatus = 'approved') {
     const classes = ['vehicle-pin', `vehicle-pin--${safeStatus}`];
     if (numericCount > 0) classes.push('vehicle-pin--with-photos');
     const className = classes.join(' ');
-    const html = `<div class="${className}">${badge}</div>`;
+    const html = `<div class="${className}"><span class="vehicle-pin-glyph" aria-hidden="true"></span>${badge}</div>`;
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
 }
 
@@ -24,7 +24,7 @@ function fieldPhotoIcon(count = 1, issueType = FIELD_PHOTO_ISSUE_TYPE_VEHICLE) {
 }
 
 function pendingSubmissionIcon() {
-    const html = '<div class="pending-submission-pin pending-submission-pin--photo"></div>';
+    const html = '<div class="pending-submission-pin"></div>';
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
 }
 

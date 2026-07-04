@@ -341,6 +341,7 @@ class FrontendContracts(unittest.TestCase):
     def test_frontend_uses_one_vehicle_layer_for_cases_and_vehicle_photos(self):
         html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        map_markers_js = (ROOT_DIR / "web" / "app" / "map_markers.js").read_text(encoding="utf-8")
         map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
@@ -353,6 +354,7 @@ class FrontendContracts(unittest.TestCase):
         frontend = (
             html
             + config_js
+            + map_markers_js
             + map_helpers_js
             + settings_js
             + field_photos_js
@@ -425,7 +427,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("--pin-vehicle-ring:", styles)
         self.assertIn("background: var(--pin-vehicle-bg);", styles)
         self.assertIn("border: 2px solid var(--pin-vehicle-ring);", styles)
+        self.assertIn('class="vehicle-pin-glyph" aria-hidden="true"', map_markers_js)
+        self.assertIn(".vehicle-pin-glyph", styles)
+        self.assertNotIn("content: 'A';", styles)
         self.assertIn("background: var(--pin-infrastructure-bg);", styles)
+        self.assertIn("content: '!';", styles)
+        self.assertIn("content: '~';", styles)
+        self.assertNotIn("content: 'D';", styles)
+        self.assertIn(".pending-submission-pin::before", styles)
+        self.assertNotIn("pending-submission-pin--photo", frontend)
+        self.assertNotIn("content: 'W';", styles)
+        self.assertNotIn("content: 'P';", styles)
         self.assertNotIn("map-popup-action--photo", frontend)
         self.assertNotIn("map-popup-action--delete", frontend)
         self.assertNotIn("fieldPhoto.openOriginal", i18n_js)

@@ -115,9 +115,11 @@
     --pin-infrastructure-bg: #451a03;
     --pin-infrastructure-ring: #f59e0b;
     --pin-infrastructure-ring-soft: rgba(245, 158, 11, 0.22);
+    --pin-infrastructure-glyph: #fffbeb;
     --pin-smoke-bg: #312e81;
     --pin-smoke-ring: #a78bfa;
     --pin-smoke-ring-soft: rgba(167, 139, 250, 0.24);
+    --pin-smoke-glyph: #ede9fe;
     --pin-cadastral-bg: rgba(69, 26, 3, 0.72);
     --pin-cadastral-ring: rgba(251, 191, 36, 0.95);
     --pin-cadastral-ring-soft: rgba(251, 191, 36, 0.16);
