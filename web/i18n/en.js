@@ -62,6 +62,7 @@ const TRANSLATIONS_EN = {
         'layers.fieldPhotoInfrastructure': 'Unsafe infrastructure',
         'layers.fieldPhotoSmoke': 'Polluted air',
         'layers.fieldPhotoPending': 'For review',
+        'layers.vehicleInsuranceLegend': 'Vehicle insurance / UFG',
         'layers.countVehiclesTooltip': 'Cars documented with field photos: {n}',
         'layers.countFieldPhotoInfrastructureTooltip': 'Grouped unsafe infrastructure points: {n}',
         'layers.countFieldPhotoSmokeTooltip': 'Grouped polluted air points: {n}',

@@ -64,6 +64,7 @@ const TRANSLATIONS_PL = {
         'layers.fieldPhotoInfrastructure': 'Niebezpieczna infrastruktura',
         'layers.fieldPhotoSmoke': 'Zanieczyszczone powietrze',
         'layers.fieldPhotoPending': 'Do weryfikacji',
+        'layers.vehicleInsuranceLegend': 'OC / UFG pojazdu',
         'layers.countVehiclesTooltip': 'Auta udokumentowane zdjęciami w terenie: {n}',
         'layers.countFieldPhotoInfrastructureTooltip': 'Zgrupowane punkty niebezpiecznej infrastruktury: {n}',
         'layers.countFieldPhotoSmokeTooltip': 'Zgrupowane punkty zanieczyszczonego powietrza: {n}',

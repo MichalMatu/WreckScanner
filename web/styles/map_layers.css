@@ -178,3 +178,53 @@
     border: 2px dashed var(--pin-pending-ring);
     box-shadow: 0 0 0 2px var(--pin-pending-ring-soft);
 }
+
+.map-pin-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 9px;
+    padding: 8px 10px 2px;
+    color: var(--muted);
+    font: 750 0.68rem var(--font);
+    line-height: 1.2;
+}
+
+.map-pin-legend-title {
+    width: 100%;
+    color: var(--muted-strong);
+    font-size: 0.67rem;
+    text-transform: uppercase;
+}
+
+.map-pin-legend-item {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.map-pin-status-ring {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: var(--pin-vehicle-bg);
+    flex: 0 0 auto;
+}
+
+.map-pin-status-ring--unknown {
+    border: 2px solid var(--pin-insurance-unknown-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-unknown-ring-soft);
+}
+
+.map-pin-status-ring--insured {
+    border: 2px solid var(--pin-insurance-insured-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-insured-ring-soft);
+}
+
+.map-pin-status-ring--uninsured {
+    border: 2px solid var(--pin-insurance-uninsured-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-uninsured-ring-soft);
+}

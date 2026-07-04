@@ -6,10 +6,15 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 
 class MapPinStyleContracts(unittest.TestCase):
     def test_vehicle_pin_uses_group_insurance_status_as_ring(self):
+        html = (ROOT_DIR / "web" / "partials" / "app_shell.html").read_text(encoding="utf-8")
         css = (ROOT_DIR / "web" / "styles" / "map_pins.css").read_text(encoding="utf-8")
+        layer_css = (ROOT_DIR / "web" / "styles" / "map_layers.css").read_text(encoding="utf-8")
         tokens_css = (ROOT_DIR / "web" / "styles" / "tokens.css").read_text(encoding="utf-8")
         markers_js = (ROOT_DIR / "web" / "app" / "map_markers.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
+        i18n_js = "\n".join(
+            (ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js")
+        )
 
         self.assertIn(
             "vehicleIcon(photoCount = 0, reviewStatus = 'approved', insuranceStatus = "
@@ -27,6 +32,10 @@ class MapPinStyleContracts(unittest.TestCase):
             self.assertIn(f".vehicle-pin--insurance-{status}", css)
         self.assertIn("border: 3px solid var(--pin-vehicle-current-ring);", css)
         self.assertIn("box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-current-ring-soft);", css)
+        self.assertIn('class="map-pin-legend"', html)
+        self.assertIn("layers.vehicleInsuranceLegend", html + i18n_js)
+        for status in ("unknown", "insured", "uninsured"):
+            self.assertIn(f"map-pin-status-ring--{status}", html + layer_css)
 
     def test_low_zoom_dot_mode_uses_distinct_shapes_for_place_types(self):
         css = (ROOT_DIR / "web" / "styles" / "map_pins.css").read_text(encoding="utf-8")
