@@ -31,6 +31,20 @@ class MapPinStyleContracts(unittest.TestCase):
             "vehicleGroupIsLongStanding(group)",
             vehicle_layer_js,
         )
+        self.assertIn("const VEHICLE_STATUS_FILTER_ALL = 'all';", vehicle_layer_js)
+        self.assertIn("function vehicleGroupMatchesStatusFilter", vehicle_layer_js)
+        self.assertIn("function visibleVehicleGroups", vehicle_layer_js)
+        self.assertIn("function setVehicleStatusFilter", vehicle_layer_js)
+        self.assertIn(
+            "visibleVehicleGroups().length", (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
+        )
+        self.assertIn('class="vehicle-status-filter"', html)
+        self.assertIn('data-vehicle-status-filter="uninsured"', html)
+        self.assertIn('data-vehicle-status-filter="long-standing"', html)
+        self.assertIn('data-vehicle-status-filter="unknown"', html)
+        self.assertIn(".vehicle-status-filter-option.is-active", layer_css)
+        self.assertIn("layers.vehicleStatusFilter", html + i18n_js)
+        self.assertIn("layers.vehicleStatusFilterUninsured", html + i18n_js)
         for status in ("unknown", "insured", "uninsured"):
             self.assertIn(f"--pin-insurance-{status}-ring:", tokens_css)
             self.assertIn(f".vehicle-pin--insurance-{status}", css)

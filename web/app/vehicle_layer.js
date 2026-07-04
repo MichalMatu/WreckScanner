@@ -1,5 +1,16 @@
 let vehicleMarkers = [];
 let vehicleLayerVisible = true;
+const VEHICLE_STATUS_FILTER_ALL = 'all';
+const VEHICLE_STATUS_FILTER_UNINSURED = 'uninsured';
+const VEHICLE_STATUS_FILTER_LONG_STANDING = 'long-standing';
+const VEHICLE_STATUS_FILTER_UNKNOWN = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+const VEHICLE_STATUS_FILTERS = new Set([
+    VEHICLE_STATUS_FILTER_ALL,
+    VEHICLE_STATUS_FILTER_UNINSURED,
+    VEHICLE_STATUS_FILTER_LONG_STANDING,
+    VEHICLE_STATUS_FILTER_UNKNOWN,
+]);
+let vehicleStatusFilter = VEHICLE_STATUS_FILTER_ALL;
 let pendingVehiclePhotoFocusId = '';
 let vehiclePhotoFocusDone = false;
 
@@ -167,6 +178,52 @@ function vehicleGroupIsLongStanding(group, nowMs = Date.now()) {
     return Number.isFinite(startTimestampMs) && nowMs - startTimestampMs >= VEHICLE_LONG_STANDING_MS;
 }
 
+function normalizeVehicleStatusFilter(filter) {
+    const safeFilter = String(filter || '');
+    return VEHICLE_STATUS_FILTERS.has(safeFilter) ? safeFilter : VEHICLE_STATUS_FILTER_ALL;
+}
+
+function vehicleGroupMatchesStatusFilter(group, filter = vehicleStatusFilter) {
+    switch (normalizeVehicleStatusFilter(filter)) {
+        case VEHICLE_STATUS_FILTER_UNINSURED:
+            return vehicleGroupInsuranceStatus(group) === 'uninsured';
+        case VEHICLE_STATUS_FILTER_LONG_STANDING:
+            return vehicleGroupIsLongStanding(group);
+        case VEHICLE_STATUS_FILTER_UNKNOWN:
+            return vehicleGroupInsuranceStatus(group) === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+        case VEHICLE_STATUS_FILTER_ALL:
+        default:
+            return true;
+    }
+}
+
+function visibleVehicleGroups(photos = fieldPhotoLayerData) {
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return [];
+    return buildVehicleGroups(photos).filter(group =>
+        vehicleGroupPhotoCount(group) > 0
+        && vehicleGroupMatchesStatusFilter(group)
+    );
+}
+
+function updateVehicleStatusFilterControls() {
+    document.querySelectorAll('[data-vehicle-status-filter]').forEach(button => {
+        const active = normalizeVehicleStatusFilter(button.dataset.vehicleStatusFilter) === vehicleStatusFilter;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+}
+
+function setVehicleStatusFilter(filter) {
+    const nextFilter = normalizeVehicleStatusFilter(filter);
+    if (nextFilter === vehicleStatusFilter) {
+        updateVehicleStatusFilterControls();
+        return;
+    }
+    vehicleStatusFilter = nextFilter;
+    refreshVehicleLayer();
+    updateVehicleStatusFilterControls();
+}
+
 function vehiclePhotoPopup(group) {
     const photoCount = vehicleGroupPhotoCount(group);
     const title = photoCount > 1
@@ -188,7 +245,7 @@ function vehicleGroupPopup(group) {
 function placeVehicleMarkers() {
     clearVehicleMarkers();
     if (!vehicleLayerAllowed()) return;
-    buildVehicleGroups().forEach(group => {
+    visibleVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
         const marker = L.marker([group.lat, group.lon], {
             icon: vehicleIcon(
@@ -216,6 +273,7 @@ function placeVehicleMarkers() {
 function refreshVehicleLayer() {
     placeVehicleMarkers();
     updateLayerCounters();
+    updateVehicleStatusFilterControls();
 }
 
 function toggleVehicleLayer(visible) {

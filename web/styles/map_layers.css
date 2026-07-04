@@ -126,6 +126,51 @@
     color: color-mix(in srgb, var(--danger) 54%, white);
 }
 
+.vehicle-status-filter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 5px 0 0;
+}
+
+.vehicle-status-filter-option {
+    min-width: 0;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+    color: var(--text-soft);
+    font: 800 0.7rem var(--font);
+    line-height: 1.15;
+    text-align: center;
+    cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.vehicle-status-filter-option:hover {
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+    background: var(--primary-soft);
+    color: var(--text-strong);
+}
+
+.vehicle-status-filter-option:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.vehicle-status-filter-option.is-active {
+    border-color: color-mix(in srgb, var(--primary) 74%, white);
+    background: var(--primary);
+    color: var(--text-strong);
+}
+
 .layer-pin {
     width: 13px;
     height: 13px;

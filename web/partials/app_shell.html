@@ -86,6 +86,21 @@
                         <span class="layer-label" data-i18n="layers.cadastral">Granice działek</span>
                     </label>
                 </div>
+                <div class="vehicle-status-filter" data-i18n-attr="aria-label:layers.vehicleStatusFilter"
+                    aria-label="Filtr pojazdów" role="group">
+                    <button type="button" class="vehicle-status-filter-option is-active"
+                        data-vehicle-status-filter="all" aria-pressed="true"
+                        onclick="setVehicleStatusFilter('all')" data-i18n="layers.vehicleStatusFilterAll">Wszystkie</button>
+                    <button type="button" class="vehicle-status-filter-option"
+                        data-vehicle-status-filter="uninsured" aria-pressed="false"
+                        onclick="setVehicleStatusFilter('uninsured')" data-i18n="layers.vehicleStatusFilterUninsured">Brak OC</button>
+                    <button type="button" class="vehicle-status-filter-option"
+                        data-vehicle-status-filter="long-standing" aria-pressed="false"
+                        onclick="setVehicleStatusFilter('long-standing')" data-i18n="layers.vehicleStatusFilterLongStanding">Długo stoi</button>
+                    <button type="button" class="vehicle-status-filter-option"
+                        data-vehicle-status-filter="unknown" aria-pressed="false"
+                        onclick="setVehicleStatusFilter('unknown')" data-i18n="layers.vehicleStatusFilterUnknown">Nie sprawdzono</button>
+                </div>
                 <div class="map-pin-legend" data-i18n-attr="aria-label:layers.vehicleStatusLegend"
                     aria-label="Status pojazdu">
                     <span class="map-pin-legend-title" data-i18n="layers.vehicleStatusLegend">Status pojazdu</span>
