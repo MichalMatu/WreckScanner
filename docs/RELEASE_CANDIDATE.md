@@ -153,3 +153,15 @@ Zakres:
 - screenshot desktop/mobile w `analiza/e2e-map-desktop.png` i
   `analiza/e2e-map-mobile.png`,
 - cleanup testowego rekordu, publicznych plikow i prywatnego oryginalu.
+
+## Dokumentacja deployu
+
+Produkcyjny runbook jest w [DEPLOY.md](DEPLOY.md). Obejmuje:
+
+- wymagane sekrety `WRECKSCANNER_ADMIN_PASSWORD` i
+  `WRECKSCANNER_ADMIN_SESSION_SECRET`,
+- konfiguracje `WRECKSCANNER_CORS_ALLOWED_ORIGINS`,
+- przyklad jednostki `wreckscanner.service`,
+- checkliste przed deployem: check, diagnostyka, walidacja DB i backup,
+- checkliste po deployu: health, smoke i `make e2e-report`,
+- rollback przez restic restore.

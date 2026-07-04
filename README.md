@@ -45,6 +45,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 - [docs/CURRENT_MODEL.md](docs/CURRENT_MODEL.md) - aktualny model danych, endpointy i audyt braku starych artefaktow.
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
+- [docs/DEPLOY.md](docs/DEPLOY.md) - produkcyjny deploy, sekrety, systemd i rollback.
 
 ## Lokalne Dane
 

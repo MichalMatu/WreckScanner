@@ -95,3 +95,8 @@ curl -fsS http://127.0.0.1:8001/api/health
 ## Backup
 
 Backup i restore opisuje [BACKUP.md](BACKUP.md). Pliku `.restic_password` nie nadpisuj przy rotacji hasla administratora, chyba ze swiadomie zmieniasz haslo repozytorium backupu.
+
+## Deploy
+
+Produkcyjny deploy, zmienne srodowiskowe, systemd i rollback opisuje
+[DEPLOY.md](DEPLOY.md).

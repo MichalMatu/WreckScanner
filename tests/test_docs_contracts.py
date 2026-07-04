@@ -13,6 +13,7 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
         self.assertIn("docs/BACKUP.md", readme)
+        self.assertIn("docs/DEPLOY.md", readme)
         self.assertNotIn("docs/AUDIT.md", readme)
         self.assertNotIn("docs/README.en.md", readme)
         self.assertNotIn("RUNTIME_SMOKE", readme)
@@ -30,6 +31,20 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("make e2e-report", doc)
         self.assertIn("generuje ZIP/PDF z tymczasowymi cropami mapy", doc)
         self.assertIn("BACKUP.md", doc)
+        self.assertIn("DEPLOY.md", doc)
+
+    def test_deploy_doc_has_production_secret_and_verification_checklist(self):
+        doc = (ROOT_DIR / "docs" / "DEPLOY.md").read_text(encoding="utf-8")
+
+        self.assertIn("WRECKSCANNER_ADMIN_PASSWORD", doc)
+        self.assertIn("WRECKSCANNER_ADMIN_SESSION_SECRET", doc)
+        self.assertIn("WRECKSCANNER_CORS_ALLOWED_ORIGINS", doc)
+        self.assertIn("systemctl enable --now wreckscanner.service", doc)
+        self.assertIn("./scripts/check.sh", doc)
+        self.assertIn("scripts/backup_data.py run", doc)
+        self.assertIn("make smoke", doc)
+        self.assertIn("make e2e-report", doc)
+        self.assertIn("Rollback", doc)
 
     def test_backup_doc_has_restore_validation_commands(self):
         doc = (ROOT_DIR / "docs" / "BACKUP.md").read_text(encoding="utf-8")
@@ -75,6 +90,8 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("missing_paths=0", doc)
         self.assertIn("make e2e-report", doc)
         self.assertIn("analiza/e2e-map-desktop.png", doc)
+        self.assertIn("Produkcyjny runbook jest w [DEPLOY.md](DEPLOY.md)", doc)
+        self.assertIn("WRECKSCANNER_ADMIN_SESSION_SECRET", doc)
         self.assertIn("tag `v1.0.0-rc1`", doc)
 
     def test_removed_development_docs_stay_removed(self):
