@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import diagnose_architecture
+from scripts import architecture_quality, diagnose_architecture
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -86,6 +86,32 @@ class ArchitectureDiagnosticsToolAvailabilityTests(unittest.TestCase):
         for name, length in test_lengths.items():
             with self.subTest(name=name):
                 self.assertLessEqual(length, 130)
+
+    def test_quality_gate_flags_size_layers_and_retired_runtime_artifacts(self):
+        report = {
+            "biggest_files": [{"path": "core/too_big.py", "lines": 651, "bytes": 1}],
+            "longest_functions": [
+                {"path": "web/app/large.js", "name": "large", "line": 1, "lines": 91, "kind": "javascript"}
+            ],
+            "forbidden_layer_imports": [{"from": "core.bad", "to": "app.http", "path": "core/bad.py", "line": 3}],
+            "retired_artifacts": [{"path": "web/config.js", "line": 1, "match": "/api/wrecks"}],
+            "parse_errors": [],
+        }
+
+        gates = architecture_quality.evaluate_quality_gates(report)
+
+        self.assertEqual(gates["status"], "fail")
+        self.assertEqual(gates["checks"]["file_size"][0]["limit"], 650)
+        self.assertEqual(gates["checks"]["function_size"][0]["limit"], 90)
+        self.assertEqual(gates["checks"]["layer_imports"][0]["to"], "app.http")
+        self.assertEqual(gates["checks"]["retired_artifacts"][0]["match"], "/api/wrecks")
+
+    def test_current_tree_passes_architecture_quality_gates(self):
+        report = diagnose_architecture.build_report()
+
+        self.assertEqual(report["quality_gates"]["status"], "pass")
+        for findings in report["quality_gates"]["checks"].values():
+            self.assertEqual(findings, [])
 
 
 if __name__ == "__main__":

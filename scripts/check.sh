@@ -42,7 +42,8 @@ fi
 mkdir -p analiza
 run_to_file analiza/architecture_diagnostics.md "$PYTHON_BIN" scripts/diagnose_architecture.py \
     --output-json analiza/architecture_diagnostics.json \
-    --markdown
+    --markdown \
+    --strict
 run "$PYTHON_BIN" scripts/diagnose_data.py --no-image-check --output-json analiza/data_diagnostics.json
 
 if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then

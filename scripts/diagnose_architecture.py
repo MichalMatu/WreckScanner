@@ -14,10 +14,18 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
+
+from scripts.architecture_quality import (  # noqa: E402
+    collect_retired_artifacts,
+    evaluate_quality_gates,
+    forbidden_layer_imports,
+)
 
 TARGET_DIRS = ("app", "core", "scripts", "tests", "web")
 PY_GROUPS = {"app", "core", "scripts", "tests"}
@@ -89,7 +97,7 @@ def biggest_files(files: list[Path], limit: int = 20) -> list[dict[str, Any]]:
     rows = []
     for path in files:
         text = read_text(path)
-        rows.append({"path": rel(path), "bytes": path.stat().st_size, "lines": text.count("\n") + 1})
+        rows.append({"path": rel(path), "bytes": path.stat().st_size, "lines": len(text.splitlines())})
     return sorted(rows, key=lambda item: (item["lines"], item["bytes"]), reverse=True)[:limit]
 
 
@@ -436,7 +444,7 @@ def build_report() -> dict[str, Any]:
     imports, graph = collect_imports(py_trees)
     risky_patterns = collect_risky_patterns(py_trees, js_files)
 
-    return {
+    report = {
         "generated_at": now_iso(),
         "root": str(ROOT_DIR),
         "summary": {
@@ -451,10 +459,14 @@ def build_report() -> dict[str, Any]:
         "dependency_cycles": find_cycles(graph),
         "http_endpoints": collect_endpoints(py_trees, js_files),
         "risky_patterns": risky_patterns,
+        "forbidden_layer_imports": forbidden_layer_imports(imports),
+        "retired_artifacts": collect_retired_artifacts(ROOT_DIR, EXCLUDED_DIRS),
         "group_dependencies": group_dependencies(imports, js_files),
         "tool_availability": collect_tool_availability(),
         "parse_errors": collect_parse_errors(py_files),
     }
+    report["quality_gates"] = evaluate_quality_gates(report)
+    return report
 
 
 def table(headers: list[str], rows: list[list[Any]]) -> str:
@@ -466,6 +478,54 @@ def table(headers: list[str], rows: list[list[Any]]) -> str:
     return "\n".join(output) + "\n"
 
 
+def quality_gate_table(report: dict[str, Any]) -> str:
+    quality_gates = report.get("quality_gates", {})
+    gate_checks = quality_gates.get("checks", {})
+    return table(
+        ["Gate", "Status", "Findings"],
+        [[key, "FAIL" if findings else "PASS", len(findings)] for key, findings in gate_checks.items()],
+    )
+
+
+def format_forbidden_layer_imports(report: dict[str, Any]) -> list[str]:
+    if not report["forbidden_layer_imports"]:
+        return []
+    return [
+        "## Forbidden layer imports",
+        "",
+        table(
+            ["From", "To", "Path", "Line"],
+            [[item["from"], item["to"], item["path"], item["line"]] for item in report["forbidden_layer_imports"]],
+        ),
+    ]
+
+
+def format_retired_artifacts(report: dict[str, Any]) -> list[str]:
+    if not report["retired_artifacts"]:
+        return []
+    return [
+        "## Retired runtime artifacts",
+        "",
+        table(
+            ["Path", "Line", "Match", "Snippet"],
+            [[item["path"], item["line"], item["match"], item["snippet"]] for item in report["retired_artifacts"][:60]],
+        ),
+    ]
+
+
+def format_parse_errors(report: dict[str, Any]) -> list[str]:
+    if not report["parse_errors"]:
+        return []
+    return [
+        "## Parse errors",
+        "",
+        table(
+            ["Path", "Line", "Error"],
+            [[item["path"], item["line"], item["error"]] for item in report["parse_errors"]],
+        ),
+    ]
+
+
 def format_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# WreckScanner architecture diagnostics",
@@ -475,6 +535,9 @@ def format_markdown(report: dict[str, Any]) -> str:
         "## Summary",
         "",
         table(["Metric", "Value"], [[key, value] for key, value in report["summary"].items()]),
+        "## Quality gates",
+        "",
+        quality_gate_table(report),
         "## Biggest files",
         "",
         table(
@@ -548,18 +611,9 @@ def format_markdown(report: dict[str, Any]) -> str:
             ),
         ]
     )
-
-    if report["parse_errors"]:
-        lines.extend(
-            [
-                "## Parse errors",
-                "",
-                table(
-                    ["Path", "Line", "Error"],
-                    [[item["path"], item["line"], item["error"]] for item in report["parse_errors"]],
-                ),
-            ]
-        )
+    lines.extend(format_forbidden_layer_imports(report))
+    lines.extend(format_retired_artifacts(report))
+    lines.extend(format_parse_errors(report))
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -569,6 +623,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--markdown", action="store_true", help="Print a Markdown report.")
     parser.add_argument("--json", action="store_true", help="Print the full JSON report.")
     parser.add_argument("--output-json", type=Path, help="Write the full JSON report to this path.")
+    parser.add_argument("--strict", action="store_true", help="Return non-zero when architecture quality gates fail.")
     return parser.parse_args()
 
 
@@ -588,7 +643,7 @@ def main() -> int:
     elif args.markdown or not args.output_json:
         print(format_markdown(report), end="")
 
-    return 0
+    return 1 if args.strict and report["quality_gates"]["status"] != "pass" else 0
 
 
 if __name__ == "__main__":
