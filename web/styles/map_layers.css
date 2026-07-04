@@ -25,7 +25,7 @@
     padding: 7px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.045);
+    background: var(--surface-subtle);
     color: var(--text);
     font-size: 0.78rem;
     font-weight: 700;
@@ -51,7 +51,7 @@
     margin: 0;
     border: 1px solid var(--border-strong);
     border-radius: 5px;
-    background: rgba(15, 23, 42, 0.72);
+    background: var(--surface-inset);
     position: relative;
     cursor: pointer;
 }
@@ -68,7 +68,7 @@
     top: 2px;
     width: 5px;
     height: 9px;
-    border: solid #fff;
+    border: solid var(--text-strong);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -119,11 +119,11 @@
 }
 
 .layer-status.is-ok {
-    color: #86efac;
+    color: var(--pin-vehicle-photo-ring);
 }
 
 .layer-status.is-error {
-    color: #fca5a5;
+    color: color-mix(in srgb, var(--danger) 54%, white);
 }
 
 .layer-pin {
@@ -136,45 +136,45 @@
 }
 
 .layer-pin--vehicle {
-    background: #111827;
-    border: 2px solid #34d399;
-    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.14);
+    background: var(--pin-vehicle-bg);
+    border: 2px solid var(--pin-vehicle-ring);
+    box-shadow: 0 0 0 2px var(--pin-vehicle-ring-soft);
 }
 
 .layer-pin--cadastral {
     border-radius: 3px;
     background:
-        linear-gradient(90deg, transparent 47%, rgba(251, 191, 36, 0.95) 48%, rgba(251, 191, 36, 0.95) 53%, transparent 54%),
-        linear-gradient(0deg, transparent 47%, rgba(251, 191, 36, 0.95) 48%, rgba(251, 191, 36, 0.95) 53%, transparent 54%),
-        rgba(69, 26, 3, 0.72);
-    border: 1px solid rgba(251, 191, 36, 0.95);
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.16);
+        linear-gradient(90deg, transparent 47%, var(--pin-cadastral-ring) 48%, var(--pin-cadastral-ring) 53%, transparent 54%),
+        linear-gradient(0deg, transparent 47%, var(--pin-cadastral-ring) 48%, var(--pin-cadastral-ring) 53%, transparent 54%),
+        var(--pin-cadastral-bg);
+    border: 1px solid var(--pin-cadastral-ring);
+    box-shadow: 0 0 0 2px var(--pin-cadastral-ring-soft);
     transform: none;
 }
 
 .layer-pin--base-map-osm {
     border-radius: 3px;
     background:
-        linear-gradient(135deg, #e5e7eb 0 48%, #bbf7d0 49% 70%, #bae6fd 71% 100%);
-    border: 1px solid rgba(15, 23, 42, 0.28);
-    box-shadow: 0 0 0 2px rgba(226, 232, 240, 0.16);
+        linear-gradient(135deg, var(--pin-base-map-land) 0 48%, var(--pin-base-map-green) 49% 70%, var(--pin-base-map-water) 71% 100%);
+    border: 1px solid var(--pin-base-map-border);
+    box-shadow: 0 0 0 2px var(--pin-base-map-halo);
     transform: none;
 }
 
 .layer-pin--field-photo-infrastructure {
-    background: #451a03;
-    border: 2px solid #f59e0b;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+    background: var(--pin-infrastructure-bg);
+    border: 2px solid var(--pin-infrastructure-ring);
+    box-shadow: 0 0 0 2px var(--pin-infrastructure-ring-soft);
 }
 
 .layer-pin--field-photo-smoke {
-    background: #312e81;
-    border: 2px solid #a78bfa;
-    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+    background: var(--pin-smoke-bg);
+    border: 2px solid var(--pin-smoke-ring);
+    box-shadow: 0 0 0 2px var(--pin-smoke-ring-soft);
 }
 
 .layer-pin--field-photo-pending {
-    background: #1f2937;
-    border: 2px dashed #fbbf24;
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18);
+    background: var(--pin-pending-bg);
+    border: 2px dashed var(--pin-pending-ring);
+    box-shadow: 0 0 0 2px var(--pin-pending-ring-soft);
 }

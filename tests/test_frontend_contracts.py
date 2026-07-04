@@ -19,6 +19,24 @@ def read_i18n_bundle() -> str:
 
 
 class FrontendContracts(unittest.TestCase):
+    def test_app_menu_exposes_global_language_toggle_in_footer(self):
+        html = read_index_html()
+        ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
+        panel_css = (ROOT_DIR / "web" / "styles" / "panel.css").read_text(encoding="utf-8")
+
+        self.assertIn('id="app-menu-toggle-lang"', html)
+        self.assertIn('id="app-menu-lang-label"', html)
+        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--lang btn-lang"', html)
+        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--admin"', html)
+        self.assertIn('data-i18n-attr="title:icon.lang;aria-label:icon.lang"', html)
+        self.assertIn('onclick="toggleLang()"', html)
+        self.assertIn("function toggleLang()", ui_js)
+        self.assertIn("document.querySelectorAll('.lang-label')", ui_js)
+        self.assertIn(".app-menu-footer-icon", panel_css)
+        self.assertIn(".app-menu-footer-icon--lang", panel_css)
+        self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
+        self.assertNotIn("app-menu-admin-icon", html + panel_css)
+
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
         html = read_index_html()
         report_js = (ROOT_DIR / "web" / "app" / "problem_report.js").read_text(encoding="utf-8")
@@ -252,13 +270,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn(".map-popup--media", popups_css)
         self.assertIn("function mapPopupMediaModifiers", popups_js)
         self.assertIn("function popupElapsedAgeText", popups_js)
+        self.assertIn("function popupHeaderBadge", popups_js)
+        self.assertIn("function popupElapsedAgeBadge", popups_js)
         self.assertIn("fieldPhotoGroupStartTimestamp", popups_js)
         self.assertIn(".map-popup--media-count-0", popups_css)
         self.assertIn(".map-popup--media-count-1", popups_css)
         self.assertIn(".map-popup--media-count-4", popups_css)
         self.assertIn("--map-popup-photo-columns: 2;", popups_css)
         self.assertIn(".map-popup-link-item", popups_css)
+        self.assertIn(".map-popup-head-values", popups_css)
         self.assertIn(".map-popup-head-value", popups_css)
+        self.assertIn("var(--popup-action-primary)", popups_css)
         self.assertIn("badge: year", popups_js)
         self.assertIn("badge: humanDate.date", popups_js)
         self.assertIn("const badge = escapeHtml(photo.badge || photo.title || '');", popups_js)
@@ -341,7 +363,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
         self.assertIn("bindPopup(vehicleGroupPopup(group), mapPopupOptions())", vehicle_layer_js)
         self.assertIn("mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo')", vehicle_layer_js)
-        self.assertIn("popupHeader(title, popupElapsedAgeText(group.photos))", vehicle_layer_js)
+        self.assertIn("popupHeader(title, popupElapsedAgeBadge(group.photos))", vehicle_layer_js)
         self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
@@ -383,9 +405,19 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("reportDownloadName", reports_js)
         self.assertIn("submit.hidden = true", reports_js)
         self.assertIn("showHeader: false", vehicle_layer_js)
+        self.assertNotIn("function vehicleGroupMeta", vehicle_layer_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", vehicle_layer_js)
         self.assertNotIn("toFixed(6)", vehicle_layer_js)
         self.assertIn("'popup.agePrefix': 'od {age}'", i18n_js)
+        self.assertIn("--pin-vehicle-ring:", styles)
+        self.assertIn("background: var(--pin-vehicle-bg);", styles)
+        self.assertIn("border: 2px solid var(--pin-vehicle-ring);", styles)
+        self.assertIn("background: var(--pin-infrastructure-bg);", styles)
+        self.assertNotIn("map-popup-action--photo", frontend)
+        self.assertNotIn("map-popup-action--delete", frontend)
+        self.assertNotIn("fieldPhoto.openOriginal", i18n_js)
+        self.assertIn("background: var(--surface-subtle);", styles)
+        self.assertIn("background: var(--surface-inset);", styles)
 
         for retired in (
             "toggle-saved-wrecks",
@@ -494,8 +526,10 @@ class FrontendContracts(unittest.TestCase):
 
         self.assertNotIn("function fieldPhotoGroupMeta", popups_js)
         self.assertNotIn("fieldPhoto.popup.capturedAt", popups_js)
+        self.assertNotIn("fieldPhoto.popup.capturedAt", i18n_js)
+        self.assertNotIn("fieldPhoto.noCapturedAt", i18n_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", popups_js)
-        self.assertIn("popupHeader(title, popupElapsedAgeText(photos))", popups_js)
+        self.assertIn("popupHeader(title, popupElapsedAgeBadge(photos))", popups_js)
         self.assertIn("showHeader: false", popups_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Photo {date}'", i18n_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)

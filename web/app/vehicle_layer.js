@@ -101,7 +101,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         && fieldPhotoIssueAllowed(FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
     const ownerButton = encodedPhotoIds
         ? mapPopupIconAction(
-            'map-popup-action--photo',
+            'map-popup-action--primary',
             t('fieldPhoto.editMyPhoto'),
             `openFieldPhotoOwnerEditor('${encodedPhotoIds}')`,
             'M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'
@@ -117,7 +117,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         : '';
     const photoButton = canAddFieldPhotosHere
         ? mapPopupIconAction(
-            'map-popup-action--photo',
+            'map-popup-action--primary',
             t('fieldPhoto.addPhotosHere'),
             `openFieldPhotoGroupPhotoUpload(${lat}, ${lon}, '${encodedPhotoIds}', '${FIELD_PHOTO_ISSUE_TYPE_VEHICLE}', this)`,
             'M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-5h-2v2h-2v2h2v2h2v-2h2v-2h-2v-2z'
@@ -125,7 +125,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         : '';
     const reviewButton = adminAuthenticated && encodedPhotoIds
         ? mapPopupIconAction(
-            'map-popup-action--photo',
+            'map-popup-action--primary',
             t('fieldPhoto.reviewPhotos'),
             `openPhotoReviewForFieldPhotoGroup('${encodedPhotoIds}')`,
             'M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm10-9.5 1.1-1.1 1.5 1.5-1.1 1.1-1.5-1.5zm-6.5 6.5L18 5.5 19.5 7 13 13.5H11.5V12z'
@@ -133,7 +133,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         : '';
     const deleteButton = adminAuthenticated && encodedPhotoIds
         ? mapPopupIconAction(
-            'map-popup-action--delete',
+            'map-popup-action--danger',
             t('fieldPhoto.delete'),
             `deleteFieldPhotoGroup('${encodedPhotoIds}', this)`,
             'M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z'
@@ -144,16 +144,6 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
 
 function vehicleGroupPreviews(group) {
     return fieldPhotoGroupPreviews(group.photos);
-}
-
-function vehicleGroupMeta(group) {
-    const photos = group.photos || [];
-    const firstPhoto = photos[0] || {};
-    return popupMeta([
-        photos.length === 1
-            ? t('fieldPhoto.popup.capturedAt', { date: firstPhoto.captured_at || t('fieldPhoto.noCapturedAt') })
-            : '',
-    ]);
 }
 
 function vehicleGroupLinks(group) {
@@ -172,8 +162,7 @@ function vehiclePhotoPopup(group) {
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
     return mapPopup(`
-            ${popupHeader(title, popupElapsedAgeText(group.photos))}
-            ${vehicleGroupMeta(group)}
+            ${popupHeader(title, popupElapsedAgeBadge(group.photos))}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}

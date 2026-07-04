@@ -1,9 +1,16 @@
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--popup-surface);
+    color: var(--popup-text);
+}
+
 .map-popup {
     --map-popup-width: min(350px, calc(100vw - 56px));
     --map-popup-photo-columns: 3;
     --map-popup-photo-gap: 8px;
     --map-popup-photo-max-height: none;
     font-family: var(--font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    color: var(--popup-text);
     width: var(--map-popup-width);
 }
 
@@ -53,14 +60,14 @@
 
 .map-popup--loading {
     padding: 10px;
-    color: #4b5563;
+    color: var(--popup-muted);
     font-size: 12px;
     text-align: center;
 }
 
 .map-popup-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     font-size: 13px;
@@ -68,21 +75,41 @@
 }
 
 .map-popup-head strong {
+    flex: 1 1 auto;
     min-width: 0;
     overflow-wrap: anywhere;
 }
 
+.map-popup-head-values {
+    flex: 0 1 auto;
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    max-width: min(54%, 220px);
+    min-width: 0;
+}
+
 .map-popup-head-value {
-    flex: 0 0 auto;
-    max-width: 42%;
+    max-width: 100%;
     border-radius: 999px;
     padding: 2px 7px;
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--popup-surface-muted);
+    color: var(--popup-muted);
     font-size: 11px;
     line-height: 1.25;
     text-align: right;
     overflow-wrap: anywhere;
+}
+
+.map-popup-head-value--age {
+    background: var(--popup-age-surface);
+    color: var(--popup-age-text);
+}
+
+.map-popup-head-value--status {
+    background: var(--popup-status-surface);
+    color: var(--popup-status-text);
 }
 
 .map-popup-meta {
@@ -90,7 +117,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px 10px;
-    color: #4b5563;
+    color: var(--popup-muted);
     font-size: 11px;
     line-height: 1.35;
 }
@@ -106,13 +133,13 @@
     grid-template-columns: 92px minmax(0, 1fr);
     gap: 8px;
     align-items: baseline;
-    color: #4b5563;
+    color: var(--popup-muted);
     font-size: 11px;
 }
 
 .parcel-popup-row strong {
     min-width: 0;
-    color: #111827;
+    color: var(--popup-text);
     font-size: 12px;
     overflow-wrap: anywhere;
 }
@@ -127,13 +154,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    color: #4b5563;
+    color: var(--popup-muted);
     font: 800 10px var(--font);
 }
 
 .map-popup-section-count {
     flex: 0 0 auto;
-    color: #64748b;
+    color: var(--popup-muted-strong);
 }
 
 .map-popup-photo-grid {
@@ -169,8 +196,8 @@
     padding: 0;
     overflow: hidden;
     border-radius: 6px;
-    border: 1px solid #d1d5db;
-    background: #f8fafc;
+    border: 1px solid var(--popup-border);
+    background: var(--popup-surface-soft);
     aspect-ratio: 4 / 3;
     cursor: pointer;
     transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
@@ -187,8 +214,8 @@
 
 .map-popup-photo:hover,
 .map-popup-photo:focus-visible {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+    border-color: var(--popup-focus);
+    box-shadow: 0 0 0 2px var(--popup-focus-soft);
 }
 
 .map-popup-photo:hover img,
@@ -203,8 +230,8 @@
     bottom: 4px;
     border-radius: 4px;
     padding: 3px 5px;
-    background: rgba(15, 23, 42, 0.72);
-    color: #fff;
+    background: var(--popup-photo-badge-bg);
+    color: var(--popup-on-action);
     font: 800 11px var(--font);
     line-height: 1.05;
     text-align: center;
@@ -235,12 +262,13 @@
     content: "·";
     flex: 0 0 auto;
     margin-left: 6px;
-    color: #64748b;
+    color: var(--popup-muted-strong);
 }
 
 .map-popup-link-item a {
     min-width: 0;
     max-width: 100%;
+    color: var(--popup-link);
     overflow-wrap: anywhere;
 }
 
@@ -255,9 +283,9 @@
     width: 34px;
     height: 32px;
     border-radius: 7px;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    color: #1f2937;
+    border: 1px solid var(--popup-border-strong);
+    background: var(--popup-action-surface);
+    color: var(--popup-control-text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -275,29 +303,32 @@
     opacity: 0.6;
 }
 
-.map-popup-action--report:hover,
-.map-popup-action--photo:hover {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #fff;
+.map-popup-action--primary:hover {
+    background: var(--popup-action-primary);
+    border-color: var(--popup-action-primary);
+    color: var(--popup-on-action);
 }
 
-.map-popup-action--approve:hover {
-    background: #16a34a;
-    border-color: #16a34a;
-    color: #fff;
+.map-popup-action--report:hover {
+    background: var(--popup-action-report);
+    border-color: var(--popup-action-report);
+    color: var(--popup-on-action);
 }
 
-.map-popup-action--delete {
+.map-popup-action--danger {
     margin-left: auto;
-    border-color: rgba(220, 38, 38, 0.28);
-    color: #991b1b;
+    border-color: var(--popup-action-danger-border);
+    color: var(--popup-action-danger-text);
 }
 
-.map-popup-action--delete:hover {
-    background: #dc2626;
-    border-color: #dc2626;
-    color: #fff;
+.map-popup-action--danger + .map-popup-action--danger {
+    margin-left: 0;
+}
+
+.map-popup-action--danger:hover {
+    background: var(--popup-action-danger);
+    border-color: var(--popup-action-danger);
+    color: var(--popup-on-action);
 }
 
 .map-popup-text-action {
@@ -305,27 +336,27 @@
     border: 0;
     border-radius: 7px;
     padding: 7px 9px;
-    background: #059669;
-    color: #fff;
+    background: var(--popup-action-success);
+    color: var(--popup-on-action);
     font: 800 12px var(--font);
     cursor: pointer;
 }
 
 .map-popup-text-action:hover {
-    background: #047857;
+    background: var(--popup-action-success-hover);
 }
 
 .map-popup-text-action--danger {
     margin-top: 6px;
-    border: 1px solid rgba(220, 38, 38, 0.28);
-    background: rgba(220, 38, 38, 0.08);
-    color: #991b1b;
+    border: 1px solid var(--popup-action-danger-border);
+    background: var(--popup-action-danger-soft);
+    color: var(--popup-action-danger-text);
 }
 
 .map-popup-text-action--danger:hover {
-    background: #dc2626;
-    border-color: #dc2626;
-    color: #fff;
+    background: var(--popup-action-danger);
+    border-color: var(--popup-action-danger);
+    color: var(--popup-on-action);
 }
 
 .map-popup-text-action:disabled {

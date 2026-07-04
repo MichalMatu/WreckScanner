@@ -11,7 +11,7 @@
 
 .app-menu-button,
 .app-menu-drawer-item,
-.app-menu-admin-icon {
+.app-menu-footer-icon {
     border: 0;
     font-family: var(--font);
     cursor: pointer;
@@ -163,11 +163,13 @@
     margin-top: auto;
     padding: var(--space-3) var(--space-5) var(--space-4);
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: var(--space-2);
     border-top: 1px solid var(--border);
 }
 
-.app-menu-admin-icon {
+.app-menu-footer-icon {
     width: 36px;
     height: 36px;
     align-items: center;
@@ -186,8 +188,8 @@
         opacity var(--duration-fast);
 }
 
-.app-menu-admin-icon:hover,
-.app-menu-admin-icon:focus-visible {
+.app-menu-footer-icon:hover,
+.app-menu-footer-icon:focus-visible {
     background: var(--surface-subtle);
     border-color: color-mix(in srgb, var(--primary) 34%, transparent);
     color: var(--text-strong);
@@ -195,14 +197,19 @@
     outline: none;
 }
 
-.app-menu-admin-icon.is-admin {
+.app-menu-footer-icon--lang {
+    color: var(--text-soft);
+    opacity: 0.9;
+}
+
+.app-menu-footer-icon--admin.is-admin {
     background: var(--success-soft);
     border-color: color-mix(in srgb, var(--success) 46%, transparent);
     color: #d1fae5;
     opacity: 1;
 }
 
-.app-menu-admin-icon svg {
+.app-menu-footer-icon svg {
     width: 16px;
     height: 16px;
     fill: currentColor;

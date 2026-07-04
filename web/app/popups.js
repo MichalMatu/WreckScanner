@@ -26,8 +26,26 @@ function popupCompactLink(href, label, title) {
     return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" title="${escapeHtml(title || label)}">${escapeHtml(label)}</a>`;
 }
 
+function popupHeaderBadge(label, variant = '') {
+    const text = String(label || '').trim();
+    if (!text) return null;
+    return { label: text, variant: String(variant || '').replace(/[^A-Za-z0-9_-]/g, '') };
+}
+
+function popupHeaderBadgeHtml(value) {
+    const badge = value && typeof value === 'object'
+        ? popupHeaderBadge(value.label, value.variant)
+        : popupHeaderBadge(value);
+    if (!badge) return '';
+    const variantClass = badge.variant ? ` map-popup-head-value--${badge.variant}` : '';
+    return `<span class="map-popup-head-value${variantClass}">${escapeHtml(badge.label)}</span>`;
+}
+
 function popupHeader(title, value = '') {
-    const valueHtml = value ? `<span class="map-popup-head-value">${escapeHtml(value)}</span>` : '';
+    const values = (Array.isArray(value) ? value : [value])
+        .map(item => popupHeaderBadgeHtml(item))
+        .filter(Boolean);
+    const valueHtml = values.length ? `<span class="map-popup-head-values">${values.join('')}</span>` : '';
     return `
         <div class="map-popup-head">
             <strong>${escapeHtml(title)}</strong>
@@ -112,6 +130,10 @@ function popupElapsedAgeText(photos, nowMs = Date.now()) {
     return t('popup.agePrefix', {
         age: popupElapsedUnitText(Math.max(0, nowMs - startTimestampMs)),
     });
+}
+
+function popupElapsedAgeBadge(photos, nowMs = Date.now()) {
+    return popupHeaderBadge(popupElapsedAgeText(photos, nowMs), 'age');
 }
 
 function humanNameFromFilename(value) {
