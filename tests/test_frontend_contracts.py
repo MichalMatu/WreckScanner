@@ -23,6 +23,7 @@ class FrontendContracts(unittest.TestCase):
         html = read_index_html()
         ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
         panel_css = (ROOT_DIR / "web" / "styles" / "panel.css").read_text(encoding="utf-8")
+        tokens_css = (ROOT_DIR / "web" / "styles" / "tokens.css").read_text(encoding="utf-8")
 
         self.assertIn('id="app-menu-toggle-lang"', html)
         self.assertIn('id="app-menu-lang-label"', html)
@@ -36,6 +37,10 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn(".app-menu-footer-icon--lang", panel_css)
         self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
         self.assertNotIn("app-menu-admin-icon", html + panel_css)
+        self.assertIn('-apple-system, BlinkMacSystemFont, "SF Pro Text"', tokens_css)
+        self.assertNotIn("fonts.googleapis.com", html)
+        self.assertNotIn("Plus Jakarta Sans", html + tokens_css)
+        self.assertNotIn("Outfit", html + tokens_css)
 
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
         html = read_index_html()
@@ -139,7 +144,7 @@ class FrontendContracts(unittest.TestCase):
         html = read_index_html()
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
 
-        self.assertIn("background: var(--surface-subtle);", admin_css)
+        self.assertIn("background: var(--glass-control-bg);", admin_css)
         self.assertIn("color: var(--text);", admin_css)
         self.assertIn("color: var(--text-strong);", admin_css)
         self.assertNotIn("admin-panel-section--tools", html + admin_css)
@@ -280,7 +285,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn(".map-popup-link-item", popups_css)
         self.assertIn(".map-popup-head-values", popups_css)
         self.assertIn(".map-popup-head-value", popups_css)
+        self.assertIn("backdrop-filter: var(--glass-blur);", popups_css)
+        self.assertIn("background: var(--popup-surface);", popups_css)
         self.assertIn("var(--popup-action-primary)", popups_css)
+        self.assertNotIn("transform: scale(1.015)", popups_css)
+        self.assertNotIn("--popup-photo-hover-shadow", popups_css)
+        self.assertNotIn(".map-popup-photo:hover", popups_css)
         self.assertIn("badge: year", popups_js)
         self.assertIn("badge: humanDate.date", popups_js)
         self.assertIn("const badge = escapeHtml(photo.badge || photo.title || '');", popups_js)

@@ -7,19 +7,20 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(17, 24, 39, 0.92);
-    border: 1px solid var(--border);
+    background: var(--glass-panel-bg);
+    border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 10px 14px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     z-index: 900;
     font-family: var(--font, var(--font-body));
     user-select: none;
 }
 
 .year-arrow {
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--surface-inset);
     border: 1px solid var(--border);
     color: var(--muted);
     width: 28px;
@@ -47,7 +48,7 @@
 
 .year-track input[type=range] {
     width: 100%;
-    accent-color: var(--primary, #6366f1);
+    accent-color: var(--primary);
     cursor: pointer;
 }
 
@@ -73,7 +74,7 @@
 }
 
 .year-tick.active {
-    color: #fff;
+    color: var(--text-strong);
     background: var(--primary-soft);
 }
 
@@ -82,7 +83,7 @@
     max-width: 190px;
     text-align: center;
     font: 700 16px var(--font-title, var(--font-display, sans-serif));
-    color: #fff;
+    color: var(--text-strong);
     padding: 4px 10px;
     background: var(--primary-soft);
     border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);

@@ -4,6 +4,27 @@
     color: var(--popup-text);
 }
 
+.leaflet-popup-content-wrapper {
+    border: 1px solid var(--popup-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.leaflet-popup-tip {
+    border: 1px solid var(--popup-border);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    color: var(--popup-muted);
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus-visible {
+    color: var(--popup-text);
+}
+
 .map-popup {
     --map-popup-width: min(350px, calc(100vw - 56px));
     --map-popup-photo-columns: 3;
@@ -200,7 +221,7 @@
     background: var(--popup-surface-soft);
     aspect-ratio: 4 / 3;
     cursor: pointer;
-    transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+    transition: border-color var(--duration-fast);
 }
 
 .map-popup-photo img {
@@ -209,18 +230,12 @@
     display: block;
     object-fit: cover;
     cursor: pointer;
-    transition: transform 120ms ease;
 }
 
-.map-popup-photo:hover,
 .map-popup-photo:focus-visible {
-    border-color: var(--popup-focus);
-    box-shadow: 0 0 0 2px var(--popup-focus-soft);
-}
-
-.map-popup-photo:hover img,
-.map-popup-photo:focus-visible img {
-    transform: scale(1.015);
+    border-color: var(--popup-border-strong);
+    outline: 2px solid var(--popup-border-strong);
+    outline-offset: 2px;
 }
 
 .map-popup-photo span {
@@ -290,6 +305,11 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast),
+        box-shadow var(--duration-fast);
 }
 
 .map-popup-action svg {
@@ -307,12 +327,14 @@
     background: var(--popup-action-primary);
     border-color: var(--popup-action-primary);
     color: var(--popup-on-action);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--popup-action-primary) 22%, transparent);
 }
 
 .map-popup-action--report:hover {
     background: var(--popup-action-report);
     border-color: var(--popup-action-report);
     color: var(--popup-on-action);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--popup-action-report) 22%, transparent);
 }
 
 .map-popup-action--danger {
