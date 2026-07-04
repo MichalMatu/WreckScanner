@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 from collections import Counter
 from datetime import datetime, timezone
@@ -10,17 +9,12 @@ from typing import Any
 from PIL import Image, UnidentifiedImageError
 
 from core import config
-from core.field_photos import FIELD_PHOTO_ID_RE
+from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, list_field_photo_records
 from core.photo_privacy import REVIEW_STATUSES, normalize_redactions
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
 
 
 def _issue(
@@ -139,7 +133,7 @@ def _audit_private_photo_file(
                 "warning",
                 f"{code_prefix}_size_mismatch",
                 file_path,
-                "Rozmiar prywatnego oryginału nie zgadza się z record.json.",
+                "Rozmiar prywatnego oryginału nie zgadza się z rekordem DB.",
                 image_width=info["width"],
                 image_height=info["height"],
                 record_width=width,
@@ -265,18 +259,6 @@ def _new_field_photo_summary() -> dict[str, Any]:
     }
 
 
-def _read_field_photo_record(record_path: Path, issues: list[dict[str, Any]]) -> dict[str, Any] | None:
-    try:
-        record = _read_json(record_path)
-    except (OSError, json.JSONDecodeError) as exc:
-        _issue(issues, "error", "field_photo_record_unreadable", record_path, f"Nie da się odczytać record.json: {exc}")
-        return None
-    if not isinstance(record, dict):
-        _issue(issues, "error", "field_photo_record_not_object", record_path, "record.json nie jest obiektem JSON.")
-        return None
-    return record
-
-
 def _audit_field_photo_identity(
     directory: Path,
     record_path: Path,
@@ -365,6 +347,8 @@ def _audit_field_photo_public_assets(
 
 def _audit_field_photo_record(
     directory: Path,
+    record_path: Path,
+    record: dict[str, Any],
     private_photos_dir: Path,
     issues: list[dict[str, Any]],
     summary: dict[str, Any],
@@ -373,11 +357,6 @@ def _audit_field_photo_record(
     *,
     check_images: bool,
 ) -> None:
-    record_path = directory / "record.json"
-    record = _read_field_photo_record(record_path, issues)
-    if record is None:
-        return
-
     summary["records"] += 1
     _audit_field_photo_identity(directory, record_path, record, issues, field_photo_ids)
     _audit_field_photo_issue_type(record_path, record, issues, summary, issue_counter)
@@ -410,28 +389,23 @@ def _audit_field_photos(
     issue_counter = Counter()
     field_photo_ids: set[str] = set()
 
-    if not field_photos_dir.exists():
+    try:
+        records = list_field_photo_records(field_photos_dir, private_dir=private_photos_dir, prepare=False)
+    except Exception as exc:
         _issue(
-            issues, "warning", "field_photos_dir_missing", field_photos_dir, "Katalog zdjęć terenowych nie istnieje."
+            issues, "error", "field_photo_database_unreadable", config.DATABASE_PATH, f"Nie da się odczytać DB: {exc}"
         )
         summary["ids"] = []
         return summary
 
-    for child in sorted(field_photos_dir.iterdir()):
-        if child.is_file():
-            summary["orphan_files"] += 1
-            _issue(issues, "warning", "field_photo_orphan_file", child, "Plik leży bezpośrednio w katalogu zdjęć.")
-            continue
-        if not child.is_dir():
-            continue
-
-        record_path = child / "record.json"
-        if not record_path.exists():
-            summary["orphan_directories"] += 1
-            _issue(issues, "error", "field_photo_record_missing", child, "Katalog zdjęcia nie ma record.json.")
-            continue
+    for record in records:
+        photo_id = str(record.get("id") or "")
+        child = field_photo_record_dir(photo_id, field_photos_dir)
+        record_path = Path(f"db://field_photos/{photo_id}")
         _audit_field_photo_record(
             child,
+            record_path,
+            record,
             private_photos_dir,
             issues,
             summary,
@@ -439,6 +413,16 @@ def _audit_field_photos(
             field_photo_ids,
             check_images=check_images,
         )
+
+    if field_photos_dir.exists():
+        for child in sorted(field_photos_dir.iterdir()):
+            if child.is_file():
+                summary["orphan_files"] += 1
+                _issue(issues, "warning", "field_photo_orphan_file", child, "Plik leży bezpośrednio w katalogu zdjęć.")
+                continue
+            if child.is_dir() and child.name not in field_photo_ids:
+                summary["orphan_directories"] += 1
+                _issue(issues, "warning", "field_photo_orphan_directory", child, "Katalog zdjęcia nie ma rekordu DB.")
 
     summary["issue_types"] = {key: int(issue_counter.get(key, 0)) for key in config.FIELD_PHOTO_ISSUE_TYPES}
     summary["ids"] = sorted(field_photo_ids)

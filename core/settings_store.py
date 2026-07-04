@@ -7,9 +7,9 @@ from typing import Any
 
 from core import config
 from core.config import DEFAULT_ENHANCEMENT_SETTINGS, EnhancementSettings
-from core.json_io import write_json_atomic
+from core.database import apply_migrations, connect_database, json_text, now_iso
 
-SETTINGS_PATH = Path(__file__).resolve().parent.parent / config.SETTINGS_FILENAME
+DATABASE_PATH = Path(__file__).resolve().parent.parent / config.DATABASE_PATH
 DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
     "vehicles": True,
     "field_photo_infrastructure": True,
@@ -98,17 +98,30 @@ def public_feature_settings_from_dict(raw: Any) -> dict[str, bool]:
     return settings
 
 
-def load_app_settings() -> dict[str, Any]:
-    if not SETTINGS_PATH.exists():
-        return default_app_settings()
+def _connection():
+    connection = connect_database(DATABASE_PATH)
+    apply_migrations(connection)
+    return connection
 
+
+def _settings_rows() -> dict[str, Any]:
+    connection = _connection()
     try:
-        with SETTINGS_PATH.open(encoding="utf-8") as f:
-            raw = json.load(f)
-    except (OSError, json.JSONDecodeError):
-        return default_app_settings()
+        rows = connection.execute("SELECT key, value_json FROM settings")
+        settings: dict[str, Any] = {}
+        for row in rows:
+            try:
+                settings[str(row["key"])] = json.loads(str(row["value_json"]))
+            except json.JSONDecodeError:
+                continue
+        return settings
+    finally:
+        connection.close()
 
-    if not isinstance(raw, dict):
+
+def load_app_settings() -> dict[str, Any]:
+    raw = _settings_rows()
+    if not raw:
         return default_app_settings()
 
     settings = default_app_settings()
@@ -127,6 +140,21 @@ def save_app_settings(raw: dict[str, Any]) -> dict[str, Any]:
     if "public_features" in raw:
         current["public_features"] = public_feature_settings_from_dict(raw["public_features"])
 
-    write_json_atomic(SETTINGS_PATH, current)
+    connection = _connection()
+    try:
+        with connection:
+            for key, value in sorted(current.items()):
+                connection.execute(
+                    """
+                    INSERT INTO settings (key, value_json, updated_at)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(key) DO UPDATE SET
+                        value_json = excluded.value_json,
+                        updated_at = excluded.updated_at
+                    """,
+                    (key, json_text(value, {}), now_iso()),
+                )
+    finally:
+        connection.close()
 
     return current

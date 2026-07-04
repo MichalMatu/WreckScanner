@@ -5,23 +5,27 @@ modelu trwalych spraw pojazdow.
 
 ## Zrodlo prawdy
 
-- `zdjecia_terenowe/` - jedyne rekordy obserwacji pokazywane na mapie.
+- `wreckscanner.sqlite3` - aktywny stan aplikacji: `field_photos`,
+  `settings`, `privacy_requests`.
+- `zdjecia_terenowe/` - publiczne pliki zdjec terenowych i katalogi robocze
+  pochodnych obrazow.
 - `prywatne_zdjecia/field_photos/` - prywatne oryginaly zdjec terenowych.
-- `zgloszenia_prywatnosci/` - kolejka zgloszen prywatnosci.
-- `settings.json` - lokalne ustawienia aplikacji.
+- `settings.json` i `zgloszenia_prywatnosci/` - format importu/migracji i
+  backup historyczny, nie aktywny runtime.
 
 Kazde zdjecie terenowe musi miec jawne `issue_type`. Warstwa pojazdow jest
 budowana z zatwierdzonych zdjec terenowych o `issue_type: "vehicle"`.
 
 ## Aktualne przeplywy
 
-- Dodanie materialu tworzy rekord zdjecia terenowego z tokenem edycji.
+- Dodanie materialu tworzy rekord `field_photos` w SQLite z tokenem edycji.
 - Administrator zatwierdza albo odrzuca zdjecia w jednej kolejce photo review.
 - Pojazdy na mapie sa grupami zatwierdzonych zdjec terenowych, nie osobnymi
   rekordami spraw.
 - Zgloszenie ZIP/PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
 - Miniatury ortofoto sa dowodem generowanym podczas tworzenia pakietu raportu.
+- Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB.
 
 ## Endpointy domenowe
 
@@ -61,14 +65,10 @@ rg -n -i '(/api/wrecks|zidentyfikowane_wraki|wreck_photos|attached_wreck|saved_w
 test ! -e zidentyfikowane_wraki
 test ! -e prywatne_zdjecia/wreck_photos
 
-find zdjecia_terenowe -name record.json -print0 \
-  | xargs -0 jq -r 'select(has("issue_type")|not) | input_filename'
-
-find zdjecia_terenowe -name record.json -print0 \
-  | xargs -0 rg -l '"(original_file|thumbnail_file|thumb_file|original_url|original_path)"'
+./.venv/bin/python scripts/migrate_json_to_db.py --validate-only
 
 ./scripts/check.sh
 ```
 
-Oczekiwany wynik: dwa polecenia `find` nic nie wypisuja, katalogi starego modelu
-nie istnieja, a `scripts/check.sh` konczy sie statusem OK.
+Oczekiwany wynik: walidacja DB pokazuje zgodne liczniki i `Brakujace sciezki: 0`,
+katalogi starego modelu nie istnieja, a `scripts/check.sh` konczy sie statusem OK.

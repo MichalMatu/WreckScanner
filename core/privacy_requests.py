@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from core import config
-from core.json_io import write_json_atomic
+from core.database import apply_migrations, connect_database, upsert_privacy_request
 
 PRIVACY_REQUEST_STATUSES = {"new", "in_progress", "done", "rejected"}
+DATABASE_PATH = Path(__file__).resolve().parent.parent / config.DATABASE_PATH
 
 
 def _now_iso() -> str:
@@ -33,17 +33,6 @@ def _request_id(created_at: str, email: str) -> str:
     return f"privacy_{stamp}_{digest}"
 
 
-def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    write_json_atomic(path, payload)
-
-
-def _read_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError("Nieprawidłowy format zgłoszenia.")
-    return payload
-
-
 def _safe_request_id(value: Any) -> str:
     request_id = str(value or "").strip()
     if not request_id.startswith("privacy_") or "/" in request_id or "\\" in request_id or ".." in request_id:
@@ -58,13 +47,10 @@ def _normalize_status(value: Any) -> str:
     return status
 
 
-def _request_path(request_id: str, storage_dir: Path) -> Path:
-    request_id = _safe_request_id(request_id)
-    root = storage_dir.resolve()
-    path = (storage_dir / f"{request_id}.json").resolve()
-    if root != path and root not in path.parents:
-        raise ValueError("Nieprawidłowa ścieżka zgłoszenia.")
-    return path
+def _connection():
+    connection = connect_database(DATABASE_PATH)
+    apply_migrations(connection)
+    return connection
 
 
 def _ensure_request_fields(payload: dict[str, Any]) -> bool:
@@ -86,8 +72,23 @@ def _ensure_request_fields(payload: dict[str, Any]) -> bool:
     return changed
 
 
-def create_privacy_request(fields: dict[str, Any], storage_dir: Path | None = None) -> dict[str, Any]:
-    storage = storage_dir or config.PRIVACY_REQUESTS_DIR
+def _payload_from_row(row) -> dict[str, Any]:
+    payload = {
+        "id": row["id"],
+        "created_at": row["created_at"],
+        "status": row["status"],
+        "email": row["email"],
+        "target": row["target"],
+        "reason": row["reason"],
+        "updated_at": row["updated_at"],
+        "handled_at": row["handled_at"],
+        "admin_note": row["admin_note"],
+    }
+    _ensure_request_fields(payload)
+    return payload
+
+
+def create_privacy_request(fields: dict[str, Any]) -> dict[str, Any]:
     email = _safe_text(fields.get("email"), 180)
     target = _safe_text(fields.get("target"), 500)
     reason = _safe_text(fields.get("reason"), 4000)
@@ -106,38 +107,42 @@ def create_privacy_request(fields: dict[str, Any], storage_dir: Path | None = No
         "handled_at": None,
         "admin_note": "",
     }
-    _write_json(storage / f"{request_id}.json", payload)
+    connection = _connection()
+    try:
+        with connection:
+            upsert_privacy_request(connection, payload)
+    finally:
+        connection.close()
     return {"status": "ok", "request_id": request_id}
 
 
-def list_privacy_requests(storage_dir: Path | None = None, *, status: Any = "all") -> list[dict[str, Any]]:
-    storage = storage_dir or config.PRIVACY_REQUESTS_DIR
-    if not storage.is_dir():
-        return []
+def list_privacy_requests(*, status: Any = "all") -> list[dict[str, Any]]:
     status_filter = str(status or "all").strip()
     if status_filter != "all" and status_filter not in PRIVACY_REQUEST_STATUSES:
         raise ValueError("Nieprawidłowy filtr statusu zgłoszeń.")
-    requests: list[dict[str, Any]] = []
-    for path in sorted(storage.glob("privacy_*.json")):
-        try:
-            payload = _read_json(path)
-            if _ensure_request_fields(payload):
-                _write_json(path, payload)
-        except (OSError, json.JSONDecodeError, ValueError):
-            continue
-        if payload.get("id") and (status_filter == "all" or payload.get("status") == status_filter):
-            requests.append(payload)
-    return sorted(requests, key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""), reverse=True)
+    query = "SELECT * FROM privacy_requests"
+    params: tuple[Any, ...] = ()
+    if status_filter != "all":
+        query += " WHERE status = ?"
+        params = (status_filter,)
+    query += " ORDER BY updated_at DESC, created_at DESC"
+    connection = _connection()
+    try:
+        return [_payload_from_row(row) for row in connection.execute(query, params)]
+    finally:
+        connection.close()
 
 
-def update_privacy_request(request_id: str, fields: dict[str, Any], storage_dir: Path | None = None) -> dict[str, Any]:
-    storage = storage_dir or config.PRIVACY_REQUESTS_DIR
-    path = _request_path(request_id, storage)
-    if not path.exists():
-        raise FileNotFoundError("Nie znaleziono zgłoszenia.")
-    payload = _read_json(path)
-    if str(payload.get("id") or "") != _safe_request_id(request_id):
-        raise ValueError("ID zgłoszenia nie zgadza się z nazwą pliku.")
+def update_privacy_request(request_id: str, fields: dict[str, Any]) -> dict[str, Any]:
+    request_id = _safe_request_id(request_id)
+    connection = _connection()
+    try:
+        row = connection.execute("SELECT * FROM privacy_requests WHERE id = ?", (request_id,)).fetchone()
+        if row is None:
+            raise FileNotFoundError("Nie znaleziono zgłoszenia.")
+        payload = _payload_from_row(row)
+    finally:
+        connection.close()
     _ensure_request_fields(payload)
     status = _normalize_status(fields.get("status", payload.get("status")))
     admin_note = _safe_text(fields.get("admin_note", payload.get("admin_note")), 4000)
@@ -146,5 +151,10 @@ def update_privacy_request(request_id: str, fields: dict[str, Any], storage_dir:
     payload["admin_note"] = admin_note
     payload["updated_at"] = updated_at
     payload["handled_at"] = updated_at if status in {"done", "rejected"} else None
-    _write_json(path, payload)
+    connection = _connection()
+    try:
+        with connection:
+            upsert_privacy_request(connection, payload)
+    finally:
+        connection.close()
     return {"status": "ok", "request": payload}

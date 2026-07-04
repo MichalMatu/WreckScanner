@@ -12,6 +12,7 @@ from PIL import Image
 import core.report_pdf as report_pdf
 from app.http import public as http_public
 from app.http.public import reject_report_package_files
+from core.database import migrate_json_to_database
 from core.report_assets import report_package_download_name
 from core.report_models import safe_report_url, validate_report_fields
 from core.report_packages import create_field_photo_report_package
@@ -67,6 +68,9 @@ def create_field_photo_fixture(
     photo_dir.mkdir(parents=True, exist_ok=True)
     (photo_dir / "public.jpg").write_bytes(image_bytes())
     (photo_dir / "public_thumb.jpg").write_bytes(image_bytes())
+    private_rel = f"field_photos/{photo_id}/original.jpg"
+    (root / "prywatne_zdjecia" / private_rel).parent.mkdir(parents=True, exist_ok=True)
+    (root / "prywatne_zdjecia" / private_rel).write_bytes(image_bytes())
     write_json(
         photo_dir / "record.json",
         {
@@ -83,7 +87,7 @@ def create_field_photo_fixture(
             "lon": 17.2,
             "coordinate_source": "map",
             "captured_at": "2026-06-04T20:00:00",
-            "private_original_file": f"field_photos/{photo_id}/original.jpg",
+            "private_original_file": private_rel,
             "public_review_status": status,
             "redactions": [],
             "reviewed_at": "2026-06-04T20:12:00Z" if status == "approved" else None,
@@ -94,6 +98,7 @@ def create_field_photo_fixture(
             "links": {},
         },
     )
+    migrate_json_to_database(root_dir=root, database_path=root / "wreckscanner.sqlite3", require_backup=False)
     return field_dir, photo_id
 
 

@@ -9,13 +9,9 @@ from tempfile import TemporaryDirectory
 from PIL import Image
 
 from core.data_diagnostics import format_data_diagnostics, run_data_diagnostics
+from core.field_photos import load_field_photo_record, save_field_photo_record
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-
-
-def write_json(path: Path, payload):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload), encoding="utf-8")
 
 
 def write_image(path: Path, size: tuple[int, int] = (48, 32)) -> None:
@@ -38,14 +34,15 @@ def write_field_photo_record(
     image_size: tuple[int, int] = (48, 32),
     thumb_size: tuple[int, int] = (36, 24),
     write_private: bool = True,
+    write_public: bool = True,
 ) -> Path:
     record_dir = field_dir / photo_id
     private_original = private_original_file or f"field_photos/{photo_id}/original.jpg"
     if write_private and not private_original.startswith("../") and "\\" not in private_original:
         write_image(private_dir / private_original, image_size)
-    if public_review_status == "approved" and public_image_file and "../" not in public_image_file:
+    if write_public and public_review_status == "approved" and public_image_file and "../" not in public_image_file:
         write_image(record_dir / public_image_file, image_size)
-    if public_review_status == "approved" and public_thumb_file and "../" not in public_thumb_file:
+    if write_public and public_review_status == "approved" and public_thumb_file and "../" not in public_thumb_file:
         write_image(record_dir / public_thumb_file, thumb_size)
     record = {
         "id": photo_id,
@@ -70,7 +67,7 @@ def write_field_photo_record(
         record["public_thumb_file"] = public_thumb_file
     if issue_type is not None:
         record["issue_type"] = issue_type
-    write_json(record_dir / "record.json", record)
+    save_field_photo_record(record, field_dir)
     return record_dir
 
 
@@ -101,25 +98,18 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertIn("Zdjęcia terenowe: 2 rekordów", format_data_diagnostics(report))
             self.assertNotIn("Sprawy pojazdów", format_data_diagnostics(report))
 
-    def test_run_data_diagnostics_finds_corrupt_records_and_missing_files(self):
+    def test_run_data_diagnostics_finds_missing_files(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_dir = root / "zdjecia_terenowe"
             private_dir = root / "prywatne_zdjecia"
 
-            broken_field = field_dir / "photo_20260604T200730Z_37885295"
-            write_json(
-                broken_field / "record.json",
-                {
-                    "id": broken_field.name,
-                    "lat": 999,
-                    "lon": 17.2,
-                    "private_original_file": "field_photos/photo_20260604T200730Z_37885295/missing.jpg",
-                    "public_review_status": "approved",
-                    "redactions": [],
-                    "public_image_file": "public.jpg",
-                    "public_thumb_file": "public_thumb.jpg",
-                },
+            write_field_photo_record(
+                field_dir,
+                private_dir,
+                private_original_file="field_photos/photo_20260604T200730Z_37885295/missing.jpg",
+                write_private=False,
+                write_public=False,
             )
 
             report = run_data_diagnostics(
@@ -130,9 +120,9 @@ class DataDiagnosticsTests(unittest.TestCase):
 
             self.assertEqual(report["status"], "error")
             codes = {issue["code"] for issue in report["issues"]}
-            self.assertIn("field_photo_missing_issue_type", codes)
-            self.assertIn("field_photo_bad_coordinates", codes)
             self.assertIn("field_photo_private_original_missing", codes)
+            self.assertIn("field_photo_public_image_missing_file", codes)
+            self.assertIn("field_photo_public_thumb_missing_file", codes)
 
     def test_run_data_diagnostics_finds_unsafe_paths(self):
         with TemporaryDirectory() as tmp:
@@ -161,10 +151,10 @@ class DataDiagnosticsTests(unittest.TestCase):
             record_dir = write_field_photo_record(field_dir, private_dir, image_size=(48, 32), thumb_size=(480, 320))
             private_original = private_dir / f"field_photos/{record_dir.name}/original.jpg"
             private_original.write_bytes(b"not an image")
-            record = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
+            record = load_field_photo_record(record_dir.name, field_dir, private_dir=private_dir)
             record["image_width"] = 64
             record["image_height"] = 64
-            write_json(record_dir / "record.json", record)
+            save_field_photo_record(record, field_dir)
             mismatch_dir = write_field_photo_record(
                 field_dir,
                 private_dir,
@@ -172,10 +162,10 @@ class DataDiagnosticsTests(unittest.TestCase):
                 image_size=(50, 40),
                 thumb_size=(36, 28),
             )
-            mismatch_record = json.loads((mismatch_dir / "record.json").read_text(encoding="utf-8"))
+            mismatch_record = load_field_photo_record(mismatch_dir.name, field_dir, private_dir=private_dir)
             mismatch_record["image_width"] = 99
             mismatch_record["image_height"] = 88
-            write_json(mismatch_dir / "record.json", mismatch_record)
+            save_field_photo_record(mismatch_record, field_dir)
 
             report = run_data_diagnostics(field_photos_dir=field_dir, private_photos_dir=private_dir)
 
@@ -188,8 +178,8 @@ class DataDiagnosticsTests(unittest.TestCase):
     def test_diagnose_data_cli_outputs_json_without_archived_case_root(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            field_dir = root / "field"
-            private_dir = root / "private"
+            field_dir = root / "zdjecia_terenowe"
+            private_dir = root / "prywatne_zdjecia"
             write_field_photo_record(field_dir, private_dir)
 
             result = subprocess.run(

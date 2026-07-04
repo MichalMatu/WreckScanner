@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import json
 import secrets
 import shutil
 from datetime import datetime, timezone
@@ -11,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip
-from core.field_photos import FIELD_PHOTO_ID_RE
+from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, load_field_photo_record
 from core.geo import external_map_links
 from core.map_crops import validate_crop_m
 from core.photo_privacy import is_approved, safe_child
@@ -112,18 +111,7 @@ def _field_photo_record_dir(photo_id: Any, field_photos_dir: Path) -> Path:
     photo_id_text = str(photo_id or "").strip()
     if not FIELD_PHOTO_ID_RE.fullmatch(photo_id_text):
         raise ValueError("Nieprawidłowy identyfikator zdjęcia terenowego.")
-    root = field_photos_dir.resolve()
-    record_dir = (field_photos_dir / photo_id_text).resolve()
-    if root != record_dir and root not in record_dir.parents:
-        raise ValueError("Nieprawidłowa ścieżka zdjęcia terenowego.")
-    if not (record_dir / "record.json").exists():
-        raise FileNotFoundError("Nie znaleziono zdjęcia terenowego.")
-    return record_dir
-
-
-def _read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
+    return field_photo_record_dir(photo_id_text, field_photos_dir)
 
 
 def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
@@ -135,9 +123,9 @@ def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[t
             continue
         seen.add(photo_id)
         record_dir = _field_photo_record_dir(photo_id, field_photos_dir)
-        record = _read_json(record_dir / "record.json")
+        record = load_field_photo_record(photo_id, field_photos_dir)
         if not isinstance(record, dict) or str(record.get("id") or "") != photo_id:
-            raise ValueError("Nieprawidłowy format record.json zdjęcia terenowego.")
+            raise ValueError("Nieprawidłowy rekord zdjęcia terenowego.")
         if not is_approved(record):
             raise ValueError("Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych.")
         if (

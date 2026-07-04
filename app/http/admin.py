@@ -151,7 +151,7 @@ def handle_admin_privacy_requests(handler) -> None:
     query = parse_qs(urlsplit(handler.path).query)
     status_filter = query.get("status", ["all"])[0]
     try:
-        requests = list_privacy_requests(core_config.PRIVACY_REQUESTS_DIR, status=status_filter)
+        requests = list_privacy_requests(status=status_filter)
     except ValueError as e:
         http_responses.send_json(handler, 400, {"error": str(e)})
         return
@@ -290,7 +290,7 @@ def handle_update_privacy_request(handler, request_id: str) -> None:
         return
     try:
         data = http_request_body.read_json_body(handler)
-        result = update_privacy_request(request_id, data, core_config.PRIVACY_REQUESTS_DIR)
+        result = update_privacy_request(request_id, data)
         http_responses.send_json(handler, 200, result)
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})

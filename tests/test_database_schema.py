@@ -3,6 +3,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from core.database import apply_migrations
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 MIGRATION_PATH = ROOT_DIR / "database" / "migrations" / "001_initial.sql"
 
@@ -23,13 +25,13 @@ FORBIDDEN_TABLES = {
 
 class DatabaseSchemaTests(unittest.TestCase):
     def _migrated_connection(self) -> sqlite3.Connection:
-        sql = MIGRATION_PATH.read_text(encoding="utf-8")
         tempdir = TemporaryDirectory()
         self.addCleanup(tempdir.cleanup)
         db_path = Path(tempdir.name) / "wreckscanner.sqlite3"
         connection = sqlite3.connect(db_path)
+        connection.row_factory = sqlite3.Row
         self.addCleanup(connection.close)
-        connection.executescript(sql)
+        apply_migrations(connection)
         return connection
 
     def test_initial_migration_uses_sqlite_wal(self):
@@ -68,6 +70,9 @@ class DatabaseSchemaTests(unittest.TestCase):
 
         for column in (
             "private_original_file",
+            "private_original_replaced_at",
+            "private_original_deleted_at",
+            "private_original_retention_action",
             "public_image_file",
             "public_thumb_file",
             "exif_json",

@@ -1,6 +1,7 @@
 # Backup
 
-Dane aplikacji sa plikami w katalogach projektu. Lokalny backup uzywa `restic`.
+Dane aplikacji to baza SQLite oraz pliki zdjec w katalogach projektu. Lokalny
+backup uzywa `restic`.
 
 ## Pliki
 
@@ -15,10 +16,10 @@ Backup obejmuje dane uzytkowe:
 
 - `zdjecia_terenowe/`
 - `prywatne_zdjecia/`
-- `zgloszenia_prywatnosci/`, jesli istnieje
-- `settings.json`, jesli istnieje
 - `wreckscanner.sqlite3`, `wreckscanner.sqlite3-wal`, `wreckscanner.sqlite3-shm`,
   jesli istnieja po migracji DB
+- `zgloszenia_prywatnosci/` i `settings.json`, jesli istnieja jako material
+  importowy albo historyczny
 - `analiza/data_diagnostics.json`, jesli istnieje
 
 Backup pomija zaleznosci, cache, `.backups/` i raporty wygenerowane do jednorazowego pobrania.

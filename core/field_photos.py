@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import io
-import json
 import math
 import re
 import secrets
@@ -14,8 +13,25 @@ from typing import Any, Literal
 from PIL import Image, UnidentifiedImageError
 
 from core import config
+from core.field_photo_store import (
+    FIELD_PHOTO_ID_RE as _FIELD_PHOTO_ID_RE,
+)
+from core.field_photo_store import (
+    delete_field_record as _delete_field_record,
+)
+from core.field_photo_store import (
+    list_field_records as _list_field_records,
+)
+from core.field_photo_store import (
+    load_field_record_by_id as _load_field_record_by_id,
+)
+from core.field_photo_store import (
+    save_field_record as _save_field_record,
+)
+from core.field_photo_store import (
+    validate_photo_id as _validate_photo_id,
+)
 from core.geo import external_map_links
-from core.json_io import write_json_atomic
 from core.photo_privacy import (
     REVIEW_STATUSES,
     apply_review_update,
@@ -30,7 +46,7 @@ from core.photo_privacy import (
 from core.photo_tokens import new_photo_edit_token_hash, normalize_photo_edit_token, verify_photo_edit_token
 from core.uploads import UploadedFile
 
-FIELD_PHOTO_ID_RE = re.compile(r"photo_\d{8}T\d{6}Z_[a-f0-9]{8}")
+FIELD_PHOTO_ID_RE = _FIELD_PHOTO_ID_RE
 
 
 def _now_utc() -> datetime:
@@ -39,15 +55,6 @@ def _now_utc() -> datetime:
 
 def _now_iso() -> str:
     return _now_utc().isoformat().replace("+00:00", "Z")
-
-
-def _read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _write_json(path: Path, payload: Any) -> None:
-    write_json_atomic(path, payload)
 
 
 def _safe_text(value: Any, max_len: int = 300) -> str:
@@ -59,12 +66,6 @@ def _safe_original_name(raw_name: str, ext: str) -> str:
     stem = Path(raw_name or "").stem or "zdjecie"
     stem = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._-") or "zdjecie"
     return f"{stem[:80]}{ext}"
-
-
-def _validate_photo_id(photo_id: str) -> str:
-    if not FIELD_PHOTO_ID_RE.fullmatch(photo_id):
-        raise ValueError("Nieprawidłowy identyfikator zdjęcia.")
-    return photo_id
 
 
 def _record_dir_for(photo_id: str, storage_dir: Path) -> Path:
@@ -176,19 +177,48 @@ def _prepare_field_record(record_dir: Path, record: dict[str, Any], private_dir:
 
 
 def _load_field_record(record_dir: Path, private_dir: Path) -> dict[str, Any]:
-    record_path = record_dir / "record.json"
-    if not record_path.exists():
-        raise FileNotFoundError("Nie znaleziono zdjęcia terenowego.")
-    record = _read_json(record_path)
-    if not isinstance(record, dict):
-        raise ValueError("Nieprawidłowy format record.json.")
+    record = _load_field_record_by_id(record_dir.name, record_dir.parent)
     if _prepare_field_record(record_dir, record, private_dir):
-        _write_json(record_path, record)
+        _save_field_record(record_dir.parent, record)
     return record
 
 
 def _public_file_url(photo_id: str, asset: Literal["public-image", "public-thumb"]) -> str:
     return f"/api/field-photos/{photo_id}/{asset}"
+
+
+def field_photo_record_dir(photo_id: str, storage_dir: Path) -> Path:
+    return _record_dir_for(photo_id, storage_dir)
+
+
+def load_field_photo_record(
+    photo_id: str,
+    storage_dir: Path,
+    *,
+    private_dir: Path | None = None,
+) -> dict[str, Any]:
+    record_dir = _record_dir_for(photo_id, storage_dir)
+    return _load_field_record(record_dir, _private_dir(private_dir))
+
+
+def list_field_photo_records(
+    storage_dir: Path,
+    *,
+    private_dir: Path | None = None,
+    prepare: bool = True,
+) -> list[dict[str, Any]]:
+    private_root = _private_dir(private_dir)
+    records: list[dict[str, Any]] = []
+    for record in _list_field_records(storage_dir):
+        record_dir = _record_dir_for(str(record["id"]), storage_dir)
+        if prepare and _prepare_field_record(record_dir, record, private_root):
+            _save_field_record(storage_dir, record)
+        records.append(record)
+    return records
+
+
+def save_field_photo_record(record: dict[str, Any], storage_dir: Path) -> None:
+    _save_field_record(storage_dir, record)
 
 
 def _summary(record: dict[str, Any]) -> dict[str, Any]:
@@ -243,13 +273,13 @@ def _require_edit_token(record: dict[str, Any], edit_token: Any) -> None:
 
 def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> list[dict[str, Any]]:
     private_root = _private_dir(private_dir)
-    if not storage_dir.is_dir():
-        return []
     records: list[dict[str, Any]] = []
-    for path in sorted(storage_dir.glob("*/record.json")):
+    for record in _list_field_records(storage_dir):
         try:
-            record = _load_field_record(path.parent, private_root)
-        except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
+            record_dir = _record_dir_for(str(record["id"]), storage_dir)
+            if _prepare_field_record(record_dir, record, private_root):
+                _save_field_record(storage_dir, record)
+        except (OSError, ValueError, FileNotFoundError):
             continue
         status = review_status(record)
         if isinstance(record, dict) and record.get("id") and status not in {"draft", "rejected"}:
@@ -277,9 +307,10 @@ def list_owner_field_photo_review_items(
     items: list[dict[str, Any]] = []
     for photo_id in requested_ids:
         record_dir = _record_dir_for(photo_id, storage_dir)
-        if not (record_dir / "record.json").exists():
+        try:
+            record = _load_field_record(record_dir, private_root)
+        except FileNotFoundError:
             continue
-        record = _load_field_record(record_dir, private_root)
         try:
             _require_edit_token(record, edit_token)
         except PermissionError:
@@ -292,13 +323,13 @@ def list_owner_field_photo_review_items(
 
 def list_field_photo_review_items(storage_dir: Path, *, private_dir: Path | None = None) -> list[dict[str, Any]]:
     private_root = _private_dir(private_dir)
-    if not storage_dir.is_dir():
-        return []
     records: list[dict[str, Any]] = []
-    for path in sorted(storage_dir.glob("*/record.json")):
+    for record in _list_field_records(storage_dir):
         try:
-            record = _load_field_record(path.parent, private_root)
-        except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError):
+            record_dir = _record_dir_for(str(record["id"]), storage_dir)
+            if _prepare_field_record(record_dir, record, private_root):
+                _save_field_record(storage_dir, record)
+        except (OSError, ValueError, FileNotFoundError):
             continue
         if not isinstance(record, dict) or not record.get("id") or review_status(record) == "draft":
             continue
@@ -395,7 +426,7 @@ def save_field_photo(
     original_path = safe_child(private_root, private_original_file)
     original_path.parent.mkdir(parents=True, exist_ok=True)
     original_path.write_bytes(upload.data)
-    _write_json(record_dir / "record.json", record)
+    _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record)}
 
 
@@ -408,9 +439,6 @@ def update_field_photo_location(
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
     record_dir = _record_dir_for(photo_id, storage_dir)
-    record_path = record_dir / "record.json"
-    if not record_path.exists():
-        raise FileNotFoundError("Nie znaleziono zdjęcia terenowego.")
     record = _load_field_record(record_dir, _private_dir(private_dir))
     lat_float, lon_float = _validated_lat_lon(lat, lon)
     record["lat"] = lat_float
@@ -418,24 +446,23 @@ def update_field_photo_location(
     record["coordinate_source"] = "manual"
     record["position_updated_at"] = _now_iso()
     record["links"] = _links(lat_float, lon_float)
-    _write_json(record_path, record)
+    _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record)}
 
 
 def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | None = None) -> dict[str, Any]:
     record_dir = _record_dir_for(photo_id, storage_dir)
-    if not record_dir.exists():
-        raise FileNotFoundError("Nie znaleziono zdjęcia terenowego.")
-    if not (record_dir / "record.json").exists():
-        raise ValueError("Katalog nie wygląda jak rekord zdjęcia terenowego.")
+    record = _load_field_record(record_dir, _private_dir(private_dir))
     try:
-        record = _load_field_record(record_dir, _private_dir(private_dir))
-        original = safe_child(_private_dir(private_dir), record.get("private_original_file"))
-        if original.exists():
+        private_rel = record.get("private_original_file")
+        original = safe_child(_private_dir(private_dir), private_rel) if private_rel else None
+        if original and original.exists():
             original.unlink()
     except (FileNotFoundError, ValueError):
         pass
-    shutil.rmtree(record_dir)
+    if record_dir.exists():
+        shutil.rmtree(record_dir)
+    _delete_field_record(storage_dir, photo_id)
     return {"status": "ok", "deleted": photo_id}
 
 
@@ -503,7 +530,7 @@ def review_field_photo(
         thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
-    _write_json(record_dir / "record.json", record)
+    _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
 
 
@@ -529,7 +556,7 @@ def review_field_photo_by_owner(
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
     record["owner_redactions_updated_at"] = _now_iso()
-    _write_json(record_dir / "record.json", record)
+    _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record)}
 
 
@@ -553,9 +580,10 @@ def submit_field_photos_by_owner(
     photos: list[dict[str, Any]] = []
     for photo_id in requested_ids:
         record_dir = _record_dir_for(photo_id, storage_dir)
-        if not (record_dir / "record.json").exists():
+        try:
+            record = _load_field_record(record_dir, private_root)
+        except FileNotFoundError:
             continue
-        record = _load_field_record(record_dir, private_root)
         try:
             _require_edit_token(record, edit_token)
         except PermissionError:
@@ -566,7 +594,7 @@ def submit_field_photos_by_owner(
             record["submitted_at"] = _now_iso()
             record["reviewed_at"] = None
             remove_public_derivatives(record, record_dir)
-            _write_json(record_dir / "record.json", record)
+            _save_field_record(storage_dir, record)
             status = "pending"
         if status == "pending":
             photos.append(_summary(record))
@@ -591,9 +619,10 @@ def discard_field_photo_drafts_by_owner(
             continue
         photo_id = _validate_photo_id(photo_id)
         record_dir = _record_dir_for(photo_id, storage_dir)
-        if not (record_dir / "record.json").exists():
+        try:
+            record = _load_field_record(record_dir, private_root)
+        except FileNotFoundError:
             continue
-        record = _load_field_record(record_dir, private_root)
         try:
             _require_edit_token(record, edit_token)
         except PermissionError:

@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 from core import config
+from core.field_photos import list_field_photo_records
 from core.photo_privacy import safe_child
-
-
-def _read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
 
 
 def _private_size(record: dict[str, Any], private_dir: Path) -> int:
@@ -42,18 +37,13 @@ def pending_submission_usage(
     total_bytes = 0
     total_items = 0
 
-    if field_photos_dir.is_dir():
-        for record_path in field_photos_dir.glob("*/record.json"):
-            try:
-                record = _read_json(record_path)
-            except (OSError, json.JSONDecodeError):
-                continue
-            if not isinstance(record, dict) or not _is_pending(record):
-                continue
-            if owner and _pending_record_owner(record) != owner:
-                continue
-            total_items += 1
-            total_bytes += _private_size(record, private_dir)
+    for record in list_field_photo_records(field_photos_dir, private_dir=private_dir):
+        if not _is_pending(record):
+            continue
+        if owner and _pending_record_owner(record) != owner:
+            continue
+        total_items += 1
+        total_bytes += _private_size(record, private_dir)
 
     return {
         "bytes": total_bytes,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -8,7 +7,7 @@ from typing import Any
 from PIL import Image
 
 from core import config
-from core.json_io import write_json_atomic
+from core.field_photos import field_photo_record_dir, list_field_photo_records, save_field_photo_record
 from core.photo_privacy import is_approved, safe_child
 
 
@@ -21,15 +20,6 @@ def _now_iso(now: datetime | None = None) -> str:
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)
     return current.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _write_json(path: Path, payload: Any) -> None:
-    write_json_atomic(path, payload)
 
 
 def _parse_reviewed_at(value: Any) -> datetime | None:
@@ -200,16 +190,11 @@ def retire_private_originals(
         "items": [],
     }
 
-    for record_path in sorted(field_photos_dir.glob("*/record.json")):
-        try:
-            record = _read_json(record_path)
-        except (OSError, json.JSONDecodeError):
-            continue
-        if not isinstance(record, dict):
-            continue
+    for record in list_field_photo_records(field_photos_dir, private_dir=private_photos_dir):
+        photo_id = str(record.get("id") or "")
         result = _retire_record_private_original(
             record,
-            record_dir=record_path.parent,
+            record_dir=field_photo_record_dir(photo_id, field_photos_dir),
             private_photos_dir=private_photos_dir,
             public_image_file=record.get("public_image_file"),
             now=current,
@@ -219,7 +204,7 @@ def retire_private_originals(
         action = str(result.get("action") or "skipped")
         _count(report["field_photos"], action)
         if action in {"replaced", "deleted"} and not dry_run:
-            _write_json(record_path, record)
+            save_field_photo_record(record, field_photos_dir)
         if action in {"replaced", "deleted"}:
             report["items"].append({"scope": "field", "id": record.get("id"), **result})
 

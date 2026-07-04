@@ -32,11 +32,14 @@ class DocumentationContractTests(unittest.TestCase):
     def test_current_model_doc_names_active_flow_and_retired_artifact_audit(self):
         doc = (ROOT_DIR / "docs" / "CURRENT_MODEL.md").read_text(encoding="utf-8")
 
-        self.assertIn("`zdjecia_terenowe/` - jedyne rekordy obserwacji", doc)
+        self.assertIn("`wreckscanner.sqlite3` - aktywny stan aplikacji", doc)
+        self.assertIn("`zdjecia_terenowe/` - publiczne pliki zdjec terenowych", doc)
         self.assertIn("Kazde zdjecie terenowe musi miec jawne `issue_type`", doc)
         self.assertIn("`POST /api/field-photo-reports/report-package`", doc)
+        self.assertIn("Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB.", doc)
         self.assertIn("Nie ma publicznego ani administracyjnego API `/api/wrecks`.", doc)
         self.assertIn("test ! -e zidentyfikowane_wraki", doc)
+        self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
         self.assertIn("scripts/check.sh", doc)
 
     def test_release_candidate_doc_freezes_baseline_and_next_goal(self):
@@ -44,6 +47,7 @@ class DocumentationContractTests(unittest.TestCase):
 
         self.assertIn("restic snapshot: `4aaaca53`", doc)
         self.assertIn("restic snapshot po migracji DB: `05c2b91c`", doc)
+        self.assertIn("restic snapshot po przepieciu runtime na DB: `08af6d00`", doc)
         self.assertIn("zdjecia terenowe: `270`", doc)
         self.assertIn("typy zdjec: `vehicle=240`, `infrastructure=29`, `smoke=1`", doc)
         self.assertIn("zgloszenia prywatnosci: `0`", doc)

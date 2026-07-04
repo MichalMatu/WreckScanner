@@ -146,6 +146,9 @@ def _field_photo_row(record: dict[str, Any]) -> tuple[Any, ...]:
         int(record["image_width"]) if record.get("image_width") is not None else None,
         int(record["image_height"]) if record.get("image_height") is not None else None,
         record.get("private_original_file"),
+        record.get("private_original_replaced_at"),
+        record.get("private_original_deleted_at"),
+        record.get("private_original_retention_action"),
         record.get("public_image_file"),
         record.get("public_thumb_file"),
         int(record["public_width"]) if record.get("public_width") is not None else None,
@@ -167,11 +170,13 @@ def upsert_field_photo(connection: sqlite3.Connection, record: dict[str, Any]) -
             coordinate_source, position_updated_at, public_review_status,
             reviewed_at, owner_redactions_updated_at, redactions_json, exif_json,
             original_filename, content_type, format, size_bytes, image_width,
-            image_height, private_original_file, public_image_file, public_thumb_file,
-            public_width, public_height, submission_owner, edit_token_salt,
-            edit_token_hash, edit_token_created_at, links_json, updated_at
+            image_height, private_original_file, private_original_replaced_at,
+            private_original_deleted_at, private_original_retention_action,
+            public_image_file, public_thumb_file, public_width, public_height,
+            submission_owner, edit_token_salt, edit_token_hash, edit_token_created_at,
+            links_json, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             created_at = excluded.created_at,
             submitted_at = excluded.submitted_at,
@@ -193,6 +198,9 @@ def upsert_field_photo(connection: sqlite3.Connection, record: dict[str, Any]) -
             image_width = excluded.image_width,
             image_height = excluded.image_height,
             private_original_file = excluded.private_original_file,
+            private_original_replaced_at = excluded.private_original_replaced_at,
+            private_original_deleted_at = excluded.private_original_deleted_at,
+            private_original_retention_action = excluded.private_original_retention_action,
             public_image_file = excluded.public_image_file,
             public_thumb_file = excluded.public_thumb_file,
             public_width = excluded.public_width,

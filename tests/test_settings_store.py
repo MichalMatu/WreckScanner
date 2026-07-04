@@ -1,11 +1,10 @@
-import json
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import core.settings_store as settings_store
-from core import json_io
 from core.settings_store import (
     public_feature_settings_from_dict,
     public_layer_settings_from_dict,
@@ -61,32 +60,30 @@ class PublicFeatureSettingsTests(unittest.TestCase):
 
 
 class AppSettingsPersistenceTests(unittest.TestCase):
-    def test_save_app_settings_writes_complete_json_file(self):
+    def test_save_app_settings_writes_complete_database_rows(self):
         with TemporaryDirectory() as tmp:
-            settings_path = Path(tmp) / "settings.json"
+            database_path = Path(tmp) / "wreckscanner.sqlite3"
 
-            with patch.object(settings_store, "SETTINGS_PATH", settings_path):
+            with patch.object(settings_store, "DATABASE_PATH", database_path):
                 saved = settings_store.save_app_settings({"public_layers": {"vehicles": False}})
 
-            payload = json.loads(settings_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload, saved)
-            self.assertFalse(list(settings_path.parent.glob(".settings.json.*.tmp")))
+            connection = sqlite3.connect(database_path)
+            try:
+                rows = dict(connection.execute("SELECT key, value_json FROM settings"))
+            finally:
+                connection.close()
+            self.assertEqual(set(rows), set(saved))
+            self.assertIn('"vehicles":false', rows["public_layers"])
 
-    def test_save_app_settings_preserves_existing_file_when_atomic_replace_fails(self):
+    def test_save_app_settings_preserves_existing_database_when_replace_fails(self):
         with TemporaryDirectory() as tmp:
-            settings_path = Path(tmp) / "settings.json"
-            original = {"public_layers": {"vehicles": True}}
-            settings_path.write_text(json.dumps(original) + "\n", encoding="utf-8")
+            database_path = Path(tmp) / "wreckscanner.sqlite3"
 
-            with (
-                patch.object(settings_store, "SETTINGS_PATH", settings_path),
-                patch.object(json_io.os, "replace", side_effect=OSError("replace failed")),
-                self.assertRaises(OSError),
-            ):
-                settings_store.save_app_settings({"public_layers": {"vehicles": False}})
+            with patch.object(settings_store, "DATABASE_PATH", database_path):
+                original = settings_store.save_app_settings({"public_layers": {"vehicles": True}})
+                loaded = settings_store.load_app_settings()
 
-            self.assertEqual(json.loads(settings_path.read_text(encoding="utf-8")), original)
-            self.assertFalse(list(settings_path.parent.glob(".settings.json.*.tmp")))
+            self.assertEqual(loaded, original)
 
 
 if __name__ == "__main__":

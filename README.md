@@ -25,7 +25,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 ## Zakres
 
 - mapa Leaflet z podkladami `POL`, `OSM` oraz rocznikami Wroclawia `2020-2025`,
-- zdjecia terenowe z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
+- zdjecia terenowe w SQLite z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
 - warstwa pojazdow budowana z zatwierdzonych zdjec terenowych,
 - automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
 - pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
@@ -51,11 +51,11 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 Te katalogi i pliki sa lokalna baza aplikacji albo cache i nie powinny trafic do repozytorium:
 
 - `analiza/` - lokalne raporty diagnostyczne uruchamiane przez `scripts/check.sh`,
-- `zdjecia_terenowe/` - rekordy zdjec terenowych i publiczne pochodne,
+- `wreckscanner.sqlite3` - aktywny stan aplikacji: zdjecia terenowe, ustawienia i zgloszenia prywatnosci,
+- `zdjecia_terenowe/` - publiczne pochodne zdjec terenowych i katalogi plikow,
 - `prywatne_zdjecia/` - prywatne oryginaly zdjec,
 - `prywatne_zgloszenia/` - prywatne pakiety zgloszen,
-- `zgloszenia_prywatnosci/` - kolejka wnioskow o usuniecie, korekte lub anonimizacje,
-- `settings.json` - lokalne ustawienia aplikacji,
+- `zgloszenia_prywatnosci/` i `settings.json` - historyczny/importowy format JSON,
 - `.cache/` i `.backups/` - cache oraz lokalne repozytorium backupu.
 
 ## Kontrole

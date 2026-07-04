@@ -56,7 +56,7 @@ def _report_cadastral_context(lat: str | None, lon: str | None) -> tuple[dict | 
 def handle_create_privacy_request(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        result = create_privacy_request(data, core_config.PRIVACY_REQUESTS_DIR)
+        result = create_privacy_request(data)
         http_responses.send_json(handler, 200, result)
     except ValueError as e:
         http_responses.send_json(handler, 400, {"error": str(e)})

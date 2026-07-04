@@ -1,5 +1,6 @@
 import io
 import json
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -77,6 +78,31 @@ def upload(data: bytes, filename: str = "teren.jpg", field_name: str = "photo") 
     return UploadedFile(field_name=field_name, filename=filename, content_type="image/jpeg", data=data)
 
 
+def db_record(storage_dir: Path, photo_id: str) -> dict:
+    connection = sqlite3.connect(storage_dir / "wreckscanner.sqlite3")
+    try:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute("SELECT * FROM field_photos WHERE id = ?", (photo_id,)).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        raise AssertionError(f"Missing DB field photo {photo_id}")
+    record = dict(row)
+    record["redactions"] = json.loads(record.pop("redactions_json"))
+    record["exif"] = json.loads(record.pop("exif_json"))
+    record["links"] = json.loads(record.pop("links_json"))
+    return record
+
+
+def db_record_exists(storage_dir: Path, photo_id: str) -> bool:
+    connection = sqlite3.connect(storage_dir / "wreckscanner.sqlite3")
+    try:
+        row = connection.execute("SELECT 1 FROM field_photos WHERE id = ?", (photo_id,)).fetchone()
+        return row is not None
+    finally:
+        connection.close()
+
+
 class FieldPhotoTests(unittest.TestCase):
     def test_save_field_photo_uses_map_point_even_when_exif_gps_exists(self):
         with TemporaryDirectory() as tmp:
@@ -106,7 +132,7 @@ class FieldPhotoTests(unittest.TestCase):
 
             photo = result["photo"]
             record_dir = Path(tmp) / photo["id"]
-            record = json.loads((record_dir / "record.json").read_text(encoding="utf-8"))
+            record = db_record(Path(tmp), photo["id"])
             self.assertEqual(photo["coordinate_source"], "map")
             self.assertEqual(photo["issue_type"], "vehicle")
             self.assertEqual(record["public_review_status"], "pending")
@@ -134,9 +160,8 @@ class FieldPhotoTests(unittest.TestCase):
                 edit_token=token,
             )
             photo_id = result["photo"]["id"]
-            record_path = Path(tmp) / photo_id / "record.json"
-            record_text = record_path.read_text(encoding="utf-8")
-            record = json.loads(record_text)
+            record = db_record(Path(tmp), photo_id)
+            record_text = json.dumps(record)
 
             self.assertNotIn(token, record_text)
             self.assertIn("edit_token_hash", record)
@@ -188,7 +213,7 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(list_field_photo_review_items(storage_dir, private_dir=private_dir), [])
 
             submit_result = submit_field_photos_by_owner([photo_id], token, storage_dir, private_dir=private_dir)
-            record = json.loads((storage_dir / photo_id / "record.json").read_text(encoding="utf-8"))
+            record = db_record(storage_dir, photo_id)
 
             self.assertEqual(submit_result["photos"][0]["public_review_status"], "pending")
             self.assertEqual(record["public_review_status"], "pending")
@@ -211,7 +236,6 @@ class FieldPhotoTests(unittest.TestCase):
                 public_review_status="draft",
             )
             photo_id = result["photo"]["id"]
-            record_path = storage_dir / photo_id / "record.json"
             private_original = private_dir / f"field_photos/{photo_id}/original.png"
 
             discard_result = discard_field_photo_drafts_by_owner(
@@ -219,7 +243,7 @@ class FieldPhotoTests(unittest.TestCase):
             )
 
             self.assertEqual(discard_result["deleted"], [photo_id])
-            self.assertFalse(record_path.exists())
+            self.assertFalse(db_record_exists(storage_dir, photo_id))
             self.assertFalse(private_original.exists())
 
             pending_result = save_field_photo(
@@ -236,7 +260,7 @@ class FieldPhotoTests(unittest.TestCase):
 
             with self.assertRaises(PermissionError):
                 discard_field_photo_drafts_by_owner([pending_photo_id], token, storage_dir, private_dir=private_dir)
-            self.assertTrue((storage_dir / pending_photo_id / "record.json").exists())
+            self.assertTrue(db_record_exists(storage_dir, pending_photo_id))
 
     def test_owner_review_saves_redactions_as_pending_for_admin_decision(self):
         with TemporaryDirectory() as tmp:
@@ -260,7 +284,7 @@ class FieldPhotoTests(unittest.TestCase):
                 redactions=[{"x": 0, "y": 0, "width": 0.5, "height": 0.5}],
                 private_dir=private_dir,
             )
-            record = json.loads((Path(tmp) / photo_id / "record.json").read_text(encoding="utf-8"))
+            record = db_record(Path(tmp), photo_id)
 
             self.assertEqual(owner_result["photo"]["public_review_status"], "pending")
             self.assertEqual(record["public_review_status"], "pending")
@@ -290,7 +314,7 @@ class FieldPhotoTests(unittest.TestCase):
 
             public_list = list_field_photos(Path(tmp), private_dir=private_dir)
             self.assertEqual(len(public_list), 1)
-            record = json.loads((Path(tmp) / photo_id / "record.json").read_text(encoding="utf-8"))
+            record = db_record(Path(tmp), photo_id)
             self.assertEqual(public_list[0]["public_review_status"], "approved")
             self.assertEqual(list(record["redactions"][0]), ["points"])
             self.assertEqual(len(record["redactions"][0]["points"]), 4)
@@ -336,7 +360,7 @@ class FieldPhotoTests(unittest.TestCase):
             )
 
             photo = result["photo"]
-            record = json.loads((Path(tmp) / photo["id"] / "record.json").read_text(encoding="utf-8"))
+            record = db_record(Path(tmp), photo["id"])
             self.assertEqual(photo["issue_type"], "infrastructure")
             self.assertEqual(record["issue_type"], "infrastructure")
 

@@ -4,13 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from core import (
-    field_photos,
-    json_io,
-    photo_retention,
-    privacy_requests,
-    report_evidence,
-)
+from core import json_io, report_evidence
 
 
 class AtomicJsonWriteTests(unittest.TestCase):
@@ -39,12 +33,7 @@ class AtomicJsonWriteTests(unittest.TestCase):
             self.assertFalse(list(path.parent.glob(".record.json.*.tmp")))
 
     def test_record_json_helpers_delegate_to_atomic_writer(self):
-        helpers = (
-            (field_photos, "_write_json"),
-            (photo_retention, "_write_json"),
-            (privacy_requests, "_write_json"),
-            (report_evidence, "_write_json"),
-        )
+        helpers = ((report_evidence, "_write_json"),)
 
         with TemporaryDirectory() as tmp:
             path = Path(tmp) / "record.json"

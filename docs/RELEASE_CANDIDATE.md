@@ -23,6 +23,8 @@ Stan zapisany 2026-07-04 po zielonym `./scripts/check.sh`.
 - snapshot time: `2026-07-04T08:22:13+02:00`
 - restic snapshot po migracji DB: `05c2b91c`
 - snapshot DB time: `2026-07-04T08:32:46+02:00`
+- restic snapshot po przepieciu runtime na DB: `08af6d00`
+- snapshot runtime DB time: `2026-07-04T08:53:09+02:00`
 - backup repo: `.backups/wreckscanner-restic`
 - backup password file: `.restic_password`
 - status diagnostyki danych: `ok`
@@ -101,5 +103,16 @@ Walidacja wykonana 2026-07-04:
 - `field_photos=270`
 - `settings=3`
 - `privacy_requests=0`
-- `schema_migrations=1`
+- `schema_migrations=2`
 - `missing_paths=0`
+
+## Runtime na DB
+
+Od podgolu 4 aktywny runtime czyta i zapisuje:
+
+- `field_photos` przez `core.field_photos`,
+- `settings` przez `core.settings_store`,
+- `privacy_requests` przez `core.privacy_requests`.
+
+`record.json`, `settings.json` i `zgloszenia_prywatnosci/` pozostaja materialem
+importowym/migracyjnym. Nowe operacje aplikacji nie mutuja tych JSON-ow.

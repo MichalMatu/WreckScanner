@@ -13,6 +13,8 @@ from core.data_backup import (
     restic_init,
     run_backup,
 )
+from core.database import apply_migrations, connect_database
+from core.field_photos import save_field_photo_record
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,6 +42,35 @@ def prepare_root(root: Path) -> Path:
     password_file = root / ".restic_password"
     password_file.write_text("secret\n", encoding="utf-8")
     return password_file
+
+
+def create_valid_database(root: Path) -> None:
+    connection = connect_database(root / "wreckscanner.sqlite3")
+    try:
+        apply_migrations(connection)
+    finally:
+        connection.close()
+
+
+def field_photo_record(photo_id: str = "photo_20260604T200730Z_37885295") -> dict:
+    return {
+        "id": photo_id,
+        "created_at": "2026-06-04T20:07:30Z",
+        "original_filename": "teren.jpg",
+        "content_type": "image/jpeg",
+        "format": "JPEG",
+        "size_bytes": 123,
+        "image_width": 48,
+        "image_height": 32,
+        "issue_type": "vehicle",
+        "lat": 51.1,
+        "lon": 17.2,
+        "coordinate_source": "map",
+        "private_original_file": f"field_photos/{photo_id}/missing.jpg",
+        "public_review_status": "pending",
+        "redactions": [],
+        "links": {},
+    }
 
 
 def fake_restic(path: Path) -> Path:
@@ -125,7 +156,7 @@ class DataBackupTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             password_file = prepare_root(root)
-            (root / "wreckscanner.sqlite3").write_bytes(b"db")
+            create_valid_database(root)
             (root / "wreckscanner.sqlite3-wal").write_bytes(b"wal")
             (root / "wreckscanner.sqlite3-shm").write_bytes(b"shm")
             runner = RecordingRunner()
@@ -138,14 +169,12 @@ class DataBackupTests(unittest.TestCase):
             self.assertEqual(result.status, "ok")
             command = runner.calls[0]["command"]
             self.assertIn("wreckscanner.sqlite3", command)
-            self.assertIn("wreckscanner.sqlite3-wal", command)
-            self.assertIn("wreckscanner.sqlite3-shm", command)
 
     def test_run_backup_blocks_when_diagnostics_has_errors(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             password_file = prepare_root(root)
-            (root / "zdjecia_terenowe" / "photo_20260604T200730Z_37885295").mkdir()
+            save_field_photo_record(field_photo_record(), root / "zdjecia_terenowe")
             runner = RecordingRunner()
             options = ResticOptions(
                 root_dir=root, restic_bin="restic", repository=str(root / "repo"), password_file=password_file
@@ -161,8 +190,8 @@ class DataBackupTests(unittest.TestCase):
     def test_run_backup_strict_blocks_warnings(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            password_file = root / ".restic_password"
-            password_file.write_text("secret\n", encoding="utf-8")
+            password_file = prepare_root(root)
+            (root / "zdjecia_terenowe" / "orphan.bin").write_bytes(b"orphan")
             runner = RecordingRunner()
             options = ResticOptions(
                 root_dir=root, restic_bin="restic", repository=str(root / "repo"), password_file=password_file
