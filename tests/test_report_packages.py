@@ -60,7 +60,7 @@ def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **kwargs)
 
 
 def create_field_photo_fixture(
-    root: Path, *, issue_type: str = "vehicle", status: str = "approved"
+    root: Path, *, issue_type: str = "vehicle", status: str = "approved", vehicle_insurance_status: str = "insured"
 ) -> tuple[Path, str]:
     field_dir = root / "zdjecia_terenowe"
     photo_id = "photo_20260604T201000Z_11111111"
@@ -83,6 +83,7 @@ def create_field_photo_fixture(
             "image_width": 32,
             "image_height": 24,
             "issue_type": issue_type,
+            "vehicle_insurance_status": (vehicle_insurance_status if issue_type == "vehicle" else "unknown"),
             "lat": 51.1,
             "lon": 17.2,
             "coordinate_source": "map",
@@ -192,6 +193,8 @@ class ReportPackageTests(unittest.TestCase):
             self.assertNotIn("pdf_url", result)
             self.assertIn(place_url, result["body"])
             self.assertIn("Dane działki ewidencyjnej", result["body"])
+            self.assertIn("Status OC/UFG pojazdu", result["body"])
+            self.assertIn("- Wynik ręcznego sprawdzenia: pojazd ma OC", result["body"])
             self.assertIn("- Numer działki: 87", result["body"])
             self.assertIn("- Typ terenu: B - tereny mieszkaniowe", result["body"])
             self.assertNotIn("- Powierzchnia:", result["body"])
@@ -219,6 +222,7 @@ class ReportPackageTests(unittest.TestCase):
                 text = archive.read("zgloszenie.txt").decode("utf-8")
                 report_html = archive.read("raport.html").decode("utf-8")
                 self.assertIn(place_url, text)
+                self.assertIn("Wynik ręcznego sprawdzenia: pojazd ma OC", text)
                 self.assertIn("Identyfikator działki: 026401_1.0022.AR_27.87", text)
                 self.assertIn("Typ terenu: B - tereny mieszkaniowe", text)
                 self.assertNotIn("Powierzchnia:", text)
@@ -226,6 +230,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Użytek:", text)
                 self.assertNotIn("Geoportal działki", text)
                 self.assertIn("Link do miejsca w WreckScanner", report_html)
+                self.assertIn("Wynik ręcznego sprawdzenia: pojazd ma OC", report_html)
                 self.assertIn("Otwórz miejsce w WreckScanner", report_html)
                 self.assertIn('class="report-inline-link"', report_html)
                 self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", report_html)

@@ -12,28 +12,28 @@
     justify-content: center;
     position: relative;
     box-sizing: border-box;
-    background: #111827;
+    background: var(--pin-vehicle-bg);
     color: transparent;
-    border: 2px solid #34d399;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(52, 211, 153, 0.18);
+    border: 2px solid var(--pin-vehicle-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-ring-soft);
     transform: rotate(-45deg);
 }
 
 .vehicle-pin--with-photos {
-    border-color: #86efac;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(249, 115, 22, 0.24);
+    border-color: var(--pin-vehicle-photo-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-photo-halo);
 }
 
 .vehicle-pin--pending {
-    background: #422006;
-    border-color: #fbbf24;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 191, 36, 0.26);
+    background: var(--pin-vehicle-pending-bg);
+    border-color: var(--pin-pending-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 4px var(--pin-pending-ring-strong);
 }
 
 .vehicle-pin--rejected {
-    background: #450a0a;
-    border-color: #fb7185;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 113, 133, 0.22);
+    background: var(--pin-rejected-bg);
+    border-color: var(--pin-rejected-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 4px var(--pin-rejected-ring-soft);
 }
 
 .vehicle-pin::before {
@@ -41,35 +41,35 @@
     position: absolute;
     inset: 7px;
     border-radius: 50%;
-    border: 1px solid rgba(52, 211, 153, 0.45);
+    border: 1px solid var(--pin-vehicle-inner-ring);
 }
 
 .vehicle-pin::after {
     content: 'V';
-    color: #34d399;
+    color: var(--pin-vehicle-glyph);
     transform: rotate(45deg);
     position: absolute;
     font: 900 13px var(--font);
     line-height: 1;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    text-shadow: var(--pin-glyph-shadow);
 }
 
 .vehicle-pin--pending::before {
-    border-color: rgba(251, 191, 36, 0.56);
+    border-color: var(--pin-pending-inner-ring);
 }
 
 .vehicle-pin--pending::after {
     content: '?';
-    color: #fde68a;
+    color: var(--pin-pending-glyph);
 }
 
 .vehicle-pin--rejected::before {
-    border-color: rgba(251, 113, 133, 0.54);
+    border-color: var(--pin-rejected-inner-ring);
 }
 
 .vehicle-pin--rejected::after {
     content: 'X';
-    color: #fecdd3;
+    color: var(--pin-rejected-glyph);
 }
 
 .pending-submission-pin {
@@ -81,19 +81,19 @@
     justify-content: center;
     position: relative;
     box-sizing: border-box;
-    background: #1f2937;
-    border: 2px dashed #fbbf24;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(251, 191, 36, 0.22);
+    background: var(--pin-pending-bg);
+    border: 2px dashed var(--pin-pending-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-pending-ring-soft);
     transform: rotate(-45deg);
 }
 
 .pending-submission-pin::after {
     content: 'W';
-    color: #fde68a;
+    color: var(--pin-pending-glyph);
     transform: rotate(45deg);
     font: 900 13px var(--font);
     line-height: 1;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    text-shadow: var(--pin-glyph-shadow);
 }
 
 .pending-submission-pin--photo::after {
@@ -109,22 +109,22 @@
     justify-content: center;
     position: relative;
     box-sizing: border-box;
-    background: #082f49;
-    border: 2px solid #38bdf8;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(56, 189, 248, 0.2);
+    background: var(--pin-field-bg);
+    border: 2px solid var(--pin-field-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-field-ring-soft);
     transform: rotate(-45deg);
 }
 
 .field-photo-pin--infrastructure {
-    background: #451a03;
-    border-color: #f59e0b;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(245, 158, 11, 0.22);
+    background: var(--pin-infrastructure-bg);
+    border-color: var(--pin-infrastructure-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-infrastructure-ring-soft);
 }
 
 .field-photo-pin--smoke {
-    background: #312e81;
-    border-color: #a78bfa;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(167, 139, 250, 0.24);
+    background: var(--pin-smoke-bg);
+    border-color: var(--pin-smoke-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-smoke-ring-soft);
 }
 
 .leaflet-marker-draggable .field-photo-pin {
@@ -136,7 +136,7 @@
     width: 14px;
     height: 10px;
     border-radius: 3px;
-    border: 2px solid #e0f2fe;
+    border: 2px solid var(--pin-field-glyph);
     transform: rotate(45deg);
     box-sizing: border-box;
 }
@@ -147,7 +147,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #e0f2fe;
+    background: var(--pin-field-glyph);
     transform: translate(2px, -1px) rotate(45deg);
 }
 
@@ -163,10 +163,10 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    background: #f97316;
-    color: #fff;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+    background: var(--pin-count-bg);
+    color: var(--pin-count-text);
+    border: 2px solid var(--pin-count-border);
+    box-shadow: var(--pin-count-shadow);
     font: 900 11px var(--font);
     line-height: 1;
     transform: rotate(45deg);
@@ -189,31 +189,31 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.55);
+    box-shadow: var(--pin-dot-shadow);
     transform: translate(11px, 28px);
 }
 
 .marker-detail--dots .vehicle-pin {
-    background: #34d399;
-    border: 2px solid #ecfdf5;
+    background: var(--pin-vehicle-ring);
+    border: 2px solid var(--pin-vehicle-dot-border);
 }
 
 .marker-detail--dots .vehicle-pin--pending {
-    background: #fbbf24;
-    border-color: #fffbeb;
+    background: var(--pin-pending-ring);
+    border-color: var(--pin-pending-dot-border);
 }
 
 .marker-detail--dots .vehicle-pin--rejected {
-    background: #fb7185;
-    border-color: #fff1f2;
+    background: var(--pin-rejected-ring);
+    border-color: var(--pin-rejected-dot-border);
 }
 
 .marker-detail--dots .pending-submission-pin {
-    background: #fbbf24;
-    border: 2px solid #fffbeb;
+    background: var(--pin-pending-ring);
+    border: 2px solid var(--pin-pending-dot-border);
 }
 
 .marker-detail--dots .field-photo-pin {
-    background: #38bdf8;
-    border: 2px solid #e0f2fe;
+    background: var(--pin-field-ring);
+    border: 2px solid var(--pin-field-glyph);
 }

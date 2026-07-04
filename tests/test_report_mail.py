@@ -11,6 +11,7 @@ class ReportMailTests(unittest.TestCase):
                 "lat": 51.1,
                 "lon": 17.2,
                 "links": {"street_view": "https://example.test/street"},
+                "vehicle_insurance_status": "uninsured",
                 "report_history": [
                     {
                         "created_at": "2026-06-01T10:00:00Z",
@@ -36,6 +37,8 @@ class ReportMailTests(unittest.TestCase):
         self.assertIn("02.06.2026, godz. 12:30", body)
         self.assertNotIn("2026-06-02T12:30", body)
         self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
+        self.assertIn("Status OC/UFG pojazdu", body)
+        self.assertIn("- Wynik ręcznego sprawdzenia: brak OC", body)
         self.assertIn("Zakres oczekiwanej odpowiedzi", body)
         self.assertIn("art. 241 Kodeksu postępowania administracyjnego", body)
         self.assertIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)

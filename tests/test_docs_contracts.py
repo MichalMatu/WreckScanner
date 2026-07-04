@@ -8,12 +8,15 @@ class DocumentationContractTests(unittest.TestCase):
     def test_readme_links_only_essential_docs(self):
         readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("Aktualne wydanie: `v2.0`", readme)
+        self.assertIn("Aktualne wydanie: `v3.1`", readme)
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
         self.assertIn("docs/BACKUP.md", readme)
         self.assertIn("docs/DEPLOY.md", readme)
+        self.assertIn("OC/UFG", readme)
+        self.assertIn("`main` jest linia release-only", readme)
+        self.assertIn("`work/dirty` jest galezia robocza", readme)
         self.assertNotIn("docs/AUDIT.md", readme)
         self.assertNotIn("docs/README.en.md", readme)
         self.assertNotIn("RUNTIME_SMOKE", readme)
@@ -29,7 +32,7 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("scripts/check.sh", doc)
         self.assertIn("make smoke", doc)
         self.assertIn("make e2e-report", doc)
-        self.assertIn("generuje ZIP/PDF z tymczasowymi cropami mapy", doc)
+        self.assertIn("statusem OC/UFG", doc)
         self.assertIn("BACKUP.md", doc)
         self.assertIn("DEPLOY.md", doc)
 
@@ -61,6 +64,10 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("`wreckscanner.sqlite3` - aktywny stan aplikacji", doc)
         self.assertIn("`zdjecia_terenowe/` - publiczne pliki zdjec terenowych", doc)
         self.assertIn("Kazde zdjecie terenowe musi miec jawne `issue_type`", doc)
+        self.assertIn("`vehicle_insurance_status`", doc)
+        self.assertIn("Aplikacja nie pobiera danych z UFG automatycznie", doc)
+        self.assertIn("Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu", doc)
+        self.assertIn("`zgloszenie.txt`, `raport.html` i PDF", doc)
         self.assertIn("`POST /api/field-photo-reports/report-package`", doc)
         self.assertIn("Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB ani w stalym", doc)
         self.assertIn("Nie ma publicznego ani administracyjnego API `/api/wrecks`.", doc)
@@ -69,30 +76,8 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
         self.assertIn("scripts/check.sh", doc)
 
-    def test_release_candidate_doc_freezes_baseline_and_next_goal(self):
-        doc = (ROOT_DIR / "docs" / "RELEASE_CANDIDATE.md").read_text(encoding="utf-8")
-
-        self.assertIn("restic snapshot: `4aaaca53`", doc)
-        self.assertIn("restic snapshot po migracji DB: `05c2b91c`", doc)
-        self.assertIn("restic snapshot po przepieciu runtime na DB: `08af6d00`", doc)
-        self.assertIn("restic snapshot przed sprzataniem starych pakietow: `d830cfc3`", doc)
-        self.assertIn("restic snapshot po sprzataniu starych pakietow: `da97b30a`", doc)
-        self.assertIn("zdjecia terenowe: `270`", doc)
-        self.assertIn("typy zdjec: `vehicle=240`, `infrastructure=29`, `smoke=1`", doc)
-        self.assertIn("zgloszenia prywatnosci: `0`", doc)
-        self.assertIn("stale pakiety raportow w `prywatne_zgloszenia/`: `0`", doc)
-        self.assertIn("Restore snapshotu `da97b30a`", doc)
-        self.assertIn("Brakujace sciezki=0", doc)
-        self.assertIn("Kontrakt bazy: SQLite/WAL", doc)
-        self.assertIn("Migracja JSON -> DB", doc)
-        self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
-        self.assertIn("field_photos=270", doc)
-        self.assertIn("missing_paths=0", doc)
-        self.assertIn("make e2e-report", doc)
-        self.assertIn("analiza/e2e-map-desktop.png", doc)
-        self.assertIn("Produkcyjny runbook jest w [DEPLOY.md](DEPLOY.md)", doc)
-        self.assertIn("WRECKSCANNER_ADMIN_SESSION_SECRET", doc)
-        self.assertIn("tag `v1.0.0-rc1`", doc)
+    def test_release_candidate_archive_stays_removed(self):
+        self.assertFalse((ROOT_DIR / "docs" / "RELEASE_CANDIDATE.md").exists())
 
     def test_removed_development_docs_stay_removed(self):
         removed = (
@@ -102,6 +87,7 @@ class DocumentationContractTests(unittest.TestCase):
             "GEOTIFF_RUNBOOK.md",
             "PHOTO_UPLOAD_RUNBOOK.md",
             "README.en.md",
+            "RELEASE_CANDIDATE.md",
             "RUNTIME_SMOKE.md",
             "claudflare.md",
             "todo.md",

@@ -13,9 +13,9 @@
 
 .photo-review-list,
 .privacy-request-list {
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.72);
+    background: var(--surface-inset);
     overflow-y: auto;
     max-height: 560px;
 }
@@ -27,7 +27,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 5px 8px;
     border: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    border-bottom: 1px solid var(--border);
     padding: 10px;
     background: transparent;
     color: var(--text);
@@ -39,7 +39,7 @@
 .photo-review-item.is-active,
 .privacy-request-item:hover,
 .privacy-request-item.is-active {
-    background: rgba(37, 99, 235, 0.18);
+    background: var(--primary-soft);
 }
 
 .photo-review-item strong,
@@ -57,16 +57,16 @@
 
 .photo-review-detail {
     grid-column: 1 / -1;
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .photo-review-pill {
     align-self: start;
-    border: 1px solid rgba(148, 163, 184, 0.22);
+    border: 1px solid var(--border-strong);
     border-radius: 999px;
     padding: 2px 7px;
     font-size: 0.68rem;
-    color: #cbd5e1;
+    color: var(--muted-strong);
 }
 
 .photo-review-editor {
@@ -74,6 +74,15 @@
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+}
+
+.photo-review-insurance {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-subtle);
 }
 
 .privacy-request-detail {
@@ -103,17 +112,17 @@
 .privacy-request-text {
     margin: 6px 0 0;
     padding: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.54);
-    color: #dbeafe;
+    background: var(--surface-inset);
+    color: var(--text-soft);
     line-height: 1.45;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
 
 .privacy-request-text a {
-    color: #93c5fd;
+    color: var(--primary-hover);
 }
 
 .privacy-request-actions {
@@ -126,9 +135,9 @@
     max-width: 100%;
     height: auto;
     max-height: 58vh;
-    border: 1px solid rgba(148, 163, 184, 0.22);
+    border: 1px solid var(--border-strong);
     border-radius: 8px;
-    background: #020617;
+    background: var(--surface-canvas);
     display: none;
     cursor: crosshair;
     touch-action: none;

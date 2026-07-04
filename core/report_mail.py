@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from core.cadastral import cadastral_code_label
+from core.field_photo_metadata import vehicle_insurance_status_label
 
 DANGLING_SUBJECT_WORDS = {"i", "o", "u", "w", "z", "do", "na", "od", "po"}
 
@@ -88,6 +89,10 @@ Wnoszę o:
 - pisemną odpowiedź obejmującą każdy z powyższych punktów."""
 
 
+def _vehicle_insurance_context_text(record: dict[str, Any]) -> str:
+    return f"Status OC/UFG pojazdu:\n- Wynik ręcznego sprawdzenia: {vehicle_insurance_status_label(record.get('vehicle_insurance_status'))}"
+
+
 def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: dict[str, str]) -> tuple[str, str]:
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
@@ -119,6 +124,8 @@ Data i godzina obserwacji:
 
 Opis stanu pojazdu:
 {fields["vehicle_description"]}
+
+{_vehicle_insurance_context_text(record)}
 
 Materiał pomocniczy z aplikacji WreckScanner:
 - pojazd widoczny na ortofotomapach z lat: {labels}

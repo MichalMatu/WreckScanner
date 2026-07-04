@@ -83,8 +83,8 @@ make e2e-report
 
 Ten test wymaga `.admin_password`, dzialajacego serwera, Chromium oraz dostepu do
 WMS. Dodaje male zdjecie testowe, zatwierdza je, sprawdza publiczny kontrakt mapy,
-generuje ZIP/PDF z tymczasowymi cropami mapy, zapisuje screenshoty desktop/mobile
-w `analiza/`, a na koncu usuwa testowy rekord i pliki.
+generuje ZIP/PDF z tymczasowymi cropami mapy oraz statusem OC/UFG, zapisuje
+screenshoty desktop/mobile w `analiza/`, a na koncu usuwa testowy rekord i pliki.
 
 Szybki health check:
 

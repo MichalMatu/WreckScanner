@@ -166,6 +166,24 @@ function photoReviewStatusLabel(status) {
     return t('modal.photoReview.pending');
 }
 
+function photoReviewVehicleInsuranceStatus() {
+    const select = document.getElementById('photo-review-vehicle-insurance');
+    return vehicleInsuranceStatus(select?.value || activePhotoReview?.vehicle_insurance_status);
+}
+
+function photoReviewVehicleInsurancePayload() {
+    if (activePhotoReview?.issue_type !== FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return {};
+    return { vehicle_insurance_status: photoReviewVehicleInsuranceStatus() };
+}
+
+function updatePhotoReviewVehicleInsuranceUi() {
+    const section = document.getElementById('photo-review-vehicle-insurance-section');
+    const select = document.getElementById('photo-review-vehicle-insurance');
+    const show = activePhotoReview?.issue_type === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    if (section) section.hidden = !show;
+    if (select && show) select.value = vehicleInsuranceStatus(activePhotoReview?.vehicle_insurance_status);
+}
+
 function photoReviewQueueDisplay(item, index = 0) {
     const originalName = String(item?.original_filename || '').trim();
     const technicalId = String(item?.photo_id || item?.id || '').trim();
@@ -311,6 +329,7 @@ function clearPhotoReviewCanvas() {
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
     }
     if (empty) empty.hidden = false;
+    updatePhotoReviewVehicleInsuranceUi();
     updatePhotoReviewDeleteAction();
 }
 
@@ -343,6 +362,7 @@ async function selectPhotoReview(itemId) {
     const item = photoReviewItems.find(candidate => candidate.id === itemId);
     if (!item) return;
     activePhotoReview = item;
+    updatePhotoReviewVehicleInsuranceUi();
     photoReviewRedactions = (Array.isArray(item.redactions) ? item.redactions : [])
         .map(normalizePhotoReviewRedaction)
         .filter(Boolean);
@@ -390,8 +410,8 @@ async function savePhotoReviewStatus(publicReviewStatus) {
     if (status) status.textContent = t('modal.photoReview.saving');
     try {
         const payload = photoReviewMode === 'owner'
-            ? { edit_token: ownerPhotoReviewToken, redactions: photoReviewRedactions }
-            : { public_review_status: publicReviewStatus, redactions: photoReviewRedactions };
+            ? { edit_token: ownerPhotoReviewToken, redactions: photoReviewRedactions, ...photoReviewVehicleInsurancePayload() }
+            : { public_review_status: publicReviewStatus, redactions: photoReviewRedactions, ...photoReviewVehicleInsurancePayload() };
         const data = await apiPatchJson(endpoint, payload);
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.photoReview.saveError'));
@@ -403,8 +423,12 @@ async function savePhotoReviewStatus(publicReviewStatus) {
             : t('modal.photoReview.saved');
         if (photoReviewMode === 'owner') {
             activePhotoReview.public_review_status = data.photo?.public_review_status || 'pending';
+            activePhotoReview.vehicle_insurance_status = data.photo?.vehicle_insurance_status
+                || photoReviewVehicleInsurancePayload().vehicle_insurance_status
+                || activePhotoReview.vehicle_insurance_status;
             activePhotoReview.redactions = photoReviewRedactions;
             renderPhotoReviewQueue();
+            updatePhotoReviewVehicleInsuranceUi();
             await loadFieldPhotos();
             return;
         }

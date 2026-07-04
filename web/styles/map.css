@@ -7,8 +7,8 @@
     gap: 4px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-control);
-    background: var(--surface-overlay);
-    box-shadow: var(--shadow-floating);
+    background: var(--glass-panel-bg-strong);
+    box-shadow: var(--shadow-glass);
     backdrop-filter: var(--blur-glass);
     -webkit-backdrop-filter: var(--blur-glass);
 }
@@ -27,7 +27,7 @@
     border: 0;
     border-radius: var(--radius-control);
     background: transparent;
-    color: #e5e7eb;
+    color: var(--text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -60,7 +60,7 @@
 
 /* Override Leaflet tiles to look nicer */
 .leaflet-container {
-    background: #d1d8e0;
+    background: color-mix(in srgb, var(--surface-canvas) 8%, #d1d8e0);
 }
 
 .leaflet-container.is-picking-field-photo-location,
@@ -89,7 +89,7 @@
         linear-gradient(180deg, color-mix(in srgb, var(--text-strong) 8%, transparent), transparent),
         var(--surface-overlay);
     color: var(--text);
-    box-shadow: var(--shadow-floating);
+    box-shadow: var(--shadow-glass);
     transform: translateX(-50%);
     backdrop-filter: var(--blur-glass);
     -webkit-backdrop-filter: var(--blur-glass);

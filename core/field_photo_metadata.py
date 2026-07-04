@@ -1,0 +1,52 @@
+from __future__ import annotations
+
+from typing import Any
+
+from core import config
+
+
+def issue_type(value: Any) -> str:
+    issue_type_text = str(value or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE).strip()
+    if issue_type_text not in config.FIELD_PHOTO_ISSUE_TYPES:
+        raise ValueError("Nieprawidłowy typ pinezki terenowej.")
+    return issue_type_text
+
+
+def vehicle_insurance_status(issue_type_text: str, value: Any = None) -> str:
+    status = str(value or config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS).strip()
+    if status not in config.FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES:
+        raise ValueError("Nieprawidłowy status OC pojazdu.")
+    if issue_type_text != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        if status != config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS:
+            raise ValueError("Status OC dotyczy tylko zdjęć pojazdu.")
+        return config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS
+    return status
+
+
+def vehicle_insurance_status_from_record(record: dict[str, Any]) -> str:
+    return vehicle_insurance_status(issue_type(record.get("issue_type")), record.get("vehicle_insurance_status"))
+
+
+def grouped_vehicle_insurance_status(records: list[dict[str, Any]]) -> str:
+    statuses: list[str] = []
+    for record in records:
+        try:
+            statuses.append(vehicle_insurance_status_from_record(record))
+        except ValueError:
+            continue
+    if "uninsured" in statuses:
+        return "uninsured"
+    if "insured" in statuses:
+        return "insured"
+    return config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS
+
+
+def vehicle_insurance_status_label(value: Any) -> str:
+    status = vehicle_insurance_status(config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE, value)
+    return config.FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES[status]
+
+
+def validated_vehicle_insurance_update(record: dict[str, Any], value: Any) -> str | None:
+    if value is None:
+        return None
+    return vehicle_insurance_status(issue_type(record.get("issue_type")), value)

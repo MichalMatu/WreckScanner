@@ -12,6 +12,7 @@ class FutureDatabaseContractTests(unittest.TestCase):
         self.assertIn("SQLite z trybem WAL", doc)
         self.assertIn("database/migrations/", doc)
         self.assertIn("`schema_migrations`", doc)
+        self.assertIn("`vehicle_insurance_status`", doc)
 
         for table in ("field_photos", "settings", "privacy_requests"):
             self.assertRegex(doc, rf"`{table}`")

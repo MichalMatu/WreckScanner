@@ -86,9 +86,9 @@ async function inspectLocationHistoryAt(latLng) {
     const inspectLon = Number(latLng?.lng);
     if (!Number.isFinite(inspectLat) || !Number.isFinite(inspectLon)) return;
 
-    const popup = L.popup({ maxWidth: 380 })
+    const popup = L.popup(mapPopupOptions())
         .setLatLng([inspectLat, inspectLon])
-        .setContent(`<div style="text-align:center; padding:10px;">${t('inspect.loading')}</div>`)
+        .setContent(mapPopup(escapeHtml(t('inspect.loading')), 'map-popup--loading'))
         .openOn(map);
 
     try {
@@ -100,19 +100,15 @@ async function inspectLocationHistoryAt(latLng) {
             public_thumb: crop.data_url,
         }));
 
-        popup.setContent(`
-            <div class="map-popup map-popup--manual-inspect">
+        popup.setContent(mapPopup(`
                 ${popupHeader(t('inspect.title'))}
                 ${popupPhotoSection(t('inspect.evidencePreviews'), cropPreviews)}
-            </div>
-        `);
+        `, mapPopupMediaModifiers(cropPreviews, 'map-popup--manual-inspect')));
     } catch (err) {
-        popup.setContent(`
-            <div class="map-popup map-popup--manual-inspect">
+        popup.setContent(mapPopup(`
                 ${popupHeader(t('inspect.title'))}
                 ${popupMeta([apiErrorMessage(err, t('inspect.loadError'))])}
-            </div>
-        `);
+        `, 'map-popup--manual-inspect'));
     }
 }
 

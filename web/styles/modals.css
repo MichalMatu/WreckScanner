@@ -2,9 +2,9 @@
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: var(--surface-scrim);
+    backdrop-filter: var(--glass-blur-soft);
+    -webkit-backdrop-filter: var(--glass-blur-soft);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -38,8 +38,8 @@
 }
 
 .modal {
-    background: var(--surface-overlay);
-    border: 1px solid var(--border);
+    background: var(--glass-panel-bg-strong);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-panel);
     width: 100%;
     max-width: 480px;
@@ -47,7 +47,9 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    box-shadow: var(--shadow-modal);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     animation: modal-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -213,7 +215,7 @@
     justify-content: space-between;
     padding: 18px 20px 14px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+    background: linear-gradient(180deg, var(--surface-glass-highlight), transparent);
 }
 
 .modal-header-actions {
@@ -236,7 +238,7 @@
     font-family: var(--font-title);
     font-size: 1.1rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-strong);
 }
 
 .modal-close {
@@ -255,7 +257,7 @@
 }
 
 .modal-close:hover {
-    color: #fff;
+    color: var(--text-strong);
     background: var(--surface-on-media-hover);
 }
 
@@ -281,7 +283,7 @@
 }
 
 .modal-icon-btn:hover {
-    color: #fff;
+    color: var(--text-strong);
     background: var(--surface-on-media-hover);
 }
 
@@ -303,7 +305,7 @@
 .settings-card {
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
-    background: rgba(255, 255, 255, 0.045);
+    background: var(--surface-subtle);
     padding: var(--space-3);
 }
 
@@ -349,11 +351,11 @@
 
 .modal--settings select:disabled,
 .modal--settings input[type="range"]:disabled {
-    background-color: rgba(15, 23, 42, 0.46);
+    background-color: var(--surface-inset);
 }
 
 .modal--settings input[type="range"]:disabled::-webkit-slider-thumb {
-    background: #64748b;
+    background: var(--muted);
     box-shadow: none;
     cursor: not-allowed;
 }

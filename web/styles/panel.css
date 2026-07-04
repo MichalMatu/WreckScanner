@@ -11,7 +11,7 @@
 
 .app-menu-button,
 .app-menu-drawer-item,
-.app-menu-admin-icon {
+.app-menu-footer-icon {
     border: 0;
     font-family: var(--font);
     cursor: pointer;
@@ -21,14 +21,14 @@
     width: var(--control-hit-target);
     height: var(--control-hit-target);
     border-radius: var(--radius-full);
-    background: rgba(245, 245, 247, 0.88);
-    color: #18181b;
+    background: color-mix(in srgb, var(--text-strong) 86%, transparent);
+    color: var(--surface-canvas);
     display: grid;
     place-items: center;
     padding: 0;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
-    backdrop-filter: blur(18px) saturate(1.18);
-    -webkit-backdrop-filter: blur(18px) saturate(1.18);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur-soft);
+    -webkit-backdrop-filter: var(--glass-blur-soft);
     transition:
         color var(--duration-fast),
         transform var(--duration-fast),
@@ -40,7 +40,7 @@
 .app-menu-button:focus-visible {
     color: var(--primary);
     transform: translateY(-1px);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+    box-shadow: var(--shadow-glass);
     outline: none;
 }
 
@@ -73,7 +73,7 @@
     min-height: 0;
     border: 0;
     border-radius: 0;
-    background: rgba(0, 0, 0, 0.30);
+    background: var(--surface-scrim);
     padding: 0;
 }
 
@@ -89,10 +89,10 @@
     flex-direction: column;
     overflow-y: auto;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 280px),
+        linear-gradient(180deg, var(--surface-glass-highlight), transparent 280px),
         var(--surface-overlay);
     border-right: 1px solid var(--border);
-    box-shadow: var(--shadow-floating);
+    box-shadow: var(--shadow-glass);
     backdrop-filter: var(--blur-glass);
     -webkit-backdrop-filter: var(--blur-glass);
     padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
@@ -163,11 +163,13 @@
     margin-top: auto;
     padding: var(--space-3) var(--space-5) var(--space-4);
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: var(--space-2);
     border-top: 1px solid var(--border);
 }
 
-.app-menu-admin-icon {
+.app-menu-footer-icon {
     width: 36px;
     height: 36px;
     align-items: center;
@@ -176,7 +178,7 @@
     padding: 0;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.045);
+    background: var(--glass-control-bg);
     color: var(--muted);
     opacity: 0.78;
     transition:
@@ -186,23 +188,28 @@
         opacity var(--duration-fast);
 }
 
-.app-menu-admin-icon:hover,
-.app-menu-admin-icon:focus-visible {
-    background: var(--surface-subtle);
+.app-menu-footer-icon:hover,
+.app-menu-footer-icon:focus-visible {
+    background: var(--glass-control-bg-hover);
     border-color: color-mix(in srgb, var(--primary) 34%, transparent);
     color: var(--text-strong);
     opacity: 1;
     outline: none;
 }
 
-.app-menu-admin-icon.is-admin {
+.app-menu-footer-icon--lang {
+    color: var(--text-soft);
+    opacity: 0.9;
+}
+
+.app-menu-footer-icon--admin.is-admin {
     background: var(--success-soft);
     border-color: color-mix(in srgb, var(--success) 46%, transparent);
-    color: #d1fae5;
+    color: var(--success-text);
     opacity: 1;
 }
 
-.app-menu-admin-icon svg {
+.app-menu-footer-icon svg {
     width: 16px;
     height: 16px;
     fill: currentColor;
@@ -213,9 +220,9 @@
     min-height: var(--control-height-comfortable);
     border: 0;
     border-radius: var(--radius-control);
-    background: linear-gradient(135deg, var(--primary), #34c759);
-    color: #fff;
-    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.24);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, white), var(--info));
+    color: var(--text-strong);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 24%, transparent);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -227,7 +234,7 @@
 
 .panel-photo-cta:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.30);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--info) 24%, transparent);
 }
 
 .panel-photo-cta:active {
@@ -235,8 +242,8 @@
 }
 
 .panel-photo-cta.is-picking-location {
-    background: linear-gradient(135deg, #f97316, var(--primary));
-    box-shadow: 0 12px 30px rgba(249, 115, 22, 0.30);
+    background: linear-gradient(135deg, var(--warning), var(--primary));
+    box-shadow: 0 12px 30px color-mix(in srgb, var(--warning) 28%, transparent);
 }
 
 .panel-photo-cta:disabled {
@@ -273,7 +280,7 @@
 }
 
 .slider-row label span {
-    color: #e0e7ff;
+    color: var(--text-soft);
     font-weight: 700;
 }
 
@@ -281,7 +288,7 @@ input[type=range] {
     -webkit-appearance: none;
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-control);
     border-radius: 3px;
     outline: none;
 }
@@ -350,15 +357,15 @@ select:focus {
 }
 
 .btn-clear:hover {
-    background: rgba(239, 68, 68, 0.08);
+    background: var(--danger-soft);
     color: var(--danger);
-    border-color: rgba(239, 68, 68, 0.3);
+    border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 /* Download button */
 .btn-download {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-    color: #fff;
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    color: var(--text-strong);
     border: none;
     padding: 14px;
     border-radius: 12px;
@@ -384,7 +391,7 @@ select:focus {
 }
 
 .btn-download:disabled {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-control);
     color: var(--muted);
     cursor: wait;
     box-shadow: none;

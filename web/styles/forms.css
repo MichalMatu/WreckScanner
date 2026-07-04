@@ -41,7 +41,7 @@
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-control);
     background: var(--surface-control);
-    color: #f8fafc;
+    color: var(--text-strong);
     font: 600 0.86rem var(--font);
     padding: 9px 10px;
     min-height: 42px;
@@ -60,6 +60,24 @@ select.modal-input {
     background-position: right 11px center;
     background-size: 16px 16px;
     padding-right: 36px;
+    color-scheme: dark;
+}
+
+select.modal-input option,
+.report-form select option {
+    background-color: var(--surface-elevated-solid);
+    color: var(--text-strong);
+}
+
+select.modal-input option:checked,
+.report-form select option:checked {
+    background-color: color-mix(in srgb, var(--primary) 42%, var(--surface-elevated-solid));
+    color: var(--text-strong);
+}
+
+select.modal-input option:disabled,
+.report-form select option:disabled {
+    color: var(--muted);
 }
 
 .modal-input:focus,
@@ -73,8 +91,8 @@ select.modal-input {
 .modal-input:-webkit-autofill,
 .modal-input:-webkit-autofill:hover,
 .modal-input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #f8fafc;
-    caret-color: #f8fafc;
+    -webkit-text-fill-color: var(--text-strong);
+    caret-color: var(--text-strong);
     box-shadow: 0 0 0 1000px var(--surface-elevated-solid) inset, var(--shadow-focus);
     transition: background-color 9999s ease-out;
 }
@@ -144,6 +162,27 @@ select.modal-input {
     color: var(--text-soft);
 }
 
+.field-photo-insurance-section {
+    gap: 8px;
+}
+
+.field-photo-insurance-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.field-photo-insurance-link {
+    color: var(--primary-hover);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
 .field-photo-token-label-row {
     display: flex;
     align-items: baseline;
@@ -198,7 +237,7 @@ select.modal-input {
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
     padding: var(--space-3);
-    background: rgba(255, 255, 255, 0.045);
+    background: var(--surface-subtle);
 }
 
 .token-card .modal-hint {
@@ -254,7 +293,7 @@ select.modal-input {
     top: 1px;
     width: 5px;
     height: 9px;
-    border: solid #fff;
+    border: solid var(--text-strong);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }

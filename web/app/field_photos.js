@@ -63,6 +63,7 @@ function updateFieldPhotoIssueOptions() {
     if (firstEnabled && (!FIELD_PHOTO_ISSUE_TYPES.has(select.value) || select.selectedOptions[0]?.disabled)) {
         select.value = firstEnabled;
     }
+    if (typeof updateFieldPhotoVehicleInsuranceUi === 'function') updateFieldPhotoVehicleInsuranceUi();
 }
 
 function filteredFieldPhotos(photos = fieldPhotoLayerData) {
@@ -161,7 +162,7 @@ function placeFieldPhotos(photos = fieldPhotoLayerData) {
             zIndexOffset: 1400,
             draggable: adminAuthenticated,
             autoPan: adminAuthenticated,
-        }).addTo(map).bindPopup(fieldPhotoGroupPopup(group), { maxWidth: group.photos.length > 1 ? 380 : 300 });
+        }).addTo(map).bindPopup(fieldPhotoGroupPopup(group), mapPopupOptions());
         if (adminAuthenticated) {
             marker.on('dragstart', () => marker.closePopup());
             marker.on('dragend', () => updateFieldPhotoGroupLocation(group, marker));

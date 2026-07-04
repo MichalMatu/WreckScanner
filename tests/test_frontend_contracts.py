@@ -19,6 +19,29 @@ def read_i18n_bundle() -> str:
 
 
 class FrontendContracts(unittest.TestCase):
+    def test_app_menu_exposes_global_language_toggle_in_footer(self):
+        html = read_index_html()
+        ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
+        panel_css = (ROOT_DIR / "web" / "styles" / "panel.css").read_text(encoding="utf-8")
+        tokens_css = (ROOT_DIR / "web" / "styles" / "tokens.css").read_text(encoding="utf-8")
+
+        self.assertIn('id="app-menu-toggle-lang"', html)
+        self.assertIn('id="app-menu-lang-label"', html)
+        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--lang btn-lang"', html)
+        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--admin"', html)
+        self.assertIn('data-i18n-attr="title:icon.lang;aria-label:icon.lang"', html)
+        self.assertIn('onclick="toggleLang()"', html)
+        self.assertIn("function toggleLang()", ui_js)
+        self.assertIn("document.querySelectorAll('.lang-label')", ui_js)
+        self.assertIn(".app-menu-footer-icon", panel_css)
+        self.assertIn(".app-menu-footer-icon--lang", panel_css)
+        self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
+        self.assertNotIn("app-menu-admin-icon", html + panel_css)
+        self.assertIn('-apple-system, BlinkMacSystemFont, "SF Pro Text"', tokens_css)
+        self.assertNotIn("fonts.googleapis.com", html)
+        self.assertNotIn("Plus Jakarta Sans", html + tokens_css)
+        self.assertNotIn("Outfit", html + tokens_css)
+
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
         html = read_index_html()
         report_js = (ROOT_DIR / "web" / "app" / "problem_report.js").read_text(encoding="utf-8")
@@ -121,7 +144,7 @@ class FrontendContracts(unittest.TestCase):
         html = read_index_html()
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
 
-        self.assertIn("background: var(--surface-subtle);", admin_css)
+        self.assertIn("background: var(--glass-control-bg);", admin_css)
         self.assertIn("color: var(--text);", admin_css)
         self.assertIn("color: var(--text-strong);", admin_css)
         self.assertNotIn("admin-panel-section--tools", html + admin_css)
@@ -240,15 +263,36 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("apiPostJson('/api/inspect'", location_js)
         self.assertIn('id="context-inspect-location"', html)
         self.assertIn("openLocationInspectionAtContextPoint", location_js)
-        self.assertIn("L.popup({ maxWidth: 380 })", location_js)
+        self.assertIn("L.popup(mapPopupOptions())", location_js)
         self.assertIn("const INSPECT_LOCATION_MAX_ATTEMPTS = 2;", location_js)
         self.assertIn("async function fetchLocationHistoryCrops", location_js)
         self.assertIn("normalizedInspectYears(data.expected_years)", location_js)
         self.assertIn("normalizedInspectYears(data.missing_years)", location_js)
         self.assertIn("mergeInspectCrops(cropsByYear, data.crops)", location_js)
         self.assertIn("await delay(INSPECT_LOCATION_RETRY_DELAY_MS * (attempt + 1));", location_js)
-        self.assertIn(".map-popup--manual-inspect", popups_css)
+        self.assertIn("mapPopup(`", location_js)
+        self.assertIn("mapPopupMediaModifiers(cropPreviews, 'map-popup--manual-inspect')", location_js)
+        self.assertIn(".map-popup--media", popups_css)
+        self.assertIn("function mapPopupMediaModifiers", popups_js)
+        self.assertIn("function popupElapsedAgeText", popups_js)
+        self.assertIn("function popupHeaderBadge", popups_js)
+        self.assertIn("function popupElapsedAgeBadge", popups_js)
+        self.assertIn("fieldPhotoGroupStartTimestamp", popups_js)
+        self.assertIn(".map-popup--media-count-0", popups_css)
+        self.assertIn(".map-popup--media-count-1", popups_css)
+        self.assertIn(".map-popup--media-count-4", popups_css)
+        self.assertIn("--map-popup-photo-columns: 2;", popups_css)
+        self.assertIn(".map-popup-link-item", popups_css)
+        self.assertIn(".map-popup-head-values", popups_css)
+        self.assertIn(".map-popup-head-value", popups_css)
+        self.assertIn("backdrop-filter: var(--glass-blur);", popups_css)
+        self.assertIn("background: var(--popup-surface);", popups_css)
+        self.assertIn("var(--popup-action-primary)", popups_css)
+        self.assertNotIn("transform: scale(1.015)", popups_css)
+        self.assertNotIn("--popup-photo-hover-shadow", popups_css)
+        self.assertNotIn(".map-popup-photo:hover", popups_css)
         self.assertIn("badge: year", popups_js)
+        self.assertIn("badge: humanDate.date", popups_js)
         self.assertIn("const badge = escapeHtml(photo.badge || photo.title || '');", popups_js)
         self.assertNotIn("inspect.coords", frontend)
         self.assertNotIn("toFixed(6)", location_js)
@@ -327,6 +371,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function buildVehicleGroups", vehicle_layer_js)
         self.assertIn("function placeVehicleMarkers", vehicle_layer_js)
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
+        self.assertIn("bindPopup(vehicleGroupPopup(group), mapPopupOptions())", vehicle_layer_js)
+        self.assertIn("mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo')", vehicle_layer_js)
+        self.assertIn(
+            "popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])",
+            vehicle_layer_js,
+        )
         self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
@@ -368,8 +418,19 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("reportDownloadName", reports_js)
         self.assertIn("submit.hidden = true", reports_js)
         self.assertIn("showHeader: false", vehicle_layer_js)
+        self.assertNotIn("function vehicleGroupMeta", vehicle_layer_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", vehicle_layer_js)
         self.assertNotIn("toFixed(6)", vehicle_layer_js)
+        self.assertIn("'popup.agePrefix': 'od {age}'", i18n_js)
+        self.assertIn("--pin-vehicle-ring:", styles)
+        self.assertIn("background: var(--pin-vehicle-bg);", styles)
+        self.assertIn("border: 2px solid var(--pin-vehicle-ring);", styles)
+        self.assertIn("background: var(--pin-infrastructure-bg);", styles)
+        self.assertNotIn("map-popup-action--photo", frontend)
+        self.assertNotIn("map-popup-action--delete", frontend)
+        self.assertNotIn("fieldPhoto.openOriginal", i18n_js)
+        self.assertIn("background: var(--surface-subtle);", styles)
+        self.assertIn("background: var(--surface-inset);", styles)
 
         for retired in (
             "toggle-saved-wrecks",
@@ -445,6 +506,75 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("modal.fieldPhotoSummary.discard", i18n_js)
         self.assertIn("returnToFieldPhotoSummary", review_js)
 
+    def test_vehicle_insurance_ufg_badge_is_shared_and_editable(self):
+        html = read_index_html()
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        popups_js = (ROOT_DIR / "web" / "app" / "popups.js").read_text(encoding="utf-8")
+        field_photo_popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
+        upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
+        review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        popups_css = (ROOT_DIR / "web" / "styles" / "popups.css").read_text(encoding="utf-8")
+        forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
+        review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
+        frontend = html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + i18n_js
+
+        self.assertIn("const UFG_OC_CHECK_URL = 'https://www.ufg.pl/';", config_js)
+        self.assertIn("FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES", config_js)
+        self.assertIn('id="field-photo-insurance-section"', html)
+        self.assertIn('id="field-photo-insurance-status"', html)
+        self.assertIn('id="photo-review-vehicle-insurance-section"', html)
+        self.assertIn('id="photo-review-vehicle-insurance"', html)
+        self.assertIn('href="https://www.ufg.pl/" target="_blank"', html)
+        self.assertIn("function vehicleInsuranceHeaderBadge", popups_js)
+        self.assertIn(
+            "function vehicleGroupInsuranceStatus",
+            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            "vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group))",
+            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
+        )
+        self.assertNotIn('class="map-popup-photo-tile"', popups_js)
+        self.assertIn('class="map-popup-photo"', popups_js)
+        self.assertNotIn("${vehicleInsuranceUfgBadge(photo)}", popups_js)
+        self.assertIn("href: UFG_OC_CHECK_URL", popups_js)
+        self.assertIn('href="${escapeHtml(badge.href)}"', popups_js)
+        self.assertNotIn(
+            "vehicleInsuranceStatus: fieldPhotoIssueType(photo) === FIELD_PHOTO_ISSUE_TYPE_VEHICLE",
+            field_photo_popups_js,
+        )
+        self.assertIn("formData.append('vehicle_insurance_status'", upload_js)
+        self.assertIn("photoReviewVehicleInsurancePayload", review_js)
+        self.assertIn("vehicle_insurance_status", review_js)
+        self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
+        self.assertIn(".map-popup-head-value--insurance-uninsured", popups_css)
+        self.assertNotIn(".map-popup-ufg-link", popups_css)
+        self.assertIn(".field-photo-insurance-head", forms_css)
+        self.assertIn(".photo-review-insurance", review_css)
+        for key in (
+            "fieldPhoto.vehicleInsurance.unknown",
+            "fieldPhoto.vehicleInsurance.insured",
+            "fieldPhoto.vehicleInsurance.uninsured",
+            "fieldPhoto.vehicleInsurance.badge.insured",
+            "fieldPhoto.vehicleInsurance.badge.uninsured",
+            "fieldPhoto.vehicleInsurance.ufgTitle",
+            "modal.photoReview.vehicleInsurance",
+        ):
+            self.assertIn(key, frontend)
+
+    def test_modal_select_options_keep_dark_theme(self):
+        html = read_index_html()
+        forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
+        privacy_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
+
+        self.assertIn("<select", html + privacy_js)
+        self.assertIn("select.modal-input option", forms_css)
+        self.assertIn(".report-form select option", forms_css)
+        self.assertIn("background-color: var(--surface-elevated-solid);", forms_css)
+        self.assertIn("color: var(--text-strong);", forms_css)
+        self.assertIn("color-scheme: dark;", forms_css)
+
     def test_field_photo_panel_pick_uses_map_hint_after_closing_menu(self):
         html = read_index_html()
         upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
@@ -478,7 +608,10 @@ class FrontendContracts(unittest.TestCase):
 
         self.assertNotIn("function fieldPhotoGroupMeta", popups_js)
         self.assertNotIn("fieldPhoto.popup.capturedAt", popups_js)
+        self.assertNotIn("fieldPhoto.popup.capturedAt", i18n_js)
+        self.assertNotIn("fieldPhoto.noCapturedAt", i18n_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", popups_js)
+        self.assertIn("popupHeader(title, popupElapsedAgeBadge(photos))", popups_js)
         self.assertIn("showHeader: false", popups_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Photo {date}'", i18n_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)

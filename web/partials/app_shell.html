@@ -102,7 +102,12 @@
             </button>
         </nav>
         <div class="app-menu-drawer-footer">
-            <button type="button" class="app-menu-admin-icon" id="open-admin-panel"
+            <button type="button" class="app-menu-footer-icon app-menu-footer-icon--lang btn-lang" id="app-menu-toggle-lang"
+                data-i18n-attr="title:icon.lang;aria-label:icon.lang"
+                title="Język / Language" aria-label="Język / Language" onclick="toggleLang()">
+                <span class="lang-label" id="app-menu-lang-label">PL</span>
+            </button>
+            <button type="button" class="app-menu-footer-icon app-menu-footer-icon--admin" id="open-admin-panel"
                 data-i18n-attr="title:icon.adminPanel;aria-label:icon.adminPanel"
                 title="Panel administratora" aria-label="Panel administratora"
                 onclick="openAdminPanel(); closeAppMenu()">

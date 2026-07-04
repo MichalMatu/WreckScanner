@@ -2,7 +2,7 @@
 
 WreckScanner to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
 
-Aktualne wydanie: `v2.0`.
+Aktualne wydanie: `v3.1`.
 
 Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i podstawowej dokumentacji potrzebnej do uruchomienia, backupu i pozniejszego serwisu.
 
@@ -26,7 +26,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 
 - mapa Leaflet z podkladami `POL`, `OSM` oraz rocznikami Wroclawia `2020-2025`,
 - zdjecia terenowe w SQLite z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
-- warstwa pojazdow budowana z zatwierdzonych zdjec terenowych,
+- warstwa pojazdow budowana z zatwierdzonych zdjec terenowych, z recznym statusem OC/UFG dla grupy wraku,
 - automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
 - pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
 - panel administratora dla zdjec, zgloszen prywatnosci, retencji oryginalow i widocznosci warstw,
@@ -46,6 +46,12 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 - [docs/DEPLOY.md](docs/DEPLOY.md) - produkcyjny deploy, sekrety, systemd i rollback.
+
+## Git Flow
+
+- `main` jest linia release-only: jeden commit `Release vX.Y baseline` na wydanie i pasujacy tag, np. `v3.1`.
+- `work/dirty` jest galezia robocza do codziennego rozwoju, poprawek i eksperymentow.
+- Po weryfikacji stan z `work/dirty` trafia na `main` jako squash release baseline.
 
 ## Lokalne Dane
 
@@ -70,4 +76,4 @@ make smoke
 make e2e-report
 ```
 
-`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> ZIP/PDF.
+`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport ZIP/PDF z OC/UFG.
