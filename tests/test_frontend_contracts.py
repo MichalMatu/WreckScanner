@@ -3,15 +3,27 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from app.http import static_files
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
+
+
+def read_index_html() -> str:
+    return static_files.render_web_template("index.html")
+
+
+def read_i18n_bundle() -> str:
+    return "\n".join(
+        (ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js", "i18n.js")
+    )
 
 
 class FrontendContracts(unittest.TestCase):
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         report_js = (ROOT_DIR / "web" / "app" / "problem_report.js").read_text(encoding="utf-8")
         static_files_py = (ROOT_DIR / "app" / "http" / "static_files.py").read_text(encoding="utf-8")
-        modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
+        styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
 
         self.assertFalse((ROOT_DIR / "web" / "report.html").exists())
         self.assertFalse((ROOT_DIR / "web" / "privacy.html").exists())
@@ -22,14 +34,14 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("openProblemReportModal()", report_js)
         self.assertNotIn('<a class="app-menu-drawer-item" href="/report">', html)
         self.assertIn('onclick="openProblemReportModal(); closeAppMenu()"', html)
-        self.assertIn('path in {"/privacy", "/report"}', static_files_py)
-        self.assertIn('send_web_file(handler, "index.html"', static_files_py)
-        self.assertIn("gap: var(--space-4);", modals_css)
-        self.assertIn("color: var(--text-soft);", modals_css)
-        self.assertIn("min-height: calc(var(--control-height-comfortable) * 3);", modals_css)
+        self.assertIn('HTML_PAGE_PATHS = {"/", "/index.html", "/privacy", "/report"}', static_files_py)
+        self.assertIn('send_web_page(handler, "index.html"', static_files_py)
+        self.assertIn("gap: var(--space-4);", styles)
+        self.assertIn("color: var(--text-soft);", styles)
+        self.assertIn("min-height: calc(var(--control-height-comfortable) * 3);", styles)
 
     def test_orthophoto_filter_is_local_user_preview_setting(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         bootstrap_js = (ROOT_DIR / "web" / "app" / "bootstrap.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
@@ -53,12 +65,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('id="enhancement-decast" min="0" max="1" step="0.05" value="0.2"', html)
 
     def test_photo_retention_admin_status_uses_friendly_card(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         admin_js = (ROOT_DIR / "web" / "admin.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         frontend = html + admin_js + settings_js + admin_css + modals_css + i18n_js
 
         admin_modal = html.split('id="modal-admin-panel"', 1)[1].split('id="modal-photo-retention"', 1)[0]
@@ -87,7 +99,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("Original retention", frontend)
 
     def test_admin_panel_sections_share_tokenized_surface(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
 
         self.assertIn("background: var(--surface-subtle);", admin_css)
@@ -98,7 +110,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("background: rgba(255, 255, 255, 0.045);", admin_css)
 
     def test_admin_panel_uses_compact_shell_and_preserves_child_flow(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
         admin_js = (ROOT_DIR / "web" / "admin.js").read_text(encoding="utf-8")
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
@@ -106,7 +118,7 @@ class FrontendContracts(unittest.TestCase):
         welcome_js = (ROOT_DIR / "web" / "app" / "welcome.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         frontend = (
             html
             + ui_js
@@ -141,7 +153,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("closeModal(document.getElementById('modal-admin-panel'))", frontend)
 
     def test_admin_panel_does_not_duplicate_field_photo_upload_entry(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
 
         self.assertNotIn('id="open-field-photo-upload"', html)
         self.assertNotIn('onclick="openFieldPhotoUploadModal()"', html)
@@ -150,11 +162,11 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('id="open-photo-review"', html)
 
     def test_frontend_removes_retired_vehicle_case_review_panel(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
         admin_py = (ROOT_DIR / "app" / "http" / "admin.py").read_text(encoding="utf-8")
         dispatch_py = (ROOT_DIR / "app" / "http" / "dispatch.py").read_text(encoding="utf-8")
@@ -195,12 +207,12 @@ class FrontendContracts(unittest.TestCase):
             self.assertNotIn(retired, frontend + admin_py)
 
     def test_frontend_uses_location_inspection_as_preview_only(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         location_js = (ROOT_DIR / "web" / "app" / "location_inspection.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         frontend = html + config_js + location_js + settings_js + vehicle_layer_js + i18n_js
 
         self.assertIn('<script src="/app/location_inspection.js"></script>', html)
@@ -222,12 +234,12 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("yolo_wrecks", config_js + settings_js + html)
 
     def test_frontend_removes_retired_map_download_and_model_controls(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         layers_js = (ROOT_DIR / "web" / "app" / "layers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         frontend = html + config_js + layers_js + settings_js + styles + i18n_js
 
         for retired in (
@@ -250,7 +262,7 @@ class FrontendContracts(unittest.TestCase):
             self.assertNotIn(retired, frontend)
 
     def test_frontend_uses_one_vehicle_layer_for_cases_and_vehicle_photos(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
@@ -259,7 +271,7 @@ class FrontendContracts(unittest.TestCase):
         map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         reports_js = (ROOT_DIR / "web" / "app" / "reports.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
         styles = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT_DIR / "web" / "styles").glob("*.css"))
         frontend = (
             html
@@ -344,12 +356,13 @@ class FrontendContracts(unittest.TestCase):
             self.assertNotIn(retired, frontend)
 
     def test_field_photo_upload_keeps_edit_token_out_of_initial_form(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
+        thanks_js = (ROOT_DIR / "web" / "app" / "field_photo_thanks.js").read_text(encoding="utf-8")
         review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
-        frontend = html + upload_js + review_js + popups_js + i18n_js
+        i18n_js = read_i18n_bundle()
+        frontend = html + upload_js + thanks_js + review_js + popups_js + i18n_js
 
         self.assertNotIn("field-photo-edit-token", frontend)
         self.assertNotIn("field-photo-token-section", frontend)
@@ -379,11 +392,14 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("field-photo-thanks-discard", html)
         self.assertIn('id="field-photo-thanks-close"', html)
         self.assertIn('onclick="closeFieldPhotoThanksModal(this)"', html)
-        self.assertIn("fieldPhotoThanksDraftRequiresDecision", upload_js)
+        self.assertIn(
+            '/app/field_photo_upload.js"></script>\n    <script src="/app/field_photo_thanks.js"></script>', html
+        )
+        self.assertIn("fieldPhotoThanksDraftRequiresDecision", thanks_js)
         self.assertIn("modal.fieldPhotoSummary.closeBlocked", i18n_js)
-        self.assertIn("openFieldPhotoThanksOwnerReview", upload_js)
-        self.assertIn("/owner-submit", upload_js)
-        self.assertIn("/owner-discard", upload_js)
+        self.assertIn("openFieldPhotoThanksOwnerReview", thanks_js)
+        self.assertIn("/owner-submit", thanks_js)
+        self.assertIn("/owner-discard", thanks_js)
         self.assertIn("openFieldPhotoOwnerReviewWithToken", review_js)
         self.assertIn('id="photo-review-close"', html)
         self.assertIn('onclick="handlePhotoReviewBackdropClose(this)"', html)
@@ -397,11 +413,11 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("returnToFieldPhotoSummary", review_js)
 
     def test_field_photo_panel_pick_uses_map_hint_after_closing_menu(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
         map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
         map_css = (ROOT_DIR / "web" / "styles" / "map.css").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
 
         self.assertIn('id="map-field-photo-pick-hint"', html)
         self.assertIn("updateFieldPhotoLocationPickHintUi", upload_js)
@@ -414,7 +430,7 @@ class FrontendContracts(unittest.TestCase):
 
     def test_cadastral_popup_uses_ready_data_without_blocked_geoportal_link(self):
         map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
 
         self.assertIn("function cadastralParcelClipboardText", map_context_js)
         self.assertIn("function cadastralParcelPopup", map_context_js)
@@ -425,7 +441,7 @@ class FrontendContracts(unittest.TestCase):
 
     def test_approved_field_photo_popups_hide_redundant_metadata(self):
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
-        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
 
         self.assertNotIn("function fieldPhotoGroupMeta", popups_js)
         self.assertNotIn("fieldPhoto.popup.capturedAt", popups_js)
@@ -435,7 +451,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)
 
     def test_script_order_keeps_inspection_after_field_photo_actions(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         self.assertLess(
             html.index('<script src="/app/field_photo_actions.js"></script>'),
             html.index('<script src="/app/location_inspection.js"></script>'),

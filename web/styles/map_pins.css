@@ -1,0 +1,219 @@
+.map-pin-icon {
+    background: transparent;
+    border: 0;
+}
+
+.vehicle-pin {
+    width: 34px;
+    height: 34px;
+    border-radius: 50% 50% 50% 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    background: #111827;
+    color: transparent;
+    border: 2px solid #34d399;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(52, 211, 153, 0.18);
+    transform: rotate(-45deg);
+}
+
+.vehicle-pin--with-photos {
+    border-color: #86efac;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(249, 115, 22, 0.24);
+}
+
+.vehicle-pin--pending {
+    background: #422006;
+    border-color: #fbbf24;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 191, 36, 0.26);
+}
+
+.vehicle-pin--rejected {
+    background: #450a0a;
+    border-color: #fb7185;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(251, 113, 133, 0.22);
+}
+
+.vehicle-pin::before {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    border: 1px solid rgba(52, 211, 153, 0.45);
+}
+
+.vehicle-pin::after {
+    content: 'V';
+    color: #34d399;
+    transform: rotate(45deg);
+    position: absolute;
+    font: 900 13px var(--font);
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.vehicle-pin--pending::before {
+    border-color: rgba(251, 191, 36, 0.56);
+}
+
+.vehicle-pin--pending::after {
+    content: '?';
+    color: #fde68a;
+}
+
+.vehicle-pin--rejected::before {
+    border-color: rgba(251, 113, 133, 0.54);
+}
+
+.vehicle-pin--rejected::after {
+    content: 'X';
+    color: #fecdd3;
+}
+
+.pending-submission-pin {
+    width: 34px;
+    height: 34px;
+    border-radius: 50% 50% 50% 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    background: #1f2937;
+    border: 2px dashed #fbbf24;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(251, 191, 36, 0.22);
+    transform: rotate(-45deg);
+}
+
+.pending-submission-pin::after {
+    content: 'W';
+    color: #fde68a;
+    transform: rotate(45deg);
+    font: 900 13px var(--font);
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.pending-submission-pin--photo::after {
+    content: 'P';
+}
+
+.field-photo-pin {
+    width: 34px;
+    height: 34px;
+    border-radius: 50% 50% 50% 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    background: #082f49;
+    border: 2px solid #38bdf8;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(56, 189, 248, 0.2);
+    transform: rotate(-45deg);
+}
+
+.field-photo-pin--infrastructure {
+    background: #451a03;
+    border-color: #f59e0b;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(245, 158, 11, 0.22);
+}
+
+.field-photo-pin--smoke {
+    background: #312e81;
+    border-color: #a78bfa;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(167, 139, 250, 0.24);
+}
+
+.leaflet-marker-draggable .field-photo-pin {
+    cursor: move;
+}
+
+.field-photo-pin::before {
+    content: '';
+    width: 14px;
+    height: 10px;
+    border-radius: 3px;
+    border: 2px solid #e0f2fe;
+    transform: rotate(45deg);
+    box-sizing: border-box;
+}
+
+.field-photo-pin::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #e0f2fe;
+    transform: translate(2px, -1px) rotate(45deg);
+}
+
+.map-pin-count {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: #f97316;
+    color: #fff;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+    font: 900 11px var(--font);
+    line-height: 1;
+    transform: rotate(45deg);
+    z-index: 2;
+    transition: opacity 0.15s ease;
+}
+
+.marker-detail--dots .map-pin-count,
+.marker-detail--dots .vehicle-pin::before,
+.marker-detail--dots .vehicle-pin::after,
+.marker-detail--dots .pending-submission-pin::after,
+.marker-detail--dots .field-photo-pin::before,
+.marker-detail--dots .field-photo-pin::after {
+    display: none;
+}
+
+.marker-detail--dots .vehicle-pin,
+.marker-detail--dots .pending-submission-pin,
+.marker-detail--dots .field-photo-pin {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.55);
+    transform: translate(11px, 28px);
+}
+
+.marker-detail--dots .vehicle-pin {
+    background: #34d399;
+    border: 2px solid #ecfdf5;
+}
+
+.marker-detail--dots .vehicle-pin--pending {
+    background: #fbbf24;
+    border-color: #fffbeb;
+}
+
+.marker-detail--dots .vehicle-pin--rejected {
+    background: #fb7185;
+    border-color: #fff1f2;
+}
+
+.marker-detail--dots .pending-submission-pin {
+    background: #fbbf24;
+    border: 2px solid #fffbeb;
+}
+
+.marker-detail--dots .field-photo-pin {
+    background: #38bdf8;
+    border: 2px solid #e0f2fe;
+}

@@ -1,0 +1,180 @@
+.panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.map-layer-controls {
+    display: grid;
+    gap: 7px;
+    font-family: var(--font, var(--font-body));
+    user-select: none;
+}
+
+.map-layer-controls.is-loading-public-layers .layer-toggle {
+    display: none;
+}
+
+.layer-toggle {
+    min-height: var(--control-height-compact);
+    display: grid;
+    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.045);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1.25;
+    white-space: normal;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.layer-toggle:hover {
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+}
+
+.layer-toggle input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    background: rgba(15, 23, 42, 0.72);
+    position: relative;
+    cursor: pointer;
+}
+
+.layer-toggle input:checked {
+    border-color: color-mix(in srgb, var(--primary) 74%, white);
+    background: var(--primary);
+}
+
+.layer-toggle input:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 5px;
+    height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.layer-toggle input:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.layer-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layer-count-badge {
+    justify-self: end;
+    min-width: 24px;
+    max-width: 58px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--text-soft);
+    font: 850 0.68rem var(--font);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layer-status {
+    margin-left: auto;
+    min-width: 0;
+    max-width: 74px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1;
+    text-align: right;
+}
+
+.layer-status.is-ok {
+    color: #86efac;
+}
+
+.layer-status.is-error {
+    color: #fca5a5;
+}
+
+.layer-pin {
+    width: 13px;
+    height: 13px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-sizing: border-box;
+    justify-self: center;
+}
+
+.layer-pin--vehicle {
+    background: #111827;
+    border: 2px solid #34d399;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.14);
+}
+
+.layer-pin--cadastral {
+    border-radius: 3px;
+    background:
+        linear-gradient(90deg, transparent 47%, rgba(251, 191, 36, 0.95) 48%, rgba(251, 191, 36, 0.95) 53%, transparent 54%),
+        linear-gradient(0deg, transparent 47%, rgba(251, 191, 36, 0.95) 48%, rgba(251, 191, 36, 0.95) 53%, transparent 54%),
+        rgba(69, 26, 3, 0.72);
+    border: 1px solid rgba(251, 191, 36, 0.95);
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.16);
+    transform: none;
+}
+
+.layer-pin--base-map-osm {
+    border-radius: 3px;
+    background:
+        linear-gradient(135deg, #e5e7eb 0 48%, #bbf7d0 49% 70%, #bae6fd 71% 100%);
+    border: 1px solid rgba(15, 23, 42, 0.28);
+    box-shadow: 0 0 0 2px rgba(226, 232, 240, 0.16);
+    transform: none;
+}
+
+.layer-pin--field-photo-infrastructure {
+    background: #451a03;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+}
+
+.layer-pin--field-photo-smoke {
+    background: #312e81;
+    border: 2px solid #a78bfa;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+}
+
+.layer-pin--field-photo-pending {
+    background: #1f2937;
+    border: 2px dashed #fbbf24;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18);
+}

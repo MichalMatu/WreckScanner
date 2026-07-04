@@ -67,6 +67,53 @@ class HttpStaticFilesContractTests(unittest.TestCase):
 
         self.assertEqual(translated, str(web_dir / "app.js"))
 
+    def test_render_web_template_expands_safe_partials(self):
+        with TemporaryDirectory() as tmp:
+            web_dir = Path(tmp) / "web"
+            (web_dir / "partials").mkdir(parents=True)
+            (web_dir / "index.html").write_text(
+                "<main>\n<!-- include:partials/body.html -->\n</main>\n",
+                encoding="utf-8",
+            )
+            (web_dir / "partials" / "body.html").write_text("<p>OK</p>\n", encoding="utf-8")
+
+            with patch.object(config, "WEB_DIR", web_dir):
+                rendered = static_files.render_web_template("index.html")
+
+        self.assertEqual(rendered, "<main>\n<p>OK</p>\n\n</main>\n")
+
+    def test_render_web_template_rejects_unsafe_partials(self):
+        with TemporaryDirectory() as tmp:
+            web_dir = Path(tmp) / "web"
+            web_dir.mkdir()
+            (web_dir / "index.html").write_text("<!-- include:../secret.html -->\n", encoding="utf-8")
+
+            with (
+                patch.object(config, "WEB_DIR", web_dir),
+                self.assertRaises(FileNotFoundError),
+            ):
+                static_files.render_web_template("index.html")
+
+    def test_handle_web_page_serves_rendered_index_without_head_body(self):
+        with TemporaryDirectory() as tmp:
+            web_dir = Path(tmp) / "web"
+            (web_dir / "partials").mkdir(parents=True)
+            (web_dir / "index.html").write_text(
+                "<html>\n<!-- include:partials/app.html -->\n</html>\n",
+                encoding="utf-8",
+            )
+            (web_dir / "partials" / "app.html").write_text("<body>app</body>\n", encoding="utf-8")
+            handler = FakeHandler()
+            expected_body = b"<html>\n<body>app</body>\n\n</html>\n"
+
+            with patch.object(config, "WEB_DIR", web_dir):
+                handled = static_files.handle_web_page(handler, "/privacy", include_body=False)
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(handler.wfile.getvalue(), b"")
+        self.assertIn(("Content-Length", str(len(expected_body))), handler.headers)
+
 
 if __name__ == "__main__":
     unittest.main()

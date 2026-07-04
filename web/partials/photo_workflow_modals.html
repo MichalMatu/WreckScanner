@@ -1,0 +1,250 @@
+    <!-- ─── MODAL: ZDJĘCIA TERENOWE ─────────────────────── -->
+    <div class="modal-backdrop" id="modal-field-photo-upload" hidden onclick="closeFieldPhotoUploadModal(this)">
+        <div class="modal modal--field-photo draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.fieldPhoto.title">Zdjęcia terenowe</h2>
+                <button type="button" class="modal-close" onclick="closeFieldPhotoUploadModal()"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-body report-form" id="field-photo-form" onsubmit="submitFieldPhotoUpload(event)">
+                <section class="modal-section">
+                    <label class="modal-label" for="field-photo-issue-type" data-i18n="modal.fieldPhoto.issueType">Typ
+                        miejsca</label>
+                    <select class="modal-input" id="field-photo-issue-type">
+                        <option value="vehicle" data-i18n="fieldPhoto.issueType.vehicle">Zalegający pojazd</option>
+                        <option value="infrastructure" data-i18n="fieldPhoto.issueType.infrastructure">Niebezpieczna
+                            infrastruktura</option>
+                        <option value="smoke" data-i18n="fieldPhoto.issueType.smoke">Zanieczyszczone powietrze</option>
+                    </select>
+                </section>
+                <section class="modal-section">
+                    <label class="modal-label" for="field-photo-files" data-i18n="modal.fieldPhoto.files">Pliki
+                        zdjęć</label>
+                    <div class="file-picker">
+                        <input type="file" class="file-picker-input" id="field-photo-files"
+                            accept="image/jpeg,image/png,image/webp" multiple>
+                        <label class="file-picker-button" for="field-photo-files"
+                            data-i18n="modal.fieldPhoto.chooseFiles">Wybierz zdjęcia z terenu</label>
+                        <span class="file-picker-summary" data-file-summary-for="field-photo-files"
+                            data-i18n="filePicker.empty">Nie wybrano plików</span>
+                    </div>
+                    <p class="modal-hint" data-i18n="modal.fieldPhoto.fileHint">JPG, PNG albo WebP, maks. 10 MB każde,
+                        do 25 zdjęć naraz.</p>
+                    <div class="field-photo-queue" id="field-photo-queue" hidden></div>
+                </section>
+                <section class="modal-section">
+                    <label class="modal-label" data-i18n="modal.fieldPhoto.location">Punkt na mapie</label>
+                    <p class="modal-hint field-photo-map-point" id="field-photo-map-point"></p>
+                </section>
+                <div class="report-actions">
+                    <button type="submit" class="btn-download report-submit-btn" id="field-photo-submit">
+                        <span data-i18n="modal.fieldPhoto.submit">Dodaj na mapę</span>
+                    </button>
+                    <button type="button" class="field-photo-retry-btn" id="field-photo-retry"
+                        onclick="retryFailedFieldPhotoUploads()" data-i18n="modal.fieldPhoto.retryFailed" hidden>Ponów
+                        błędne</button>
+                </div>
+                <p class="modal-hint" id="field-photo-status"></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-field-photo-thanks" hidden onclick="closeFieldPhotoThanksModal(this)">
+        <div class="modal modal--field-photo-thanks draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 id="field-photo-thanks-title" data-i18n="modal.fieldPhotoThanks.title">Dziękujemy za zdjęcie</h2>
+                <button type="button" class="modal-close" id="field-photo-thanks-close"
+                    onclick="closeFieldPhotoThanksModal()" data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body field-photo-thanks-body">
+                <p class="field-photo-thanks-lead" id="field-photo-thanks-count">Zdjęcie trafiło do weryfikacji.</p>
+                <section class="modal-section field-photo-thanks-token-section token-card" id="field-photo-thanks-token-section">
+                    <div class="field-photo-token-label-row">
+                        <label class="modal-label" for="field-photo-thanks-token"
+                            data-i18n="modal.fieldPhotoThanks.token">Token edycji</label>
+                        <button type="button" class="report-copy-btn field-photo-token-btn"
+                            onclick="copyFieldPhotoThanksToken()" data-i18n="modal.fieldPhotoThanks.copyToken">Kopiuj</button>
+                    </div>
+                    <input class="modal-input field-photo-token-input" id="field-photo-thanks-token" type="text"
+                        readonly autocomplete="off" spellcheck="false">
+                    <p class="modal-hint" data-i18n="modal.fieldPhotoThanks.tokenHint">Zachowaj token. Bez niego nie
+                        odblokujesz później edycji zdjęcia z mapy.</p>
+                    <p class="modal-hint" id="field-photo-thanks-status"></p>
+                </section>
+                <section class="welcome-section field-photo-thanks-steps">
+                    <h3 data-i18n="modal.fieldPhotoThanks.nextTitle">Co dalej?</h3>
+                    <ol class="modal-steps">
+                        <li data-i18n="modal.fieldPhotoThanks.stepEdit">Możesz od razu przygotować anonimizację bez
+                            ponownego wpisywania tokenu.</li>
+                        <li data-i18n="modal.fieldPhotoThanks.stepToken">Zachowaj token, jeśli później wrócisz do
+                            zdjęcia z pinezki na mapie.</li>
+                        <li data-i18n="modal.fieldPhotoThanks.stepApproval">Administrator zatwierdzi zdjęcie przed
+                            publikacją.</li>
+                    </ol>
+                </section>
+                <div class="welcome-actions">
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-review"
+                        onclick="openFieldPhotoThanksOwnerReview()">
+                        <span data-i18n="modal.fieldPhotoThanks.reviewNow">Anonimizuj teraz</span>
+                    </button>
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-submit"
+                        onclick="submitFieldPhotoThanksForReview()">
+                        <span data-i18n="modal.fieldPhotoSummary.submit">Wyślij do weryfikacji</span>
+                    </button>
+                    <button type="button" class="confirm-danger-btn welcome-start-btn" id="field-photo-thanks-discard"
+                        onclick="discardFieldPhotoThanksDraft()">
+                        <span data-i18n="modal.fieldPhotoSummary.discard">Porzuć szkic</span>
+                    </button>
+                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-done"
+                        onclick="closeModal()">
+                        <span data-i18n="modal.fieldPhotoThanks.done">OK</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-field-photo-owner" hidden onclick="closeModal(this)">
+        <form class="modal modal--field-photo-owner draggable-modal" id="field-photo-owner-form"
+            onclick="event.stopPropagation()" onsubmit="submitFieldPhotoOwnerToken(event)">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.fieldPhotoOwner.title">Edycja mojego zdjęcia</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body report-form">
+                <section class="modal-section token-card">
+                    <label class="modal-label" for="field-photo-owner-token"
+                        data-i18n="modal.fieldPhotoOwner.token">Token edycji</label>
+                    <input class="modal-input field-photo-token-input" id="field-photo-owner-token" type="text"
+                        autocomplete="off" spellcheck="false" maxlength="80">
+                    <p class="modal-hint" data-i18n="modal.fieldPhotoOwner.hint">Wpisz token zapisany przy dodawaniu
+                        zdjęcia. Po odblokowaniu przygotujesz obszary do zamazania.</p>
+                </section>
+                <button type="submit" class="btn-download report-submit-btn field-photo-owner-submit"
+                    id="field-photo-owner-submit">
+                    <span data-i18n="modal.fieldPhotoOwner.submit">Odblokuj edycję</span>
+                </button>
+                <p class="modal-hint" id="field-photo-owner-status"></p>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-backdrop" id="modal-photo-review" hidden onclick="handlePhotoReviewBackdropClose(this)">
+        <div class="modal modal--photo-review draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 id="photo-review-title" data-i18n="modal.photoReview.title">Przegląd zdjęć</h2>
+                <div class="modal-header-actions">
+                    <button type="button" class="report-copy-btn field-photo-token-btn" id="photo-review-return-summary"
+                        onclick="returnPhotoReviewToFieldPhotoSummary()" data-i18n="modal.photoReview.backToSummary"
+                        hidden>Podsumowanie</button>
+                    <button type="button" class="modal-close" id="photo-review-close" onclick="closePhotoReviewModal()"
+                        data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body photo-review-body">
+                <section class="modal-section" id="photo-review-controls">
+                    <label class="modal-label" for="photo-review-filter"
+                        data-i18n="modal.photoReview.filter">Status</label>
+                    <select class="modal-input" id="photo-review-filter" onchange="loadPhotoReviewQueue()">
+                        <option value="pending" data-i18n="modal.photoReview.pending">Do weryfikacji</option>
+                        <option value="approved" data-i18n="modal.photoReview.approved">Zatwierdzone</option>
+                        <option value="rejected" data-i18n="modal.photoReview.rejected">Odrzucone</option>
+                        <option value="all" data-i18n="modal.photoReview.all">Wszystkie</option>
+                    </select>
+                    <input class="modal-input" id="photo-review-search" type="search"
+                        data-i18n-attr="placeholder:modal.photoReview.search" placeholder="Szukaj id zdjęcia / nazwy pliku">
+                </section>
+                <div class="photo-review-layout">
+                    <div class="photo-review-list" id="photo-review-list"></div>
+                    <section class="photo-review-editor">
+                        <canvas id="photo-review-canvas"></canvas>
+                        <p class="modal-hint" id="photo-review-empty" data-i18n="modal.photoReview.empty">Wybierz
+                            zdjęcie z kolejki.</p>
+                        <div class="photo-review-actions">
+                            <div class="review-tool-actions">
+                                <button type="button" class="report-copy-btn review-icon-btn" onclick="undoPhotoRedaction()"
+                                    data-i18n-attr="title:modal.photoReview.undo;aria-label:modal.photoReview.undo"
+                                    title="Cofnij obszar" aria-label="Cofnij obszar">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7 7V3L1 9l6 6v-4h7a5 5 0 0 1 0 10h-3v-2h3a3 3 0 0 0 0-6H7z" />
+                                    </svg>
+                                </button>
+                                <button type="button" class="report-copy-btn review-icon-btn" onclick="rotatePhotoRedaction(-5)"
+                                    data-i18n-attr="title:modal.photoReview.rotateLeft;aria-label:modal.photoReview.rotateLeft"
+                                    title="Obróć w lewo" aria-label="Obróć w lewo">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7.1 7.1A7 7 0 1 1 5 12H3a9 9 0 1 0 2.6-6.4L3 3v7h7L7.1 7.1z" />
+                                    </svg>
+                                </button>
+                                <button type="button" class="report-copy-btn review-icon-btn" onclick="rotatePhotoRedaction(5)"
+                                    data-i18n-attr="title:modal.photoReview.rotateRight;aria-label:modal.photoReview.rotateRight"
+                                    title="Obróć w prawo" aria-label="Obróć w prawo">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M16.9 7.1A7 7 0 1 0 19 12h2a9 9 0 1 1-2.6-6.4L21 3v7h-7l2.9-2.9z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="review-decision-actions">
+                                <button type="button" class="report-copy-btn review-action-btn" id="photo-review-save"
+                                    onclick="savePhotoReviewStatus('pending')"
+                                    data-i18n-attr="title:modal.photoReview.savePending;aria-label:modal.photoReview.savePending">
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-2.3-5.7L15 9h7V2l-2.9 2.9A10 10 0 0 0 12 2zm1 5h-2v6l5 3 .9-1.6-3.9-2.3V7z" />
+                                    </svg>
+                                    <span class="review-action-label" id="photo-review-save-label"
+                                        data-i18n="modal.photoReview.savePendingShort">Do weryfikacji</span>
+                                </button>
+                                <button type="button" class="confirm-danger-btn review-action-btn admin-review-only"
+                                    onclick="savePhotoReviewStatus('rejected')"
+                                    data-i18n-attr="title:modal.photoReview.reject;aria-label:modal.photoReview.reject">
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M18.3 5.7 16.9 4.3 12 9.2 7.1 4.3 5.7 5.7l4.9 4.9-4.9 4.9 1.4 1.4 4.9-4.9 4.9 4.9 1.4-1.4-4.9-4.9 4.9-4.9z" />
+                                    </svg>
+                                    <span class="review-action-label" data-i18n="modal.photoReview.reject">Odrzuć</span>
+                                </button>
+                                <button type="button" class="confirm-danger-btn review-action-btn admin-review-only" id="photo-review-delete"
+                                    onclick="deletePhotoReviewItem()"
+                                    data-i18n-attr="title:modal.photoReview.delete;aria-label:modal.photoReview.delete" hidden>
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 3v1H4v2h16V4h-5V3H9zm-3 5 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z" />
+                                    </svg>
+                                    <span class="review-action-label" data-i18n="modal.photoReview.deleteShort">Usuń</span>
+                                </button>
+                                <button type="button" class="btn-download report-submit-btn review-approve-btn admin-review-only"
+                                    onclick="savePhotoReviewStatus('approved')"
+                                    data-i18n-attr="title:modal.photoReview.approve;aria-label:modal.photoReview.approve">
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+                                    </svg>
+                                    <span class="review-action-label" data-i18n="modal.photoReview.approve">Zatwierdź</span>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="modal-hint" id="photo-review-status"></p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+

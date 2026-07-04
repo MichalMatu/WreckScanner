@@ -252,14 +252,8 @@ def _audit_retired_photo_fields(
         )
 
 
-def _audit_field_photos(
-    field_photos_dir: Path,
-    private_photos_dir: Path,
-    issues: list[dict[str, Any]],
-    *,
-    check_images: bool,
-) -> dict[str, Any]:
-    summary: dict[str, Any] = {
+def _new_field_photo_summary() -> dict[str, Any]:
+    return {
         "records": 0,
         "issue_types": dict.fromkeys(config.FIELD_PHOTO_ISSUE_TYPES, 0),
         "unknown_issue_types": 0,
@@ -269,6 +263,150 @@ def _audit_field_photos(
         "orphan_directories": 0,
         "orphan_files": 0,
     }
+
+
+def _read_field_photo_record(record_path: Path, issues: list[dict[str, Any]]) -> dict[str, Any] | None:
+    try:
+        record = _read_json(record_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        _issue(issues, "error", "field_photo_record_unreadable", record_path, f"Nie da się odczytać record.json: {exc}")
+        return None
+    if not isinstance(record, dict):
+        _issue(issues, "error", "field_photo_record_not_object", record_path, "record.json nie jest obiektem JSON.")
+        return None
+    return record
+
+
+def _audit_field_photo_identity(
+    directory: Path,
+    record_path: Path,
+    record: dict[str, Any],
+    issues: list[dict[str, Any]],
+    field_photo_ids: set[str],
+) -> None:
+    photo_id = str(record.get("id") or "")
+    if not FIELD_PHOTO_ID_RE.fullmatch(photo_id):
+        _issue(issues, "error", "field_photo_bad_id", record_path, "Nieprawidłowy identyfikator zdjęcia.", id=photo_id)
+    else:
+        field_photo_ids.add(photo_id)
+    if photo_id and photo_id != directory.name:
+        _issue(issues, "error", "field_photo_id_folder_mismatch", record_path, "ID nie zgadza się z nazwą katalogu.")
+
+
+def _audit_field_photo_issue_type(
+    record_path: Path,
+    record: dict[str, Any],
+    issues: list[dict[str, Any]],
+    summary: dict[str, Any],
+    issue_counter: Counter[str],
+) -> None:
+    if "issue_type" not in record:
+        issue_type = ""
+        _issue(issues, "error", "field_photo_missing_issue_type", record_path, "Brak typu pinezki.")
+    else:
+        issue_type = str(record.get("issue_type") or "").strip()
+    if issue_type not in config.FIELD_PHOTO_ISSUE_TYPES:
+        summary["unknown_issue_types"] += 1
+        _issue(
+            issues,
+            "error",
+            "field_photo_bad_issue_type",
+            record_path,
+            "Nieprawidłowy typ pinezki.",
+            issue_type=issue_type,
+        )
+    else:
+        issue_counter[issue_type] += 1
+
+
+def _audit_field_photo_public_assets(
+    directory: Path,
+    record_path: Path,
+    record: dict[str, Any],
+    issues: list[dict[str, Any]],
+    summary: dict[str, Any],
+    *,
+    check_images: bool,
+) -> None:
+    if record.get("public_review_status") != "approved":
+        if record.get("public_image_file") or record.get("public_thumb_file"):
+            _issue(
+                issues,
+                "error",
+                "field_photo_public_asset_without_approval",
+                record_path,
+                "Niezatwierdzony rekord wskazuje publiczne pliki zdjęcia.",
+            )
+        return
+
+    _, public_bytes = _audit_public_photo_file(
+        directory,
+        record_path,
+        record,
+        "public_image_file",
+        issues,
+        "field_photo_public_image",
+        check_images=check_images,
+    )
+    _, thumb_bytes = _audit_public_photo_file(
+        directory,
+        record_path,
+        record,
+        "public_thumb_file",
+        issues,
+        "field_photo_public_thumb",
+        check_images=check_images,
+        expected_thumbnail=True,
+        thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
+    )
+    summary["public_image_bytes"] += public_bytes
+    summary["public_thumb_bytes"] += thumb_bytes
+
+
+def _audit_field_photo_record(
+    directory: Path,
+    private_photos_dir: Path,
+    issues: list[dict[str, Any]],
+    summary: dict[str, Any],
+    issue_counter: Counter[str],
+    field_photo_ids: set[str],
+    *,
+    check_images: bool,
+) -> None:
+    record_path = directory / "record.json"
+    record = _read_field_photo_record(record_path, issues)
+    if record is None:
+        return
+
+    summary["records"] += 1
+    _audit_field_photo_identity(directory, record_path, record, issues, field_photo_ids)
+    _audit_field_photo_issue_type(record_path, record, issues, summary, issue_counter)
+
+    if not _is_coord(record.get("lat"), -90, 90) or not _is_coord(record.get("lon"), -180, 180):
+        _issue(issues, "error", "field_photo_bad_coordinates", record_path, "Nieprawidłowe współrzędne zdjęcia.")
+
+    _audit_retired_photo_fields(record_path, record, issues, "field_photo")
+    _audit_review_fields(record_path, record, issues, "field_photo")
+    _, original_bytes = _audit_private_photo_file(
+        private_photos_dir,
+        record_path,
+        record,
+        issues,
+        "field_photo",
+        check_images=check_images,
+    )
+    summary["private_original_bytes"] += original_bytes
+    _audit_field_photo_public_assets(directory, record_path, record, issues, summary, check_images=check_images)
+
+
+def _audit_field_photos(
+    field_photos_dir: Path,
+    private_photos_dir: Path,
+    issues: list[dict[str, Any]],
+    *,
+    check_images: bool,
+) -> dict[str, Any]:
+    summary = _new_field_photo_summary()
     issue_counter = Counter()
     field_photo_ids: set[str] = set()
 
@@ -292,95 +430,15 @@ def _audit_field_photos(
             summary["orphan_directories"] += 1
             _issue(issues, "error", "field_photo_record_missing", child, "Katalog zdjęcia nie ma record.json.")
             continue
-        try:
-            record = _read_json(record_path)
-        except (OSError, json.JSONDecodeError) as exc:
-            _issue(
-                issues, "error", "field_photo_record_unreadable", record_path, f"Nie da się odczytać record.json: {exc}"
-            )
-            continue
-        if not isinstance(record, dict):
-            _issue(issues, "error", "field_photo_record_not_object", record_path, "record.json nie jest obiektem JSON.")
-            continue
-
-        summary["records"] += 1
-        photo_id = str(record.get("id") or "")
-        photo_id_valid = bool(FIELD_PHOTO_ID_RE.fullmatch(photo_id))
-        if not photo_id_valid:
-            _issue(
-                issues, "error", "field_photo_bad_id", record_path, "Nieprawidłowy identyfikator zdjęcia.", id=photo_id
-            )
-        else:
-            field_photo_ids.add(photo_id)
-        if photo_id and photo_id != child.name:
-            _issue(
-                issues, "error", "field_photo_id_folder_mismatch", record_path, "ID nie zgadza się z nazwą katalogu."
-            )
-
-        if "issue_type" not in record:
-            issue_type = ""
-            _issue(issues, "error", "field_photo_missing_issue_type", record_path, "Brak typu pinezki.")
-        else:
-            issue_type = str(record.get("issue_type") or "").strip()
-        if issue_type not in config.FIELD_PHOTO_ISSUE_TYPES:
-            summary["unknown_issue_types"] += 1
-            _issue(
-                issues,
-                "error",
-                "field_photo_bad_issue_type",
-                record_path,
-                "Nieprawidłowy typ pinezki.",
-                issue_type=issue_type,
-            )
-        else:
-            issue_counter[issue_type] += 1
-
-        if not _is_coord(record.get("lat"), -90, 90) or not _is_coord(record.get("lon"), -180, 180):
-            _issue(issues, "error", "field_photo_bad_coordinates", record_path, "Nieprawidłowe współrzędne zdjęcia.")
-
-        _audit_retired_photo_fields(record_path, record, issues, "field_photo")
-        status = _audit_review_fields(record_path, record, issues, "field_photo")
-        _, original_bytes = _audit_private_photo_file(
+        _audit_field_photo_record(
+            child,
             private_photos_dir,
-            record_path,
-            record,
             issues,
-            "field_photo",
+            summary,
+            issue_counter,
+            field_photo_ids,
             check_images=check_images,
         )
-        summary["private_original_bytes"] += original_bytes
-
-        if status == "approved":
-            _, public_bytes = _audit_public_photo_file(
-                child,
-                record_path,
-                record,
-                "public_image_file",
-                issues,
-                "field_photo_public_image",
-                check_images=check_images,
-            )
-            _, thumb_bytes = _audit_public_photo_file(
-                child,
-                record_path,
-                record,
-                "public_thumb_file",
-                issues,
-                "field_photo_public_thumb",
-                check_images=check_images,
-                expected_thumbnail=True,
-                thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
-            )
-            summary["public_image_bytes"] += public_bytes
-            summary["public_thumb_bytes"] += thumb_bytes
-        elif record.get("public_image_file") or record.get("public_thumb_file"):
-            _issue(
-                issues,
-                "error",
-                "field_photo_public_asset_without_approval",
-                record_path,
-                "Niezatwierdzony rekord wskazuje publiczne pliki zdjęcia.",
-            )
 
     summary["issue_types"] = {key: int(issue_counter.get(key, 0)) for key in config.FIELD_PHOTO_ISSUE_TYPES}
     summary["ids"] = sorted(field_photo_ids)

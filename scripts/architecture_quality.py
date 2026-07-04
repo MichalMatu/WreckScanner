@@ -6,13 +6,11 @@ from typing import Any
 
 DEFAULT_FILE_LINE_LIMITS = {
     ".py": 650,
-    ".js": 700,
+    ".js": 650,
     ".html": 1250,
-    ".css": 725,
+    ".css": 650,
 }
-FILE_LINE_LIMIT_OVERRIDES = {
-    "web/i18n.js": 1000,
-}
+FILE_LINE_LIMIT_OVERRIDES: dict[str, int] = {}
 FUNCTION_LINE_LIMITS = {
     "python": 140,
     "javascript": 90,

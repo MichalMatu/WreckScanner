@@ -3,9 +3,14 @@ import unittest
 from pathlib import Path
 
 from app import config as app_config
+from app.http import static_files
 from core import config as core_config
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
+
+def read_index_html() -> str:
+    return static_files.render_web_template("index.html")
 
 
 def frontend_map_source_block(config_js: str) -> str:
@@ -43,11 +48,20 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertEqual(app_config.CORS_ALLOWED_ORIGINS, ("https://wreckscanner.pl",))
 
     def test_web_config_is_loaded_before_application_code(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         app_js = (ROOT_DIR / "web" / "app.js").read_text(encoding="utf-8")
         map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
 
+        self.assertLess(
+            html.index('<script src="/i18n/pl.js"></script>'), html.index('<script src="/i18n.js"></script>')
+        )
+        self.assertLess(
+            html.index('<script src="/i18n/en.js"></script>'), html.index('<script src="/i18n.js"></script>')
+        )
+        self.assertLess(
+            html.index('<script src="/i18n.js"></script>'), html.index('<script src="/config.js"></script>')
+        )
         self.assertLess(html.index('<script src="/config.js"></script>'), html.index('<script src="/app.js"></script>'))
         self.assertLess(
             html.index('<script src="/map_helpers.js"></script>'), html.index('<script src="/app.js"></script>')
@@ -101,7 +115,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertNotIn("function squareBounds(start, end)", app_js)
 
     def test_frontend_map_sources_are_structured_and_match_slider_contract(self):
-        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")
         block = frontend_map_source_block(config_js)

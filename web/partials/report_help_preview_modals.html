@@ -1,0 +1,187 @@
+    <!-- ─── MODAL: GENERATOR ZGŁOSZENIA ─────────────────── -->
+    <div class="modal-backdrop" id="modal-report-package" hidden onclick="closeModal(this)">
+        <div class="modal modal--report draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.report.title">Zgłoszenie do weryfikacji</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-body report-form" id="report-package-form" onsubmit="submitReportPackage(event)">
+                <section class="modal-section">
+                    <label class="modal-label" data-i18n="modal.report.reporter">Dane zgłaszającego</label>
+                    <div class="report-grid">
+                        <label class="report-field">
+                            <span data-i18n="modal.report.reporterName">Imię i nazwisko</span>
+                            <input type="text" name="reporter_name" maxlength="120" required>
+                        </label>
+                        <label class="report-field">
+                            <span data-i18n="modal.report.reporterEmail">E-mail</span>
+                            <input type="email" name="reporter_email" maxlength="160" required>
+                        </label>
+                        <label class="report-field">
+                            <span data-i18n="modal.report.reporterPhone">Telefon</span>
+                            <input type="tel" name="reporter_phone" maxlength="80" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="modal.report.reporterAddress">Adres zamieszkania</span>
+                            <input type="text" name="reporter_address" maxlength="240" required>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="modal-section">
+                    <label class="modal-label" data-i18n="modal.report.description">Opis zgłoszenia</label>
+                    <div class="report-grid">
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="modal.report.location">Dokładne miejsce pojazdu</span>
+                            <textarea name="location_description" rows="2" maxlength="1200" required></textarea>
+                        </label>
+                        <label class="report-field">
+                            <span data-i18n="modal.report.observedAt">Data i godzina obserwacji</span>
+                            <input type="datetime-local" name="observed_at" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="modal.report.vehicleDescription">Opis pojazdu lub miejsca</span>
+                            <textarea name="vehicle_description" rows="3" maxlength="2000" required></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="modal-section">
+                    <label class="modal-label" for="report-crop-select" data-i18n="modal.report.mapEvidence">Miniatury
+                        ortofoto</label>
+                    <div class="report-grid">
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="modal.report.crop">Zoom miniatur w raporcie</span>
+                            <select class="modal-input" id="report-crop-select" name="crop_m">
+                                <option value="5" data-i18n="modal.report.crop5">5 m — ciasny</option>
+                                <option value="7.5" selected data-i18n="modal.report.crop75">7.5 m — standard</option>
+                                <option value="10" data-i18n="modal.report.crop10">10 m — szerzej</option>
+                                <option value="15" data-i18n="modal.report.crop15">15 m — szeroki</option>
+                                <option value="20" data-i18n="modal.report.crop20">20 m — kontekst</option>
+                            </select>
+                        </label>
+                    </div>
+                    <p class="modal-hint" data-i18n="modal.report.cropHint">Wielkość wycinka w generowanym pakiecie.</p>
+                </section>
+
+                <div class="report-actions">
+                    <button type="submit" class="btn-download report-submit-btn" id="report-package-submit">
+                        <span data-i18n="modal.report.submit">Generuj zgłoszenie</span>
+                    </button>
+                    <div class="report-download-actions" id="report-package-result" hidden>
+                        <a id="report-package-download" class="btn-download report-download-btn" target="_blank"
+                            rel="noopener" download>
+                            <span data-i18n="modal.report.download">Pobierz ZIP</span>
+                        </a>
+                        <a id="report-package-pdf" class="btn-download report-download-btn" target="_blank"
+                            rel="noopener" download>
+                            <span data-i18n="modal.report.downloadPdf">Pobierz PDF</span>
+                        </a>
+                    </div>
+                </div>
+                <p class="modal-hint" id="report-package-status"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: POMOC / POWITANIE ────────────────────── -->
+    <div class="modal-backdrop" id="modal-help" hidden onclick="closeModal(this)">
+        <div class="modal modal--welcome draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.help.title">WreckScanner</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="welcome-lead" data-i18n="modal.help.intro">WreckScanner pomaga dokumentować porzucone albo
+                    długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.</p>
+
+                <section class="welcome-section">
+                    <h3 data-i18n="modal.help.photoTitle">Jak dodać zdjęcie</h3>
+                    <ol class="modal-steps">
+                        <li data-i18n="modal.help.photoStep1" data-i18n-html>
+                            Kliknij <b>Dodaj zdjęcie</b> w menu albo kliknij prawym przyciskiem miejsce na mapie.
+                        </li>
+                        <li data-i18n="modal.help.photoStep2" data-i18n-html>
+                            Wybierz typ zgłoszenia, dodaj pliki i zachowaj token edycji po wysyłce.
+                        </li>
+                        <li data-i18n="modal.help.photoStep3" data-i18n-html>
+                            Zdjęcia pojawią się na mapie po weryfikacji i anonimizacji.
+                        </li>
+                    </ol>
+                </section>
+
+                <section class="welcome-section">
+                    <h3 data-i18n="modal.help.mapTitle">Warstwy i podkłady</h3>
+                    <p data-i18n="modal.help.mapBody" data-i18n-html>Filtry warstw są w menu. Suwak na dole przełącza
+                        ortofoto <b>POL</b>, <b>OSM</b> i roczniki <b>2020-2025</b>.</p>
+                </section>
+
+                <section class="welcome-section">
+                    <h3 data-i18n="modal.help.reportTitle">Jak przygotować zgłoszenie</h3>
+                    <p data-i18n="modal.help.reportBody" data-i18n-html>Kliknij pinezkę pojazdu lub zdjęcia i wybierz
+                        generowanie zgłoszenia. Aplikacja dołączy aktualne dane i wycinki ortofoto.</p>
+                </section>
+
+                <div class="welcome-actions">
+                    <button type="button" class="btn-download welcome-start-btn" onclick="closeModal()">
+                        <span data-i18n="modal.help.start">Zaczynam</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: PODGLĄD ZDJĘCIA ─────────────────────── -->
+    <div class="modal-backdrop" id="modal-photo-preview" hidden onclick="closeModal(this)">
+        <div class="modal modal--photo-preview draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 id="photo-preview-title" data-i18n="modal.photoPreview.title">Podgląd zdjęcia</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body photo-preview-body">
+                <div class="photo-preview-frame">
+                    <img id="photo-preview-image" alt="">
+                </div>
+                <p class="modal-hint photo-preview-detail" id="photo-preview-detail" hidden></p>
+                <div class="photo-preview-controls">
+                    <button type="button" class="photo-preview-nav" id="photo-preview-prev"
+                        onclick="movePhotoPreview(-1)"
+                        data-i18n-attr="title:modal.photoPreview.previous;aria-label:modal.photoPreview.previous"
+                        title="Poprzednie zdjęcie" aria-label="Poprzednie zdjęcie">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M15.5 5 8.5 12l7 7 1.4-1.4L11.3 12l5.6-5.6L15.5 5z" />
+                        </svg>
+                    </button>
+                    <span class="photo-preview-counter" id="photo-preview-counter" hidden></span>
+                    <button type="button" class="photo-preview-nav" id="photo-preview-next"
+                        onclick="movePhotoPreview(1)"
+                        data-i18n-attr="title:modal.photoPreview.next;aria-label:modal.photoPreview.next"
+                        title="Następne zdjęcie" aria-label="Następne zdjęcie">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m8.5 19 7-7-7-7-1.4 1.4 5.6 5.6-5.6 5.6L8.5 19z" />
+                        </svg>
+                    </button>
+                    <a class="report-copy-btn photo-preview-download" id="photo-preview-download" href="" download
+                        data-i18n="modal.photoPreview.download">Pobierz zdjęcie</a>
+                </div>
+            </div>
+        </div>
+    </div>
