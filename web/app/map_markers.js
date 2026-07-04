@@ -41,7 +41,7 @@ function pendingFieldPhotoPopup(group) {
         )
         : '';
     return mapPopup(`
-            ${popupHeader(t('pendingSubmission.photoTitle'), t('pendingSubmission.status'))}
+            ${popupHeader(t('pendingSubmission.photoTitle'), popupElapsedAgeText(group.photos) || t('pendingSubmission.status'))}
             ${popupMeta([
                 t('fieldPhoto.pendingPublicHint'),
                 t('pendingSubmission.coords', { lat: lat.toFixed(6), lon: lon.toFixed(6) }),

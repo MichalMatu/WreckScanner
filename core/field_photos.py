@@ -227,6 +227,7 @@ def _summary(record: dict[str, Any]) -> dict[str, Any]:
     summary = {
         "id": photo_id,
         "created_at": record.get("created_at"),
+        "submitted_at": record.get("submitted_at"),
         "format": record.get("format"),
         "public_width": record.get("public_width"),
         "public_height": record.get("public_height"),

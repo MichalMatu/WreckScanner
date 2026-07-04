@@ -251,11 +251,14 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("mapPopupMediaModifiers(cropPreviews, 'map-popup--manual-inspect')", location_js)
         self.assertIn(".map-popup--media", popups_css)
         self.assertIn("function mapPopupMediaModifiers", popups_js)
+        self.assertIn("function popupElapsedAgeText", popups_js)
+        self.assertIn("fieldPhotoGroupStartTimestamp", popups_js)
         self.assertIn(".map-popup--media-count-0", popups_css)
         self.assertIn(".map-popup--media-count-1", popups_css)
         self.assertIn(".map-popup--media-count-4", popups_css)
         self.assertIn("--map-popup-photo-columns: 2;", popups_css)
         self.assertIn(".map-popup-link-item", popups_css)
+        self.assertIn(".map-popup-head-value", popups_css)
         self.assertIn("badge: year", popups_js)
         self.assertIn("badge: humanDate.date", popups_js)
         self.assertIn("const badge = escapeHtml(photo.badge || photo.title || '');", popups_js)
@@ -338,6 +341,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
         self.assertIn("bindPopup(vehicleGroupPopup(group), mapPopupOptions())", vehicle_layer_js)
         self.assertIn("mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo')", vehicle_layer_js)
+        self.assertIn("popupHeader(title, popupElapsedAgeText(group.photos))", vehicle_layer_js)
         self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
@@ -381,6 +385,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("showHeader: false", vehicle_layer_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", vehicle_layer_js)
         self.assertNotIn("toFixed(6)", vehicle_layer_js)
+        self.assertIn("'popup.agePrefix': 'od {age}'", i18n_js)
 
         for retired in (
             "toggle-saved-wrecks",
@@ -490,6 +495,7 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("function fieldPhotoGroupMeta", popups_js)
         self.assertNotIn("fieldPhoto.popup.capturedAt", popups_js)
         self.assertNotIn("fieldPhotoGroupMeta(group, photos)", popups_js)
+        self.assertIn("popupHeader(title, popupElapsedAgeText(photos))", popups_js)
         self.assertIn("showHeader: false", popups_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Photo {date}'", i18n_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)

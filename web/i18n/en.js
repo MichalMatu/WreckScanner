@@ -379,6 +379,13 @@ const TRANSLATIONS_EN = {
         'popup.mapillary': 'Mapillary',
         'popup.geoportal': 'Polish Geoportal',
         'popup.report': 'Report',
+        'popup.agePrefix': 'for {age}',
+        'popup.ageNow': 'now',
+        'popup.ageMinutes': '{n} min',
+        'popup.ageHours': '{n} h',
+        'popup.ageDays': '{n} d',
+        'popup.ageMonths': '{n} mo',
+        'popup.ageYears': '{n} y',
 
         'pendingSubmission.photoTitle': 'Photo received',
         'pendingSubmission.status': 'for review',

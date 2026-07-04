@@ -218,7 +218,9 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(submit_result["photos"][0]["public_review_status"], "pending")
             self.assertEqual(record["public_review_status"], "pending")
             self.assertTrue(record["submitted_at"])
-            self.assertEqual(len(list_field_photos(storage_dir, private_dir=private_dir)), 1)
+            public_list = list_field_photos(storage_dir, private_dir=private_dir)
+            self.assertEqual(len(public_list), 1)
+            self.assertEqual(public_list[0]["submitted_at"], record["submitted_at"])
             self.assertEqual(len(list_field_photo_review_items(storage_dir, private_dir=private_dir)), 1)
 
     def test_owner_can_discard_draft_but_not_pending_photo(self):

@@ -125,7 +125,7 @@ function fieldPhotoPendingReviewPopup(group) {
         )
         : '';
     return mapPopup(`
-            ${popupHeader(title, t('pendingSubmission.status'))}
+            ${popupHeader(title, popupElapsedAgeText(photos) || t('pendingSubmission.status'))}
             ${popupMeta([
                 issueLabel,
                 t('fieldPhoto.pendingReview.hint'),
@@ -151,7 +151,7 @@ function fieldPhotoGroupPopup(group) {
         : issueLabel;
     const previews = fieldPhotoGroupPreviews(photos);
     return mapPopup(`
-            ${popupHeader(title)}
+            ${popupHeader(title, popupElapsedAgeText(photos))}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photos.length, showHeader: false })}
             ${fieldPhotoGroupLinks(group, photos)}
             ${fieldPhotoGroupActions({ ...group, issueType })}

@@ -386,6 +386,13 @@ const TRANSLATIONS_PL = {
         'popup.mapillary': 'Mapillary',
         'popup.geoportal': 'Geoportal Krajowy',
         'popup.report': 'Raport',
+        'popup.agePrefix': 'od {age}',
+        'popup.ageNow': 'teraz',
+        'popup.ageMinutes': '{n} min',
+        'popup.ageHours': '{n} h',
+        'popup.ageDays': '{n} d',
+        'popup.ageMonths': '{n} mies.',
+        'popup.ageYears': '{n} lat',
 
         'pendingSubmission.photoTitle': 'Zdjęcie przyjęte',
         'pendingSubmission.status': 'do weryfikacji',

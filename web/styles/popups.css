@@ -72,9 +72,17 @@
     overflow-wrap: anywhere;
 }
 
-.map-popup-head span {
+.map-popup-head-value {
     flex: 0 0 auto;
-    color: #047857;
+    max-width: 42%;
+    border-radius: 999px;
+    padding: 2px 7px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .map-popup-meta {

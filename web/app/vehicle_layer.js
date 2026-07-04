@@ -172,7 +172,7 @@ function vehiclePhotoPopup(group) {
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
     return mapPopup(`
-            ${popupHeader(title)}
+            ${popupHeader(title, popupElapsedAgeText(group.photos))}
             ${vehicleGroupMeta(group)}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}

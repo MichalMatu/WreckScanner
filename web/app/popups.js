@@ -1,4 +1,6 @@
 const MAP_POPUP_LEAFLET_OPTIONS = Object.freeze({ maxWidth: 540 });
+const MAP_POPUP_AGE_MIN_TIMESTAMP_MS = Date.UTC(2000, 0, 1);
+const MAP_POPUP_AGE_FUTURE_GRACE_MS = 5 * 60 * 1000;
 
 function mapPopupOptions() {
     return { ...MAP_POPUP_LEAFLET_OPTIONS };
@@ -25,7 +27,7 @@ function popupCompactLink(href, label, title) {
 }
 
 function popupHeader(title, value = '') {
-    const valueHtml = value ? `<span>${escapeHtml(value)}</span>` : '';
+    const valueHtml = value ? `<span class="map-popup-head-value">${escapeHtml(value)}</span>` : '';
     return `
         <div class="map-popup-head">
             <strong>${escapeHtml(title)}</strong>
@@ -65,6 +67,51 @@ function humanDatePartsFromPhotoText(value) {
         date,
         dateTime: `${date}${hour && minute ? `, ${hour}:${minute}` : ''}`,
     };
+}
+
+function popupTimestampMs(value, nowMs = Date.now()) {
+    const text = String(value || '').trim();
+    if (!text) return null;
+    const timestampMs = Date.parse(text);
+    if (!Number.isFinite(timestampMs)) return null;
+    if (timestampMs < MAP_POPUP_AGE_MIN_TIMESTAMP_MS || timestampMs > nowMs + MAP_POPUP_AGE_FUTURE_GRACE_MS) {
+        return null;
+    }
+    return timestampMs;
+}
+
+function earliestPopupTimestamp(photos, field, nowMs = Date.now()) {
+    const timestamps = (Array.isArray(photos) ? photos : [])
+        .map(photo => popupTimestampMs(photo?.[field], nowMs))
+        .filter(timestampMs => Number.isFinite(timestampMs));
+    return timestamps.length ? Math.min(...timestamps) : null;
+}
+
+function fieldPhotoGroupStartTimestamp(photos, nowMs = Date.now()) {
+    return earliestPopupTimestamp(photos, 'submitted_at', nowMs)
+        ?? earliestPopupTimestamp(photos, 'created_at', nowMs)
+        ?? earliestPopupTimestamp(photos, 'captured_at', nowMs);
+}
+
+function popupElapsedUnitText(elapsedMs) {
+    const elapsedMinutes = Math.max(0, Math.floor(elapsedMs / 60000));
+    if (elapsedMinutes < 1) return t('popup.ageNow');
+    if (elapsedMinutes < 60) return t('popup.ageMinutes', { n: elapsedMinutes });
+    const elapsedHours = Math.floor(elapsedMinutes / 60);
+    if (elapsedHours < 24) return t('popup.ageHours', { n: elapsedHours });
+    const elapsedDays = Math.floor(elapsedHours / 24);
+    if (elapsedDays < 60) return t('popup.ageDays', { n: elapsedDays });
+    const elapsedMonths = Math.floor(elapsedDays / 30);
+    if (elapsedMonths < 24) return t('popup.ageMonths', { n: Math.max(1, elapsedMonths) });
+    return t('popup.ageYears', { n: Math.max(1, Math.floor(elapsedDays / 365)) });
+}
+
+function popupElapsedAgeText(photos, nowMs = Date.now()) {
+    const startTimestampMs = fieldPhotoGroupStartTimestamp(photos, nowMs);
+    if (!Number.isFinite(startTimestampMs)) return '';
+    return t('popup.agePrefix', {
+        age: popupElapsedUnitText(Math.max(0, nowMs - startTimestampMs)),
+    });
 }
 
 function humanNameFromFilename(value) {
