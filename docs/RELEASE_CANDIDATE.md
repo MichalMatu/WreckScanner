@@ -25,6 +25,8 @@ Stan zapisany 2026-07-04 po zielonym `./scripts/check.sh`.
 - snapshot DB time: `2026-07-04T08:32:46+02:00`
 - restic snapshot po przepieciu runtime na DB: `08af6d00`
 - snapshot runtime DB time: `2026-07-04T08:53:09+02:00`
+- restic snapshot przed sprzataniem starych pakietow: `d830cfc3`
+- restic snapshot po sprzataniu starych pakietow: `da97b30a`
 - backup repo: `.backups/wreckscanner-restic`
 - backup password file: `.restic_password`
 - status diagnostyki danych: `ok`
@@ -36,6 +38,7 @@ Stan zapisany 2026-07-04 po zielonym `./scripts/check.sh`.
 - publiczne kopie: `719882982` bajtow
 - publiczne miniatury: `6873793` bajtow
 - osierocone katalogi/pliki: `0/0`
+- stale pakiety raportow w `prywatne_zgloszenia/`: `0`
 - problemy diagnostyki: `0 error`, `0 warning`, `0 info`
 
 Zakres snapshotu:
@@ -44,6 +47,11 @@ Zakres snapshotu:
 - `prywatne_zdjecia/`
 - `settings.json`
 - `analiza/data_diagnostics.json`
+
+Snapshot `d830cfc3` obejmuje dodatkowo wycofany katalog
+`prywatne_zgloszenia/`, zeby stare ZIP/PDF/access.json byly odtwarzalne po
+sprzataniu. Snapshot `da97b30a` zapisuje juz czysty stan runtime bez tego
+katalogu.
 
 ## Podgole domkniecia
 

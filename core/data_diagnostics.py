@@ -12,6 +12,8 @@ from core import config
 from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, list_field_photo_records
 from core.photo_privacy import REVIEW_STATUSES, normalize_redactions
 
+LEGACY_REPORT_PACKAGES_DIRNAME = "prywatne_zgloszenia"
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -78,6 +80,63 @@ def _count_bytes(path: Path | None) -> int:
         return path.stat().st_size if path and path.is_file() else 0
     except OSError:
         return 0
+
+
+def _legacy_report_packages_dir(field_photos_dir: Path) -> Path:
+    return field_photos_dir.parent / LEGACY_REPORT_PACKAGES_DIRNAME
+
+
+def _audit_legacy_report_packages(
+    field_photos_dir: Path,
+    issues: list[dict[str, Any]],
+) -> dict[str, Any]:
+    directory = _legacy_report_packages_dir(field_photos_dir)
+    summary = {
+        "exists": directory.exists(),
+        "directories": 0,
+        "files": 0,
+        "bytes": 0,
+    }
+    if not directory.exists():
+        return summary
+
+    if not directory.is_dir():
+        _issue(
+            issues,
+            "error",
+            "legacy_report_packages_path_not_directory",
+            directory,
+            "Ścieżka starych pakietów raportów nie jest katalogiem.",
+        )
+        return summary
+
+    for child in sorted(directory.rglob("*")):
+        if child.is_dir():
+            summary["directories"] += 1
+        elif child.is_file():
+            summary["files"] += 1
+            summary["bytes"] += _count_bytes(child)
+
+    if summary["directories"] or summary["files"]:
+        _issue(
+            issues,
+            "error",
+            "legacy_report_packages_present",
+            directory,
+            "Stare wygenerowane raporty/cropy leżą w katalogu runtime.",
+            directories=summary["directories"],
+            files=summary["files"],
+            bytes=summary["bytes"],
+        )
+    else:
+        _issue(
+            issues,
+            "warning",
+            "legacy_report_packages_empty_root_present",
+            directory,
+            "Pusty katalog starych pakietów raportów nadal leży w runtime.",
+        )
+    return summary
 
 
 def _audit_private_photo_file(
@@ -437,6 +496,7 @@ def run_data_diagnostics(
 ) -> dict[str, Any]:
     issues: list[dict[str, Any]] = []
     field_summary = _audit_field_photos(field_photos_dir, private_photos_dir, issues, check_images=check_images)
+    legacy_report_summary = _audit_legacy_report_packages(field_photos_dir, issues)
     field_summary.pop("ids", None)
     by_severity = Counter(issue["severity"] for issue in issues)
     status = "error" if by_severity.get("error", 0) else "warning" if by_severity.get("warning", 0) else "ok"
@@ -446,12 +506,14 @@ def run_data_diagnostics(
         "roots": {
             "field_photos_dir": field_photos_dir.as_posix(),
             "private_photos_dir": private_photos_dir.as_posix(),
+            "legacy_report_packages_dir": _legacy_report_packages_dir(field_photos_dir).as_posix(),
         },
         "checks": {
             "images": check_images,
         },
         "summary": {
             "field_photos": field_summary,
+            "legacy_report_packages": legacy_report_summary,
             "issues": {
                 "total": len(issues),
                 "by_severity": {key: int(by_severity.get(key, 0)) for key in ("error", "warning", "info")},
@@ -463,6 +525,7 @@ def run_data_diagnostics(
 
 def format_data_diagnostics(report: dict[str, Any]) -> str:
     field = report["summary"]["field_photos"]
+    legacy_reports = report["summary"].get("legacy_report_packages") or {}
     issue_summary = report["summary"]["issues"]
     issue_types = field["issue_types"]
     lines = [
@@ -477,11 +540,20 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
         f"prywatne oryginały {_human_bytes(field['private_original_bytes'])}, "
         f"publiczne kopie {_human_bytes(field['public_image_bytes'])}, "
         f"publiczne miniatury {_human_bytes(field['public_thumb_bytes'])}",
+    ]
+    if legacy_reports.get("exists"):
+        lines.append(
+            "Stare pakiety raportów: "
+            f"{legacy_reports.get('directories', 0)} katalogów, "
+            f"{legacy_reports.get('files', 0)} plików, "
+            f"{_human_bytes(legacy_reports.get('bytes', 0))}"
+        )
+    lines.append(
         "Problemy: "
         f"{issue_summary['by_severity']['error']} error, "
         f"{issue_summary['by_severity']['warning']} warning, "
-        f"{issue_summary['by_severity']['info']} info",
-    ]
+        f"{issue_summary['by_severity']['info']} info"
+    )
     if report["issues"]:
         lines.append("")
         lines.append("Lista problemów:")

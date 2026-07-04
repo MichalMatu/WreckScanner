@@ -54,9 +54,12 @@ Te katalogi i pliki sa lokalna baza aplikacji albo cache i nie powinny trafic do
 - `wreckscanner.sqlite3` - aktywny stan aplikacji: zdjecia terenowe, ustawienia i zgloszenia prywatnosci,
 - `zdjecia_terenowe/` - publiczne pochodne zdjec terenowych i katalogi plikow,
 - `prywatne_zdjecia/` - prywatne oryginaly zdjec,
-- `prywatne_zgloszenia/` - prywatne pakiety zgloszen,
 - `zgloszenia_prywatnosci/` i `settings.json` - historyczny/importowy format JSON,
 - `.cache/` i `.backups/` - cache oraz lokalne repozytorium backupu.
+
+`prywatne_zgloszenia/` to wycofany katalog starych, trwale zapisanych pakietow
+raportow. Nie jest aktywnym storage aplikacji; `scripts/diagnose_data.py` traktuje
+jego obecnosc jako blad danych przed release candidate.
 
 ## Kontrole
 

@@ -25,7 +25,8 @@ budowana z zatwierdzonych zdjec terenowych o `issue_type: "vehicle"`.
 - Zgloszenie ZIP/PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
 - Miniatury ortofoto sa dowodem generowanym podczas tworzenia pakietu raportu.
-- Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB.
+- Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB ani w stalym
+  katalogu runtime.
 
 ## Endpointy domenowe
 
@@ -64,6 +65,7 @@ rg -n -i '(/api/wrecks|zidentyfikowane_wraki|wreck_photos|attached_wreck|saved_w
 
 test ! -e zidentyfikowane_wraki
 test ! -e prywatne_zdjecia/wreck_photos
+test ! -e prywatne_zgloszenia
 
 ./.venv/bin/python scripts/migrate_json_to_db.py --validate-only
 
@@ -71,4 +73,5 @@ test ! -e prywatne_zdjecia/wreck_photos
 ```
 
 Oczekiwany wynik: walidacja DB pokazuje zgodne liczniki i `Brakujace sciezki: 0`,
-katalogi starego modelu nie istnieja, a `scripts/check.sh` konczy sie statusem OK.
+katalogi starego modelu nie istnieja, diagnostyka danych nie widzi starych
+pakietow raportow, a `scripts/check.sh` konczy sie statusem OK.

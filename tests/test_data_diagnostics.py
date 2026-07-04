@@ -98,6 +98,31 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertIn("Zdjęcia terenowe: 2 rekordów", format_data_diagnostics(report))
             self.assertNotIn("Sprawy pojazdów", format_data_diagnostics(report))
 
+    def test_run_data_diagnostics_blocks_legacy_report_packages(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir = root / "zdjecia_terenowe"
+            private_dir = root / "prywatne_zdjecia"
+            legacy_report_dir = root / "prywatne_zgloszenia" / "wreck_51000000_17000000"
+            legacy_report_dir.mkdir(parents=True)
+            (legacy_report_dir / "report_20260702T120000Z_deadbeef.zip").write_bytes(b"zip")
+            (legacy_report_dir / "report_20260702T120000Z_deadbeef.pdf").write_bytes(b"pdf")
+
+            write_field_photo_record(field_dir, private_dir)
+
+            report = run_data_diagnostics(
+                field_photos_dir=field_dir,
+                private_photos_dir=private_dir,
+                check_images=False,
+            )
+
+            codes = {issue["code"] for issue in report["issues"]}
+            self.assertEqual(report["status"], "error")
+            self.assertIn("legacy_report_packages_present", codes)
+            self.assertEqual(report["summary"]["legacy_report_packages"]["files"], 2)
+            self.assertEqual(report["summary"]["legacy_report_packages"]["directories"], 1)
+            self.assertIn("Stare pakiety raportów: 1 katalogów, 2 plików", format_data_diagnostics(report))
+
     def test_run_data_diagnostics_finds_missing_files(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
