@@ -1,0 +1,185 @@
+    <div class="modal-backdrop" id="modal-privacy-requests" hidden onclick="closeModal(this)">
+        <div class="modal modal--privacy-requests draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.privacyRequests.title">Zgłoszenia prywatności</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body privacy-request-body">
+                <section class="modal-section">
+                    <label class="modal-label" for="privacy-request-filter"
+                        data-i18n="modal.privacyRequests.filter">Status</label>
+                    <select class="modal-input" id="privacy-request-filter" onchange="loadPrivacyRequestQueue()">
+                        <option value="new" data-i18n="modal.privacyRequests.new">Nowe</option>
+                        <option value="in_progress" data-i18n="modal.privacyRequests.inProgress">W toku</option>
+                        <option value="done" data-i18n="modal.privacyRequests.done">Zamknięte</option>
+                        <option value="rejected" data-i18n="modal.privacyRequests.rejected">Odrzucone</option>
+                        <option value="all" data-i18n="modal.privacyRequests.all">Wszystkie</option>
+                    </select>
+                </section>
+                <div class="privacy-request-layout">
+                    <div class="privacy-request-list" id="privacy-request-list"></div>
+                    <section class="privacy-request-detail" id="privacy-request-detail">
+                        <p class="modal-hint" data-i18n="modal.privacyRequests.empty">Wybierz zgłoszenie z kolejki.</p>
+                    </section>
+                </div>
+                <p class="modal-hint" id="privacy-request-status"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-privacy-info" hidden onclick="closeModal(this)">
+        <div class="modal modal--privacy-info draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="page.privacy.heading">Prywatność</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body privacy-info-body">
+                <p class="privacy-info-lead" data-i18n="page.privacy.intro">WreckScanner służy do dokumentowania zgłoszeń
+                    dotyczących pojazdów nieużytkowanych albo zalegających w przestrzeni publicznej. Publiczne wpisy są
+                    zgłoszeniami do weryfikacji, a nie rozstrzygnięciem o stanie prawnym pojazdu.</p>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.adminTitle">Administrator i kontakt</h3>
+                    <p data-i18n="page.privacy.adminBody" data-i18n-html>Administratorem danych jest operator serwisu
+                        WreckScanner. Kontakt w sprawach prywatności: <a href="mailto:privacy@wreckscanner.pl">privacy@wreckscanner.pl</a>
+                        albo <a href="/report">formularz zgłoszenia problemu</a>.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.legalTitle">Podstawa prawna</h3>
+                    <p data-i18n="page.privacy.legalBody">Dane są przetwarzane w celu przyjęcia, weryfikacji i dokumentowania
+                        zgłoszeń dotyczących pojazdów mogących zalegać w przestrzeni publicznej oraz obsługi żądań korekty,
+                        anonimizacji albo usunięcia. Podstawą przetwarzania jest prawnie uzasadniony interes administratora
+                        polegający na dokumentowaniu zgłoszeń do weryfikacji i ochronie przed nadużyciami; w zakresie
+                        korespondencji podstawą jest obsługa żądania osoby kontaktującej się.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.scopeTitle">Zakres danych</h3>
+                    <p data-i18n="page.privacy.scopeBody">Przetwarzane mogą być: zdjęcia pojazdu lub miejsca, współrzędne i
+                        przybliżona lokalizacja, daty obserwacji, opis zgłoszenia, publiczne linki weryfikacyjne, dane
+                        techniczne zdjęć przed anonimizacją, dane kontaktowe podane w formularzu zgłoszenia oraz metadane
+                        administracyjne potrzebne do obsługi sprawy.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.photosTitle">Zdjęcia</h3>
+                    <p data-i18n="page.privacy.photosBody1">Każde zdjęcie ma prywatny oryginał dostępny wyłącznie
+                        administracyjnie oraz publiczną kopię. Publiczna kopia jest tworzona bez EXIF i może zostać
+                        opublikowana dopiero po zatwierdzeniu przez administratora. Tablice rejestracyjne, identyfikatory i
+                        inne dane widoczne na zdjęciu powinny być zamazane przed publikacją.</p>
+                    <p data-i18n="page.privacy.photosBody2">Publiczne raporty i pobieranie zdjęć korzystają wyłącznie z
+                        zatwierdzonych kopii publicznych przygotowanych w przepływie weryfikacji i anonimizacji.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.retentionTitle">Retencja</h3>
+                    <p data-i18n="page.privacy.retentionBody1">Dane związane ze zgłoszeniem pojazdu są przechowywane przez
+                        czas potrzebny do weryfikacji zgłoszenia oraz dokumentowania, że pojazd może być nieużytkowany lub
+                        zalegać w przestrzeni publicznej. Wpis jest okresowo weryfikowany. Po potwierdzeniu, że pojazd
+                        został usunięty albo zgłoszenie stało się nieaktualne, publiczny wpis zostanie usunięty albo
+                        zanonimizowany w rozsądnym terminie, nie później niż w ciągu 30 dni od potwierdzenia tej
+                        okoliczności.</p>
+                    <p data-i18n="page.privacy.retentionBody2">Oryginały zdjęć, dostępne wyłącznie administracyjnie, są
+                        przechowywane tylko tak długo, jak jest to potrzebne do weryfikacji zgłoszenia, obsługi żądania
+                        usunięcia lub przekazania sprawy właściwym podmiotom. Co do zasady oryginały są usuwane albo
+                        zastępowane wersją zanonimizowaną najpóźniej po 180 dniach od ostatniej weryfikacji, chyba że sprawa
+                        jest nadal aktywna. Zastąpienie oznacza zapisanie wersji bez EXIF i z trwale zamazanymi obszarami
+                        zamiast dalszego przechowywania pierwotnego pliku.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.requestsTitle">Żądania korekty lub usunięcia</h3>
+                    <p data-i18n="page.privacy.requestsBody" data-i18n-html>Jeżeli publiczny wpis albo zdjęcie zawiera dane,
+                        które powinny zostać usunięte, ograniczone lub poprawione, użyj
+                        <a href="/report">formularza zgłoszenia problemu</a>. Zgłoszenie trafi do kolejki administracyjnej.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.recipientsTitle">Odbiorcy danych</h3>
+                    <p data-i18n="page.privacy.recipientsBody">Publiczne wpisy mogą być dostępne użytkownikom strony
+                        wyłącznie w zakresie zatwierdzonych, zanonimizowanych danych. Dane mogą być przekazywane właściwym
+                        podmiotom publicznym, jeżeli jest to potrzebne do weryfikacji zgłoszenia, oraz dostawcom hostingu lub
+                        usług technicznych obsługujących serwis.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.rightsTitle">Prawa osób</h3>
+                    <p data-i18n="page.privacy.rightsBody">Osoba, której dane dotyczą, może żądać dostępu do danych, ich
+                        sprostowania, usunięcia, ograniczenia przetwarzania, wniesienia sprzeciwu oraz informacji o zakresie
+                        przetwarzania. Żądania można składać przez formularz zgłoszenia problemu albo kontakt e-mail.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.complaintTitle">Skarga do UODO</h3>
+                    <p data-i18n="page.privacy.complaintBody">Jeżeli uważasz, że dane są przetwarzane niezgodnie z prawem,
+                        masz prawo wnieść skargę do Prezesa Urzędu Ochrony Danych Osobowych.</p>
+                </section>
+
+                <section class="privacy-info-section">
+                    <h3 data-i18n="page.privacy.logsTitle">Logi techniczne</h3>
+                    <p data-i18n="page.privacy.logsBody">Serwer może zapisywać podstawowe logi techniczne, takie jak czas
+                        żądania, adres IP, ścieżka URL, kod odpowiedzi i informacje diagnostyczne. Logi służą utrzymaniu
+                        bezpieczeństwa, diagnozowaniu błędów i ochronie przed nadużyciami.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-problem-report" hidden onclick="closeModal(this)">
+        <div class="modal modal--problem-report draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="page.report.heading">Zgłoś problem z wpisem lub zdjęciem</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-body report-form problem-report-body" id="privacy-request-form"
+                onsubmit="submitPrivacyRequest(event)">
+                <p class="problem-report-lead" data-i18n="page.report.intro">Użyj formularza, jeżeli chcesz zgłosić
+                    prośbę o usunięcie, anonimizację albo korektę publicznego wpisu. Podaj link do wpisu, identyfikator
+                    zdjęcia albo inny opis, który pozwoli administratorowi znaleźć zgłoszenie.</p>
+
+                <section class="modal-section">
+                    <div class="report-grid">
+                        <label class="report-field">
+                            <span data-i18n="page.report.email">E-mail do kontaktu</span>
+                            <input type="email" name="email" maxlength="180" autocomplete="email" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="page.report.target">Link albo identyfikator wpisu</span>
+                            <input type="text" name="target" maxlength="500" required>
+                        </label>
+                        <label class="report-field report-field--wide">
+                            <span data-i18n="page.report.reason">Opis żądania</span>
+                            <textarea class="problem-report-textarea" name="reason" maxlength="4000" required></textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="report-actions">
+                    <button type="submit" class="btn-download report-submit-btn" id="privacy-request-submit">
+                        <span data-i18n="page.report.submit">Wyślij zgłoszenie</span>
+                    </button>
+                </div>
+                <p class="modal-hint problem-report-status" id="privacy-request-submit-status"></p>
+            </form>
+        </div>
+    </div>
+

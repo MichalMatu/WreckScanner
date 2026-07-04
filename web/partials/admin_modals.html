@@ -1,0 +1,292 @@
+    <!-- ─── MODAL: LOGOWANIE ADMINA ─────────────────────── -->
+    <div class="modal-backdrop" id="modal-admin-login" hidden onclick="closeAdminLoginModal(false, this)">
+        <form class="modal modal--admin-login draggable-modal" id="admin-login-form" onclick="event.stopPropagation()"
+            onsubmit="submitAdminLogin(event)">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.admin.title">Panel administratora</h2>
+                <button type="button" class="modal-close" onclick="closeAdminLoginModal(false)"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body admin-login-body">
+                <section class="modal-section">
+                    <label class="report-field">
+                        <span data-i18n="modal.admin.password">Hasło administratora</span>
+                        <input type="password" class="modal-input" id="admin-password-input"
+                            autocomplete="current-password" required>
+                    </label>
+                    <p class="modal-hint" id="admin-login-status"></p>
+                </section>
+                <button type="submit" class="btn-download admin-login-submit" id="admin-login-submit">
+                    <span data-i18n="modal.admin.submit">Zaloguj</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ─── MODAL: POTWIERDZENIE AKCJI ─────────────────── -->
+    <div class="modal-backdrop" id="modal-confirm" hidden onclick="closeConfirmModal(false, this)">
+        <form class="modal modal--confirm draggable-modal" id="confirm-form" onclick="event.stopPropagation()"
+            onsubmit="submitConfirmAction(event)">
+            <div class="modal-header modal-drag-handle">
+                <h2 id="confirm-title" data-i18n="modal.confirm.title">Potwierdź akcję</h2>
+                <button type="button" class="modal-close" onclick="closeConfirmModal(false)"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body confirm-body">
+                <p class="confirm-message" id="confirm-message"></p>
+                <div class="confirm-actions">
+                    <button type="button" class="confirm-cancel-btn" id="confirm-cancel"
+                        onclick="closeConfirmModal(false)" data-i18n="modal.confirm.cancel">Anuluj</button>
+                    <button type="submit" class="confirm-danger-btn" id="confirm-submit"
+                        data-i18n="modal.confirm.delete">Usuń</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ─── MODAL: USTAWIENIA ───────────────────────────── -->
+    <div class="modal-backdrop modal-backdrop--floating" id="modal-settings" hidden onclick="closeModal(this)">
+        <div class="modal modal--settings draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.settings.title">Ustawienia</h2>
+                <div class="modal-header-actions">
+                    <button type="button" class="modal-icon-btn btn-lang" id="settings-toggle-lang"
+                        data-i18n-attr="title:icon.lang;aria-label:icon.lang" title="Język / Language"
+                        aria-label="Język / Language" onclick="toggleLang()">
+                        <span class="lang-label" id="settings-lang-label">PL</span>
+                    </button>
+                    <button type="button" class="modal-close" onclick="closeModal()"
+                        data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <section class="modal-section settings-card">
+                    <div class="setting-toggle-row">
+                        <label class="modal-label" for="enhancement-enabled"
+                            data-i18n="modal.settings.enhancement">Filtr ortofoto</label>
+                        <div class="setting-actions">
+                            <button type="button" class="settings-reset-btn" id="enhancement-reset"
+                                data-i18n="modal.settings.resetDefaults">Domyślne</button>
+                            <input type="checkbox" id="enhancement-enabled">
+                        </div>
+                    </div>
+                    <div class="settings-grid">
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.clahe">Kontrast lokalny</span>
+                            <output id="enhancement-clahe-value">0.8</output>
+                            <input type="range" id="enhancement-clahe" min="0.1" max="5" step="0.1" value="0.8">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.tileGrid">Rozmiar siatki CLAHE</span>
+                            <output id="enhancement-tile-value">12</output>
+                            <input type="range" id="enhancement-tile" min="1" max="32" step="1" value="12">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.percentileLow">Percentyl cieni</span>
+                            <output id="enhancement-p-low-value">1</output>
+                            <input type="range" id="enhancement-p-low" min="0" max="40" step="0.5" value="1">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.percentileHigh">Percentyl świateł</span>
+                            <output id="enhancement-p-high-value">99</output>
+                            <input type="range" id="enhancement-p-high" min="60" max="100" step="0.5" value="99">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.outputLow">Poziom czerni</span>
+                            <output id="enhancement-out-low-value">5</output>
+                            <input type="range" id="enhancement-out-low" min="0" max="120" step="1" value="5">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.outputHigh">Poziom bieli</span>
+                            <output id="enhancement-out-high-value">250</output>
+                            <input type="range" id="enhancement-out-high" min="135" max="255" step="1" value="250">
+                        </label>
+                        <label class="setting-range">
+                            <span data-i18n="modal.settings.decast">Neutralizacja koloru</span>
+                            <output id="enhancement-decast-value">0.2</output>
+                            <input type="range" id="enhancement-decast" min="0" max="1" step="0.05" value="0.2">
+                        </label>
+                    </div>
+                    <p class="modal-hint" id="settings-save-status" data-i18n="modal.settings.enhancementHint">Parametry są używane w podglądzie mapy.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: PANEL ADMINISTRATORA ─────────────────────── -->
+    <div class="modal-backdrop modal-backdrop--floating" id="modal-admin-panel" hidden onclick="closeModal(this)">
+        <div class="modal modal--admin-panel draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.adminPanel.title">Panel administratora</h2>
+                <div class="modal-header-actions">
+                    <button type="button" class="modal-icon-btn" id="admin-login"
+                        data-i18n-attr="title:icon.adminLogout;aria-label:icon.adminLogout" title="Wyloguj administratora"
+                        aria-label="Wyloguj administratora" onclick="toggleAdminLogin()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
+                        </svg>
+                    </button>
+                    <button type="button" class="modal-close" onclick="closeModal()"
+                        data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body admin-panel-body">
+                <div class="admin-panel-stack">
+                    <section class="modal-section admin-panel-section">
+                        <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
+                        <div class="admin-panel-actions">
+                            <button type="button" class="admin-panel-action admin-only" id="open-photo-review"
+                                onclick="openPhotoReviewModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm7.5-6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                                </svg>
+                                <span data-i18n="icon.photoReview">Przegląd zdjęć</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-privacy-requests"
+                                onclick="openPrivacyRequestsModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M5 4h14v16H5V4zm2 2v12h10V6H7zm2 2h6v2H9V8zm0 4h6v2H9v-2zm0 4h4v2H9v-2z" />
+                                </svg>
+                                <span data-i18n="icon.privacyRequests">Zgłoszenia prywatności</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-photo-retention"
+                                onclick="openPhotoRetentionModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 3h12l1 4H5l1-4zm1 6h10v10H7V9zm2 2v6h6v-6H9zm1 1h4v2h-4v-2z" />
+                                </svg>
+                                <span data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-welcome-modal"
+                                onclick="openWelcomeModalFromAdminPanel()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                                </svg>
+                                <span data-i18n="icon.welcomeModal">Pokaż powitanie</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="modal-section admin-panel-section admin-panel-section--features">
+                        <div class="setting-toggle-row">
+                            <h3 data-i18n="modal.adminPanel.publicFeatures">Funkcje</h3>
+                            <button type="button" class="settings-reset-btn" id="admin-public-features-save"
+                                onclick="savePublicFeatureSettings()" data-i18n="modal.adminPanel.savePublicFeatures">Zapisz</button>
+                        </div>
+                        <div class="admin-layer-grid admin-feature-grid">
+                            <label class="admin-layer-toggle admin-feature-toggle">
+                                <input type="checkbox" id="admin-feature-report-packages" checked>
+                                <span class="admin-feature-copy">
+                                    <span data-i18n="modal.adminPanel.featureReportPackages">Raporty ze zdjęć</span>
+                                    <small data-i18n="modal.adminPanel.featureReportPackagesHint">PDF/ZIP ze zdjęć pojazdów.</small>
+                                </span>
+                            </label>
+                            <label class="admin-layer-toggle admin-feature-toggle">
+                                <input type="checkbox" id="admin-feature-photo-uploads" checked>
+                                <span class="admin-feature-copy">
+                                    <span data-i18n="modal.adminPanel.featurePhotoUploads">Dodawanie zdjęć</span>
+                                    <small data-i18n="modal.adminPanel.featurePhotoUploadsHint">Wysyłanie zdjęć z mapy.</small>
+                                </span>
+                            </label>
+                        </div>
+                        <p class="modal-hint" id="admin-public-features-status"
+                            data-i18n="modal.adminPanel.publicFeaturesHint">Określa, co mogą robić niezalogowani.</p>
+                    </section>
+                </div>
+
+                <section class="modal-section admin-panel-section admin-panel-section--layers">
+                    <div class="setting-toggle-row">
+                        <h3 data-i18n="modal.adminPanel.publicLayers">Warstwy</h3>
+                        <button type="button" class="settings-reset-btn" id="admin-public-layers-save"
+                            onclick="savePublicLayerSettings()" data-i18n="modal.adminPanel.savePublicLayers">Zapisz</button>
+                    </div>
+                    <div class="admin-layer-grid">
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-vehicles" checked>
+                            <span class="layer-pin layer-pin--vehicle"></span>
+                            <span data-i18n="layers.vehicles">Pojazdy</span>
+                        </label>
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-field-photo-infrastructure" checked>
+                            <span class="layer-pin layer-pin--field-photo-infrastructure"></span>
+                            <span data-i18n="layers.fieldPhotoInfrastructure">Niebezpieczna infrastruktura</span>
+                        </label>
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-field-photo-smoke" checked>
+                            <span class="layer-pin layer-pin--field-photo-smoke"></span>
+                            <span data-i18n="layers.fieldPhotoSmoke">Zanieczyszczone powietrze</span>
+                        </label>
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-field-photo-pending" checked>
+                            <span class="layer-pin layer-pin--field-photo-pending"></span>
+                            <span data-i18n="layers.fieldPhotoPending">Do weryfikacji</span>
+                        </label>
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-cadastral" checked>
+                            <span class="layer-pin layer-pin--cadastral"></span>
+                            <span data-i18n="layers.cadastral">Granice działek</span>
+                        </label>
+                        <label class="admin-layer-toggle">
+                            <input type="checkbox" id="admin-layer-base-map-osm" checked>
+                            <span class="layer-pin layer-pin--base-map-osm"></span>
+                            <span data-i18n="layers.baseMapOsm">Mapa OSM</span>
+                        </label>
+                    </div>
+                    <p class="modal-hint" id="admin-public-layers-status"
+                        data-i18n="modal.adminPanel.publicLayersHint">Określa, które warstwy widzą niezalogowani.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: PORZĄDKOWANIE ORYGINAŁÓW ─────────────────────── -->
+    <div class="modal-backdrop" id="modal-photo-retention" hidden onclick="closeModal(this)">
+        <div class="modal modal--photo-retention draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</h2>
+                <button type="button" class="modal-close" onclick="closeModal()"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body photo-retention-body">
+                <section class="modal-section photo-retention-section" id="photo-retention-section">
+                    <div class="setting-actions retention-actions retention-actions--standalone">
+                        <button type="button" class="settings-reset-btn" id="photo-retention-refresh"
+                            onclick="loadPhotoRetentionStatus()"
+                            data-i18n="modal.settings.photoRetentionRefresh">Odśwież</button>
+                        <button type="button" class="settings-reset-btn" id="photo-retention-dry-run"
+                            onclick="runPhotoRetention(true)"
+                            data-i18n="modal.settings.photoRetentionDryRun">Sprawdź bez zmian</button>
+                        <button type="button" class="confirm-danger-btn settings-danger-btn"
+                            id="photo-retention-apply" onclick="runPhotoRetention(false)"
+                            data-i18n="modal.settings.photoRetentionApply">Wykonaj</button>
+                    </div>
+                    <div class="modal-hint photo-retention-status" id="photo-retention-status" role="status"
+                        data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</div>
+                </section>
+            </div>
+        </div>
+    </div>

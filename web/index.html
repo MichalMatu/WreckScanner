@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WreckScanner</title>
+    <meta name="description"
+        content="Mapa dokumentowania porzuconych pojazdów i zdjęć terenowych.">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23152738' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'%3E%3C/path%3E%3C/svg%3E">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+    <!-- include:partials/app_shell.html -->
+
+    <!-- include:partials/admin_modals.html -->
+
+    <!-- include:partials/photo_workflow_modals.html -->
+    <!-- include:partials/privacy_problem_modals.html -->
+    <!-- include:partials/report_help_preview_modals.html -->
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- i18n (musi być przed app.js, żeby t() i CURRENT_LANG były dostępne) -->
+    <script src="/i18n/pl.js"></script>
+    <script src="/i18n/en.js"></script>
+    <script src="/i18n.js"></script>
+    <script src="/config.js"></script>
+    <script src="/ui.js"></script>
+    <script src="/admin.js"></script>
+    <script src="/map_helpers.js"></script>
+    <script src="/app/bootstrap.js"></script>
+    <script src="/app/map_sources.js"></script>
+    <script src="/app/popups.js"></script>
+    <script src="/app/map_markers.js"></script>
+    <script src="/app/layers.js"></script>
+    <script src="/app/file_picker.js"></script>
+
+    <!-- App logic -->
+    <script src="/app.js"></script>
+    <script src="/app/api.js"></script>
+    <script src="/app/problem_report.js"></script>
+    <script src="/app/vehicle_layer.js"></script>
+    <script src="/app/field_photos.js"></script>
+    <script src="/app/field_photo_actions.js"></script>
+    <script src="/app/location_inspection.js"></script>
+    <script src="/app/field_photo_popups.js"></script>
+    <script src="/app/field_photo_upload.js"></script>
+    <script src="/app/field_photo_thanks.js"></script>
+    <script src="/app/photo_review.js"></script>
+    <script src="/app/photo_review_canvas.js"></script>
+    <script src="/app/settings.js"></script>
+    <script src="/app/reports.js"></script>
+    <script src="/app/privacy_requests.js"></script>
+    <script src="/app/map_controls.js"></script>
+    <script src="/app/map_context.js"></script>
+    <script src="/app/welcome.js"></script>
+    <script src="/app/startup.js"></script>
+</body>
+
+</html>

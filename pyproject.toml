@@ -1,0 +1,31 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = [
+    ".cache",
+    ".venv",
+    ".venv-audit",
+    "analiza",
+    "node_modules",
+    "output",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+branch = true
+source = ["app", "core", "scripts"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "analiza/htmlcov"

@@ -1,0 +1,308 @@
+// Wroclaw and Geoportal sources are preview-only base layers; reports fetch
+// their own small historical crops by location.
+let currentMapSourceIndex = Math.max(0, MAP_SOURCES.findIndex(source => source.key === DEFAULT_MAP_SOURCE_KEY));
+let mapSourceLayer = null;
+let mapSourceSwapToken = 0;
+let mapLabelLayer = null;
+const TILE_FALLBACK_DATA_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#d1d8e0"/></svg>'
+)}`;
+const RETRYABLE_TILE_CACHE_STATUSES = new Set(['UPSTREAM_ERROR', 'ENCODE_ERROR']);
+
+function retryTileDelayMs(attempt) {
+    return Math.min(30000, 1500 * (2 ** Math.min(attempt, 5)));
+}
+
+function isRetryableProxyTileUrl(url) {
+    return typeof url === 'string' && (url.startsWith('/tile_proxy/') || url.startsWith('/wms_proxy/'));
+}
+
+const retryingTileMixin = {
+    createTile(coords, done) {
+        if (!window.fetch || !window.URL || !window.Blob) {
+            return L.TileLayer.prototype.createTile.call(this, coords, done);
+        }
+
+        const tile = document.createElement('img');
+        let settled = false;
+        let retryTimer = null;
+        let currentObjectUrl = '';
+        let stopped = false;
+
+        tile.alt = '';
+        tile.decoding = 'async';
+        tile.setAttribute('role', 'presentation');
+
+        const settle = error => {
+            if (settled) return;
+            settled = true;
+            done(error || null, tile);
+        };
+        const clearRetryTimer = () => {
+            if (!retryTimer) return;
+            clearTimeout(retryTimer);
+            retryTimer = null;
+        };
+        const cleanup = () => {
+            stopped = true;
+            clearRetryTimer();
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = '';
+            }
+            this.off('tileunload', handleTileUnload);
+        };
+        const handleTileUnload = event => {
+            if (event.tile === tile) cleanup();
+        };
+        const showFallback = () => {
+            tile.classList.add('leaflet-tile--retrying');
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = '';
+            }
+            tile.src = TILE_FALLBACK_DATA_URL;
+            settle();
+        };
+        const scheduleRetry = attempt => {
+            clearRetryTimer();
+            retryTimer = setTimeout(() => loadTile(attempt + 1), retryTileDelayMs(attempt));
+        };
+        const shouldContinueRetrying = attempt => {
+            if (stopped || !this._map) return false;
+            return attempt === 0 || tile.isConnected;
+        };
+        const loadBlob = blob => {
+            const nextObjectUrl = URL.createObjectURL(blob);
+            const previousObjectUrl = currentObjectUrl;
+            currentObjectUrl = nextObjectUrl;
+            tile.onload = () => {
+                if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
+                tile.onload = null;
+                tile.onerror = null;
+                tile.classList.remove('leaflet-tile--retrying');
+                settle();
+            };
+            tile.onerror = () => {
+                if (nextObjectUrl === currentObjectUrl) currentObjectUrl = '';
+                URL.revokeObjectURL(nextObjectUrl);
+                tile.onload = null;
+                tile.onerror = null;
+                showFallback();
+                scheduleRetry(0);
+            };
+            tile.src = nextObjectUrl;
+        };
+        const loadTile = async attempt => {
+            if (!shouldContinueRetrying(attempt)) return;
+            try {
+                const response = await fetch(this.getTileUrl(coords), { cache: 'default' });
+                const cacheStatus = response.headers.get('X-WMS-Cache') || '';
+                if (!response.ok || RETRYABLE_TILE_CACHE_STATUSES.has(cacheStatus)) {
+                    showFallback();
+                    scheduleRetry(attempt);
+                    return;
+                }
+                const blob = await response.blob();
+                loadBlob(blob);
+            } catch (_) {
+                showFallback();
+                scheduleRetry(attempt);
+            }
+        };
+
+        this.on('tileunload', handleTileUnload);
+        loadTile(0);
+        return tile;
+    },
+};
+
+const RetryingTileLayer = L.TileLayer.extend(retryingTileMixin);
+const RetryingWmsLayer = L.TileLayer.WMS.extend(retryingTileMixin);
+
+function retryingTileLayer(url, options) {
+    return new RetryingTileLayer(url, options);
+}
+
+retryingTileLayer.wms = function wms(url, options) {
+    return new RetryingWmsLayer(url, options);
+};
+
+function activeMapSource() {
+    return MAP_SOURCES[currentMapSourceIndex] || MAP_SOURCES[0];
+}
+
+function mapSourceAllowed(source) {
+    return !source?.publicLayerKey || publicLayerAllowed(source.publicLayerKey);
+}
+
+function visibleMapSourceIndices() {
+    return MAP_SOURCES.map((source, index) => ({ source, index }))
+        .filter(item => mapSourceAllowed(item.source))
+        .map(item => item.index);
+}
+
+function fallbackMapSourceIndex(visibleIndices = visibleMapSourceIndices()) {
+    const defaultIndex = MAP_SOURCES.findIndex(source => source.key === DEFAULT_MAP_SOURCE_KEY);
+    if (visibleIndices.includes(defaultIndex)) return defaultIndex;
+    return visibleIndices[0] ?? Math.max(0, defaultIndex);
+}
+
+function mapSourceVisiblePosition(index = currentMapSourceIndex, visibleIndices = visibleMapSourceIndices()) {
+    const position = visibleIndices.indexOf(index);
+    return position >= 0 ? position : Math.max(0, visibleIndices.indexOf(fallbackMapSourceIndex(visibleIndices)));
+}
+
+function buildMapSourceLayer(source) {
+    if (source.type === 'wroclaw') {
+        return retryingTileLayer.wms(`/wms_proxy/OGC_ortofoto_${source.year}/MapServer/WMSServer`, {
+            layers: '1',
+            format: 'image/png',
+            transparent: false,
+            version: '1.3.0',
+            enhancementSettings: enhancementSettingsRevision,
+            maxZoom: MAX_MAP_ZOOM,
+            attribution: `Geoportal Wroclawia · ${source.year} · enhanced`,
+        });
+    }
+    if (source.type === 'wms') {
+        const factory = isRetryableProxyTileUrl(source.url) ? retryingTileLayer.wms : L.tileLayer.wms;
+        return factory(source.url, {
+            layers: source.layers,
+            styles: source.styles || '',
+            format: 'image/png',
+            transparent: false,
+            version: source.version || '1.3.0',
+            maxZoom: MAX_MAP_ZOOM,
+            attribution: source.attribution || 'Geoportal.gov.pl / GUGiK',
+        });
+    }
+    if (source.type === 'tile') {
+        const factory = isRetryableProxyTileUrl(source.url) ? retryingTileLayer : L.tileLayer;
+        return factory(source.url, {
+            maxZoom: MAX_MAP_ZOOM,
+            maxNativeZoom: source.maxNativeZoom || MAX_MAP_ZOOM,
+            enhancementSettings: enhancementSettingsRevision,
+            attribution: source.attribution || '',
+        });
+    }
+    throw new Error(`Unsupported map source type: ${source.type}`);
+}
+
+function buildMapLabelLayer() {
+    return L.tileLayer(CARTO_LABELS_TILE_URL, {
+        maxZoom: MAX_MAP_ZOOM,
+        pane: 'overlayPane',
+    });
+}
+
+function updateMapLabelLayer() {
+    const shouldShow = activeMapSource().labelsOverlay !== false;
+    if (shouldShow) {
+        if (!mapLabelLayer) mapLabelLayer = buildMapLabelLayer();
+        if (!map.hasLayer(mapLabelLayer)) mapLabelLayer.addTo(map);
+        return;
+    }
+    if (mapLabelLayer && map.hasLayer(mapLabelLayer)) {
+        map.removeLayer(mapLabelLayer);
+    }
+}
+
+function renderMapSourceTicks(visibleIndices = visibleMapSourceIndices()) {
+    const ticks = document.getElementById('year-ticks');
+    if (!ticks) return;
+    ticks.innerHTML = '';
+    visibleIndices.forEach(index => {
+        const source = MAP_SOURCES[index];
+        const tick = document.createElement('button');
+        tick.type = 'button';
+        tick.className = 'year-tick' + (index === currentMapSourceIndex ? ' active' : '');
+        tick.dataset.index = index;
+        tick.textContent = source.shortLabel;
+        tick.title = source.label;
+        tick.addEventListener('click', () => setMapSource(index));
+        ticks.appendChild(tick);
+    });
+}
+
+function updateMapSourceUi() {
+    const visibleIndices = visibleMapSourceIndices();
+    const source = activeMapSource();
+    const currentLabel = document.getElementById('year-current');
+    currentLabel.textContent = source.shortLabel;
+    currentLabel.title = source.label;
+    const range = document.getElementById('year-range');
+    if (range) {
+        range.min = 0;
+        range.max = Math.max(0, visibleIndices.length - 1);
+        range.value = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices);
+    }
+    renderMapSourceTicks(visibleIndices);
+    document.getElementById('year-prev')?.toggleAttribute('disabled', mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) <= 0);
+    document.getElementById('year-next')?.toggleAttribute(
+        'disabled',
+        mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) >= visibleIndices.length - 1
+    );
+    updateMapLabelLayer();
+}
+
+function swapMapSourceLayer(nextLayer, previousLayer) {
+    const swapToken = ++mapSourceSwapToken;
+    mapSourceLayer = nextLayer;
+    nextLayer.addTo(map);
+    const finishSwap = () => {
+        if (previousLayer) map.removeLayer(previousLayer);
+        if (swapToken === mapSourceSwapToken) {
+            mapSourceLayer = nextLayer;
+        } else if (map.hasLayer(nextLayer)) {
+            map.removeLayer(nextLayer);
+        }
+    };
+    nextLayer.once('load', finishSwap);
+    setTimeout(() => {
+        finishSwap();
+    }, ORTHO_LAYER_SWAP_FALLBACK_MS);
+}
+
+function setMapSource(index) {
+    const nextIndex = Math.max(0, Math.min(MAP_SOURCES.length - 1, parseInt(index, 10)));
+    if (!Number.isFinite(nextIndex) || nextIndex === currentMapSourceIndex || !mapSourceAllowed(MAP_SOURCES[nextIndex])) return;
+    currentMapSourceIndex = nextIndex;
+    const previousLayer = mapSourceLayer;
+    const nextLayer = buildMapSourceLayer(activeMapSource());
+    swapMapSourceLayer(nextLayer, previousLayer);
+    updateMapSourceUi();
+}
+
+function setMapSourceByVisiblePosition(position) {
+    const visibleIndices = visibleMapSourceIndices();
+    if (!visibleIndices.length) return;
+    const nextPosition = Math.max(0, Math.min(visibleIndices.length - 1, parseInt(position, 10)));
+    setMapSource(visibleIndices[nextPosition]);
+}
+
+function moveMapSource(delta) {
+    const visibleIndices = visibleMapSourceIndices();
+    const nextPosition = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) + delta;
+    setMapSourceByVisiblePosition(nextPosition);
+}
+
+function updateMapSourceAvailability() {
+    if (mapSourceAllowed(activeMapSource())) {
+        updateMapSourceUi();
+        return;
+    }
+    currentMapSourceIndex = fallbackMapSourceIndex();
+    const previousLayer = mapSourceLayer;
+    const nextLayer = buildMapSourceLayer(activeMapSource());
+    swapMapSourceLayer(nextLayer, previousLayer);
+    updateMapSourceUi();
+}
+
+function refreshOrthoLayer() {
+    const previousLayer = mapSourceLayer;
+    const nextLayer = buildMapSourceLayer(activeMapSource());
+    swapMapSourceLayer(nextLayer, previousLayer);
+}
+
+mapSourceLayer = buildMapSourceLayer(activeMapSource()).addTo(map);

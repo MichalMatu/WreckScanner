@@ -1,0 +1,386 @@
+.setting-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+
+.setting-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-toggle-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.settings-reset-btn {
+    min-height: 30px;
+    border: 1px solid color-mix(in srgb, var(--primary) 36%, transparent);
+    border-radius: var(--radius-control);
+    background: var(--primary-soft);
+    color: var(--text-soft);
+    font: 700 0.68rem var(--font-display);
+    padding: 0 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.settings-reset-btn:hover {
+    background: color-mix(in srgb, var(--primary) 28%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 58%, transparent);
+    color: var(--text-strong);
+}
+
+.settings-danger-btn {
+    min-height: 28px;
+    padding: 5px 10px;
+    font: 800 0.68rem var(--font-display);
+    box-shadow: none;
+}
+
+.photo-retention-status {
+    color: var(--text-soft);
+}
+
+.photo-retention-card {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+}
+
+.photo-retention-card-header,
+.photo-retention-finished {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.photo-retention-card-header strong {
+    color: var(--text);
+    font: 800 0.86rem var(--font-display);
+}
+
+.photo-retention-mode {
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--info) 34%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--info-soft);
+    color: var(--text);
+    padding: var(--space-1) var(--space-2);
+    font: 800 0.68rem var(--font-display);
+}
+
+.photo-retention-mode--applied {
+    border-color: color-mix(in srgb, var(--success) 34%, transparent);
+    background: var(--success-soft);
+}
+
+.photo-retention-finished {
+    justify-content: flex-start;
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+.photo-retention-finished strong {
+    color: var(--text-soft);
+    font: 700 0.75rem var(--font-display);
+}
+
+.photo-retention-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.photo-retention-metric {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    min-height: 64px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-control);
+    padding: var(--space-3);
+}
+
+.photo-retention-metric strong {
+    color: var(--text);
+    font: 900 1.05rem var(--font-display);
+}
+
+.photo-retention-metric span {
+    color: var(--muted-strong);
+    font-size: 0.68rem;
+    line-height: 1.25;
+}
+
+.photo-retention-metric--positive strong {
+    color: var(--success);
+}
+
+.photo-retention-metric--danger strong {
+    color: var(--danger);
+}
+
+.photo-retention-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.admin-panel-body {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.82fr) minmax(360px, 1.18fr);
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.admin-panel-stack {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    min-width: 0;
+}
+
+.admin-panel-section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    padding: var(--space-4);
+    background: var(--surface-subtle);
+    min-width: 0;
+}
+
+.admin-panel-section--layers {
+    min-height: 100%;
+}
+
+.admin-panel-section h3 {
+    margin: 0;
+    color: var(--text);
+    font: 800 0.82rem var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.admin-panel-actions,
+.admin-layer-grid {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.admin-panel-action,
+.admin-layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-control);
+    color: var(--text);
+    font: 700 0.82rem var(--font-display);
+    min-width: 0;
+}
+
+.admin-panel-action {
+    justify-content: flex-start;
+    padding: 9px 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    position: relative;
+}
+
+.admin-panel-action:hover {
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 44%, transparent);
+    color: var(--text-strong);
+}
+
+.admin-panel-action::after {
+    content: ">";
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.admin-panel-action svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
+.admin-layer-toggle {
+    padding: 8px 10px;
+    cursor: pointer;
+    line-height: 1.25;
+}
+
+.admin-layer-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    flex: 0 0 auto;
+}
+
+.admin-layer-toggle:has(input:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.admin-layer-toggle .layer-pin {
+    flex: 0 0 auto;
+}
+
+.photo-retention-body {
+    gap: var(--space-3);
+}
+
+.photo-retention-section {
+    gap: var(--space-3);
+}
+
+.retention-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.retention-actions .settings-reset-btn,
+.retention-actions .settings-danger-btn {
+    white-space: nowrap;
+    min-width: 58px;
+}
+
+.retention-actions--standalone {
+    justify-content: flex-end;
+}
+
+.modal--photo-retention .photo-retention-card {
+    margin-top: 0;
+}
+
+.modal--photo-retention .photo-retention-metric {
+    min-height: 56px;
+    padding: var(--space-2) var(--space-3);
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+.modal--settings .settings-grid {
+    gap: 8px 10px;
+}
+
+.setting-range {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 10px;
+    align-items: center;
+    min-width: 0;
+    color: var(--muted-strong);
+    font-size: 0.76rem;
+}
+
+.modal--settings .setting-range {
+    gap: 4px 8px;
+    font-size: 0.70rem;
+}
+
+.setting-range output {
+    color: var(--text-soft);
+    font: 700 0.72rem var(--font-display);
+}
+
+.modal--settings .setting-range output {
+    font-size: 0.68rem;
+}
+
+.setting-range input[type="range"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    background:
+        linear-gradient(to right,
+            transparent calc(var(--default-pos, -10%) - 1px),
+            rgba(224, 231, 255, 0.70) calc(var(--default-pos, -10%) - 1px),
+            rgba(224, 231, 255, 0.70) calc(var(--default-pos, -10%) + 1px),
+            transparent calc(var(--default-pos, -10%) + 1px)),
+        rgba(255, 255, 255, 0.10);
+}
+
+.admin-feature-grid .admin-layer-toggle {
+    min-height: 40px;
+}
+
+.admin-feature-toggle {
+    align-items: flex-start;
+}
+
+.admin-feature-copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.admin-feature-copy small {
+    color: var(--muted);
+    font: 500 0.70rem var(--font-body);
+    line-height: 1.25;
+}
+
+@media (max-width: 980px) {
+    .admin-panel-body {
+        grid-template-columns: minmax(240px, 0.85fr) minmax(320px, 1.15fr);
+    }
+}
+
+@media (max-width: 820px) {
+    .admin-panel-body {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-section--layers {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .modal--settings {
+        top: 12px;
+        right: auto;
+        left: 12px;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+
+    .modal--admin-panel {
+        top: 12px;
+        right: auto;
+        left: 12px;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-body {
+        grid-template-columns: 1fr;
+    }
+
+    .photo-retention-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

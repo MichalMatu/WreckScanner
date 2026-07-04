@@ -1,0 +1,366 @@
+/* ── MODAL (wspólny dla pomocy i ustawień) ───────────── */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: backdrop-fade 0.18s ease-out;
+}
+
+#modal-confirm {
+    z-index: 1200;
+}
+
+.modal-backdrop--floating {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    display: block;
+    padding: 0;
+    pointer-events: none;
+    animation: none;
+}
+
+@keyframes backdrop-fade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal {
+    background: var(--surface-overlay);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-panel);
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    box-shadow: var(--shadow-modal);
+    animation: modal-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal--settings {
+    position: absolute;
+    top: 72px;
+    right: 16px;
+    width: min(460px, calc(100vw - 24px));
+    max-height: calc(100vh - 88px);
+    pointer-events: auto;
+}
+
+.modal--settings .modal-header {
+    padding: 12px 14px 10px;
+}
+
+.modal--settings .modal-header h2 {
+    font-size: 1rem;
+}
+
+.modal--settings .modal-body {
+    padding: 12px 14px 14px;
+    gap: 12px;
+}
+
+.modal--settings .modal-section {
+    gap: 8px;
+}
+
+.modal--settings .modal-label {
+    font-size: 0.70rem;
+}
+
+.modal--settings .modal-hint {
+    font-size: 0.68rem;
+    line-height: 1.35;
+    margin-top: 0;
+}
+
+.modal--report {
+    max-width: 760px;
+}
+
+.modal--field-photo {
+    max-width: 560px;
+}
+
+.modal--field-photo-owner {
+    max-width: 460px;
+}
+
+.modal--field-photo-thanks {
+    max-width: 520px;
+}
+
+.modal--welcome {
+    max-width: 620px;
+}
+
+.modal--welcome .modal-body {
+    min-height: min(520px, calc(100dvh - 132px));
+}
+
+.modal--privacy-info {
+    max-width: 760px;
+}
+
+.modal--problem-report {
+    max-width: 620px;
+}
+
+.modal--admin-panel {
+    position: absolute;
+    top: 72px;
+    right: 16px;
+    width: min(860px, calc(100vw - 24px));
+    max-width: none;
+    max-height: calc(100vh - 88px);
+    pointer-events: auto;
+}
+
+.modal--photo-retention {
+    max-width: 760px;
+}
+
+.modal--photo-review,
+.modal--privacy-requests {
+    max-width: 1100px;
+}
+
+.modal--photo-preview {
+    width: min(960px, calc(100vw - 32px));
+    max-width: none;
+}
+
+.modal--admin-login {
+    max-width: 420px;
+}
+
+.modal--confirm {
+    max-width: 430px;
+}
+
+.draggable-modal.is-dragging {
+    user-select: none;
+}
+
+@media (max-width: 640px) {
+    .modal-backdrop:not(.modal-backdrop--floating) {
+        padding: 12px;
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+
+    .modal-backdrop:not(.modal-backdrop--floating) .modal {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - 24px);
+        border-radius: 12px;
+    }
+
+    .modal--photo-review,
+    .modal--privacy-requests,
+    .modal--privacy-info,
+    .modal--problem-report,
+    .modal--photo-retention,
+    .modal--report,
+    .modal--field-photo,
+    .modal--field-photo-thanks,
+    .modal--field-photo-owner,
+    .modal--photo-preview,
+    .modal--confirm,
+    .modal--admin-login {
+        width: 100%;
+        max-width: none;
+    }
+
+    .modal-body {
+        padding: 14px 12px 16px;
+    }
+
+    .photo-review-body,
+    .privacy-request-body {
+        gap: 10px;
+    }
+}
+
+@keyframes modal-pop {
+    from {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.modal-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.draggable-modal.is-dragging .modal-drag-handle {
+    cursor: grabbing;
+}
+
+.modal-header h2 {
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.modal-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+}
+
+.modal-close:hover {
+    color: #fff;
+    background: var(--surface-on-media-hover);
+}
+
+.modal-close svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.modal-icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+}
+
+.modal-icon-btn:hover {
+    color: #fff;
+    background: var(--surface-on-media-hover);
+}
+
+.modal-icon-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.modal-body {
+    padding: 18px 20px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+}
+
+.settings-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: rgba(255, 255, 255, 0.045);
+    padding: var(--space-3);
+}
+
+.settings-section-heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.settings-section-heading h3 {
+    color: var(--text-strong);
+    font: 800 0.82rem var(--font-display);
+    margin: 0;
+    text-transform: uppercase;
+}
+
+/* Sekcja w modalu — wspólny pattern */
+.modal-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-label {
+    font-size: 0.76rem;
+    color: var(--text-soft);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.modal-section select {
+    width: 100%;
+}
+
+.modal--settings select:disabled,
+.modal--settings input:disabled,
+.modal--settings button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.modal--settings select:disabled,
+.modal--settings input[type="range"]:disabled {
+    background-color: rgba(15, 23, 42, 0.46);
+}
+
+.modal--settings input[type="range"]:disabled::-webkit-slider-thumb {
+    background: #64748b;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.modal-hint {
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-top: 2px;
+}

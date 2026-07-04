@@ -1,0 +1,142 @@
+/* ── MAP SOURCE SLIDER (podkład mapy) ─────────────── */
+#year-slider {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    z-index: 900;
+    font-family: var(--font, var(--font-body));
+    user-select: none;
+}
+
+.year-arrow {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.year-arrow:hover {
+    color: var(--text);
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.year-track {
+    position: relative;
+    width: 320px;
+    padding: 6px 0;
+}
+
+.year-track input[type=range] {
+    width: 100%;
+    accent-color: var(--primary, #6366f1);
+    cursor: pointer;
+}
+
+.year-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2px;
+}
+
+.year-tick {
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: 600 11px var(--font, sans-serif);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.year-tick:hover {
+    color: var(--text);
+}
+
+.year-tick.active {
+    color: #fff;
+    background: var(--primary-soft);
+}
+
+.year-current {
+    min-width: 52px;
+    max-width: 190px;
+    text-align: center;
+    font: 700 16px var(--font-title, var(--font-display, sans-serif));
+    color: #fff;
+    padding: 4px 10px;
+    background: var(--primary-soft);
+    border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+    border-radius: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    #year-slider {
+        width: min(420px, calc(100vw - 24px));
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr) 32px;
+        grid-template-areas:
+            "prev track next"
+            ". current .";
+        column-gap: 8px;
+        row-gap: 6px;
+        padding: 8px 10px;
+    }
+
+    #year-prev {
+        grid-area: prev;
+    }
+
+    #year-next {
+        grid-area: next;
+    }
+
+    .year-track {
+        grid-area: track;
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+    }
+
+    .year-ticks {
+        gap: 2px;
+        margin-top: 0;
+    }
+
+    .year-tick {
+        min-width: 0;
+        padding: 2px;
+        font-size: 10px;
+    }
+
+    .year-current {
+        grid-area: current;
+        justify-self: center;
+        font-size: 14px;
+        min-width: 44px;
+        max-width: 100%;
+    }
+}

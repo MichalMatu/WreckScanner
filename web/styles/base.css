@@ -1,0 +1,32 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Wymuszamy ukrycie elementów z atrybutem hidden — inaczej display:flex z innych klas wygrywa */
+[hidden] {
+    display: none !important;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── MAP ────────────────────────────── */
+#map {
+    flex: 1;
+    z-index: 1;
+}
+
+.leaflet-container.is-picking-field-photo-location {
+    cursor: crosshair;
+}
