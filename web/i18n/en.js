@@ -390,7 +390,6 @@ const TRANSLATIONS_EN = {
         'popup.gmapsSat': 'Google Maps satellite',
         'popup.appleMaps': 'Apple Maps',
         'popup.mapillary': 'Mapillary',
-        'popup.geoportal': 'Polish Geoportal',
         'popup.report': 'Report',
         'popup.agePrefix': 'for {age}',
         'popup.ageNow': 'now',

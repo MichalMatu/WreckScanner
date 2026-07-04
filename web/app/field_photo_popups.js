@@ -29,7 +29,6 @@ function fieldPhotoGroupLinks(group, photos) {
     return popupLinks([
         popupCompactLink(links.street_view, t('popup.streetView'), t('popup.streetView')),
         popupCompactLink(links.google_maps_satellite, t('popup.gmapsSat'), t('popup.gmapsSat')),
-        popupCompactLink(links.geoportal, t('popup.geoportal'), t('popup.geoportal')),
     ]);
 }
 

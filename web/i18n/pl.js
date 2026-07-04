@@ -397,7 +397,6 @@ const TRANSLATIONS_PL = {
         'popup.gmapsSat': 'Google Maps satelita',
         'popup.appleMaps': 'Apple Maps',
         'popup.mapillary': 'Mapillary',
-        'popup.geoportal': 'Geoportal Krajowy',
         'popup.report': 'Raport',
         'popup.agePrefix': 'od {age}',
         'popup.ageNow': 'teraz',

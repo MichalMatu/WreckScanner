@@ -63,7 +63,6 @@ def external_map_links(lat: float, lon: float) -> dict[str, str]:
         "google_maps_satellite": f"https://www.google.com/maps/@{lat},{lon},80m/data=!3m1!1e3",
         "apple_maps": f"https://maps.apple.com/?ll={lat},{lon}&z=20&t=k",
         "mapillary": f"https://www.mapillary.com/app/?lat={lat}&lng={lon}&z=19",
-        "geoportal": f"https://mapy.geoportal.gov.pl/imap/Imgp_2.html?gpmap=gp0&lat={lat}&lon={lon}",
     }
 
 

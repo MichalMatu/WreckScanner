@@ -602,6 +602,15 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("parcelOpenGeoportal", map_context_js + i18n_js)
         self.assertNotIn("identifyParcel=", map_context_js)
 
+    def test_field_photo_popup_omits_unstable_geoportal_deep_link(self):
+        popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
+
+        self.assertNotIn("links.geoportal", popups_js)
+        self.assertNotIn("popup.geoportal", popups_js + i18n_js)
+        self.assertIn("links.street_view", popups_js)
+        self.assertIn("links.google_maps_satellite", popups_js)
+
     def test_approved_field_photo_popups_hide_redundant_metadata(self):
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
