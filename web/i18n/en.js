@@ -53,6 +53,7 @@ const TRANSLATIONS_EN = {
         'panel.addPhotoPickStatus': 'Click the map location where you want to add the photo.',
         'panel.addPhotoPickCancel': 'Cancel location pick',
         'panel.baseMap': 'Base map',
+        'panel.baseMapSliderToggle': 'Show bottom slider',
 
         'layers.vehicles': 'Vehicles',
         'layers.cadastral': 'Parcel boundaries',

@@ -36,7 +36,14 @@
                 data-i18n-attr="aria-label:panel.baseMap" aria-label="Podkład mapy">
                 <div class="panel-section-heading">
                     <span data-i18n="panel.baseMap">Podkład mapy</span>
-                    <span class="map-source-menu-current" id="map-source-menu-current">POL</span>
+                    <label class="map-source-slider-toggle"
+                        data-i18n-attr="title:panel.baseMapSliderToggle"
+                        title="Pokaż dolny suwak">
+                        <input type="checkbox" id="map-source-slider-toggle"
+                            data-i18n-attr="aria-label:panel.baseMapSliderToggle"
+                            aria-label="Pokaż dolny suwak" onchange="setMapSourceSliderVisible(this.checked)" checked>
+                        <span class="map-source-slider-toggle-mark" aria-hidden="true"></span>
+                    </label>
                 </div>
                 <div class="map-source-menu-options" id="map-source-menu-options"
                     data-i18n-attr="aria-label:panel.baseMap" aria-label="Podkład mapy" role="group"></div>

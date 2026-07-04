@@ -55,6 +55,7 @@ const TRANSLATIONS_PL = {
         'panel.addPhotoPickStatus': 'Kliknij miejsce na mapie, w którym chcesz dodać zdjęcie.',
         'panel.addPhotoPickCancel': 'Anuluj wybór miejsca',
         'panel.baseMap': 'Podkład mapy',
+        'panel.baseMapSliderToggle': 'Pokaż dolny suwak',
 
         'layers.vehicles': 'Pojazdy',
         'layers.cadastral': 'Granice działek',
