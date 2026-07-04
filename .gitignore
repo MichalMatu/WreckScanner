@@ -15,6 +15,9 @@ __pycache__/
 node_modules/
 .DS_Store
 settings.json
+wreckscanner.sqlite3
+wreckscanner.sqlite3-shm
+wreckscanner.sqlite3-wal
 .admin_password
 .restic_password
 .cache/

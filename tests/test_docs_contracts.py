@@ -43,11 +43,15 @@ class DocumentationContractTests(unittest.TestCase):
         doc = (ROOT_DIR / "docs" / "RELEASE_CANDIDATE.md").read_text(encoding="utf-8")
 
         self.assertIn("restic snapshot: `4aaaca53`", doc)
+        self.assertIn("restic snapshot po migracji DB: `05c2b91c`", doc)
         self.assertIn("zdjecia terenowe: `270`", doc)
         self.assertIn("typy zdjec: `vehicle=240`, `infrastructure=29`, `smoke=1`", doc)
         self.assertIn("zgloszenia prywatnosci: `0`", doc)
         self.assertIn("Kontrakt bazy: SQLite/WAL", doc)
         self.assertIn("Migracja JSON -> DB", doc)
+        self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
+        self.assertIn("field_photos=270", doc)
+        self.assertIn("missing_paths=0", doc)
         self.assertIn("tag `v1.0.0-rc1`", doc)
 
     def test_removed_development_docs_stay_removed(self):

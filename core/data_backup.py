@@ -110,11 +110,15 @@ def collect_backup_paths(
     include_admin_password: bool = False,
     extra_paths: list[Path] | None = None,
 ) -> tuple[list[Path], list[Path]]:
+    database_path = _resolve(root_dir, config.DATABASE_PATH)
     candidates = [
         _resolve(root_dir, config.FIELD_PHOTOS_DIR),
         _resolve(root_dir, config.PRIVATE_PHOTOS_DIR),
         _resolve(root_dir, config.PRIVACY_REQUESTS_DIR),
         _resolve(root_dir, Path(config.SETTINGS_FILENAME)),
+        database_path,
+        database_path.with_name(f"{database_path.name}-wal"),
+        database_path.with_name(f"{database_path.name}-shm"),
         _resolve(root_dir, diagnostics_output),
     ]
     if include_admin_password:

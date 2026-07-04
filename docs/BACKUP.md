@@ -17,6 +17,8 @@ Backup obejmuje dane uzytkowe:
 - `prywatne_zdjecia/`
 - `zgloszenia_prywatnosci/`, jesli istnieje
 - `settings.json`, jesli istnieje
+- `wreckscanner.sqlite3`, `wreckscanner.sqlite3-wal`, `wreckscanner.sqlite3-shm`,
+  jesli istnieja po migracji DB
 - `analiza/data_diagnostics.json`, jesli istnieje
 
 Backup pomija zaleznosci, cache, `.backups/` i raporty wygenerowane do jednorazowego pobrania.

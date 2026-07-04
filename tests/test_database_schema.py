@@ -66,7 +66,14 @@ class DatabaseSchemaTests(unittest.TestCase):
         connection = self._migrated_connection()
         columns = {row[1]: row[2] for row in connection.execute("PRAGMA table_info(field_photos)")}
 
-        for column in ("private_original_file", "public_image_file", "public_thumb_file"):
+        for column in (
+            "private_original_file",
+            "public_image_file",
+            "public_thumb_file",
+            "exif_json",
+            "submitted_at",
+            "owner_redactions_updated_at",
+        ):
             self.assertIn(column, columns)
         self.assertIn("edit_token_salt", columns)
         self.assertIn("edit_token_hash", columns)

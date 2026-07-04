@@ -21,6 +21,8 @@ Stan zapisany 2026-07-04 po zielonym `./scripts/check.sh`.
 - commit bazowy: `a91f5b89568e8cc1e289291f50626d03acdc44ae`
 - restic snapshot: `4aaaca53`
 - snapshot time: `2026-07-04T08:22:13+02:00`
+- restic snapshot po migracji DB: `05c2b91c`
+- snapshot DB time: `2026-07-04T08:32:46+02:00`
 - backup repo: `.backups/wreckscanner-restic`
 - backup password file: `.restic_password`
 - status diagnostyki danych: `ok`
@@ -74,3 +76,30 @@ Przed uruchomieniem migracji DB wymagane sa:
 Migracja nie moze usuwac ani przenosic plikow z `zdjecia_terenowe/` i
 `prywatne_zdjecia/`. Baza ma przechowywac metadane oraz sciezki do istniejacych
 plikow.
+
+## Migracja JSON -> DB
+
+Migrator:
+
+```bash
+./.venv/bin/python scripts/migrate_json_to_db.py
+./.venv/bin/python scripts/migrate_json_to_db.py --validate-only
+```
+
+Warunki migracji:
+
+- wymaga istniejacego snapshotu restic,
+- tworzy albo aktualizuje `wreckscanner.sqlite3`,
+- dziala idempotentnie przez upsert,
+- nie usuwa i nie przenosi zdjec,
+- blokuje migracje, gdy brakuje prywatnego oryginalu albo publicznej pochodnej
+  wskazanej w `record.json`.
+
+Walidacja wykonana 2026-07-04:
+
+- `journal_mode=wal`
+- `field_photos=270`
+- `settings=3`
+- `privacy_requests=0`
+- `schema_migrations=1`
+- `missing_paths=0`

@@ -121,6 +121,26 @@ class DataBackupTests(unittest.TestCase):
             self.assertIn(".admin_password", command)
             self.assertIn("custom.json", command)
 
+    def test_run_backup_includes_database_files_when_present(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            password_file = prepare_root(root)
+            (root / "wreckscanner.sqlite3").write_bytes(b"db")
+            (root / "wreckscanner.sqlite3-wal").write_bytes(b"wal")
+            (root / "wreckscanner.sqlite3-shm").write_bytes(b"shm")
+            runner = RecordingRunner()
+            options = ResticOptions(
+                root_dir=root, restic_bin="restic", repository=str(root / "repo"), password_file=password_file
+            )
+
+            result = run_backup(options=options, check_images=False, runner=runner)
+
+            self.assertEqual(result.status, "ok")
+            command = runner.calls[0]["command"]
+            self.assertIn("wreckscanner.sqlite3", command)
+            self.assertIn("wreckscanner.sqlite3-wal", command)
+            self.assertIn("wreckscanner.sqlite3-shm", command)
+
     def test_run_backup_blocks_when_diagnostics_has_errors(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

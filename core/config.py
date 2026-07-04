@@ -70,3 +70,5 @@ PENDING_SUBMISSION_MAX_ITEMS = 100
 
 # Ustawienia trwałe widoczne w panelu.
 SETTINGS_FILENAME = "settings.json"
+DATABASE_PATH = Path("wreckscanner.sqlite3")
+DATABASE_MIGRATIONS_DIR = Path("database/migrations")
