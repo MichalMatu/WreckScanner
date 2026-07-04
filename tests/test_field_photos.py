@@ -245,6 +245,7 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(discard_result["deleted"], [photo_id])
             self.assertFalse(db_record_exists(storage_dir, photo_id))
             self.assertFalse(private_original.exists())
+            self.assertFalse(private_original.parent.exists())
 
             pending_result = save_field_photo(
                 upload(image_bytes("PNG"), filename="teren.png"),

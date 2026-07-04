@@ -27,6 +27,8 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("ma pierwszenstwo przed plikiem `.admin_password`", doc)
         self.assertIn("scripts/check.sh", doc)
         self.assertIn("make smoke", doc)
+        self.assertIn("make e2e-report", doc)
+        self.assertIn("generuje ZIP/PDF z tymczasowymi cropami mapy", doc)
         self.assertIn("BACKUP.md", doc)
 
     def test_current_model_doc_names_active_flow_and_retired_artifact_audit(self):
@@ -60,6 +62,8 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
         self.assertIn("field_photos=270", doc)
         self.assertIn("missing_paths=0", doc)
+        self.assertIn("make e2e-report", doc)
+        self.assertIn("analiza/e2e-map-desktop.png", doc)
         self.assertIn("tag `v1.0.0-rc1`", doc)
 
     def test_removed_development_docs_stay_removed(self):

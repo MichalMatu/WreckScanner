@@ -1,4 +1,4 @@
-.PHONY: help start stop restart status logs check test lint smoke health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop
+.PHONY: help start stop restart status logs check test lint smoke e2e-report health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop
 
 PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then printf './.venv/bin/python'; elif command -v python3 >/dev/null 2>&1; then command -v python3; else command -v python; fi)
 HOST ?= 127.0.0.1
@@ -32,6 +32,7 @@ help:
 		'make test' 'testy' \
 		'make lint' 'lint + format' \
 		'make smoke' 'runtime smoke dzialajacego serwera' \
+		'make e2e-report' 'upload/review/map/raport ZIP+PDF dzialajacego serwera' \
 		'make health' 'alias status'
 
 start:
@@ -65,14 +66,23 @@ wait-server:
 	@i=0; \
 	while [ "$$i" -lt "$(SERVER_WAIT_SECONDS)" ]; do \
 		if pgrep -af '$(SERVER_PATTERN)' >/dev/null; then \
-			echo 'server.py dziala:'; \
-			pgrep -af '$(SERVER_PATTERN)'; \
-			exit 0; \
+			if command -v curl >/dev/null 2>&1; then \
+				if curl -fsS "$(SERVER_URL)/api/health" >/dev/null 2>&1; then \
+					echo 'server.py dziala:'; \
+					pgrep -af '$(SERVER_PATTERN)'; \
+					echo 'Health OK'; \
+					exit 0; \
+				fi; \
+			else \
+				echo 'server.py dziala:'; \
+				pgrep -af '$(SERVER_PATTERN)'; \
+				exit 0; \
+			fi; \
 		fi; \
 		i=$$((i + 1)); \
 		sleep 1; \
 	done; \
-	echo 'Autostart nie podniosl server.py w ciagu $(SERVER_WAIT_SECONDS)s.'; \
+	echo 'Autostart nie podniosl zdrowego server.py w ciagu $(SERVER_WAIT_SECONDS)s.'; \
 	echo 'Sprawdz watcher albo uruchom tymczasowo: $(PYTHON) server.py'; \
 	exit 1
 
@@ -154,5 +164,8 @@ lint:
 
 smoke:
 	@"$(PYTHON)" scripts/smoke_runtime.py --base-url "$(SERVER_URL)"
+
+e2e-report:
+	@"$(PYTHON)" scripts/e2e_field_photo_report.py --base-url "$(SERVER_URL)"
 
 health: status

@@ -124,3 +124,23 @@ Od podgolu 4 aktywny runtime czyta i zapisuje:
 
 `record.json`, `settings.json` i `zgloszenia_prywatnosci/` pozostaja materialem
 importowym/migracyjnym. Nowe operacje aplikacji nie mutuja tych JSON-ow.
+
+## E2E mapy i raportu
+
+Verifier:
+
+```bash
+make e2e-report
+```
+
+Zakres:
+
+- logowanie administratora,
+- upload malego zdjecia testowego jako `vehicle`,
+- zatwierdzenie w review,
+- potwierdzenie widocznosci w publicznym kontrakcie mapy `/api/field-photos`,
+- wygenerowanie ZIP/PDF z publicznym zdjeciem i tymczasowymi cropami WMS,
+- potwierdzenie, ze raport nie odtwarza `prywatne_zgloszenia/`,
+- screenshot desktop/mobile w `analiza/e2e-map-desktop.png` i
+  `analiza/e2e-map-mobile.png`,
+- cleanup testowego rekordu, publicznych plikow i prywatnego oryginalu.

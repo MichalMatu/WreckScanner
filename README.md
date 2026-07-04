@@ -66,6 +66,7 @@ jego obecnosc jako blad danych przed release candidate.
 ```bash
 scripts/check.sh
 make smoke
+make e2e-report
 ```
 
-`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer.
+`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> ZIP/PDF.

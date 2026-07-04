@@ -77,6 +77,15 @@ def private_original_rel(scope: Literal["field_photos"], photo_id: str, ext: str
     return f"field_photos/{photo_id}/original{ext.lower()}"
 
 
+def remove_empty_private_photo_dir(private_root: Path, photo_id: str, private_file_path: Path) -> None:
+    expected_dir = (private_root / "field_photos" / photo_id).resolve()
+    try:
+        if private_file_path.parent.resolve() == expected_dir:
+            expected_dir.rmdir()
+    except OSError:
+        pass
+
+
 def _clamped_point(raw_point: Any) -> dict[str, float]:
     if not isinstance(raw_point, dict):
         raise ValueError("Punkt redakcji musi być obiektem.")

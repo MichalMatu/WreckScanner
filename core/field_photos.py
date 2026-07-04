@@ -38,6 +38,7 @@ from core.photo_privacy import (
     ensure_review_fields,
     generate_public_derivatives,
     is_approved,
+    remove_empty_private_photo_dir,
     remove_public_derivatives,
     review_status,
     safe_child,
@@ -452,12 +453,15 @@ def update_field_photo_location(
 
 def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | None = None) -> dict[str, Any]:
     record_dir = _record_dir_for(photo_id, storage_dir)
-    record = _load_field_record(record_dir, _private_dir(private_dir))
+    private_root = _private_dir(private_dir)
+    record = _load_field_record(record_dir, private_root)
     try:
         private_rel = record.get("private_original_file")
-        original = safe_child(_private_dir(private_dir), private_rel) if private_rel else None
+        original = safe_child(private_root, private_rel) if private_rel else None
         if original and original.exists():
             original.unlink()
+        if original:
+            remove_empty_private_photo_dir(private_root, photo_id, original)
     except (FileNotFoundError, ValueError):
         pass
     if record_dir.exists():
