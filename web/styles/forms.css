@@ -60,6 +60,24 @@ select.modal-input {
     background-position: right 11px center;
     background-size: 16px 16px;
     padding-right: 36px;
+    color-scheme: dark;
+}
+
+select.modal-input option,
+.report-form select option {
+    background-color: var(--surface-elevated-solid);
+    color: var(--text-strong);
+}
+
+select.modal-input option:checked,
+.report-form select option:checked {
+    background-color: color-mix(in srgb, var(--primary) 42%, var(--surface-elevated-solid));
+    color: var(--text-strong);
+}
+
+select.modal-input option:disabled,
+.report-form select option:disabled {
+    color: var(--muted);
 }
 
 .modal-input:focus,
@@ -142,6 +160,27 @@ select.modal-input {
 .field-photo-map-point {
     font-weight: 700;
     color: var(--text-soft);
+}
+
+.field-photo-insurance-section {
+    gap: 8px;
+}
+
+.field-photo-insurance-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+}
+
+.field-photo-insurance-link {
+    color: var(--primary-hover);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .field-photo-token-label-row {

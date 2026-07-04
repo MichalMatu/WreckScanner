@@ -4,6 +4,23 @@ let fieldPhotoUploadEditToken = '';
 let fieldPhotoLocationPickActive = false;
 let fieldPhotoUploadInProgress = false;
 
+function selectedFieldPhotoUploadIssueType() {
+    const selectedIssueType = document.getElementById('field-photo-issue-type')?.value || FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    return FIELD_PHOTO_ISSUE_TYPES.has(selectedIssueType) ? selectedIssueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+}
+
+function selectedFieldPhotoVehicleInsuranceStatus(issueType = selectedFieldPhotoUploadIssueType()) {
+    const select = document.getElementById('field-photo-insurance-status');
+    if (issueType !== FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+    return vehicleInsuranceStatus(select?.value);
+}
+
+function updateFieldPhotoVehicleInsuranceUi() {
+    const section = document.getElementById('field-photo-insurance-section');
+    if (!section) return;
+    section.hidden = selectedFieldPhotoUploadIssueType() !== FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+}
+
 function randomFieldPhotoEditToken() {
     const bytes = new Uint8Array(18);
     if (window.crypto?.getRandomValues) {
@@ -171,6 +188,10 @@ function resetFieldPhotoUploadModal(options = {}) {
         : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     if (issueSelect) issueSelect.value = requestedIssueType;
     updateFieldPhotoIssueOptions();
+    if (document.getElementById('field-photo-insurance-status')) {
+        document.getElementById('field-photo-insurance-status').value = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+    }
+    updateFieldPhotoVehicleInsuranceUi();
     updateFieldPhotoMapPointText();
     if (status) status.textContent = '';
     if (queue) {
@@ -326,6 +347,7 @@ function fieldPhotoUploadFormData(item, submittedEditToken) {
     formData.append('map_lat', item.mapLat);
     formData.append('map_lon', item.mapLon);
     formData.append('issue_type', item.issueType || FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
+    formData.append('vehicle_insurance_status', item.vehicleInsuranceStatus || FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN);
     item.editToken = item.editToken || submittedEditToken;
     if (item.editToken) formData.append('edit_token', item.editToken);
     formData.append('photo', item.file);
@@ -427,8 +449,8 @@ async function submitFieldPhotoUpload(event) {
     }
 
     const mapLatLng = currentFieldPhotoUploadMapLatLng();
-    const selectedIssueType = document.getElementById('field-photo-issue-type')?.value || FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    const issueType = FIELD_PHOTO_ISSUE_TYPES.has(selectedIssueType) ? selectedIssueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    const issueType = selectedFieldPhotoUploadIssueType();
+    const vehicleInsuranceStatusValue = selectedFieldPhotoVehicleInsuranceStatus(issueType);
     const editToken = ensureFieldPhotoUploadEditToken();
     const tokenError = validateFieldPhotoEditToken(editToken);
     if (tokenError) {
@@ -443,6 +465,7 @@ async function submitFieldPhotoUpload(event) {
         item.mapLat = mapLatLng.lat;
         item.mapLon = mapLatLng.lng;
         item.issueType = issueType;
+        item.vehicleInsuranceStatus = vehicleInsuranceStatusValue;
         item.editToken = adminAuthenticated ? '' : editToken;
     });
     renderFieldPhotoQueue();
@@ -497,3 +520,4 @@ document.addEventListener('keydown', event => {
     openFieldPhotoUploadSavedDraftSummary(t('modal.fieldPhotoSummary.closeUploadWithDrafts'));
 }, true);
 document.addEventListener('langchange', updatePanelFieldPhotoLocationPickUi);
+document.getElementById('field-photo-issue-type')?.addEventListener('change', updateFieldPhotoVehicleInsuranceUi);

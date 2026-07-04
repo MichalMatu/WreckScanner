@@ -97,7 +97,9 @@ class ConfigModuleContractTests(unittest.TestCase):
         )
         self.assertIn("const CADASTRAL_WMS_LAYERS = 'dzialki,numery_dzialek'", config_js)
         self.assertIn("const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY", config_js)
-        self.assertIn("const FIELD_PHOTO_GROUP_RADIUS_M = 1", config_js)
+        group_radius = re.search(r"const FIELD_PHOTO_GROUP_RADIUS_M = ([0-9.]+)", config_js)
+        self.assertIsNotNone(group_radius)
+        self.assertEqual(float(group_radius.group(1)), core_config.FIELD_PHOTO_GROUP_RADIUS_M)
         self.assertIn("const CADASTRAL_IDENTIFY_URL = '/api/cadastral/identify'", config_js)
         self.assertEqual(
             app_config.CADASTRAL_WMS_URL, "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow"

@@ -13,6 +13,27 @@ from typing import Any, Literal
 from PIL import Image, UnidentifiedImageError
 
 from core import config
+from core.field_photo_groups import (
+    vehicle_photo_group_records as _vehicle_photo_group_records,
+)
+from core.field_photo_metadata import (
+    issue_type as _issue_type,
+)
+from core.field_photo_metadata import (
+    validated_vehicle_insurance_update as _validated_vehicle_insurance_update,
+)
+from core.field_photo_metadata import (
+    vehicle_insurance_status as _vehicle_insurance_status,
+)
+from core.field_photo_serialization import (
+    admin_review_item as _admin_review_item,
+)
+from core.field_photo_serialization import (
+    field_photo_summary as _summary,
+)
+from core.field_photo_serialization import (
+    owner_review_item as _owner_review_item,
+)
 from core.field_photo_store import (
     FIELD_PHOTO_ID_RE as _FIELD_PHOTO_ID_RE,
 )
@@ -135,13 +156,6 @@ def _validated_lat_lon(lat_value: Any, lon_value: Any) -> tuple[float, float]:
     return lat, lon
 
 
-def _issue_type(value: Any) -> str:
-    issue_type = str(value or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE).strip()
-    if issue_type not in config.FIELD_PHOTO_ISSUE_TYPES:
-        raise ValueError("Nieprawidłowy typ pinezki terenowej.")
-    return issue_type
-
-
 def _links(lat: float, lon: float) -> dict[str, str]:
     return external_map_links(lat, lon)
 
@@ -161,6 +175,11 @@ def _private_dir(private_dir: Path | None) -> Path:
 
 def _prepare_field_record(record_dir: Path, record: dict[str, Any], private_dir: Path) -> bool:
     changed = ensure_review_fields(record)
+    issue_type = _issue_type(record.get("issue_type"))
+    vehicle_insurance_status = _vehicle_insurance_status(issue_type, record.get("vehicle_insurance_status"))
+    if record.get("vehicle_insurance_status") != vehicle_insurance_status:
+        record["vehicle_insurance_status"] = vehicle_insurance_status
+        changed = True
     if not is_approved(record):
         remove_public_derivatives(record, record_dir)
     elif not safe_existing_child(record_dir, record.get("public_image_file")) or not safe_existing_child(
@@ -182,10 +201,6 @@ def _load_field_record(record_dir: Path, private_dir: Path) -> dict[str, Any]:
     if _prepare_field_record(record_dir, record, private_dir):
         _save_field_record(record_dir.parent, record)
     return record
-
-
-def _public_file_url(photo_id: str, asset: Literal["public-image", "public-thumb"]) -> str:
-    return f"/api/field-photos/{photo_id}/{asset}"
 
 
 def field_photo_record_dir(photo_id: str, storage_dir: Path) -> Path:
@@ -222,55 +237,38 @@ def save_field_photo_record(record: dict[str, Any], storage_dir: Path) -> None:
     _save_field_record(storage_dir, record)
 
 
-def _summary(record: dict[str, Any]) -> dict[str, Any]:
-    photo_id = str(record["id"])
-    summary = {
-        "id": photo_id,
-        "created_at": record.get("created_at"),
-        "submitted_at": record.get("submitted_at"),
-        "format": record.get("format"),
-        "public_width": record.get("public_width"),
-        "public_height": record.get("public_height"),
-        "public_review_status": review_status(record),
-        "reviewed_at": record.get("reviewed_at"),
-        "issue_type": _issue_type(record.get("issue_type")),
-        "lat": record.get("lat"),
-        "lon": record.get("lon"),
-        "coordinate_source": record.get("coordinate_source"),
-        "position_updated_at": record.get("position_updated_at"),
-        "captured_at": record.get("captured_at"),
-        "links": record.get("links") or {},
-    }
-    if is_approved(record):
-        summary["public_image"] = _public_file_url(photo_id, "public-image")
-        summary["public_thumb"] = _public_file_url(photo_id, "public-thumb")
-    return summary
-
-
-def _owner_review_item(record: dict[str, Any]) -> dict[str, Any]:
-    photo_id = str(record["id"])
-    return {
-        "scope": "field",
-        "id": f"field:{photo_id}",
-        "photo_id": photo_id,
-        "created_at": record.get("created_at"),
-        "original_filename": record.get("original_filename"),
-        "issue_type": _issue_type(record.get("issue_type")),
-        "lat": record.get("lat"),
-        "lon": record.get("lon"),
-        "captured_at": record.get("captured_at"),
-        "public_review_status": record.get("public_review_status"),
-        "reviewed_at": record.get("reviewed_at"),
-        "redactions": record.get("redactions") or [],
-        "original_image": f"/api/field-photos/{photo_id}/owner-original",
-        "public_image": _public_file_url(photo_id, "public-image") if is_approved(record) else None,
-        "public_thumb": _public_file_url(photo_id, "public-thumb") if is_approved(record) else None,
-    }
-
-
 def _require_edit_token(record: dict[str, Any], edit_token: Any) -> None:
     if not verify_photo_edit_token(edit_token, record.get("edit_token_salt"), record.get("edit_token_hash")):
         raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
+
+
+def _records_with_anchor_snapshot(storage_dir: Path, anchor_record: dict[str, Any]) -> list[dict[str, Any]]:
+    anchor_id = str(anchor_record.get("id") or "")
+    records: list[dict[str, Any]] = []
+    anchor_seen = False
+    for record in _list_field_records(storage_dir):
+        if str(record.get("id") or "") == anchor_id:
+            records.append(anchor_record)
+            anchor_seen = True
+        else:
+            records.append(record)
+    if not anchor_seen:
+        records.append(anchor_record)
+    return records
+
+
+def _save_vehicle_insurance_group_update(
+    storage_dir: Path,
+    anchor_record: dict[str, Any],
+    status: str,
+) -> list[str]:
+    updated_ids: list[str] = []
+    records = _records_with_anchor_snapshot(storage_dir, anchor_record)
+    for record in _vehicle_photo_group_records(records, anchor_record):
+        record["vehicle_insurance_status"] = status
+        _save_field_record(storage_dir, record)
+        updated_ids.append(str(record["id"]))
+    return updated_ids
 
 
 def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> list[dict[str, Any]]:
@@ -335,26 +333,7 @@ def list_field_photo_review_items(storage_dir: Path, *, private_dir: Path | None
             continue
         if not isinstance(record, dict) or not record.get("id") or review_status(record) == "draft":
             continue
-        photo_id = str(record["id"])
-        records.append(
-            {
-                "scope": "field",
-                "id": f"field:{photo_id}",
-                "photo_id": photo_id,
-                "created_at": record.get("created_at"),
-                "original_filename": record.get("original_filename"),
-                "issue_type": _issue_type(record.get("issue_type")),
-                "lat": record.get("lat"),
-                "lon": record.get("lon"),
-                "captured_at": record.get("captured_at"),
-                "public_review_status": record.get("public_review_status"),
-                "reviewed_at": record.get("reviewed_at"),
-                "redactions": record.get("redactions") or [],
-                "original_image": f"/api/admin/photos/field/{photo_id}/original",
-                "public_image": _public_file_url(photo_id, "public-image") if is_approved(record) else None,
-                "public_thumb": _public_file_url(photo_id, "public-thumb") if is_approved(record) else None,
-            }
-        )
+        records.append(_admin_review_item(record))
     return sorted(records, key=lambda item: str(item.get("created_at") or ""), reverse=True)
 
 
@@ -369,6 +348,7 @@ def save_field_photo(
     submission_owner: str | None = None,
     edit_token: Any = None,
     public_review_status: Any = "pending",
+    vehicle_insurance_status: Any = None,
 ) -> dict[str, Any]:
     private_root = _private_dir(private_dir)
     if upload.field_name != "photo":
@@ -410,6 +390,7 @@ def save_field_photo(
         "image_width": width,
         "image_height": height,
         "issue_type": issue_type_text,
+        "vehicle_insurance_status": _vehicle_insurance_status(issue_type_text, vehicle_insurance_status),
         "lat": lat,
         "lon": lon,
         "coordinate_source": coordinate_source,
@@ -522,10 +503,12 @@ def review_field_photo(
     *,
     status: Any,
     redactions: Any,
+    vehicle_insurance_status: Any = None,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
     record_dir = _record_dir_for(photo_id, storage_dir)
     record = _load_field_record(record_dir, _private_dir(private_dir))
+    validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
     apply_review_update(
         record,
         record_dir,
@@ -535,8 +518,16 @@ def review_field_photo(
         thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
-    _save_field_record(storage_dir, record)
-    return {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
+    if validated_vehicle_insurance_status is not None:
+        record["vehicle_insurance_status"] = validated_vehicle_insurance_status
+        updated_ids = _save_vehicle_insurance_group_update(storage_dir, record, validated_vehicle_insurance_status)
+    else:
+        updated_ids = []
+        _save_field_record(storage_dir, record)
+    result = {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
+    if validated_vehicle_insurance_status is not None:
+        result["vehicle_insurance_updated_photo_ids"] = updated_ids
+    return result
 
 
 def review_field_photo_by_owner(
@@ -545,11 +536,13 @@ def review_field_photo_by_owner(
     storage_dir: Path,
     *,
     redactions: Any,
+    vehicle_insurance_status: Any = None,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
     record_dir = _record_dir_for(photo_id, storage_dir)
     record = _load_field_record(record_dir, _private_dir(private_dir))
     _require_edit_token(record, edit_token)
+    validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
     status = "draft" if review_status(record) == "draft" else "pending"
     apply_review_update(
         record,
@@ -560,6 +553,8 @@ def review_field_photo_by_owner(
         thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
+    if validated_vehicle_insurance_status is not None:
+        record["vehicle_insurance_status"] = validated_vehicle_insurance_status
     record["owner_redactions_updated_at"] = _now_iso()
     _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record)}

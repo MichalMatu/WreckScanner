@@ -61,6 +61,15 @@
     --popup-age-text: #e4edf9;
     --popup-status-surface: rgba(245, 158, 11, 0.17);
     --popup-status-text: #fde68a;
+    --popup-ufg-unknown-bg: rgba(113, 113, 122, 0.74);
+    --popup-ufg-unknown-border: rgba(212, 212, 216, 0.34);
+    --popup-ufg-unknown-text: #f4f4f5;
+    --popup-ufg-insured-bg: rgba(16, 185, 129, 0.78);
+    --popup-ufg-insured-border: rgba(167, 243, 208, 0.42);
+    --popup-ufg-insured-text: #ecfdf5;
+    --popup-ufg-uninsured-bg: rgba(239, 68, 68, 0.78);
+    --popup-ufg-uninsured-border: rgba(254, 202, 202, 0.42);
+    --popup-ufg-uninsured-text: #fff1f2;
     --popup-action-surface: rgba(255, 255, 255, 0.085);
     --popup-action-primary: #0a84ff;
     --popup-action-report: #0a84ff;

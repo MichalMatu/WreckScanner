@@ -155,6 +155,13 @@ function vehicleGroupActions(group) {
     return vehicleLoosePhotoActions(group);
 }
 
+function vehicleGroupInsuranceStatus(group) {
+    const statuses = (group.photos || []).map(photo => vehicleInsuranceStatus(photo.vehicle_insurance_status));
+    if (statuses.includes('uninsured')) return 'uninsured';
+    if (statuses.includes('insured')) return 'insured';
+    return statuses.length ? FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN : '';
+}
+
 function vehiclePhotoPopup(group) {
     const photoCount = vehicleGroupPhotoCount(group);
     const title = photoCount > 1
@@ -162,7 +169,7 @@ function vehiclePhotoPopup(group) {
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
     return mapPopup(`
-            ${popupHeader(title, popupElapsedAgeBadge(group.photos))}
+            ${popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}

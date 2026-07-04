@@ -76,6 +76,15 @@
     min-width: 0;
 }
 
+.photo-review-insurance {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-subtle);
+}
+
 .privacy-request-detail {
     display: flex;
     flex-direction: column;

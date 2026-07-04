@@ -63,6 +63,7 @@ function updateFieldPhotoIssueOptions() {
     if (firstEnabled && (!FIELD_PHOTO_ISSUE_TYPES.has(select.value) || select.selectedOptions[0]?.disabled)) {
         select.value = firstEnabled;
     }
+    if (typeof updateFieldPhotoVehicleInsuranceUi === 'function') updateFieldPhotoVehicleInsuranceUi();
 }
 
 function filteredFieldPhotos(photos = fieldPhotoLayerData) {

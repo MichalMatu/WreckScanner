@@ -26,18 +26,28 @@ function popupCompactLink(href, label, title) {
     return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" title="${escapeHtml(title || label)}">${escapeHtml(label)}</a>`;
 }
 
-function popupHeaderBadge(label, variant = '') {
+function popupHeaderBadge(label, variant = '', options = {}) {
     const text = String(label || '').trim();
     if (!text) return null;
-    return { label: text, variant: String(variant || '').replace(/[^A-Za-z0-9_-]/g, '') };
+    return {
+        label: text,
+        variant: String(variant || '').replace(/[^A-Za-z0-9_-]/g, ''),
+        href: String(options.href || '').trim(),
+        title: String(options.title || '').trim(),
+        ariaLabel: String(options.ariaLabel || '').trim(),
+    };
 }
 
 function popupHeaderBadgeHtml(value) {
     const badge = value && typeof value === 'object'
-        ? popupHeaderBadge(value.label, value.variant)
+        ? popupHeaderBadge(value.label, value.variant, value)
         : popupHeaderBadge(value);
     if (!badge) return '';
     const variantClass = badge.variant ? ` map-popup-head-value--${badge.variant}` : '';
+    const title = badge.title || badge.label;
+    if (badge.href) {
+        return `<a class="map-popup-head-value${variantClass}" href="${escapeHtml(badge.href)}" target="_blank" rel="noopener" title="${escapeHtml(title)}" aria-label="${escapeHtml(badge.ariaLabel || title)}">${escapeHtml(badge.label)}</a>`;
+    }
     return `<span class="map-popup-head-value${variantClass}">${escapeHtml(badge.label)}</span>`;
 }
 
@@ -185,6 +195,28 @@ function photoPreviewGalleryItems(previews) {
             };
         }).filter(item => item.url && item.thumb)
         : [];
+}
+
+function vehicleInsuranceStatus(value) {
+    const status = String(value || FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN).trim();
+    return FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES.has(status)
+        ? status
+        : FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+}
+
+function vehicleInsuranceStatusLabel(status) {
+    return t(`fieldPhoto.vehicleInsurance.${vehicleInsuranceStatus(status)}`);
+}
+
+function vehicleInsuranceHeaderBadge(rawStatus) {
+    if (!String(rawStatus || '').trim()) return null;
+    const status = vehicleInsuranceStatus(rawStatus);
+    const label = vehicleInsuranceStatusLabel(status);
+    return popupHeaderBadge(t(`fieldPhoto.vehicleInsurance.badge.${status}`), `insurance-${status}`, {
+        href: UFG_OC_CHECK_URL,
+        title: t('fieldPhoto.vehicleInsurance.ufgTitle', { status: label }),
+        ariaLabel: t('fieldPhoto.vehicleInsurance.ufgAria', { status: label }),
+    });
 }
 
 function popupVisiblePhotoCount(previews, { max = MAP_POPUP_PREVIEW_MAX_IMAGES } = {}) {

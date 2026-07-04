@@ -140,10 +140,13 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertNotIn("original_file", record)
             self.assertTrue((private_dir / record["private_original_file"]).exists())
             self.assertEqual(record["issue_type"], "vehicle")
+            self.assertEqual(record["vehicle_insurance_status"], "unknown")
+            self.assertEqual(photo["vehicle_insurance_status"], "unknown")
             self.assertFalse((record_dir / "public.jpg").exists())
             pending_list = list_field_photos(Path(tmp), private_dir=private_dir)
             self.assertEqual(len(pending_list), 1)
             self.assertEqual(pending_list[0]["public_review_status"], "pending")
+            self.assertEqual(pending_list[0]["vehicle_insurance_status"], "unknown")
             self.assertNotIn("public_image", pending_list[0])
             self.assertNotIn("public_thumb", pending_list[0])
 
@@ -374,6 +377,7 @@ class FieldPhotoTests(unittest.TestCase):
             record = db_record(Path(tmp), photo["id"])
             self.assertEqual(photo["issue_type"], "infrastructure")
             self.assertEqual(record["issue_type"], "infrastructure")
+            self.assertEqual(photo["vehicle_insurance_status"], "unknown")
 
     def test_save_field_photo_rejects_unknown_issue_type(self):
         with TemporaryDirectory() as tmp, self.assertRaisesRegex(ValueError, "typ pinezki"):
@@ -385,6 +389,142 @@ class FieldPhotoTests(unittest.TestCase):
                 issue_type="other",
                 private_dir=Path(tmp) / "private",
             )
+
+    def test_vehicle_insurance_status_is_stored_and_editable_for_vehicle_photos(self):
+        with TemporaryDirectory() as tmp:
+            storage_dir = Path(tmp)
+            private_dir = storage_dir / "private"
+            result = save_field_photo(
+                upload(image_bytes("PNG"), filename="teren.png"),
+                storage_dir,
+                map_lat="51.3",
+                map_lon="17.4",
+                private_dir=private_dir,
+                vehicle_insurance_status="uninsured",
+            )
+            photo_id = result["photo"]["id"]
+
+            self.assertEqual(result["photo"]["vehicle_insurance_status"], "uninsured")
+            self.assertEqual(db_record(storage_dir, photo_id)["vehicle_insurance_status"], "uninsured")
+
+            review_result = review_field_photo(
+                photo_id,
+                storage_dir,
+                status="approved",
+                redactions=[],
+                vehicle_insurance_status="insured",
+                private_dir=private_dir,
+            )
+            public_list = list_field_photos(storage_dir, private_dir=private_dir)
+
+            self.assertEqual(review_result["photo"]["vehicle_insurance_status"], "insured")
+            self.assertEqual(db_record(storage_dir, photo_id)["vehicle_insurance_status"], "insured")
+            self.assertEqual(public_list[0]["vehicle_insurance_status"], "insured")
+
+    def test_admin_vehicle_insurance_status_updates_same_vehicle_group(self):
+        with TemporaryDirectory() as tmp:
+            storage_dir = Path(tmp)
+            private_dir = storage_dir / "private"
+            first = save_field_photo(
+                upload(image_bytes("PNG"), filename="pierwsze.png"),
+                storage_dir,
+                map_lat="51.300000",
+                map_lon="17.400000",
+                private_dir=private_dir,
+            )["photo"]["id"]
+            same_group = save_field_photo(
+                upload(image_bytes("PNG"), filename="drugie.png"),
+                storage_dir,
+                map_lat="51.300004",
+                map_lon="17.400000",
+                private_dir=private_dir,
+            )["photo"]["id"]
+            other_vehicle = save_field_photo(
+                upload(image_bytes("PNG"), filename="daleko.png"),
+                storage_dir,
+                map_lat="51.300030",
+                map_lon="17.400000",
+                private_dir=private_dir,
+            )["photo"]["id"]
+            infrastructure = save_field_photo(
+                upload(image_bytes("PNG"), filename="infra.png"),
+                storage_dir,
+                map_lat="51.300000",
+                map_lon="17.400000",
+                issue_type="infrastructure",
+                private_dir=private_dir,
+            )["photo"]["id"]
+
+            result = review_field_photo(
+                first,
+                storage_dir,
+                status="approved",
+                redactions=[],
+                vehicle_insurance_status="insured",
+                private_dir=private_dir,
+            )
+
+            self.assertEqual(set(result["vehicle_insurance_updated_photo_ids"]), {first, same_group})
+            self.assertEqual(db_record(storage_dir, first)["vehicle_insurance_status"], "insured")
+            self.assertEqual(db_record(storage_dir, same_group)["vehicle_insurance_status"], "insured")
+            self.assertEqual(db_record(storage_dir, other_vehicle)["vehicle_insurance_status"], "unknown")
+            self.assertEqual(db_record(storage_dir, infrastructure)["vehicle_insurance_status"], "unknown")
+
+    def test_owner_vehicle_insurance_update_does_not_touch_neighboring_photos(self):
+        with TemporaryDirectory() as tmp:
+            storage_dir = Path(tmp)
+            private_dir = storage_dir / "private"
+            token = "owner-token-123"
+            first = save_field_photo(
+                upload(image_bytes("PNG"), filename="moje.png"),
+                storage_dir,
+                map_lat="51.300000",
+                map_lon="17.400000",
+                private_dir=private_dir,
+                edit_token=token,
+            )["photo"]["id"]
+            neighbor = save_field_photo(
+                upload(image_bytes("PNG"), filename="sasiednie.png"),
+                storage_dir,
+                map_lat="51.300004",
+                map_lon="17.400000",
+                private_dir=private_dir,
+            )["photo"]["id"]
+
+            review_field_photo_by_owner(
+                first,
+                token,
+                storage_dir,
+                redactions=[],
+                vehicle_insurance_status="uninsured",
+                private_dir=private_dir,
+            )
+
+            self.assertEqual(db_record(storage_dir, first)["vehicle_insurance_status"], "uninsured")
+            self.assertEqual(db_record(storage_dir, neighbor)["vehicle_insurance_status"], "unknown")
+
+    def test_vehicle_insurance_status_is_vehicle_only(self):
+        with TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "Status OC"):
+                save_field_photo(
+                    upload(image_bytes("PNG"), filename="teren.png"),
+                    Path(tmp),
+                    map_lat="51.3",
+                    map_lon="17.4",
+                    issue_type="infrastructure",
+                    private_dir=Path(tmp) / "private",
+                    vehicle_insurance_status="insured",
+                )
+
+            with self.assertRaisesRegex(ValueError, "status OC"):
+                save_field_photo(
+                    upload(image_bytes("PNG"), filename="teren.png"),
+                    Path(tmp),
+                    map_lat="51.3",
+                    map_lon="17.4",
+                    private_dir=Path(tmp) / "private",
+                    vehicle_insurance_status="maybe",
+                )
 
     def test_save_field_photo_uses_map_point_for_invalid_exif_gps(self):
         with TemporaryDirectory() as tmp:

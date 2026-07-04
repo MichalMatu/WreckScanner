@@ -373,7 +373,10 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
         self.assertIn("bindPopup(vehicleGroupPopup(group), mapPopupOptions())", vehicle_layer_js)
         self.assertIn("mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo')", vehicle_layer_js)
-        self.assertIn("popupHeader(title, popupElapsedAgeBadge(group.photos))", vehicle_layer_js)
+        self.assertIn(
+            "popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])",
+            vehicle_layer_js,
+        )
         self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
@@ -502,6 +505,75 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("modal.fieldPhotoSummary.submit", i18n_js)
         self.assertIn("modal.fieldPhotoSummary.discard", i18n_js)
         self.assertIn("returnToFieldPhotoSummary", review_js)
+
+    def test_vehicle_insurance_ufg_badge_is_shared_and_editable(self):
+        html = read_index_html()
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        popups_js = (ROOT_DIR / "web" / "app" / "popups.js").read_text(encoding="utf-8")
+        field_photo_popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
+        upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
+        review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        popups_css = (ROOT_DIR / "web" / "styles" / "popups.css").read_text(encoding="utf-8")
+        forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
+        review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
+        frontend = html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + i18n_js
+
+        self.assertIn("const UFG_OC_CHECK_URL = 'https://www.ufg.pl/';", config_js)
+        self.assertIn("FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES", config_js)
+        self.assertIn('id="field-photo-insurance-section"', html)
+        self.assertIn('id="field-photo-insurance-status"', html)
+        self.assertIn('id="photo-review-vehicle-insurance-section"', html)
+        self.assertIn('id="photo-review-vehicle-insurance"', html)
+        self.assertIn('href="https://www.ufg.pl/" target="_blank"', html)
+        self.assertIn("function vehicleInsuranceHeaderBadge", popups_js)
+        self.assertIn(
+            "function vehicleGroupInsuranceStatus",
+            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            "vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group))",
+            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
+        )
+        self.assertNotIn('class="map-popup-photo-tile"', popups_js)
+        self.assertIn('class="map-popup-photo"', popups_js)
+        self.assertNotIn("${vehicleInsuranceUfgBadge(photo)}", popups_js)
+        self.assertIn("href: UFG_OC_CHECK_URL", popups_js)
+        self.assertIn('href="${escapeHtml(badge.href)}"', popups_js)
+        self.assertNotIn(
+            "vehicleInsuranceStatus: fieldPhotoIssueType(photo) === FIELD_PHOTO_ISSUE_TYPE_VEHICLE",
+            field_photo_popups_js,
+        )
+        self.assertIn("formData.append('vehicle_insurance_status'", upload_js)
+        self.assertIn("photoReviewVehicleInsurancePayload", review_js)
+        self.assertIn("vehicle_insurance_status", review_js)
+        self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
+        self.assertIn(".map-popup-head-value--insurance-uninsured", popups_css)
+        self.assertNotIn(".map-popup-ufg-link", popups_css)
+        self.assertIn(".field-photo-insurance-head", forms_css)
+        self.assertIn(".photo-review-insurance", review_css)
+        for key in (
+            "fieldPhoto.vehicleInsurance.unknown",
+            "fieldPhoto.vehicleInsurance.insured",
+            "fieldPhoto.vehicleInsurance.uninsured",
+            "fieldPhoto.vehicleInsurance.badge.insured",
+            "fieldPhoto.vehicleInsurance.badge.uninsured",
+            "fieldPhoto.vehicleInsurance.ufgTitle",
+            "modal.photoReview.vehicleInsurance",
+        ):
+            self.assertIn(key, frontend)
+
+    def test_modal_select_options_keep_dark_theme(self):
+        html = read_index_html()
+        forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
+        privacy_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
+
+        self.assertIn("<select", html + privacy_js)
+        self.assertIn("select.modal-input option", forms_css)
+        self.assertIn(".report-form select option", forms_css)
+        self.assertIn("background-color: var(--surface-elevated-solid);", forms_css)
+        self.assertIn("color: var(--text-strong);", forms_css)
+        self.assertIn("color-scheme: dark;", forms_css)
 
     def test_field_photo_panel_pick_uses_map_hint_after_closing_menu(self):
         html = read_index_html()

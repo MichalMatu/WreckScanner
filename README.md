@@ -26,7 +26,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 
 - mapa Leaflet z podkladami `POL`, `OSM` oraz rocznikami Wroclawia `2020-2025`,
 - zdjecia terenowe w SQLite z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
-- warstwa pojazdow budowana z zatwierdzonych zdjec terenowych,
+- warstwa pojazdow budowana z zatwierdzonych zdjec terenowych, z recznym statusem OC/UFG dla grupy wraku,
 - automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
 - pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
 - panel administratora dla zdjec, zgloszen prywatnosci, retencji oryginalow i widocznosci warstw,
@@ -70,4 +70,4 @@ make smoke
 make e2e-report
 ```
 
-`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> ZIP/PDF.
+`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport ZIP/PDF z OC/UFG.

@@ -89,11 +89,18 @@ const FIELD_PHOTO_MAX_FILES = 25;
 const FIELD_PHOTO_EDIT_TOKEN_MIN_LENGTH = 8;
 const FIELD_PHOTO_EDIT_TOKEN_MAX_LENGTH = 80;
 const FIELD_PHOTO_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const UFG_OC_CHECK_URL = 'https://www.ufg.pl/';
 const FIELD_PHOTO_ISSUE_TYPE_VEHICLE = 'vehicle';
 const FIELD_PHOTO_ISSUE_TYPES = new Set([
     FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
     'infrastructure',
     'smoke',
+]);
+const FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN = 'unknown';
+const FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES = new Set([
+    FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN,
+    'insured',
+    'uninsured',
 ]);
 const FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
     vehicle: PUBLIC_LAYER_KEYS.vehicles,

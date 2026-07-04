@@ -61,6 +61,13 @@ FIELD_PHOTO_ISSUE_TYPES = {
     "infrastructure": "niebezpieczna infrastruktura",
     "smoke": "dym papierosowy",
 }
+DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS = "unknown"
+FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES = {
+    "unknown": "nie sprawdzono OC",
+    "insured": "pojazd ma OC",
+    "uninsured": "brak OC",
+}
+FIELD_PHOTO_GROUP_RADIUS_M = 1.0
 
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"
 MAX_REPORT_PACKAGE_BODY_BYTES = 2 * BYTES_PER_MIB

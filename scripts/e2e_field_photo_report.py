@@ -176,6 +176,7 @@ def upload_field_photo(client: HttpClient, *, lat: float, lon: float) -> str:
             "map_lat": f"{lat:.6f}",
             "map_lon": f"{lon:.6f}",
             "issue_type": "vehicle",
+            "vehicle_insurance_status": "uninsured",
         },
         [("photo", "wreckscanner_e2e.jpg", "image/jpeg", image_bytes())],
     )
@@ -184,6 +185,7 @@ def upload_field_photo(client: HttpClient, *, lat: float, lon: float) -> str:
     photo_id = str(photo.get("id") or "")
     expect(photo_id.startswith("photo_"), "Upload nie zwrócił identyfikatora zdjęcia.")
     expect(photo.get("public_review_status") == "pending", "Upload admina powinien utworzyć zdjęcie pending.")
+    expect(photo.get("vehicle_insurance_status") == "uninsured", "Upload nie zapisał statusu OC/UFG.")
     return photo_id
 
 
@@ -191,11 +193,12 @@ def approve_field_photo(client: HttpClient, photo_id: str) -> dict[str, Any]:
     data = client.json(
         "PATCH",
         f"/api/admin/photos/field/{quote(photo_id)}/review",
-        payload={"public_review_status": "approved", "redactions": []},
+        payload={"public_review_status": "approved", "redactions": [], "vehicle_insurance_status": "insured"},
     )
     photo = data.get("photo") if isinstance(data.get("photo"), dict) else {}
     expect(photo.get("id") == photo_id, "Review nie zwrócił zatwierdzonego zdjęcia.")
     expect(photo.get("public_review_status") == "approved", "Zdjęcie po review nie jest approved.")
+    expect(photo.get("vehicle_insurance_status") == "insured", "Review nie zaktualizował statusu OC/UFG.")
     expect(photo.get("public_image"), "Zatwierdzone zdjęcie nie ma public_image.")
     expect(photo.get("public_thumb"), "Zatwierdzone zdjęcie nie ma public_thumb.")
     return photo
@@ -210,6 +213,7 @@ def public_photo(client: HttpClient, photo_id: str) -> dict[str, Any]:
     for key in ("edit_token", "edit_token_hash", "edit_token_salt", "private_original_file", "submission_owner"):
         expect(key not in photo, f"Publiczne API ujawnia prywatne pole {key}.")
     expect(photo.get("issue_type") == "vehicle", "Publiczne zdjęcie nie ma typu vehicle.")
+    expect(photo.get("vehicle_insurance_status") == "insured", "Publiczne API nie zwraca statusu OC/UFG.")
     expect(photo.get("public_image") and photo.get("public_thumb"), "Publiczne zdjęcie nie ma publicznych assetów.")
     return photo
 
@@ -242,6 +246,10 @@ def create_report_package(client: HttpClient, photo_id: str, *, lat: float, lon:
     )
     expect(data.get("status") == "ok", f"Raport nie zwrócił statusu ok: {data!r}")
     expect(data.get("photo_count") == 1, "Raport powinien zawierać jedno zatwierdzone zdjęcie.")
+    expect(
+        "Wynik ręcznego sprawdzenia: pojazd ma OC" in str(data.get("body") or ""),
+        "Raport nie zawiera statusu OC/UFG w treści zgłoszenia.",
+    )
     zip_bytes = base64.b64decode(str(data.get("zip_base64") or ""))
     pdf_bytes = base64.b64decode(str(data.get("pdf_base64") or ""))
     expect(zip_bytes[:2] == b"PK", "ZIP raportu nie ma poprawnego nagłówka.")
@@ -262,6 +270,16 @@ def create_report_package(client: HttpClient, photo_id: str, *, lat: float, lon:
             "ZIP nie powinien zawierać technicznych JSON-ów evidence.",
         )
         expect(not any("original" in name for name in names), "ZIP nie powinien zawierać prywatnego oryginału.")
+        text = archive.read("zgloszenie.txt").decode("utf-8")
+        html = archive.read("raport.html").decode("utf-8")
+        expect(
+            "Wynik ręcznego sprawdzenia: pojazd ma OC" in text,
+            "zgloszenie.txt nie zawiera statusu OC/UFG.",
+        )
+        expect(
+            "Wynik ręcznego sprawdzenia: pojazd ma OC" in html,
+            "raport.html nie zawiera statusu OC/UFG.",
+        )
     return data
 
 

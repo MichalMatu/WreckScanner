@@ -22,6 +22,21 @@
                         <option value="smoke" data-i18n="fieldPhoto.issueType.smoke">Zanieczyszczone powietrze</option>
                     </select>
                 </section>
+                <section class="modal-section field-photo-insurance-section" id="field-photo-insurance-section" hidden>
+                    <div class="field-photo-insurance-head">
+                        <label class="modal-label" for="field-photo-insurance-status"
+                            data-i18n="modal.fieldPhoto.vehicleInsurance">OC / UFG</label>
+                        <a class="field-photo-insurance-link" href="https://www.ufg.pl/" target="_blank"
+                            rel="noopener" data-i18n="modal.fieldPhoto.vehicleInsuranceUfg">Sprawdź w UFG</a>
+                    </div>
+                    <select class="modal-input" id="field-photo-insurance-status">
+                        <option value="unknown" data-i18n="fieldPhoto.vehicleInsurance.unknown">Nie sprawdzono</option>
+                        <option value="insured" data-i18n="fieldPhoto.vehicleInsurance.insured">Ma OC</option>
+                        <option value="uninsured" data-i18n="fieldPhoto.vehicleInsurance.uninsured">Brak OC</option>
+                    </select>
+                    <p class="modal-hint" data-i18n="modal.fieldPhoto.vehicleInsuranceHint">Status ustaw po ręcznym
+                        sprawdzeniu pojazdu w UFG. Aplikacja nie zapisuje tablic ani VIN.</p>
+                </section>
                 <section class="modal-section">
                     <label class="modal-label" for="field-photo-files" data-i18n="modal.fieldPhoto.files">Pliki
                         zdjęć</label>
@@ -178,6 +193,21 @@
                 <div class="photo-review-layout">
                     <div class="photo-review-list" id="photo-review-list"></div>
                     <section class="photo-review-editor">
+                        <section class="photo-review-insurance" id="photo-review-vehicle-insurance-section" hidden>
+                            <div class="field-photo-insurance-head">
+                                <label class="modal-label" for="photo-review-vehicle-insurance"
+                                    data-i18n="modal.photoReview.vehicleInsurance">Status OC / UFG</label>
+                                <a class="field-photo-insurance-link" href="https://www.ufg.pl/" target="_blank"
+                                    rel="noopener" data-i18n="modal.fieldPhoto.vehicleInsuranceUfg">Sprawdź w UFG</a>
+                            </div>
+                            <select class="modal-input" id="photo-review-vehicle-insurance">
+                                <option value="unknown" data-i18n="fieldPhoto.vehicleInsurance.unknown">Nie sprawdzono</option>
+                                <option value="insured" data-i18n="fieldPhoto.vehicleInsurance.insured">Ma OC</option>
+                                <option value="uninsured" data-i18n="fieldPhoto.vehicleInsurance.uninsured">Brak OC</option>
+                            </select>
+                            <p class="modal-hint" data-i18n="modal.photoReview.vehicleInsuranceHint">Admin zapisuje
+                                ten wynik dla wszystkich zdjęć pojazdu z tej samej pinezki.</p>
+                        </section>
                         <canvas id="photo-review-canvas"></canvas>
                         <p class="modal-hint" id="photo-review-empty" data-i18n="modal.photoReview.empty">Wybierz
                             zdjęcie z kolejki.</p>

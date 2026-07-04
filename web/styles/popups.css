@@ -123,6 +123,10 @@
     overflow-wrap: anywhere;
 }
 
+a.map-popup-head-value {
+    text-decoration: none;
+}
+
 .map-popup-head-value--age {
     background: var(--popup-age-surface);
     color: var(--popup-age-text);
@@ -131,6 +135,24 @@
 .map-popup-head-value--status {
     background: var(--popup-status-surface);
     color: var(--popup-status-text);
+}
+
+.map-popup-head-value--insurance-unknown {
+    border: 1px solid var(--popup-ufg-unknown-border);
+    background: var(--popup-ufg-unknown-bg);
+    color: var(--popup-ufg-unknown-text);
+}
+
+.map-popup-head-value--insurance-insured {
+    border: 1px solid var(--popup-ufg-insured-border);
+    background: var(--popup-ufg-insured-bg);
+    color: var(--popup-ufg-insured-text);
+}
+
+.map-popup-head-value--insurance-uninsured {
+    border: 1px solid var(--popup-ufg-uninsured-border);
+    background: var(--popup-ufg-uninsured-bg);
+    color: var(--popup-ufg-uninsured-text);
 }
 
 .map-popup-meta {

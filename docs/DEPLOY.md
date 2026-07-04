@@ -83,7 +83,8 @@ make e2e-report
 ```
 
 `make e2e-report` wymaga dzialajacego WMS i Chromium. Test tworzy tymczasowe
-zdjecie, generuje raport ZIP/PDF z cropami mapy i usuwa testowe pliki po sobie.
+zdjecie, generuje raport ZIP/PDF z cropami mapy i statusem OC/UFG, a potem usuwa
+testowe pliki po sobie.
 
 ## Rollback
 

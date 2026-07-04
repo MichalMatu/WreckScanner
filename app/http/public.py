@@ -218,6 +218,7 @@ def handle_create_field_photo(handler) -> None:
             map_lat=fields.get("map_lat"),
             map_lon=fields.get("map_lon"),
             issue_type=issue_type,
+            vehicle_insurance_status=fields.get("vehicle_insurance_status"),
             private_dir=core_config.PRIVATE_PHOTOS_DIR,
             submission_owner=None if is_admin else access.submission_owner(handler),
             edit_token=None if is_admin else edit_token,
@@ -270,6 +271,7 @@ def handle_owner_review_field_photo(handler, photo_id: str) -> None:
             data.get("edit_token"),
             core_config.FIELD_PHOTOS_DIR,
             redactions=data.get("redactions") or [],
+            vehicle_insurance_status=data.get("vehicle_insurance_status"),
             private_dir=core_config.PRIVATE_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)
