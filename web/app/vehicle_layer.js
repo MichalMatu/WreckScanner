@@ -186,7 +186,7 @@ function placeVehicleMarkers() {
     buildVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
         const marker = L.marker([group.lat, group.lon], {
-            icon: vehicleIcon(vehicleGroupPhotoCount(group)),
+            icon: vehicleIcon(vehicleGroupPhotoCount(group), 'approved', vehicleGroupInsuranceStatus(group)),
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,

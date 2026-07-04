@@ -4,6 +4,10 @@
 }
 
 .vehicle-pin {
+    --pin-vehicle-current-ring: var(--pin-vehicle-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-vehicle-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-vehicle-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-vehicle-glyph);
     width: 34px;
     height: 34px;
     border-radius: 50% 50% 50% 0;
@@ -14,14 +18,36 @@
     box-sizing: border-box;
     background: var(--pin-vehicle-bg);
     color: transparent;
-    border: 2px solid var(--pin-vehicle-ring);
-    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-ring-soft);
+    border: 2px solid var(--pin-vehicle-current-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-current-ring-soft);
     transform: rotate(-45deg);
 }
 
 .vehicle-pin--with-photos {
-    border-color: var(--pin-vehicle-photo-ring);
-    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-photo-halo);
+    --pin-vehicle-current-ring: var(--pin-vehicle-photo-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-vehicle-photo-halo);
+    --pin-vehicle-current-inner-ring: var(--pin-vehicle-inner-ring);
+}
+
+.vehicle-pin--insurance-unknown {
+    --pin-vehicle-current-ring: var(--pin-insurance-unknown-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-unknown-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-unknown-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-unknown-ring);
+}
+
+.vehicle-pin--insurance-insured {
+    --pin-vehicle-current-ring: var(--pin-insurance-insured-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-insured-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-insured-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-insured-ring);
+}
+
+.vehicle-pin--insurance-uninsured {
+    --pin-vehicle-current-ring: var(--pin-insurance-uninsured-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-uninsured-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-uninsured-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-uninsured-ring);
 }
 
 .vehicle-pin--pending {
@@ -41,14 +67,14 @@
     position: absolute;
     inset: 7px;
     border-radius: 50%;
-    border: 1px solid var(--pin-vehicle-inner-ring);
+    border: 1px solid var(--pin-vehicle-current-inner-ring);
 }
 
 .vehicle-pin-glyph {
     width: 16px;
     height: 8px;
     border-radius: 4px 4px 2px 2px;
-    background: var(--pin-vehicle-glyph);
+    background: var(--pin-vehicle-current-glyph);
     transform: rotate(45deg);
     position: absolute;
     box-shadow: var(--pin-glyph-shadow);
@@ -61,7 +87,7 @@
     top: -5px;
     width: 10px;
     height: 6px;
-    border: 2px solid var(--pin-vehicle-glyph);
+    border: 2px solid var(--pin-vehicle-current-glyph);
     border-bottom: 0;
     border-radius: 6px 6px 1px 1px;
     box-sizing: border-box;
@@ -75,8 +101,8 @@
     width: 3px;
     height: 3px;
     border-radius: 50%;
-    background: var(--pin-vehicle-glyph);
-    box-shadow: 9px 0 0 var(--pin-vehicle-glyph);
+    background: var(--pin-vehicle-current-glyph);
+    box-shadow: 9px 0 0 var(--pin-vehicle-current-glyph);
 }
 
 .vehicle-pin--pending::before {
@@ -275,14 +301,9 @@
     height: 16px;
     border-radius: 50%;
     background: var(--pin-vehicle-bg);
-    border: 3px solid var(--pin-vehicle-ring);
-    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-ring-soft);
+    border: 3px solid var(--pin-vehicle-current-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-current-ring-soft);
     transform: translate(9px, 26px);
-}
-
-.marker-detail--dots .vehicle-pin--with-photos {
-    border-color: var(--pin-vehicle-photo-ring);
-    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-photo-halo);
 }
 
 .marker-detail--dots .vehicle-pin--pending {

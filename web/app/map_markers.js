@@ -4,12 +4,16 @@ function countBadge(count, className) {
     return `<span class="map-pin-count ${className}">${numericCount}</span>`;
 }
 
-function vehicleIcon(photoCount = 0, reviewStatus = 'approved') {
+function vehicleIcon(photoCount = 0, reviewStatus = 'approved', insuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) {
     const numericCount = Math.max(0, Math.floor(Number(photoCount) || 0));
     const badge = countBadge(numericCount, 'vehicle-pin-count');
     const safeStatus = reviewStatus === 'pending' || reviewStatus === 'rejected' ? reviewStatus : 'approved';
+    const safeInsuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES.has(insuranceStatus)
+        ? insuranceStatus
+        : FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
     const classes = ['vehicle-pin', `vehicle-pin--${safeStatus}`];
     if (numericCount > 0) classes.push('vehicle-pin--with-photos');
+    if (safeStatus === 'approved') classes.push(`vehicle-pin--insurance-${safeInsuranceStatus}`);
     const className = classes.join(' ');
     const html = `<div class="${className}"><span class="vehicle-pin-glyph" aria-hidden="true"></span>${badge}</div>`;
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });

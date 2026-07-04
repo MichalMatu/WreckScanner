@@ -94,6 +94,15 @@
     --pin-vehicle-photo-ring: #86efac;
     --pin-vehicle-photo-halo: rgba(249, 115, 22, 0.24);
     --pin-vehicle-dot-border: #ecfdf5;
+    --pin-insurance-unknown-ring: #d4d4d8;
+    --pin-insurance-unknown-ring-soft: rgba(212, 212, 216, 0.18);
+    --pin-insurance-unknown-inner-ring: rgba(212, 212, 216, 0.42);
+    --pin-insurance-insured-ring: var(--success);
+    --pin-insurance-insured-ring-soft: var(--success-soft);
+    --pin-insurance-insured-inner-ring: rgba(16, 185, 129, 0.48);
+    --pin-insurance-uninsured-ring: var(--danger);
+    --pin-insurance-uninsured-ring-soft: var(--danger-soft);
+    --pin-insurance-uninsured-inner-ring: rgba(239, 68, 68, 0.52);
     --pin-pending-bg: #1f2937;
     --pin-vehicle-pending-bg: #422006;
     --pin-pending-ring: #fbbf24;
