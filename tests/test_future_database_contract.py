@@ -9,6 +9,10 @@ class FutureDatabaseContractTests(unittest.TestCase):
     def test_future_database_contract_names_only_target_tables(self):
         doc = (ROOT_DIR / "docs" / "FUTURE_DATABASE.md").read_text(encoding="utf-8")
 
+        self.assertIn("SQLite z trybem WAL", doc)
+        self.assertIn("database/migrations/", doc)
+        self.assertIn("`schema_migrations`", doc)
+
         for table in ("field_photos", "settings", "privacy_requests"):
             self.assertRegex(doc, rf"`{table}`")
 

@@ -39,6 +39,17 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("test ! -e zidentyfikowane_wraki", doc)
         self.assertIn("scripts/check.sh", doc)
 
+    def test_release_candidate_doc_freezes_baseline_and_next_goal(self):
+        doc = (ROOT_DIR / "docs" / "RELEASE_CANDIDATE.md").read_text(encoding="utf-8")
+
+        self.assertIn("restic snapshot: `4aaaca53`", doc)
+        self.assertIn("zdjecia terenowe: `270`", doc)
+        self.assertIn("typy zdjec: `vehicle=240`, `infrastructure=29`, `smoke=1`", doc)
+        self.assertIn("zgloszenia prywatnosci: `0`", doc)
+        self.assertIn("Kontrakt bazy: SQLite/WAL", doc)
+        self.assertIn("Migracja JSON -> DB", doc)
+        self.assertIn("tag `v1.0.0-rc1`", doc)
+
     def test_removed_development_docs_stay_removed(self):
         removed = (
             "ADMIN_PASSWORD_ROTATION.md",

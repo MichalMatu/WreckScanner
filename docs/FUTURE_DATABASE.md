@@ -3,6 +3,18 @@
 Ten dokument opisuje docelowy model bazy danych po rozplątaniu starego wzorca spraw.
 Nie jest instrukcją uruchomienia bazy teraz. To kontrakt dla przyszłej migracji.
 
+## Decyzja storage
+
+Pierwszy produkcyjny storage to SQLite z trybem WAL:
+
+- jeden lokalny operator aplikacji i lokalny katalog zdjęć nie wymagają PostgreSQL,
+- plik bazy łatwo objąć backupem razem z katalogami zdjęć,
+- WAL daje bezpieczniejsze współdzielenie krótkich odczytów i zapisów,
+- PostgreSQL zostaje opcją dopiero dla równoległego hostingu wielu operatorów.
+
+Migracje SQL są w `database/migrations/`. Runtime nie może tworzyć tabel poza
+kontraktem opisanym niżej.
+
 ## Źródło prawdy
 
 Docelowa baza ma przejąć tylko dane użytkowe, które są stanem aplikacji:
@@ -11,7 +23,7 @@ Docelowa baza ma przejąć tylko dane użytkowe, które są stanem aplikacji:
 - `settings` - trwałe ustawienia aplikacji i publicznych przełączników.
 - `privacy_requests` - zgłoszenia prywatności oraz ich status obsługi.
 
-Małe tabele pomocnicze są dopuszczalne tylko wtedy, gdy normalizują powyższe dane bez tworzenia nowej domeny. Przykłady: historia zmian statusu prywatności, tokeny edycji zdjęć, kontrolowane słowniki typów obserwacji.
+Małe tabele pomocnicze są dopuszczalne tylko wtedy, gdy normalizują powyższe dane bez tworzenia nowej domeny. Przykłady: `schema_migrations`, historia zmian statusu prywatności, tokeny edycji zdjęć, kontrolowane słowniki typów obserwacji.
 
 ## Czego nie modelować
 
