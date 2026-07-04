@@ -16,8 +16,7 @@ function openWelcomeModalFromAdminPanel() {
         localStorage.removeItem(WELCOME_MODAL_SEEN_STORAGE_KEY);
         localStorage.removeItem(`${MODAL_POSITION_STORAGE_PREFIX}modal-help`);
     } catch (_) {}
-    closeModal(document.getElementById('modal-admin-panel'));
-    openModal('modal-help');
+    openAdminChildModal('modal-help');
 }
 
 openWelcomeModalIfNeeded();

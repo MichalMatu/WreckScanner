@@ -90,7 +90,7 @@ function selectPrivacyRequest(requestId) {
 
 async function openPrivacyRequestsModal() {
     if (!(await ensureAdmin())) return;
-    openModal('modal-privacy-requests');
+    openAdminChildModal('modal-privacy-requests');
     await loadPrivacyRequestQueue();
 }
 

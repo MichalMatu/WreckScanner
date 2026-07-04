@@ -242,7 +242,7 @@ async function openPhotoReviewModal() {
     const search = document.getElementById('photo-review-search');
     if (filter) filter.value = 'pending';
     if (search) search.value = '';
-    openModal('modal-photo-review');
+    openAdminChildModal('modal-photo-review');
     await loadPhotoReviewQueue();
 }
 

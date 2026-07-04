@@ -131,6 +131,15 @@ async function openSettingsModal() {
     openModal('modal-settings');
 }
 
+function isAdminPanelOpen() {
+    const modal = document.getElementById('modal-admin-panel');
+    return Boolean(modal && !modal.hidden);
+}
+
+function openAdminChildModal(id) {
+    openModal(id, { preserveOpen: isAdminPanelOpen() });
+}
+
 async function openAdminPanel() {
     if (!(await ensureAdmin())) return;
     if (typeof updatePublicLayerAccess === 'function') updatePublicLayerAccess();
@@ -139,6 +148,6 @@ async function openAdminPanel() {
 
 async function openPhotoRetentionModal() {
     if (!(await ensureAdmin())) return;
-    openModal('modal-photo-retention');
+    openAdminChildModal('modal-photo-retention');
     if (typeof loadPhotoRetentionStatus === 'function') loadPhotoRetentionStatus();
 }

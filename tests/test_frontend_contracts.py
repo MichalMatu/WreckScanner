@@ -97,6 +97,49 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("linear-gradient(135deg, var(--primary-soft)", admin_css)
         self.assertNotIn("background: rgba(255, 255, 255, 0.045);", admin_css)
 
+    def test_admin_panel_uses_compact_shell_and_preserves_child_flow(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
+        admin_js = (ROOT_DIR / "web" / "admin.js").read_text(encoding="utf-8")
+        photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        privacy_requests_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
+        welcome_js = (ROOT_DIR / "web" / "app" / "welcome.js").read_text(encoding="utf-8")
+        admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
+        modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
+        i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
+        frontend = (
+            html
+            + ui_js
+            + admin_js
+            + photo_review_js
+            + privacy_requests_js
+            + welcome_js
+            + admin_css
+            + modals_css
+            + i18n_js
+        )
+
+        self.assertIn('class="admin-panel-stack"', html)
+        self.assertIn("grid-template-columns: minmax(260px, 0.82fr) minmax(360px, 1.18fr);", admin_css)
+        self.assertIn("width: min(860px, calc(100vw - 24px));", modals_css)
+        self.assertIn("'modal.adminPanel.publicLayers': 'Warstwy'", i18n_js)
+        self.assertIn("'modal.adminPanel.publicFeatures': 'Funkcje'", i18n_js)
+        self.assertIn("'modal.adminPanel.publicFeatures': 'Features'", i18n_js)
+        self.assertNotIn("Warstwy dla niezalogowanych", html + i18n_js)
+        self.assertNotIn("Funkcje dla niezalogowanych", html + i18n_js)
+        self.assertNotIn("Features for signed-out users", html + i18n_js)
+        self.assertNotIn("Layers for signed-out users", html + i18n_js)
+        self.assertIn("function topOpenModalBackdrop()", ui_js)
+        self.assertIn("hideModalBackdrop(topOpenModalBackdrop());", ui_js)
+        self.assertNotIn("querySelectorAll('.modal-backdrop:not([hidden])').forEach(hideModalBackdrop)", ui_js)
+        self.assertIn("function openAdminChildModal(id)", admin_js)
+        self.assertIn("openModal(id, { preserveOpen: isAdminPanelOpen() });", admin_js)
+        self.assertIn("openAdminChildModal('modal-photo-retention')", admin_js)
+        self.assertIn("openAdminChildModal('modal-photo-review')", photo_review_js)
+        self.assertIn("openAdminChildModal('modal-privacy-requests')", privacy_requests_js)
+        self.assertIn("openAdminChildModal('modal-help')", welcome_js)
+        self.assertNotIn("closeModal(document.getElementById('modal-admin-panel'))", frontend)
+
     def test_admin_panel_does_not_duplicate_field_photo_upload_entry(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
 

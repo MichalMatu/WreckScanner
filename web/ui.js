@@ -65,6 +65,14 @@ function openModal(id, options = {}) {
     restoreDraggableModalPosition(modal);
 }
 
+function openModalBackdrops() {
+    return Array.from(document.querySelectorAll('.modal-backdrop:not([hidden])'));
+}
+
+function topOpenModalBackdrop() {
+    return openModalBackdrops().at(-1) || null;
+}
+
 function hideModalBackdrop(backdrop) {
     if (!(backdrop instanceof Element) || !backdrop.classList.contains('modal-backdrop') || backdrop.hidden) return;
     backdrop.dispatchEvent(new CustomEvent('modalclose', { detail: { id: backdrop.id } }));
@@ -76,7 +84,7 @@ function closeModal(target) {
     if (target instanceof Element && target.classList.contains('modal-backdrop')) {
         hideModalBackdrop(target);
     } else {
-        document.querySelectorAll('.modal-backdrop:not([hidden])').forEach(hideModalBackdrop);
+        hideModalBackdrop(topOpenModalBackdrop());
     }
 }
 document.addEventListener('keydown', (e) => {

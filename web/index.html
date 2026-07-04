@@ -366,43 +366,71 @@
                 </div>
             </div>
             <div class="modal-body admin-panel-body">
-                <section class="modal-section admin-panel-section">
-                    <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
-                    <div class="admin-panel-actions">
-                        <button type="button" class="admin-panel-action admin-only" id="open-photo-review"
-                            onclick="openPhotoReviewModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm7.5-6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
-                            </svg>
-                            <span data-i18n="icon.photoReview">Przegląd zdjęć</span>
-                        </button>
-                        <button type="button" class="admin-panel-action admin-only" id="open-privacy-requests"
-                            onclick="openPrivacyRequestsModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M5 4h14v16H5V4zm2 2v12h10V6H7zm2 2h6v2H9V8zm0 4h6v2H9v-2zm0 4h4v2H9v-2z" />
-                            </svg>
-                            <span data-i18n="icon.privacyRequests">Zgłoszenia prywatności</span>
-                        </button>
-                        <button type="button" class="admin-panel-action admin-only" id="open-photo-retention"
-                            onclick="openPhotoRetentionModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M6 3h12l1 4H5l1-4zm1 6h10v10H7V9zm2 2v6h6v-6H9zm1 1h4v2h-4v-2z" />
-                            </svg>
-                            <span data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</span>
-                        </button>
-                        <button type="button" class="admin-panel-action admin-only" id="open-welcome-modal"
-                            onclick="openWelcomeModalFromAdminPanel()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
-                            </svg>
-                            <span data-i18n="icon.welcomeModal">Pokaż powitanie</span>
-                        </button>
-                    </div>
-                </section>
+                <div class="admin-panel-stack">
+                    <section class="modal-section admin-panel-section">
+                        <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
+                        <div class="admin-panel-actions">
+                            <button type="button" class="admin-panel-action admin-only" id="open-photo-review"
+                                onclick="openPhotoReviewModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm7.5-6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                                </svg>
+                                <span data-i18n="icon.photoReview">Przegląd zdjęć</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-privacy-requests"
+                                onclick="openPrivacyRequestsModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M5 4h14v16H5V4zm2 2v12h10V6H7zm2 2h6v2H9V8zm0 4h6v2H9v-2zm0 4h4v2H9v-2z" />
+                                </svg>
+                                <span data-i18n="icon.privacyRequests">Zgłoszenia prywatności</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-photo-retention"
+                                onclick="openPhotoRetentionModal()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 3h12l1 4H5l1-4zm1 6h10v10H7V9zm2 2v6h6v-6H9zm1 1h4v2h-4v-2z" />
+                                </svg>
+                                <span data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</span>
+                            </button>
+                            <button type="button" class="admin-panel-action admin-only" id="open-welcome-modal"
+                                onclick="openWelcomeModalFromAdminPanel()" hidden>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                                </svg>
+                                <span data-i18n="icon.welcomeModal">Pokaż powitanie</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="modal-section admin-panel-section admin-panel-section--features">
+                        <div class="setting-toggle-row">
+                            <h3 data-i18n="modal.adminPanel.publicFeatures">Funkcje</h3>
+                            <button type="button" class="settings-reset-btn" id="admin-public-features-save"
+                                onclick="savePublicFeatureSettings()" data-i18n="modal.adminPanel.savePublicFeatures">Zapisz</button>
+                        </div>
+                        <div class="admin-layer-grid admin-feature-grid">
+                            <label class="admin-layer-toggle admin-feature-toggle">
+                                <input type="checkbox" id="admin-feature-report-packages" checked>
+                                <span class="admin-feature-copy">
+                                    <span data-i18n="modal.adminPanel.featureReportPackages">Raporty ze zdjęć</span>
+                                    <small data-i18n="modal.adminPanel.featureReportPackagesHint">PDF/ZIP ze zdjęć pojazdów.</small>
+                                </span>
+                            </label>
+                            <label class="admin-layer-toggle admin-feature-toggle">
+                                <input type="checkbox" id="admin-feature-photo-uploads" checked>
+                                <span class="admin-feature-copy">
+                                    <span data-i18n="modal.adminPanel.featurePhotoUploads">Dodawanie zdjęć</span>
+                                    <small data-i18n="modal.adminPanel.featurePhotoUploadsHint">Wysyłanie zdjęć z mapy.</small>
+                                </span>
+                            </label>
+                        </div>
+                        <p class="modal-hint" id="admin-public-features-status"
+                            data-i18n="modal.adminPanel.publicFeaturesHint">Określa, co mogą robić niezalogowani.</p>
+                    </section>
+                </div>
 
                 <section class="modal-section admin-panel-section admin-panel-section--layers">
                     <div class="setting-toggle-row">
-                        <h3 data-i18n="modal.adminPanel.publicLayers">Warstwy dla niezalogowanych</h3>
+                        <h3 data-i18n="modal.adminPanel.publicLayers">Warstwy</h3>
                         <button type="button" class="settings-reset-btn" id="admin-public-layers-save"
                             onclick="savePublicLayerSettings()" data-i18n="modal.adminPanel.savePublicLayers">Zapisz</button>
                     </div>
@@ -439,33 +467,7 @@
                         </label>
                     </div>
                     <p class="modal-hint" id="admin-public-layers-status"
-                        data-i18n="modal.adminPanel.publicLayersHint">Administrator nadal widzi wszystkie warstwy; ustawienie ogranicza tylko widok niezalogowanych.</p>
-                </section>
-
-                <section class="modal-section admin-panel-section admin-panel-section--features">
-                    <div class="setting-toggle-row">
-                        <h3 data-i18n="modal.adminPanel.publicFeatures">Funkcje dla niezalogowanych</h3>
-                        <button type="button" class="settings-reset-btn" id="admin-public-features-save"
-                            onclick="savePublicFeatureSettings()" data-i18n="modal.adminPanel.savePublicFeatures">Zapisz</button>
-                    </div>
-                    <div class="admin-layer-grid admin-feature-grid">
-                        <label class="admin-layer-toggle admin-feature-toggle">
-                            <input type="checkbox" id="admin-feature-report-packages" checked>
-                            <span class="admin-feature-copy">
-                                <span data-i18n="modal.adminPanel.featureReportPackages">Raporty ze zdjęć pojazdów</span>
-                                <small data-i18n="modal.adminPanel.featureReportPackagesHint">Generowanie PDF/ZIP z zatwierdzonych zdjęć.</small>
-                            </span>
-                        </label>
-                        <label class="admin-layer-toggle admin-feature-toggle">
-                            <input type="checkbox" id="admin-feature-photo-uploads" checked>
-                            <span class="admin-feature-copy">
-                                <span data-i18n="modal.adminPanel.featurePhotoUploads">Dodawanie nowych zdjęć</span>
-                                <small data-i18n="modal.adminPanel.featurePhotoUploadsHint">Wysyłanie zdjęć terenowych z mapy.</small>
-                            </span>
-                        </label>
-                    </div>
-                    <p class="modal-hint" id="admin-public-features-status"
-                        data-i18n="modal.adminPanel.publicFeaturesHint">Administrator nadal może używać tych funkcji; ustawienie ogranicza tylko niezalogowanych.</p>
+                        data-i18n="modal.adminPanel.publicLayersHint">Określa, które warstwy widzą niezalogowani.</p>
                 </section>
             </div>
         </div>
