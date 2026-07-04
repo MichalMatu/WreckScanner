@@ -2,7 +2,7 @@
 
 WreckScanner to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
 
-Aktualne wydanie: `v2.0`.
+Aktualne wydanie: `v3.1`.
 
 Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i podstawowej dokumentacji potrzebnej do uruchomienia, backupu i pozniejszego serwisu.
 
@@ -46,6 +46,12 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 - [docs/DEPLOY.md](docs/DEPLOY.md) - produkcyjny deploy, sekrety, systemd i rollback.
+
+## Git Flow
+
+- `main` jest linia release-only: jeden commit `Release vX.Y baseline` na wydanie i pasujacy tag, np. `v3.1`.
+- `work/dirty` jest galezia robocza do codziennego rozwoju, poprawek i eksperymentow.
+- Po weryfikacji stan z `work/dirty` trafia na `main` jako squash release baseline.
 
 ## Lokalne Dane
 

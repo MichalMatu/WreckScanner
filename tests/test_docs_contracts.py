@@ -8,13 +8,15 @@ class DocumentationContractTests(unittest.TestCase):
     def test_readme_links_only_essential_docs(self):
         readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("Aktualne wydanie: `v2.0`", readme)
+        self.assertIn("Aktualne wydanie: `v3.1`", readme)
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
         self.assertIn("docs/BACKUP.md", readme)
         self.assertIn("docs/DEPLOY.md", readme)
         self.assertIn("OC/UFG", readme)
+        self.assertIn("`main` jest linia release-only", readme)
+        self.assertIn("`work/dirty` jest galezia robocza", readme)
         self.assertNotIn("docs/AUDIT.md", readme)
         self.assertNotIn("docs/README.en.md", readme)
         self.assertNotIn("RUNTIME_SMOKE", readme)
