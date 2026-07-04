@@ -369,13 +369,6 @@
                 <section class="modal-section admin-panel-section">
                     <h3 data-i18n="modal.adminPanel.tools">Narzędzia</h3>
                     <div class="admin-panel-actions">
-                        <button type="button" class="admin-panel-action admin-only" id="open-field-photo-upload"
-                            onclick="openFieldPhotoUploadModal()" hidden>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.1a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8z" />
-                            </svg>
-                            <span data-i18n="icon.fieldPhotoUpload">Dodaj zdjęcia terenowe</span>
-                        </button>
                         <button type="button" class="admin-panel-action admin-only" id="open-photo-review"
                             onclick="openPhotoReviewModal()" hidden>
                             <svg viewBox="0 0 24 24">
@@ -389,6 +382,13 @@
                                 <path d="M5 4h14v16H5V4zm2 2v12h10V6H7zm2 2h6v2H9V8zm0 4h6v2H9v-2zm0 4h4v2H9v-2z" />
                             </svg>
                             <span data-i18n="icon.privacyRequests">Zgłoszenia prywatności</span>
+                        </button>
+                        <button type="button" class="admin-panel-action admin-only" id="open-photo-retention"
+                            onclick="openPhotoRetentionModal()" hidden>
+                            <svg viewBox="0 0 24 24">
+                                <path d="M6 3h12l1 4H5l1-4zm1 6h10v10H7V9zm2 2v6h6v-6H9zm1 1h4v2h-4v-2z" />
+                            </svg>
+                            <span data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</span>
                         </button>
                         <button type="button" class="admin-panel-action admin-only" id="open-welcome-modal"
                             onclick="openWelcomeModalFromAdminPanel()" hidden>
@@ -467,21 +467,35 @@
                     <p class="modal-hint" id="admin-public-features-status"
                         data-i18n="modal.adminPanel.publicFeaturesHint">Administrator nadal może używać tych funkcji; ustawienie ogranicza tylko niezalogowanych.</p>
                 </section>
+            </div>
+        </div>
+    </div>
 
-                <section class="modal-section admin-panel-section admin-panel-section--retention" id="photo-retention-section">
-                    <div class="setting-toggle-row admin-retention-header">
-                        <h3 data-i18n="modal.settings.photoRetention">Retencja oryginałów</h3>
-                        <div class="setting-actions retention-actions">
-                            <button type="button" class="settings-reset-btn" id="photo-retention-refresh"
-                                onclick="loadPhotoRetentionStatus()"
-                                data-i18n="modal.settings.photoRetentionRefresh">Odśwież</button>
-                            <button type="button" class="settings-reset-btn" id="photo-retention-dry-run"
-                                onclick="runPhotoRetention(true)"
-                                data-i18n="modal.settings.photoRetentionDryRun">Sprawdź bez zmian</button>
-                            <button type="button" class="confirm-danger-btn settings-danger-btn"
-                                id="photo-retention-apply" onclick="runPhotoRetention(false)"
-                                data-i18n="modal.settings.photoRetentionApply">Wykonaj</button>
-                        </div>
+    <!-- ─── MODAL: PORZĄDKOWANIE ORYGINAŁÓW ─────────────────────── -->
+    <div class="modal-backdrop" id="modal-photo-retention" hidden onclick="closeModal(this)">
+        <div class="modal modal--photo-retention draggable-modal" onclick="event.stopPropagation()">
+            <div class="modal-header modal-drag-handle">
+                <h2 data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</h2>
+                <button type="button" class="modal-close" onclick="closeModal()"
+                    data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body photo-retention-body">
+                <section class="modal-section photo-retention-section" id="photo-retention-section">
+                    <div class="setting-actions retention-actions retention-actions--standalone">
+                        <button type="button" class="settings-reset-btn" id="photo-retention-refresh"
+                            onclick="loadPhotoRetentionStatus()"
+                            data-i18n="modal.settings.photoRetentionRefresh">Odśwież</button>
+                        <button type="button" class="settings-reset-btn" id="photo-retention-dry-run"
+                            onclick="runPhotoRetention(true)"
+                            data-i18n="modal.settings.photoRetentionDryRun">Sprawdź bez zmian</button>
+                        <button type="button" class="confirm-danger-btn settings-danger-btn"
+                            id="photo-retention-apply" onclick="runPhotoRetention(false)"
+                            data-i18n="modal.settings.photoRetentionApply">Wykonaj</button>
                     </div>
                     <div class="modal-hint photo-retention-status" id="photo-retention-status" role="status"
                         data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</div>

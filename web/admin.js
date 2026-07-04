@@ -134,6 +134,11 @@ async function openSettingsModal() {
 async function openAdminPanel() {
     if (!(await ensureAdmin())) return;
     if (typeof updatePublicLayerAccess === 'function') updatePublicLayerAccess();
-    if (typeof loadPhotoRetentionStatus === 'function') loadPhotoRetentionStatus();
     openModal('modal-admin-panel');
+}
+
+async function openPhotoRetentionModal() {
+    if (!(await ensureAdmin())) return;
+    openModal('modal-photo-retention');
+    if (typeof loadPhotoRetentionStatus === 'function') loadPhotoRetentionStatus();
 }

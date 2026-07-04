@@ -54,20 +54,34 @@ class FrontendContracts(unittest.TestCase):
 
     def test_photo_retention_admin_status_uses_friendly_card(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+        admin_js = (ROOT_DIR / "web" / "admin.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
+        modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
-        frontend = html + settings_js + admin_css + i18n_js
+        frontend = html + admin_js + settings_js + admin_css + modals_css + i18n_js
 
+        admin_modal = html.split('id="modal-admin-panel"', 1)[1].split('id="modal-photo-retention"', 1)[0]
+        open_admin_panel = admin_js.split("async function openAdminPanel()", 1)[1].split("async function", 1)[0]
+
+        self.assertIn('id="open-photo-retention"', html)
+        self.assertIn('onclick="openPhotoRetentionModal()"', html)
+        self.assertIn('id="modal-photo-retention"', html)
         self.assertIn('id="photo-retention-status" role="status"', html)
+        self.assertNotIn('id="photo-retention-section"', admin_modal)
+        self.assertIn("async function openPhotoRetentionModal()", admin_js)
+        self.assertIn("loadPhotoRetentionStatus()", admin_js)
+        self.assertNotIn("loadPhotoRetentionStatus", open_admin_panel)
         self.assertIn("renderPhotoRetentionReport", settings_js)
         self.assertIn("photo-retention-card", settings_js + admin_css)
         self.assertIn("photo-retention-metrics", settings_js + admin_css)
+        self.assertIn(".modal--photo-retention", modals_css + admin_css)
         self.assertIn("'modal.settings.photoRetention': 'Porządkowanie oryginałów'", i18n_js)
         self.assertIn("'modal.settings.photoRetentionDryRun': 'Sprawdź bez zmian'", i18n_js)
         self.assertIn("'modal.settings.photoRetentionApply': 'Wykonaj'", i18n_js)
         self.assertIn("'modal.settings.photoRetentionScanned': 'Sprawdzone zdjęcia'", i18n_js)
         self.assertIn("'modal.settings.photoRetentionReplaced': 'Zastąpione kopią publiczną'", i18n_js)
+        self.assertNotIn("admin-panel-section--retention", frontend)
         self.assertNotIn("Dry-run: scanned", frontend)
         self.assertNotIn("Applied: scanned", frontend)
         self.assertNotIn("Original retention", frontend)
@@ -82,6 +96,15 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("admin-panel-section--tools", html + admin_css)
         self.assertNotIn("linear-gradient(135deg, var(--primary-soft)", admin_css)
         self.assertNotIn("background: rgba(255, 255, 255, 0.045);", admin_css)
+
+    def test_admin_panel_does_not_duplicate_field_photo_upload_entry(self):
+        html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
+
+        self.assertNotIn('id="open-field-photo-upload"', html)
+        self.assertNotIn('onclick="openFieldPhotoUploadModal()"', html)
+        self.assertIn('id="panel-add-field-photo"', html)
+        self.assertIn('id="context-add-field-photos"', html)
+        self.assertIn('id="open-photo-review"', html)
 
     def test_frontend_removes_retired_vehicle_case_review_panel(self):
         html = (ROOT_DIR / "web" / "index.html").read_text(encoding="utf-8")
@@ -189,6 +212,8 @@ class FrontendContracts(unittest.TestCase):
         map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
+        field_photo_upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
+        map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         reports_js = (ROOT_DIR / "web" / "app" / "reports.js").read_text(encoding="utf-8")
         i18n_js = (ROOT_DIR / "web" / "i18n.js").read_text(encoding="utf-8")
@@ -199,6 +224,8 @@ class FrontendContracts(unittest.TestCase):
             + map_helpers_js
             + settings_js
             + field_photos_js
+            + field_photo_upload_js
+            + map_context_js
             + vehicle_layer_js
             + reports_js
             + i18n_js
@@ -212,7 +239,9 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function buildVehicleGroups", vehicle_layer_js)
         self.assertIn("function placeVehicleMarkers", vehicle_layer_js)
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
-        self.assertIn("openFieldPhotoUploadModal", frontend)
+        self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
+        self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
+        self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
         self.assertIn("issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false", field_photos_js)
         self.assertIn("function vehiclePhotoPopup", vehicle_layer_js)
         self.assertIn("openFieldPhotoReportPackageModal", reports_js)

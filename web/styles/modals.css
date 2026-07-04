@@ -129,6 +129,10 @@
     pointer-events: auto;
 }
 
+.modal--photo-retention {
+    max-width: 760px;
+}
+
 .modal--photo-review,
 .modal--privacy-requests {
     max-width: 1100px;
@@ -169,6 +173,7 @@
     .modal--privacy-requests,
     .modal--privacy-info,
     .modal--problem-report,
+    .modal--photo-retention,
     .modal--report,
     .modal--field-photo,
     .modal--field-photo-thanks,
