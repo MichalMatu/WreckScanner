@@ -60,7 +60,7 @@
 
 /* Override Leaflet tiles to look nicer */
 .leaflet-container {
-    background: #0d1117;
+    background: #d1d8e0;
 }
 
 .leaflet-container.is-picking-field-photo-location,

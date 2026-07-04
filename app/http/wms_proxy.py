@@ -2,6 +2,9 @@ import base64
 import binascii
 import json
 import logging
+import struct
+import zlib
+from functools import lru_cache
 from urllib.parse import parse_qsl, unquote, urlsplit
 
 from app import config, map_downloads, wms_cache
@@ -10,14 +13,52 @@ from core.enhancement import enhance_orthophoto
 from core.settings_store import enhancement_settings_from_dict, enhancement_settings_to_dict
 
 
-def _send_tile_response(handler, *, body: bytes, content_type: str, cache_status: str) -> None:
+def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
+    checksum = zlib.crc32(chunk_type)
+    checksum = zlib.crc32(payload, checksum)
+    return struct.pack(">I", len(payload)) + chunk_type + payload + struct.pack(">I", checksum & 0xFFFFFFFF)
+
+
+@lru_cache(maxsize=1)
+def _fallback_tile_png() -> bytes:
+    width = height = 256
+    rgb = bytes((209, 216, 224))
+    raw = b"".join(b"\x00" + rgb * width for _ in range(height))
+    return b"".join(
+        [
+            b"\x89PNG\r\n\x1a\n",
+            _png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)),
+            _png_chunk(b"IDAT", zlib.compress(raw, level=6)),
+            _png_chunk(b"IEND", b""),
+        ]
+    )
+
+
+def _send_tile_response(
+    handler,
+    *,
+    body: bytes,
+    content_type: str,
+    cache_status: str,
+    cache_control: str = config.WMS_TILE_CACHE_CONTROL,
+) -> None:
     handler.send_response(200)
     handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(body)))
-    handler.send_header("Cache-Control", config.WMS_TILE_CACHE_CONTROL)
+    handler.send_header("Cache-Control", cache_control)
     handler.send_header("X-WMS-Cache", cache_status)
     handler.end_headers()
     http_responses.write_body(handler, body)
+
+
+def _send_tile_fallback(handler, *, cache_status: str) -> None:
+    _send_tile_response(
+        handler,
+        body=_fallback_tile_png(),
+        content_type="image/png",
+        cache_status=cache_status,
+        cache_control="no-store",
+    )
 
 
 def _request_enhancement_settings(cache_identity: str):
@@ -59,8 +100,14 @@ def _handle_enhanced_tile(
     try:
         raw_bytes = fetch_raw_tile(stripped_upstream_path)
     except Exception as exc:
-        http_responses.log_exception(handler, f"{upstream_error_label} upstream request failed", exc, status=502)
-        http_responses.send_text_error(handler, 502, f"{upstream_error_label} upstream error")
+        http_responses.log_exception(
+            handler,
+            f"{upstream_error_label} upstream tile request failed; returning fallback tile",
+            exc,
+            status=200,
+            level=logging.WARNING,
+        )
+        _send_tile_fallback(handler, cache_status="UPSTREAM_ERROR")
         return
 
     try:
@@ -91,7 +138,8 @@ def _handle_enhanced_tile(
 
     success, encoded = cv2.imencode(".png", enhanced, [cv2.IMWRITE_PNG_COMPRESSION, 3])
     if not success:
-        http_responses.send_text_error(handler, 500, "PNG encoding failed")
+        logging.getLogger(__name__).warning("WMS PNG encoding failed; returning fallback tile")
+        _send_tile_fallback(handler, cache_status="ENCODE_ERROR")
         return
 
     out_bytes = encoded.tobytes()

@@ -1,7 +1,9 @@
 import base64
 import json
+import tempfile
 import unittest
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 from app.http import wms_proxy
@@ -115,6 +117,33 @@ class TileProxyTests(unittest.TestCase):
 
         self.assertEqual(handler.status, 400)
         self.assertIn(b"Invalid tile coordinates", handler.wfile.getvalue())
+
+    def test_enhanced_tile_returns_no_store_png_fallback_on_upstream_error(self):
+        handler = FakeHandler("/tile_proxy/geoportal-standard/7/65/42")
+
+        def fail_fetch(_path: str) -> bytes:
+            raise RuntimeError("upstream down")
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            patch.object(wms_proxy.config, "WMS_TILE_CACHE_DIR", Path(tmp)),
+            patch.object(wms_proxy.http_responses, "log_exception") as log_exception,
+        ):
+            wms_proxy._handle_enhanced_tile(
+                handler,
+                cache_identity="geoportal-standard/7/65/42",
+                fetch_raw_tile=fail_fetch,
+                raw_content_type="image/jpeg",
+                upstream_error_label="Geoportal WMTS",
+            )
+
+        headers = dict(handler.response_headers)
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(headers["Content-Type"], "image/png")
+        self.assertEqual(headers["Cache-Control"], "no-store")
+        self.assertEqual(headers["X-WMS-Cache"], "UPSTREAM_ERROR")
+        self.assertTrue(handler.wfile.getvalue().startswith(b"\x89PNG\r\n\x1a\n"))
+        log_exception.assert_called_once()
 
 
 if __name__ == "__main__":
