@@ -10,21 +10,25 @@ class MapPinStyleContracts(unittest.TestCase):
         css = (ROOT_DIR / "web" / "styles" / "map_pins.css").read_text(encoding="utf-8")
         layer_css = (ROOT_DIR / "web" / "styles" / "map_layers.css").read_text(encoding="utf-8")
         tokens_css = (ROOT_DIR / "web" / "styles" / "tokens.css").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         markers_js = (ROOT_DIR / "web" / "app" / "map_markers.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         i18n_js = "\n".join(
             (ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js")
         )
 
-        self.assertIn(
-            "vehicleIcon(photoCount = 0, reviewStatus = 'approved', insuranceStatus = "
-            "FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN)",
-            markers_js,
-        )
+        self.assertIn("function vehicleIcon(", markers_js)
+        self.assertIn("insuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN", markers_js)
+        self.assertIn("isLongStanding = false", markers_js)
         self.assertIn("FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES.has(insuranceStatus)", markers_js)
         self.assertIn("vehicle-pin--insurance-${safeInsuranceStatus}", markers_js)
+        self.assertIn("const VEHICLE_LONG_STANDING_DAYS = 30;", config_js)
+        self.assertIn("vehicle-pin--long-standing", markers_js + css)
+        self.assertIn("function vehicleGroupIsLongStanding", vehicle_layer_js)
+        self.assertIn("fieldPhotoGroupStartTimestamp(group.photos, nowMs)", vehicle_layer_js)
+        self.assertIn("VEHICLE_LONG_STANDING_MS", config_js + vehicle_layer_js)
         self.assertIn(
-            "vehicleIcon(vehicleGroupPhotoCount(group), 'approved', vehicleGroupInsuranceStatus(group))",
+            "vehicleGroupIsLongStanding(group)",
             vehicle_layer_js,
         )
         for status in ("unknown", "insured", "uninsured"):
@@ -33,7 +37,9 @@ class MapPinStyleContracts(unittest.TestCase):
         self.assertIn("border: 3px solid var(--pin-vehicle-current-ring);", css)
         self.assertIn("box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-current-ring-soft);", css)
         self.assertIn('class="map-pin-legend"', html)
-        self.assertIn("layers.vehicleInsuranceLegend", html + i18n_js)
+        self.assertIn("layers.vehicleStatusLegend", html + i18n_js)
+        self.assertIn("layers.vehicleLongStandingLegend", html + i18n_js)
+        self.assertIn("map-pin-age-dot", html + layer_css)
         for status in ("unknown", "insured", "uninsured"):
             self.assertIn(f"map-pin-status-ring--{status}", html + layer_css)
 

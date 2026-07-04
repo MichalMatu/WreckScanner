@@ -162,6 +162,11 @@ function vehicleGroupInsuranceStatus(group) {
     return statuses.length ? FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN : '';
 }
 
+function vehicleGroupIsLongStanding(group, nowMs = Date.now()) {
+    const startTimestampMs = fieldPhotoGroupStartTimestamp(group.photos, nowMs);
+    return Number.isFinite(startTimestampMs) && nowMs - startTimestampMs >= VEHICLE_LONG_STANDING_MS;
+}
+
 function vehiclePhotoPopup(group) {
     const photoCount = vehicleGroupPhotoCount(group);
     const title = photoCount > 1
@@ -186,7 +191,12 @@ function placeVehicleMarkers() {
     buildVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
         const marker = L.marker([group.lat, group.lon], {
-            icon: vehicleIcon(vehicleGroupPhotoCount(group), 'approved', vehicleGroupInsuranceStatus(group)),
+            icon: vehicleIcon(
+                vehicleGroupPhotoCount(group),
+                'approved',
+                vehicleGroupInsuranceStatus(group),
+                vehicleGroupIsLongStanding(group)
+            ),
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,

@@ -82,6 +82,8 @@ const METERS_PER_DEGREE_LAT = 111320;
 // Do tego momentu zachowują liczniki zdjęć.
 const MARKER_DETAIL_DOT_MAX_ZOOM = 16;
 const MAP_POPUP_PREVIEW_MAX_IMAGES = 6;
+const VEHICLE_LONG_STANDING_DAYS = 30;
+const VEHICLE_LONG_STANDING_MS = VEHICLE_LONG_STANDING_DAYS * 24 * 60 * 60 * 1000;
 
 // Uploady: backend dalej waliduje te same limity, frontend tylko daje szybszy
 // komunikat przed wysłaniem formularza.

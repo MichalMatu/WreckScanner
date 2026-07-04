@@ -228,3 +228,14 @@
     border: 2px solid var(--pin-insurance-uninsured-ring);
     box-shadow: 0 0 0 2px var(--pin-insurance-uninsured-ring-soft);
 }
+
+.map-pin-age-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--pin-long-standing-dot);
+    border: 2px solid var(--pin-long-standing-dot-border);
+    box-shadow: 0 0 0 2px var(--pin-long-standing-halo);
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
