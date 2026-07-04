@@ -93,6 +93,74 @@
     white-space: nowrap;
 }
 
+.panel-map-source {
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-subtle);
+}
+
+.panel-map-source .panel-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: 0;
+    color: var(--muted);
+    font: 800 0.72rem/1.2 var(--font);
+    text-transform: uppercase;
+}
+
+.map-source-menu-current {
+    max-width: 92px;
+    padding: 3px 8px;
+    border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--primary-soft);
+    color: var(--text-strong);
+    font: 850 0.7rem/1 var(--font);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.map-source-menu-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.map-source-option {
+    min-width: 0;
+    min-height: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-inset);
+    color: var(--text);
+    cursor: pointer;
+    font: 850 0.74rem/1 var(--font);
+    text-align: center;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.map-source-option:hover,
+.map-source-option:focus-visible {
+    background: var(--surface-on-media-hover);
+    border-color: color-mix(in srgb, var(--primary) 38%, transparent);
+    color: var(--text-strong);
+    outline: none;
+}
+
+.map-source-option.is-active {
+    background: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 72%, white);
+    color: var(--text-strong);
+}
+
 @media (max-width: 640px) {
     #year-slider {
         width: min(420px, calc(100vw - 24px));

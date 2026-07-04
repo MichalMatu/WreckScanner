@@ -58,6 +58,18 @@ function openMapContextMenu(e) {
     });
 }
 
+function openMapSourcePanelFromContext() {
+    closeMapContextMenu();
+    if (typeof setAppMenuOpen === 'function') setAppMenuOpen(true);
+    requestAnimationFrame(() => {
+        const panel = document.getElementById('panel-map-source');
+        panel?.scrollIntoView({ block: 'nearest' });
+        const activeOption = panel?.querySelector('.map-source-option.is-active')
+            || panel?.querySelector('.map-source-option');
+        activeOption?.focus({ preventScroll: true });
+    });
+}
+
 map.on('contextmenu', (e) => {
     e.originalEvent.preventDefault();
     openMapContextMenu(e);

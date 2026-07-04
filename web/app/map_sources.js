@@ -225,12 +225,38 @@ function renderMapSourceTicks(visibleIndices = visibleMapSourceIndices()) {
     });
 }
 
+function renderMapSourceMenuOptions(visibleIndices = visibleMapSourceIndices()) {
+    const options = document.getElementById('map-source-menu-options');
+    if (!options) return;
+    options.innerHTML = '';
+    visibleIndices.forEach(index => {
+        const source = MAP_SOURCES[index];
+        const isActive = index === currentMapSourceIndex;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `map-source-option${isActive ? ' is-active' : ''}`;
+        button.textContent = source.shortLabel;
+        button.title = source.label;
+        button.setAttribute('aria-label', source.label);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        button.addEventListener('click', () => setMapSource(index));
+        options.appendChild(button);
+    });
+}
+
 function updateMapSourceUi() {
     const visibleIndices = visibleMapSourceIndices();
     const source = activeMapSource();
     const currentLabel = document.getElementById('year-current');
-    currentLabel.textContent = source.shortLabel;
-    currentLabel.title = source.label;
+    if (currentLabel) {
+        currentLabel.textContent = source.shortLabel;
+        currentLabel.title = source.label;
+    }
+    const menuCurrentLabel = document.getElementById('map-source-menu-current');
+    if (menuCurrentLabel) {
+        menuCurrentLabel.textContent = source.shortLabel;
+        menuCurrentLabel.title = source.label;
+    }
     const range = document.getElementById('year-range');
     if (range) {
         range.min = 0;
@@ -238,6 +264,7 @@ function updateMapSourceUi() {
         range.value = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices);
     }
     renderMapSourceTicks(visibleIndices);
+    renderMapSourceMenuOptions(visibleIndices);
     document.getElementById('year-prev')?.toggleAttribute('disabled', mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) <= 0);
     document.getElementById('year-next')?.toggleAttribute(
         'disabled',
