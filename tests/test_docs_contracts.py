@@ -31,6 +31,15 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("generuje ZIP/PDF z tymczasowymi cropami mapy", doc)
         self.assertIn("BACKUP.md", doc)
 
+    def test_backup_doc_has_restore_validation_commands(self):
+        doc = (ROOT_DIR / "docs" / "BACKUP.md").read_text(encoding="utf-8")
+
+        self.assertIn("restic restore latest --target /tmp/wreckscanner-restore-test", doc)
+        self.assertIn("scripts/diagnose_data.py --strict", doc)
+        self.assertIn("--field-photos-dir /tmp/wreckscanner-restore-test/zdjecia_terenowe", doc)
+        self.assertIn("scripts/migrate_json_to_db.py", doc)
+        self.assertIn("--validate-only", doc)
+
     def test_current_model_doc_names_active_flow_and_retired_artifact_audit(self):
         doc = (ROOT_DIR / "docs" / "CURRENT_MODEL.md").read_text(encoding="utf-8")
 
@@ -57,6 +66,8 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("typy zdjec: `vehicle=240`, `infrastructure=29`, `smoke=1`", doc)
         self.assertIn("zgloszenia prywatnosci: `0`", doc)
         self.assertIn("stale pakiety raportow w `prywatne_zgloszenia/`: `0`", doc)
+        self.assertIn("Restore snapshotu `da97b30a`", doc)
+        self.assertIn("Brakujace sciezki=0", doc)
         self.assertIn("Kontrakt bazy: SQLite/WAL", doc)
         self.assertIn("Migracja JSON -> DB", doc)
         self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)

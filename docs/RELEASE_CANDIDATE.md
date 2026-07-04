@@ -53,6 +53,15 @@ Snapshot `d830cfc3` obejmuje dodatkowo wycofany katalog
 sprzataniu. Snapshot `da97b30a` zapisuje juz czysty stan runtime bez tego
 katalogu.
 
+Restore snapshotu `da97b30a` do `/tmp/wreckscanner-restore-e2e` wykonany
+2026-07-04 zakonczyl sie poprawna diagnostyka:
+
+- `field_photos=270/270`,
+- `settings=3/3`,
+- `privacy_requests=0/0`,
+- `Brakujace sciezki=0`,
+- diagnostyka danych: `0 error`, `0 warning`, `0 info`.
+
 ## Podgole domkniecia
 
 1. Zamrozenie stanu bazowego: backup, zielony check, baseline licznikow.

@@ -302,6 +302,8 @@ class FieldPhotoTests(unittest.TestCase):
                 map_lat="51.3",
                 map_lon="17.4",
                 private_dir=private_dir,
+                submission_owner="public:owner-session",
+                edit_token="owner-secret-token",
             )
             photo_id = result["photo"]["id"]
 
@@ -322,6 +324,12 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertIn("public_image", public_list[0])
             self.assertIn("public_thumb", public_list[0])
             self.assertNotIn("original_url", public_list[0])
+            self.assertNotIn("private_original_file", public_list[0])
+            self.assertNotIn("submission_owner", public_list[0])
+            self.assertNotIn("edit_token_hash", public_list[0])
+            self.assertNotIn("edit_token_salt", public_list[0])
+            self.assertNotIn("edit_token_created_at", public_list[0])
+            self.assertNotIn("owner-secret-token", json.dumps(public_list[0]))
             public_path, public_type = field_photo_asset(photo_id, Path(tmp), "public-image", private_dir=private_dir)
             thumb_path, _ = field_photo_asset(photo_id, Path(tmp), "public-thumb", private_dir=private_dir)
             original_path, _ = field_photo_asset(photo_id, Path(tmp), "original", private_dir=private_dir)

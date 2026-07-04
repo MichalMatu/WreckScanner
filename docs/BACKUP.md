@@ -45,4 +45,19 @@ mkdir -p /tmp/wreckscanner-restore-test
 RESTIC_REPOSITORY=/home/test/Desktop/WreckScanner/.backups/wreckscanner-restic \
 RESTIC_PASSWORD_FILE=/home/test/Desktop/WreckScanner/.restic_password \
 restic restore latest --target /tmp/wreckscanner-restore-test
+
+./.venv/bin/python scripts/diagnose_data.py --strict \
+  --field-photos-dir /tmp/wreckscanner-restore-test/zdjecia_terenowe \
+  --private-photos-dir /tmp/wreckscanner-restore-test/prywatne_zdjecia
+
+./.venv/bin/python scripts/migrate_json_to_db.py \
+  --root-dir /tmp/wreckscanner-restore-test \
+  --database /tmp/wreckscanner-restore-test/wreckscanner.sqlite3 \
+  --validate-only
 ```
+
+`restic restore` odtwarza sciezki backupu bez prefiksu katalogu projektu, czyli
+po powyzszej komendzie dane leza bezposrednio w
+`/tmp/wreckscanner-restore-test/zdjecia_terenowe`,
+`/tmp/wreckscanner-restore-test/prywatne_zdjecia` i
+`/tmp/wreckscanner-restore-test/wreckscanner.sqlite3`.
