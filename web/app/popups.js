@@ -1,3 +1,24 @@
+const MAP_POPUP_LEAFLET_OPTIONS = Object.freeze({ maxWidth: 540 });
+
+function mapPopupOptions() {
+    return { ...MAP_POPUP_LEAFLET_OPTIONS };
+}
+
+function mapPopupClasses(modifiers = []) {
+    const modifierList = Array.isArray(modifiers) ? modifiers : [modifiers];
+    const classes = ['map-popup'];
+    modifierList.forEach(modifier => {
+        String(modifier || '').trim().split(/\s+/).forEach(className => {
+            if (className) classes.push(className);
+        });
+    });
+    return classes.join(' ');
+}
+
+function mapPopup(content, modifiers = []) {
+    return `<div class="${escapeHtml(mapPopupClasses(modifiers))}">${content}</div>`;
+}
+
 function popupCompactLink(href, label, title) {
     if (!href) return '';
     return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" title="${escapeHtml(title || label)}">${escapeHtml(label)}</a>`;
@@ -20,8 +41,13 @@ function popupMeta(parts) {
 }
 
 function popupLinks(links) {
-    const html = (links || []).filter(Boolean).join(' · ');
-    return html ? `<div class="map-popup-links">${html}</div>` : '';
+    const items = (links || []).filter(Boolean);
+    if (!items.length) return '';
+    return `
+        <div class="map-popup-links">
+            ${items.map(link => `<span class="map-popup-link-item">${link}</span>`).join('')}
+        </div>
+    `;
 }
 
 function popupActions(actions) {
@@ -29,12 +55,16 @@ function popupActions(actions) {
     return html ? `<div class="map-popup-actions">${html}</div>` : '';
 }
 
-function humanDateFromPhotoText(value) {
+function humanDatePartsFromPhotoText(value) {
     const text = String(value || '').trim();
     const match = text.match(/(20\d{2})[-_:.]?([01]\d)[-_:.]?([0-3]\d)(?:[T _.-]?([0-2]\d)[:_.-]?([0-5]\d))?/);
-    if (!match) return '';
+    if (!match) return null;
     const [, year, month, day, hour, minute] = match;
-    return `${day}.${month}.${year}${hour && minute ? `, ${hour}:${minute}` : ''}`;
+    const date = `${day}.${month}.${year}`;
+    return {
+        date,
+        dateTime: `${date}${hour && minute ? `, ${hour}:${minute}` : ''}`,
+    };
 }
 
 function humanNameFromFilename(value) {
@@ -58,10 +88,11 @@ function photoPreviewDisplay(photo, index = 0) {
             detail,
         };
     }
-    const humanDate = humanDateFromPhotoText(rawLabel);
+    const humanDate = humanDatePartsFromPhotoText(rawLabel);
     if (humanDate) {
         return {
-            name: t('modal.photoPreview.photoDated', { date: humanDate }),
+            name: t('modal.photoPreview.photoDated', { date: humanDate.dateTime }),
+            badge: humanDate.date,
             detail,
         };
     }
@@ -87,12 +118,34 @@ function photoPreviewGalleryItems(previews) {
         : [];
 }
 
+function popupVisiblePhotoCount(previews, { max = MAP_POPUP_PREVIEW_MAX_IMAGES } = {}) {
+    const maxItems = Number.isFinite(Number(max)) ? Math.max(0, Number(max)) : MAP_POPUP_PREVIEW_MAX_IMAGES;
+    return Math.min(photoPreviewGalleryItems(previews).length, maxItems);
+}
+
+function popupPhotoCountToken(count) {
+    const numericCount = Math.max(0, Math.floor(Number(count) || 0));
+    return numericCount >= 5 ? 'many' : String(numericCount);
+}
+
+function mapPopupMediaModifiers(previews, modifiers = [], options = {}) {
+    return [
+        'map-popup--media',
+        `map-popup--media-count-${popupPhotoCountToken(popupVisiblePhotoCount(previews, options))}`,
+        ...(Array.isArray(modifiers) ? modifiers : [modifiers]).filter(Boolean),
+    ];
+}
+
 function popupPhotoGrid(previews, { className = '', max = MAP_POPUP_PREVIEW_MAX_IMAGES } = {}) {
     const maxItems = Number.isFinite(Number(max)) ? Math.max(0, Number(max)) : MAP_POPUP_PREVIEW_MAX_IMAGES;
     const galleryItems = photoPreviewGalleryItems(previews);
     const photos = galleryItems.slice(0, maxItems);
     if (!photos.length) return '';
-    const classAttr = ['map-popup-photo-grid', className].filter(Boolean).join(' ');
+    const classAttr = [
+        'map-popup-photo-grid',
+        `map-popup-photo-grid--count-${popupPhotoCountToken(photos.length)}`,
+        className,
+    ].filter(Boolean).join(' ');
     const galleryAttr = escapeHtml(JSON.stringify(galleryItems.map(item => ({
         url: item.url,
         title: item.title,

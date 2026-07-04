@@ -277,7 +277,6 @@ const TRANSLATIONS_PL = {
         'fieldPhoto.popup.capturedAt': 'data zdjęcia: {date}',
         'fieldPhoto.noCapturedAt': 'brak w EXIF',
         'fieldPhoto.openOriginal': 'Otwórz kopię publiczną',
-        'fieldPhoto.downloadPublic': 'Pobierz zdjęcie',
         'modal.photoPreview.title': 'Podgląd zdjęcia',
         'modal.photoPreview.download': 'Pobierz zdjęcie',
         'modal.photoPreview.previous': 'Poprzednie zdjęcie',

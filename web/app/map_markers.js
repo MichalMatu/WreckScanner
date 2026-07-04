@@ -40,14 +40,12 @@ function pendingFieldPhotoPopup(group) {
             'M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'
         )
         : '';
-    return `
-        <div class="map-popup map-popup--pending-submission">
+    return mapPopup(`
             ${popupHeader(t('pendingSubmission.photoTitle'), t('pendingSubmission.status'))}
             ${popupMeta([
                 t('fieldPhoto.pendingPublicHint'),
                 t('pendingSubmission.coords', { lat: lat.toFixed(6), lon: lon.toFixed(6) }),
             ])}
             ${popupActions([ownerButton])}
-        </div>
-    `;
+    `, 'map-popup--pending-submission');
 }

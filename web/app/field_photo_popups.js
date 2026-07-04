@@ -26,14 +26,10 @@ function fieldPhotoGroupPreviews(photos) {
 function fieldPhotoGroupLinks(group, photos) {
     const firstPhoto = photos[0] || {};
     const links = firstPhoto.links || group.links || {};
-    const publicImage = photos.length === 1
-        ? cacheBustedUrl(firstPhoto.public_image || firstPhoto.public_thumb || '')
-        : '';
     return popupLinks([
         popupCompactLink(links.street_view, t('popup.streetView'), t('popup.streetView')),
         popupCompactLink(links.google_maps_satellite, t('popup.gmapsSat'), t('popup.gmapsSat')),
         popupCompactLink(links.geoportal, t('popup.geoportal'), t('popup.geoportal')),
-        publicImage ? `<a href="${escapeHtml(publicImage)}" download>${t('fieldPhoto.downloadPublic')}</a>` : '',
     ]);
 }
 
@@ -128,8 +124,7 @@ function fieldPhotoPendingReviewPopup(group) {
             'M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z'
         )
         : '';
-    return `
-        <div class="map-popup map-popup--field-photo-pending-review">
+    return mapPopup(`
             ${popupHeader(title, t('pendingSubmission.status'))}
             ${popupMeta([
                 issueLabel,
@@ -137,8 +132,7 @@ function fieldPhotoPendingReviewPopup(group) {
                 t('pendingSubmission.coords', { lat: lat.toFixed(6), lon: lon.toFixed(6) }),
             ])}
             ${popupActions([reviewButton, rejectButton, deleteButton])}
-        </div>
-    `;
+    `, 'map-popup--field-photo-pending-review');
 }
 
 function fieldPhotoGroupPopup(group) {
@@ -156,14 +150,12 @@ function fieldPhotoGroupPopup(group) {
         ? t('fieldPhoto.popup.groupTitleWithType', { type: issueLabel, n: photos.length })
         : issueLabel;
     const previews = fieldPhotoGroupPreviews(photos);
-    return `
-        <div class="map-popup ${isGroup ? 'map-popup--field-photo-group' : 'map-popup--field-photo'}">
+    return mapPopup(`
             ${popupHeader(title)}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photos.length, showHeader: false })}
             ${fieldPhotoGroupLinks(group, photos)}
             ${fieldPhotoGroupActions({ ...group, issueType })}
-        </div>
-    `;
+    `, mapPopupMediaModifiers(previews, isGroup ? 'map-popup--field-photo-group' : 'map-popup--field-photo'));
 }
 
 function fieldPhotoPopup(photo) {

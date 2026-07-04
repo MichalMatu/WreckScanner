@@ -171,15 +171,13 @@ function vehiclePhotoPopup(group) {
         ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
-    return `
-        <div class="map-popup map-popup--vehicle-photo">
+    return mapPopup(`
             ${popupHeader(title)}
             ${vehicleGroupMeta(group)}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}
-        </div>
-    `;
+    `, mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo'));
 }
 
 function vehicleGroupPopup(group) {
@@ -196,7 +194,7 @@ function placeVehicleMarkers() {
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,
-        }).addTo(map).bindPopup(vehicleGroupPopup(group), { maxWidth: vehicleGroupPhotoCount(group) > 1 ? 380 : 320 });
+        }).addTo(map).bindPopup(vehicleGroupPopup(group), mapPopupOptions());
         if (canDrag) {
             marker.on('dragstart', () => marker.closePopup());
             marker.on('dragend', () => updateFieldPhotoGroupLocation(

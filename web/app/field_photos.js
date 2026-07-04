@@ -161,7 +161,7 @@ function placeFieldPhotos(photos = fieldPhotoLayerData) {
             zIndexOffset: 1400,
             draggable: adminAuthenticated,
             autoPan: adminAuthenticated,
-        }).addTo(map).bindPopup(fieldPhotoGroupPopup(group), { maxWidth: group.photos.length > 1 ? 380 : 300 });
+        }).addTo(map).bindPopup(fieldPhotoGroupPopup(group), mapPopupOptions());
         if (adminAuthenticated) {
             marker.on('dragstart', () => marker.closePopup());
             marker.on('dragend', () => updateFieldPhotoGroupLocation(group, marker));

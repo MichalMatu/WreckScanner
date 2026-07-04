@@ -272,7 +272,6 @@ const TRANSLATIONS_EN = {
         'fieldPhoto.popup.capturedAt': 'photo date: {date}',
         'fieldPhoto.noCapturedAt': 'not in EXIF',
         'fieldPhoto.openOriginal': 'Open public copy',
-        'fieldPhoto.downloadPublic': 'Download photo',
         'modal.photoPreview.title': 'Photo preview',
         'modal.photoPreview.download': 'Download photo',
         'modal.photoPreview.previous': 'Previous photo',

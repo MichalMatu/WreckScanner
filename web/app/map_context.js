@@ -136,13 +136,11 @@ function cadastralParcelPopup(parcel = {}) {
     const actions = popupActions([
         `<button type="button" class="map-popup-text-action" onclick="copyActiveCadastralParcel()">${escapeHtml(t('context.parcelCopyData'))}</button>`,
     ]);
-    return `
-        <div class="map-popup map-popup--parcel">
+    return mapPopup(`
             ${popupHeader(t('context.parcelTitle'), parcel.parcel_number || '')}
             <div class="parcel-popup-rows">${rowHtml}</div>
             ${actions}
-        </div>
-    `;
+    `, 'map-popup--parcel');
 }
 
 async function identifyCadastralParcelAtContextPoint() {
@@ -150,9 +148,9 @@ async function identifyCadastralParcelAtContextPoint() {
     const latLng = L.latLng(contextMenuLatLng.lat, contextMenuLatLng.lng);
     closeMapContextMenu();
     activeCadastralParcel = null;
-    const popup = L.popup({ maxWidth: 340 })
+    const popup = L.popup(mapPopupOptions())
         .setLatLng(latLng)
-        .setContent(`<div class="map-popup map-popup--parcel">${escapeHtml(t('context.identifyingParcel'))}</div>`)
+        .setContent(mapPopup(escapeHtml(t('context.identifyingParcel')), 'map-popup--parcel'))
         .openOn(map);
     try {
         const url = `${CADASTRAL_IDENTIFY_URL}?lat=${encodeURIComponent(latLng.lat.toFixed(8))}&lon=${encodeURIComponent(latLng.lng.toFixed(8))}`;
@@ -163,12 +161,10 @@ async function identifyCadastralParcelAtContextPoint() {
         activeCadastralParcel = data.parcel || {};
         popup.setContent(cadastralParcelPopup(activeCadastralParcel));
     } catch (err) {
-        popup.setContent(`
-            <div class="map-popup map-popup--parcel">
+        popup.setContent(mapPopup(`
                 ${popupHeader(t('context.parcelTitle'))}
                 <p class="parcel-popup-hint">${escapeHtml(err.message || t('context.parcelError'))}</p>
-            </div>
-        `);
+        `, 'map-popup--parcel'));
     }
 }
 
