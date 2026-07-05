@@ -21,9 +21,16 @@ const VEHICLE_STANDING_FILTER_DAYS_CYCLE = [
     VEHICLE_STANDING_FILTER_OFF,
     ...VEHICLE_LONG_STANDING_DAY_OPTIONS,
 ];
+const VEHICLE_PHOTO_FILTER_OFF = 0;
+const VEHICLE_PHOTO_FILTER_MIN_OPTIONS = [2, 3];
+const VEHICLE_PHOTO_FILTER_MIN_CYCLE = [
+    VEHICLE_PHOTO_FILTER_OFF,
+    ...VEHICLE_PHOTO_FILTER_MIN_OPTIONS,
+];
 const VEHICLE_MARKER_BASE_Z_INDEX = 1200;
 let vehicleInsuranceFilter = VEHICLE_FILTER_ALL;
 let vehicleStandingFilterDays = loadVehicleStandingFilterDays();
+let vehiclePhotoFilterMin = VEHICLE_PHOTO_FILTER_OFF;
 let pendingVehiclePhotoFocusId = '';
 let vehiclePhotoFocusDone = false;
 
@@ -202,6 +209,12 @@ function normalizeVehicleStandingFilterDays(days) {
     return VEHICLE_LONG_STANDING_DAY_OPTIONS.includes(safeDays) ? safeDays : VEHICLE_STANDING_FILTER_OFF;
 }
 
+function normalizeVehiclePhotoFilterMin(value) {
+    const safeValue = Number(value);
+    if (safeValue === VEHICLE_PHOTO_FILTER_OFF) return VEHICLE_PHOTO_FILTER_OFF;
+    return VEHICLE_PHOTO_FILTER_MIN_OPTIONS.includes(safeValue) ? safeValue : VEHICLE_PHOTO_FILTER_OFF;
+}
+
 function loadVehicleStandingFilterDays() {
     try {
         return normalizeVehicleStandingFilterDays(localStorage.getItem(VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY));
@@ -253,8 +266,15 @@ function vehicleGroupMatchesStandingFilter(group, days = vehicleStandingFilterDa
     return safeDays === VEHICLE_STANDING_FILTER_OFF || vehicleGroupIsLongStanding(group, Date.now(), safeDays);
 }
 
+function vehicleGroupMatchesPhotoFilter(group, minPhotos = vehiclePhotoFilterMin) {
+    const safeMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    return safeMinPhotos === VEHICLE_PHOTO_FILTER_OFF || vehicleGroupPhotoCount(group) >= safeMinPhotos;
+}
+
 function vehicleGroupMatchesFilters(group) {
-    return vehicleGroupMatchesInsuranceFilter(group) && vehicleGroupMatchesStandingFilter(group);
+    return vehicleGroupMatchesInsuranceFilter(group)
+        && vehicleGroupMatchesStandingFilter(group)
+        && vehicleGroupMatchesPhotoFilter(group);
 }
 
 function visibleVehicleGroups(photos = fieldPhotoLayerData) {
@@ -289,9 +309,13 @@ function emptyVehicleFilterCounts() {
         insured: 0,
         uninsured: 0,
         standingByDays: {},
+        photoByMin: {},
     };
     VEHICLE_LONG_STANDING_DAY_OPTIONS.forEach(days => {
         counts.standingByDays[days] = 0;
+    });
+    VEHICLE_PHOTO_FILTER_MIN_OPTIONS.forEach(minPhotos => {
+        counts.photoByMin[minPhotos] = 0;
     });
     return counts;
 }
@@ -307,6 +331,9 @@ function vehicleFilterCounts(photos = fieldPhotoLayerData) {
             if (Object.prototype.hasOwnProperty.call(counts, insuranceStatus)) counts[insuranceStatus] += 1;
             VEHICLE_LONG_STANDING_DAY_OPTIONS.forEach(days => {
                 if (vehicleGroupIsLongStanding(group, nowMs, days)) counts.standingByDays[days] += 1;
+            });
+            VEHICLE_PHOTO_FILTER_MIN_OPTIONS.forEach(minPhotos => {
+                if (vehicleGroupPhotoCount(group) >= minPhotos) counts.photoByMin[minPhotos] += 1;
             });
         });
     return counts;
@@ -331,6 +358,13 @@ function vehicleStandingFilterLabel(days) {
     return safeDays === VEHICLE_STANDING_FILTER_OFF
         ? t('layers.vehicleStandingCycleOff')
         : t('layers.vehicleStandingCycleDays', { days: safeDays });
+}
+
+function vehiclePhotoFilterLabel(minPhotos) {
+    const safeMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    return safeMinPhotos === VEHICLE_PHOTO_FILTER_OFF
+        ? t('layers.vehiclePhotoCycleOff')
+        : t('layers.vehiclePhotoCycleMin', { n: safeMinPhotos });
 }
 
 function vehicleInsuranceFilterCount(counts, filter = vehicleInsuranceFilter) {
@@ -359,6 +393,12 @@ function vehicleInsuranceFilterDotClass(filter = vehicleInsuranceFilter) {
         default:
             return 'vehicle-filter-off-dot';
     }
+}
+
+function vehiclePhotoFilterDotClass(minPhotos = vehiclePhotoFilterMin) {
+    return normalizeVehiclePhotoFilterMin(minPhotos) === VEHICLE_PHOTO_FILTER_OFF
+        ? 'vehicle-filter-off-dot'
+        : 'vehicle-photo-dot';
 }
 
 function nextVehicleCycleValue(values, current) {
@@ -393,6 +433,20 @@ function setVehicleStandingFilterDays(days) {
 
 function cycleVehicleStandingFilterDays() {
     setVehicleStandingFilterDays(nextVehicleCycleValue(VEHICLE_STANDING_FILTER_DAYS_CYCLE, vehicleStandingFilterDays));
+}
+
+function setVehiclePhotoFilterMin(minPhotos) {
+    const nextMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    if (nextMinPhotos === vehiclePhotoFilterMin) {
+        updateVehicleFilterControlsAndCounts();
+        return;
+    }
+    vehiclePhotoFilterMin = nextMinPhotos;
+    refreshVehicleLayer();
+}
+
+function cycleVehiclePhotoFilterMin() {
+    setVehiclePhotoFilterMin(nextVehicleCycleValue(VEHICLE_PHOTO_FILTER_MIN_CYCLE, vehiclePhotoFilterMin));
 }
 
 function updateVehicleFilterCount(id, count, label = '') {
@@ -463,6 +517,18 @@ function updateVehicleFilterControlsAndCounts() {
             ? 'vehicle-filter-off-dot'
             : 'map-pin-age-dot',
         active: vehicleStandingFilterDays !== VEHICLE_STANDING_FILTER_OFF,
+    });
+    updateVehicleFilterButton({
+        buttonId: 'vehicle-photo-cycle-filter',
+        labelSelector: '[data-vehicle-photo-filter-label]',
+        dotSelector: '[data-vehicle-photo-filter-dot]',
+        countId: 'vehicle-photo-filter-count',
+        label: vehiclePhotoFilterLabel(vehiclePhotoFilterMin),
+        count: vehiclePhotoFilterMin === VEHICLE_PHOTO_FILTER_OFF
+            ? null
+            : counts.photoByMin[vehiclePhotoFilterMin],
+        dotClass: vehiclePhotoFilterDotClass(vehiclePhotoFilterMin),
+        active: vehiclePhotoFilterMin !== VEHICLE_PHOTO_FILTER_OFF,
     });
 }
 

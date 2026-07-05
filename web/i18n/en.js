@@ -67,6 +67,8 @@ const TRANSLATIONS_EN = {
         'layers.vehicleInsuranceCycleStatus': 'Ins: {status}',
         'layers.vehicleStandingCycleOff': 'Age: off',
         'layers.vehicleStandingCycleDays': 'Age: {days}d',
+        'layers.vehiclePhotoCycleOff': 'Pic: off',
+        'layers.vehiclePhotoCycleMin': 'Pic: {n}+',
         'layers.vehicleFilterCountLabel': '{label}: {n}',
         'layers.countVehiclesTooltip': 'Visible cars documented with field photos: {n}',
         'layers.countFieldPhotoInfrastructureTooltip': 'Grouped unsafe infrastructure points: {n}',
