@@ -58,7 +58,6 @@ class FrontendContracts(unittest.TestCase):
     def test_base_map_menu_uses_compact_slider_toggle(self):
         html = read_index_html()
         map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")
-        map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
         map_controls_css = (ROOT_DIR / "web" / "styles" / "map_controls.css").read_text(encoding="utf-8")
 
         panel_id = html.index('id="panel-map-source"')
@@ -70,9 +69,8 @@ class FrontendContracts(unittest.TestCase):
         self.assertLess(panel_block.index('data-i18n="panel.baseMap"'), panel_block.index('id="map-source-current-badge"'))
         self.assertIn("document.getElementById('map-source-current-badge')", map_sources_js)
         self.assertIn("menuBadge.textContent = source.shortLabel", map_sources_js)
-        self.assertIn("panel?.querySelector('#map-source-slider-toggle')?.focus", map_context_js)
         self.assertNotIn("map-source-menu-options", html + map_sources_js + map_controls_css)
-        self.assertNotIn("map-source-option", html + map_sources_js + map_context_js + map_controls_css)
+        self.assertNotIn("map-source-option", html + map_sources_js + map_controls_css)
         self.assertNotIn("map-source-slider-toggle-mark", html + map_controls_css)
 
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
@@ -249,6 +247,16 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('id="panel-add-field-photo"', html)
         self.assertIn('id="context-add-field-photos"', html)
         self.assertIn('id="open-photo-review"', html)
+
+    def test_map_context_menu_keeps_only_location_actions(self):
+        html = read_index_html()
+        frontend = html + (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
+        frontend += (ROOT_DIR / "web" / "styles" / "map.css").read_text(encoding="utf-8") + read_i18n_bundle()
+
+        for expected in ('class="context-menu-coords" id="context-menu-coords"', 'id="context-menu-coords-value"', "contextMenuCoordsValue.textContent", 'onclick="copyContextPlaceLink()"', 'onclick="copyContextCoords()"'):
+            self.assertIn(expected, frontend)
+        for retired in ('data-i18n="context.copyCoords"', "button:not([hidden])')?.focus", "openMapSourcePanelFromContext", "context.changeBaseMap", "map-context-secondary", "border-top: 1px solid var(--border) !important;", "border-bottom: 1px solid var(--border);"):
+            self.assertNotIn(retired, frontend)
 
     def test_frontend_removes_retired_vehicle_case_review_panel(self):
         html = read_index_html()

@@ -190,7 +190,15 @@
 
     <!-- Map right-click menu -->
     <div id="map-context-menu" class="map-context-menu" role="menu" aria-label="Menu punktu mapy" hidden>
-        <div class="context-menu-coords" id="context-menu-coords"></div>
+        <button type="button" class="context-menu-coords" id="context-menu-coords" role="menuitem"
+            data-i18n-attr="title:context.copyCoords;aria-label:context.copyCoords"
+            title="Kopiuj współrzędne" aria-label="Kopiuj współrzędne" onclick="copyContextCoords()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+            </svg>
+            <span class="context-menu-coords-value" id="context-menu-coords-value"></span>
+        </button>
         <button type="button" id="context-add-field-photos" role="menuitem"
             onclick="openFieldPhotoUploadAtContextPoint()" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -214,25 +222,11 @@
             </svg>
             <span data-i18n="context.identifyParcel">Sprawdź działkę</span>
         </button>
-        <button type="button" role="menuitem" onclick="openMapSourcePanelFromContext()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    d="M4 6.5 12 3l8 3.5-8 3.5-8-3.5zm0 4L12 14l8-3.5V13l-8 3.5L4 13v-2.5zm0 5L12 19l8-3.5V18l-8 3.5L4 18v-2.5z" />
-            </svg>
-            <span data-i18n="context.changeBaseMap">Zmień podkład mapy</span>
-        </button>
-        <button type="button" class="map-context-secondary" role="menuitem" onclick="copyContextPlaceLink()">
+        <button type="button" role="menuitem" onclick="copyContextPlaceLink()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M3.9 12a5 5 0 0 1 5-5h4v2h-4a3 3 0 0 0 0 6h4v2h-4a5 5 0 0 1-5-5zm5.1 1h6v-2H9v2zm2-6h4a5 5 0 0 1 0 10h-4v-2h4a3 3 0 0 0 0-6h-4V7z" />
             </svg>
             <span data-i18n="context.copyPlaceLink">Skopiuj link do miejsca</span>
-        </button>
-        <button type="button" role="menuitem" onclick="copyContextCoords()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-            </svg>
-            <span data-i18n="context.copyCoords">Kopiuj współrzędne</span>
         </button>
     </div>

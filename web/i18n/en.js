@@ -78,7 +78,6 @@ const TRANSLATIONS_EN = {
         'context.identifyParcel': 'Identify parcel',
         'context.addFieldPhotos': 'Add photos here',
         'context.inspectLocation': 'Show location history',
-        'context.changeBaseMap': 'Change base map',
         'context.identifyingParcel': 'Identifying parcel...',
         'context.parcelTitle': 'Cadastral parcel',
         'context.parcelTerrainType': 'Land type',

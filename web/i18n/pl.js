@@ -80,7 +80,6 @@ const TRANSLATIONS_PL = {
         'context.identifyParcel': 'Sprawdź działkę',
         'context.addFieldPhotos': 'Dodaj zdjęcia tutaj',
         'context.inspectLocation': 'Pokaż historię miejsca',
-        'context.changeBaseMap': 'Zmień podkład mapy',
         'context.identifyingParcel': 'Sprawdzam działkę...',
         'context.parcelTitle': 'Działka ewidencyjna',
         'context.parcelTerrainType': 'Typ terenu',
