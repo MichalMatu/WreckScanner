@@ -10,6 +10,7 @@ const VEHICLE_STATUS_FILTERS = new Set([
     VEHICLE_STATUS_FILTER_LONG_STANDING,
     VEHICLE_STATUS_FILTER_UNKNOWN,
 ]);
+const VEHICLE_MARKER_BASE_Z_INDEX = 1200;
 let vehicleStatusFilter = VEHICLE_STATUS_FILTER_ALL;
 let vehicleLongStandingDays = loadVehicleLongStandingDays();
 let pendingVehiclePhotoFocusId = '';
@@ -229,6 +230,24 @@ function visibleVehicleGroups(photos = fieldPhotoLayerData) {
     );
 }
 
+function vehicleGroupStatusPriority(group) {
+    const insuranceStatus = vehicleGroupInsuranceStatus(group);
+    let priority = 0;
+    if (insuranceStatus === 'insured') priority += 10;
+    if (insuranceStatus === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) priority += 20;
+    if (vehicleGroupIsLongStanding(group)) priority += 40;
+    if (insuranceStatus === 'uninsured') priority += 80;
+    return priority;
+}
+
+function vehicleGroupZIndexOffset(group) {
+    return VEHICLE_MARKER_BASE_Z_INDEX + vehicleGroupStatusPriority(group);
+}
+
+function prioritizedVehicleGroups(photos = fieldPhotoLayerData) {
+    return visibleVehicleGroups(photos).sort((a, b) => vehicleGroupStatusPriority(a) - vehicleGroupStatusPriority(b));
+}
+
 function vehicleStatusCounts(photos = fieldPhotoLayerData) {
     const counts = {
         unknown: 0,
@@ -367,7 +386,7 @@ function vehicleGroupPopup(group) {
 function placeVehicleMarkers() {
     clearVehicleMarkers();
     if (!vehicleLayerAllowed()) return;
-    visibleVehicleGroups().forEach(group => {
+    prioritizedVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
         const markerTitle = vehicleMarkerTitle(group);
         const marker = L.marker([group.lat, group.lon], {
@@ -377,7 +396,7 @@ function placeVehicleMarkers() {
                 vehicleGroupInsuranceStatus(group),
                 vehicleGroupIsLongStanding(group)
             ),
-            zIndexOffset: 1200,
+            zIndexOffset: vehicleGroupZIndexOffset(group),
             draggable: canDrag,
             autoPan: canDrag,
             title: markerTitle,
