@@ -313,6 +313,37 @@
     white-space: nowrap;
 }
 
+.map-pin-legend-filter {
+    padding: 3px 5px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.map-pin-legend-filter:hover {
+    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+    background: var(--surface-control);
+    color: var(--text-strong);
+}
+
+.map-pin-legend-filter:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.map-pin-legend-filter.is-active {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
+    color: var(--text-strong);
+}
+
 .map-pin-legend-count {
     min-width: 20px;
     height: 18px;

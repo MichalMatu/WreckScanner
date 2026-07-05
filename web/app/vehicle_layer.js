@@ -1,11 +1,13 @@
 let vehicleMarkers = [];
 let vehicleLayerVisible = true;
 const VEHICLE_STATUS_FILTER_ALL = 'all';
+const VEHICLE_STATUS_FILTER_INSURED = 'insured';
 const VEHICLE_STATUS_FILTER_UNINSURED = 'uninsured';
 const VEHICLE_STATUS_FILTER_LONG_STANDING = 'long-standing';
 const VEHICLE_STATUS_FILTER_UNKNOWN = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
 const VEHICLE_STATUS_FILTERS = new Set([
     VEHICLE_STATUS_FILTER_ALL,
+    VEHICLE_STATUS_FILTER_INSURED,
     VEHICLE_STATUS_FILTER_UNINSURED,
     VEHICLE_STATUS_FILTER_LONG_STANDING,
     VEHICLE_STATUS_FILTER_UNKNOWN,
@@ -210,6 +212,8 @@ function normalizeVehicleStatusFilter(filter) {
 
 function vehicleGroupMatchesStatusFilter(group, filter = vehicleStatusFilter) {
     switch (normalizeVehicleStatusFilter(filter)) {
+        case VEHICLE_STATUS_FILTER_INSURED:
+            return vehicleGroupInsuranceStatus(group) === 'insured';
         case VEHICLE_STATUS_FILTER_UNINSURED:
             return vehicleGroupInsuranceStatus(group) === 'uninsured';
         case VEHICLE_STATUS_FILTER_LONG_STANDING:

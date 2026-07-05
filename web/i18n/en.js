@@ -64,6 +64,7 @@ const TRANSLATIONS_EN = {
         'layers.fieldPhotoPending': 'For review',
         'layers.vehicleStatusFilter': 'Vehicle filter',
         'layers.vehicleStatusFilterAll': 'All',
+        'layers.vehicleStatusFilterInsured': 'Insured',
         'layers.vehicleStatusFilterUninsured': 'No insurance',
         'layers.vehicleStatusFilterLongStanding': 'Long-standing',
         'layers.vehicleStatusFilterUnknown': 'Not checked',

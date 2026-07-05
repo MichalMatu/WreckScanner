@@ -66,6 +66,7 @@ const TRANSLATIONS_PL = {
         'layers.fieldPhotoPending': 'Do weryfikacji',
         'layers.vehicleStatusFilter': 'Filtr pojazdów',
         'layers.vehicleStatusFilterAll': 'Wszystkie',
+        'layers.vehicleStatusFilterInsured': 'Ma OC',
         'layers.vehicleStatusFilterUninsured': 'Brak OC',
         'layers.vehicleStatusFilterLongStanding': 'Długo stoi',
         'layers.vehicleStatusFilterUnknown': 'Nie sprawdzono',
