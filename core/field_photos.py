@@ -13,14 +13,23 @@ from typing import Any, Literal
 from PIL import Image, UnidentifiedImageError
 
 from core import config
-from core.field_photo_groups import (
-    vehicle_photo_group_records as _vehicle_photo_group_records,
+from core.field_photo_insurance import (
+    save_vehicle_insurance_group_update as _save_vehicle_insurance_group_update,
+)
+from core.field_photo_insurance import (
+    set_vehicle_insurance as _set_vehicle_insurance,
+)
+from core.field_photo_insurance import (
+    vehicle_insurance_checked_at_for_status as _vehicle_insurance_checked_at_for_status,
 )
 from core.field_photo_metadata import (
     issue_type as _issue_type,
 )
 from core.field_photo_metadata import (
     validated_vehicle_insurance_update as _validated_vehicle_insurance_update,
+)
+from core.field_photo_metadata import (
+    vehicle_insurance_checked_at as _vehicle_insurance_checked_at,
 )
 from core.field_photo_metadata import (
     vehicle_insurance_status as _vehicle_insurance_status,
@@ -180,6 +189,14 @@ def _prepare_field_record(record_dir: Path, record: dict[str, Any], private_dir:
     if record.get("vehicle_insurance_status") != vehicle_insurance_status:
         record["vehicle_insurance_status"] = vehicle_insurance_status
         changed = True
+    vehicle_insurance_checked_at = _vehicle_insurance_checked_at(
+        issue_type,
+        vehicle_insurance_status,
+        record.get("vehicle_insurance_checked_at"),
+    )
+    if record.get("vehicle_insurance_checked_at") != vehicle_insurance_checked_at:
+        record["vehicle_insurance_checked_at"] = vehicle_insurance_checked_at
+        changed = True
     if not is_approved(record):
         remove_public_derivatives(record, record_dir)
     elif not safe_existing_child(record_dir, record.get("public_image_file")) or not safe_existing_child(
@@ -240,35 +257,6 @@ def save_field_photo_record(record: dict[str, Any], storage_dir: Path) -> None:
 def _require_edit_token(record: dict[str, Any], edit_token: Any) -> None:
     if not verify_photo_edit_token(edit_token, record.get("edit_token_salt"), record.get("edit_token_hash")):
         raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
-
-
-def _records_with_anchor_snapshot(storage_dir: Path, anchor_record: dict[str, Any]) -> list[dict[str, Any]]:
-    anchor_id = str(anchor_record.get("id") or "")
-    records: list[dict[str, Any]] = []
-    anchor_seen = False
-    for record in _list_field_records(storage_dir):
-        if str(record.get("id") or "") == anchor_id:
-            records.append(anchor_record)
-            anchor_seen = True
-        else:
-            records.append(record)
-    if not anchor_seen:
-        records.append(anchor_record)
-    return records
-
-
-def _save_vehicle_insurance_group_update(
-    storage_dir: Path,
-    anchor_record: dict[str, Any],
-    status: str,
-) -> list[str]:
-    updated_ids: list[str] = []
-    records = _records_with_anchor_snapshot(storage_dir, anchor_record)
-    for record in _vehicle_photo_group_records(records, anchor_record):
-        record["vehicle_insurance_status"] = status
-        _save_field_record(storage_dir, record)
-        updated_ids.append(str(record["id"]))
-    return updated_ids
 
 
 def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> list[dict[str, Any]]:
@@ -380,6 +368,7 @@ def save_field_photo(
     record_dir.mkdir(parents=True, exist_ok=False)
 
     private_original_file = f"field_photos/{photo_id}/original{ext}"
+    vehicle_insurance_status_text = _vehicle_insurance_status(issue_type_text, vehicle_insurance_status)
     record = {
         "id": photo_id,
         "created_at": _now_iso(),
@@ -390,7 +379,8 @@ def save_field_photo(
         "image_width": width,
         "image_height": height,
         "issue_type": issue_type_text,
-        "vehicle_insurance_status": _vehicle_insurance_status(issue_type_text, vehicle_insurance_status),
+        "vehicle_insurance_status": vehicle_insurance_status_text,
+        "vehicle_insurance_checked_at": _vehicle_insurance_checked_at_for_status(vehicle_insurance_status_text),
         "lat": lat,
         "lon": lon,
         "coordinate_source": coordinate_source,
@@ -519,7 +509,6 @@ def review_field_photo(
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
     if validated_vehicle_insurance_status is not None:
-        record["vehicle_insurance_status"] = validated_vehicle_insurance_status
         updated_ids = _save_vehicle_insurance_group_update(storage_dir, record, validated_vehicle_insurance_status)
     else:
         updated_ids = []
@@ -554,7 +543,11 @@ def review_field_photo_by_owner(
         thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
     )
     if validated_vehicle_insurance_status is not None:
-        record["vehicle_insurance_status"] = validated_vehicle_insurance_status
+        _set_vehicle_insurance(
+            record,
+            validated_vehicle_insurance_status,
+            _vehicle_insurance_checked_at_for_status(validated_vehicle_insurance_status),
+        )
     record["owner_redactions_updated_at"] = _now_iso()
     _save_field_record(storage_dir, record)
     return {"status": "ok", "photo": _summary(record)}

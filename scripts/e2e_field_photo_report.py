@@ -115,6 +115,11 @@ def expect(condition: bool, message: str) -> None:
         raise E2EFailure(message)
 
 
+def expect_checked_at(value: Any, message: str) -> None:
+    text = str(value or "")
+    expect(text.startswith("20") and "T" in text, message)
+
+
 def read_admin_password(path: Path) -> str:
     try:
         password = path.read_text(encoding="utf-8").strip()
@@ -186,6 +191,7 @@ def upload_field_photo(client: HttpClient, *, lat: float, lon: float) -> str:
     expect(photo_id.startswith("photo_"), "Upload nie zwrócił identyfikatora zdjęcia.")
     expect(photo.get("public_review_status") == "pending", "Upload admina powinien utworzyć zdjęcie pending.")
     expect(photo.get("vehicle_insurance_status") == "uninsured", "Upload nie zapisał statusu OC/UFG.")
+    expect_checked_at(photo.get("vehicle_insurance_checked_at"), "Upload nie zapisał daty sprawdzenia OC/UFG.")
     return photo_id
 
 
@@ -199,6 +205,7 @@ def approve_field_photo(client: HttpClient, photo_id: str) -> dict[str, Any]:
     expect(photo.get("id") == photo_id, "Review nie zwrócił zatwierdzonego zdjęcia.")
     expect(photo.get("public_review_status") == "approved", "Zdjęcie po review nie jest approved.")
     expect(photo.get("vehicle_insurance_status") == "insured", "Review nie zaktualizował statusu OC/UFG.")
+    expect_checked_at(photo.get("vehicle_insurance_checked_at"), "Review nie zapisał daty sprawdzenia OC/UFG.")
     expect(photo.get("public_image"), "Zatwierdzone zdjęcie nie ma public_image.")
     expect(photo.get("public_thumb"), "Zatwierdzone zdjęcie nie ma public_thumb.")
     return photo
@@ -214,6 +221,7 @@ def public_photo(client: HttpClient, photo_id: str) -> dict[str, Any]:
         expect(key not in photo, f"Publiczne API ujawnia prywatne pole {key}.")
     expect(photo.get("issue_type") == "vehicle", "Publiczne zdjęcie nie ma typu vehicle.")
     expect(photo.get("vehicle_insurance_status") == "insured", "Publiczne API nie zwraca statusu OC/UFG.")
+    expect_checked_at(photo.get("vehicle_insurance_checked_at"), "Publiczne API nie zwraca daty sprawdzenia OC/UFG.")
     expect(photo.get("public_image") and photo.get("public_thumb"), "Publiczne zdjęcie nie ma publicznych assetów.")
     return photo
 
@@ -250,6 +258,10 @@ def create_report_package(client: HttpClient, photo_id: str, *, lat: float, lon:
         "Wynik ręcznego sprawdzenia: pojazd ma OC" in str(data.get("body") or ""),
         "Raport nie zawiera statusu OC/UFG w treści zgłoszenia.",
     )
+    expect(
+        "Data sprawdzenia w UFG:" in str(data.get("body") or ""),
+        "Raport nie zawiera daty sprawdzenia OC/UFG w treści zgłoszenia.",
+    )
     zip_bytes = base64.b64decode(str(data.get("zip_base64") or ""))
     pdf_bytes = base64.b64decode(str(data.get("pdf_base64") or ""))
     expect(zip_bytes[:2] == b"PK", "ZIP raportu nie ma poprawnego nagłówka.")
@@ -277,8 +289,16 @@ def create_report_package(client: HttpClient, photo_id: str, *, lat: float, lon:
             "zgloszenie.txt nie zawiera statusu OC/UFG.",
         )
         expect(
+            "Data sprawdzenia w UFG:" in text,
+            "zgloszenie.txt nie zawiera daty sprawdzenia OC/UFG.",
+        )
+        expect(
             "Wynik ręcznego sprawdzenia: pojazd ma OC" in html,
             "raport.html nie zawiera statusu OC/UFG.",
+        )
+        expect(
+            "Data sprawdzenia w UFG:" in html,
+            "raport.html nie zawiera daty sprawdzenia OC/UFG.",
         )
     return data
 

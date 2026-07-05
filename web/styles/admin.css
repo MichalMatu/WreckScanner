@@ -356,22 +356,6 @@
 }
 
 @media (max-width: 640px) {
-    .modal--settings {
-        top: 12px;
-        right: auto;
-        left: 12px;
-        width: calc(100vw - 24px);
-        max-height: calc(100vh - 24px);
-    }
-
-    .modal--admin-panel {
-        top: 12px;
-        right: auto;
-        left: 12px;
-        width: calc(100vw - 24px);
-        max-height: calc(100vh - 24px);
-    }
-
     .settings-grid {
         grid-template-columns: 1fr;
     }

@@ -126,6 +126,107 @@
     color: color-mix(in srgb, var(--danger) 54%, white);
 }
 
+.layer-toggle--vehicle {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    cursor: default;
+}
+
+.layer-toggle--vehicle:hover {
+    background: var(--surface-subtle);
+    border-color: var(--border);
+}
+
+.layer-toggle-row {
+    min-height: var(--control-height-compact);
+    display: grid;
+    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: background var(--duration-fast);
+}
+
+.layer-toggle-row:hover {
+    background: var(--primary-soft);
+}
+
+.vehicle-filter-tray {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 5px;
+    padding: 0 8px 8px;
+}
+
+.vehicle-cycle-filter {
+    min-width: 0;
+    height: 28px;
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 3px;
+    padding: 0 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+    color: var(--muted);
+    font: 850 0.6rem var(--font);
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.vehicle-cycle-filter:hover {
+    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+    background: var(--surface-control);
+    color: var(--text-strong);
+}
+
+.vehicle-cycle-filter:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.vehicle-cycle-filter.is-active {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
+    color: var(--text-strong);
+}
+
+.vehicle-cycle-filter-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vehicle-filter-off-dot {
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: var(--surface-inset);
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
+.vehicle-photo-dot {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--pin-count-border);
+    border-radius: 50%;
+    background: var(--pin-count-bg);
+    box-shadow: 0 0 0 2px var(--pin-vehicle-photo-halo);
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
 .layer-pin {
     width: 13px;
     height: 13px;
@@ -177,4 +278,61 @@
     background: var(--pin-pending-bg);
     border: 2px dashed var(--pin-pending-ring);
     box-shadow: 0 0 0 2px var(--pin-pending-ring-soft);
+}
+
+.vehicle-filter-count {
+    width: 20px;
+    min-width: 0;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    border: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--surface-inset) 82%, transparent);
+    color: var(--text-soft);
+    font: 850 0.6rem var(--font);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.vehicle-filter-count.is-empty {
+    visibility: hidden;
+}
+
+.map-pin-status-ring {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: var(--pin-vehicle-bg);
+    flex: 0 0 auto;
+}
+
+.map-pin-status-ring--unknown {
+    border: 2px solid var(--pin-insurance-unknown-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-unknown-ring-soft);
+}
+
+.map-pin-status-ring--insured {
+    border: 2px solid var(--pin-insurance-insured-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-insured-ring-soft);
+}
+
+.map-pin-status-ring--uninsured {
+    border: 2px solid var(--pin-insurance-uninsured-ring);
+    box-shadow: 0 0 0 2px var(--pin-insurance-uninsured-ring-soft);
+}
+
+.map-pin-age-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--pin-long-standing-dot);
+    border: 2px solid var(--pin-long-standing-dot-border);
+    box-shadow: 0 0 0 2px var(--pin-long-standing-halo);
+    box-sizing: border-box;
+    flex: 0 0 auto;
 }

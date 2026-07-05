@@ -3,7 +3,28 @@
     border: 0;
 }
 
+.leaflet-tooltip.vehicle-marker-tooltip {
+    padding: 6px 9px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: var(--glass-panel-bg-strong);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur-soft);
+    -webkit-backdrop-filter: var(--glass-blur-soft);
+    font: 800 0.72rem var(--font);
+    line-height: 1.2;
+}
+
+.leaflet-tooltip-top.vehicle-marker-tooltip::before {
+    border-top-color: var(--glass-panel-bg-strong);
+}
+
 .vehicle-pin {
+    --pin-vehicle-current-ring: var(--pin-vehicle-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-vehicle-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-vehicle-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-vehicle-glyph);
     width: 34px;
     height: 34px;
     border-radius: 50% 50% 50% 0;
@@ -14,14 +35,51 @@
     box-sizing: border-box;
     background: var(--pin-vehicle-bg);
     color: transparent;
-    border: 2px solid var(--pin-vehicle-ring);
-    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-ring-soft);
+    border: 2px solid var(--pin-vehicle-current-ring);
+    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-current-ring-soft);
     transform: rotate(-45deg);
 }
 
 .vehicle-pin--with-photos {
-    border-color: var(--pin-vehicle-photo-ring);
-    box-shadow: var(--pin-shadow), 0 0 0 3px var(--pin-vehicle-photo-halo);
+    --pin-vehicle-current-ring: var(--pin-vehicle-photo-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-vehicle-photo-halo);
+    --pin-vehicle-current-inner-ring: var(--pin-vehicle-inner-ring);
+}
+
+.vehicle-pin--insurance-unknown {
+    --pin-vehicle-current-ring: var(--pin-insurance-unknown-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-unknown-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-unknown-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-unknown-ring);
+}
+
+.vehicle-pin--insurance-insured {
+    --pin-vehicle-current-ring: var(--pin-insurance-insured-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-insured-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-insured-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-insured-ring);
+}
+
+.vehicle-pin--insurance-uninsured {
+    --pin-vehicle-current-ring: var(--pin-insurance-uninsured-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-insurance-uninsured-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-insurance-uninsured-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-insurance-uninsured-ring);
+}
+
+.vehicle-pin--long-standing::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--pin-long-standing-dot);
+    border: 2px solid var(--pin-long-standing-dot-border);
+    box-shadow: 0 0 0 2px var(--pin-long-standing-halo), var(--pin-glyph-shadow);
+    box-sizing: border-box;
+    transform: rotate(45deg);
 }
 
 .vehicle-pin--pending {
@@ -41,17 +99,42 @@
     position: absolute;
     inset: 7px;
     border-radius: 50%;
-    border: 1px solid var(--pin-vehicle-inner-ring);
+    border: 1px solid var(--pin-vehicle-current-inner-ring);
 }
 
-.vehicle-pin::after {
-    content: 'V';
-    color: var(--pin-vehicle-glyph);
+.vehicle-pin-glyph {
+    width: 16px;
+    height: 8px;
+    border-radius: 4px 4px 2px 2px;
+    background: var(--pin-vehicle-current-glyph);
     transform: rotate(45deg);
     position: absolute;
-    font: 900 13px var(--font);
-    line-height: 1;
-    text-shadow: var(--pin-glyph-shadow);
+    box-shadow: var(--pin-glyph-shadow);
+}
+
+.vehicle-pin-glyph::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: -5px;
+    width: 10px;
+    height: 6px;
+    border: 2px solid var(--pin-vehicle-current-glyph);
+    border-bottom: 0;
+    border-radius: 6px 6px 1px 1px;
+    box-sizing: border-box;
+}
+
+.vehicle-pin-glyph::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    bottom: -3px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--pin-vehicle-current-glyph);
+    box-shadow: 9px 0 0 var(--pin-vehicle-current-glyph);
 }
 
 .vehicle-pin--pending::before {
@@ -61,6 +144,11 @@
 .vehicle-pin--pending::after {
     content: '?';
     color: var(--pin-pending-glyph);
+    transform: rotate(45deg);
+    position: absolute;
+    font: 900 13px var(--font);
+    line-height: 1;
+    text-shadow: var(--pin-glyph-shadow);
 }
 
 .vehicle-pin--rejected::before {
@@ -70,6 +158,16 @@
 .vehicle-pin--rejected::after {
     content: 'X';
     color: var(--pin-rejected-glyph);
+    transform: rotate(45deg);
+    position: absolute;
+    font: 900 13px var(--font);
+    line-height: 1;
+    text-shadow: var(--pin-glyph-shadow);
+}
+
+.vehicle-pin--pending .vehicle-pin-glyph,
+.vehicle-pin--rejected .vehicle-pin-glyph {
+    display: none;
 }
 
 .pending-submission-pin {
@@ -88,16 +186,26 @@
 }
 
 .pending-submission-pin::after {
-    content: 'W';
-    color: var(--pin-pending-glyph);
-    transform: rotate(45deg);
-    font: 900 13px var(--font);
-    line-height: 1;
-    text-shadow: var(--pin-glyph-shadow);
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 7px;
+    border-left: 2px solid var(--pin-pending-glyph);
+    border-bottom: 2px solid var(--pin-pending-glyph);
+    border-radius: 0 0 0 2px;
+    transform: translate(1px, -1px) rotate(45deg);
+    box-sizing: border-box;
 }
 
-.pending-submission-pin--photo::after {
-    content: 'P';
+.pending-submission-pin::before {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border: 2px solid var(--pin-pending-glyph);
+    border-radius: 50%;
+    transform: rotate(45deg);
+    box-sizing: border-box;
 }
 
 .field-photo-pin {
@@ -151,6 +259,34 @@
     transform: translate(2px, -1px) rotate(45deg);
 }
 
+.field-photo-pin--infrastructure::before,
+.field-photo-pin--smoke::before {
+    display: none;
+}
+
+.field-photo-pin--infrastructure::after,
+.field-photo-pin--smoke::after {
+    position: absolute;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+    transform: rotate(45deg);
+    font: 950 15px var(--font);
+    line-height: 1;
+    text-shadow: var(--pin-glyph-shadow);
+}
+
+.field-photo-pin--infrastructure::after {
+    content: '!';
+    color: var(--pin-infrastructure-glyph);
+}
+
+.field-photo-pin--smoke::after {
+    content: '~';
+    color: var(--pin-smoke-glyph);
+}
+
 .map-pin-count {
     position: absolute;
     top: -9px;
@@ -177,6 +313,8 @@
 .marker-detail--dots .map-pin-count,
 .marker-detail--dots .vehicle-pin::before,
 .marker-detail--dots .vehicle-pin::after,
+.marker-detail--dots .vehicle-pin-glyph,
+.marker-detail--dots .pending-submission-pin::before,
 .marker-detail--dots .pending-submission-pin::after,
 .marker-detail--dots .field-photo-pin::before,
 .marker-detail--dots .field-photo-pin::after {
@@ -186,34 +324,75 @@
 .marker-detail--dots .vehicle-pin,
 .marker-detail--dots .pending-submission-pin,
 .marker-detail--dots .field-photo-pin {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+    box-sizing: border-box;
     box-shadow: var(--pin-dot-shadow);
-    transform: translate(11px, 28px);
 }
 
 .marker-detail--dots .vehicle-pin {
-    background: var(--pin-vehicle-ring);
-    border: 2px solid var(--pin-vehicle-dot-border);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--pin-vehicle-bg);
+    border: 3px solid var(--pin-vehicle-current-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-current-ring-soft);
+    transform: translate(9px, 26px);
+}
+
+.marker-detail--dots .vehicle-pin--long-standing {
+    box-shadow:
+        var(--pin-dot-shadow),
+        0 0 0 2px var(--pin-vehicle-current-ring-soft),
+        0 0 0 4px var(--pin-long-standing-halo);
 }
 
 .marker-detail--dots .vehicle-pin--pending {
-    background: var(--pin-pending-ring);
+    background: var(--pin-vehicle-pending-bg);
     border-color: var(--pin-pending-dot-border);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-pending-ring-strong);
 }
 
 .marker-detail--dots .vehicle-pin--rejected {
-    background: var(--pin-rejected-ring);
+    background: var(--pin-rejected-bg);
     border-color: var(--pin-rejected-dot-border);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-rejected-ring-soft);
 }
 
 .marker-detail--dots .pending-submission-pin {
-    background: var(--pin-pending-ring);
-    border: 2px solid var(--pin-pending-dot-border);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--pin-pending-bg);
+    border: 2px dashed var(--pin-pending-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-pending-ring-soft);
+    transform: translate(10px, 27px);
 }
 
 .marker-detail--dots .field-photo-pin {
-    background: var(--pin-field-ring);
-    border: 2px solid var(--pin-field-glyph);
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-xs);
+    background: var(--pin-field-bg);
+    border: 2px solid var(--pin-field-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-field-ring-soft);
+    transform: translate(10px, 27px);
+}
+
+.marker-detail--dots .field-photo-pin--infrastructure {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: var(--pin-infrastructure-bg);
+    border-color: var(--pin-infrastructure-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-infrastructure-ring-soft);
+    transform: translate(10px, 27px) rotate(45deg);
+}
+
+.marker-detail--dots .field-photo-pin--smoke {
+    width: 16px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--pin-smoke-bg);
+    border-color: var(--pin-smoke-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-smoke-ring-soft);
+    transform: translate(9px, 29px);
 }

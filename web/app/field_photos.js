@@ -106,7 +106,7 @@ function groupFieldPhotos(photos) {
 
 function countVehicleLayerGroups() {
     if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return 0;
-    return buildVehicleGroups().filter(group => vehicleGroupPhotoCount(group) > 0).length;
+    return visibleVehicleGroups().length;
 }
 
 function countFieldPhotoIssueLayerGroups(issueType) {
@@ -136,6 +136,7 @@ function updateLayerCountBadge(id, count, tooltipKey) {
 
 function updateLayerCounters() {
     updateLayerCountBadge('layer-count-vehicles', countVehicleLayerGroups(), 'layers.countVehiclesTooltip');
+    updateVehicleFilterControlsAndCounts();
     updateLayerCountBadge(
         'layer-count-field-photo-infrastructure',
         countFieldPhotoIssueLayerGroups('infrastructure'),

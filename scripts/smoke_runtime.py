@@ -95,6 +95,8 @@ def check_static_asset(base_url: str, path: str, timeout: float) -> str:
     response = request(base_url, path, timeout=timeout)
     expect_status(response, 200, path)
     expect_security_headers(response, path)
+    cache_control = response.headers.get("Cache-Control", "")
+    expect("no-store" in cache_control.lower(), f"{path}: asset aplikacji musi mieć Cache-Control: no-store.")
     expect(response.body, f"{path}: pusty asset.")
     return path
 

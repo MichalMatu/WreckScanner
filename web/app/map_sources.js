@@ -4,6 +4,12 @@ let currentMapSourceIndex = Math.max(0, MAP_SOURCES.findIndex(source => source.k
 let mapSourceLayer = null;
 let mapSourceSwapToken = 0;
 let mapLabelLayer = null;
+let mapSourceSliderVisible = true;
+try {
+    mapSourceSliderVisible = localStorage.getItem(MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY) !== 'false';
+} catch (_) {
+    mapSourceSliderVisible = true;
+}
 const TILE_FALLBACK_DATA_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#d1d8e0"/></svg>'
 )}`;
@@ -225,12 +231,38 @@ function renderMapSourceTicks(visibleIndices = visibleMapSourceIndices()) {
     });
 }
 
+function isMapSourceSliderVisible() {
+    return mapSourceSliderVisible;
+}
+
+function applyMapSourceSliderVisibility() {
+    const slider = document.getElementById('year-slider');
+    if (slider) slider.hidden = !mapSourceSliderVisible;
+    const toggle = document.getElementById('map-source-slider-toggle');
+    if (toggle) toggle.checked = mapSourceSliderVisible;
+}
+
+function setMapSourceSliderVisible(visible) {
+    mapSourceSliderVisible = Boolean(visible);
+    try {
+        localStorage.setItem(MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY, mapSourceSliderVisible ? 'true' : 'false');
+    } catch (_) {}
+    applyMapSourceSliderVisibility();
+}
+
 function updateMapSourceUi() {
     const visibleIndices = visibleMapSourceIndices();
     const source = activeMapSource();
     const currentLabel = document.getElementById('year-current');
-    currentLabel.textContent = source.shortLabel;
-    currentLabel.title = source.label;
+    if (currentLabel) {
+        currentLabel.textContent = source.shortLabel;
+        currentLabel.title = source.label;
+    }
+    const menuBadge = document.getElementById('map-source-current-badge');
+    if (menuBadge) {
+        menuBadge.textContent = source.shortLabel;
+        menuBadge.title = source.label;
+    }
     const range = document.getElementById('year-range');
     if (range) {
         range.min = 0;
@@ -238,6 +270,7 @@ function updateMapSourceUi() {
         range.value = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices);
     }
     renderMapSourceTicks(visibleIndices);
+    applyMapSourceSliderVisibility();
     document.getElementById('year-prev')?.toggleAttribute('disabled', mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) <= 0);
     document.getElementById('year-next')?.toggleAttribute(
         'disabled',

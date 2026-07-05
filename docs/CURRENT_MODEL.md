@@ -16,7 +16,9 @@ modelu trwalych spraw pojazdow.
 Kazde zdjecie terenowe musi miec jawne `issue_type`. Warstwa pojazdow jest
 budowana z zatwierdzonych zdjec terenowych o `issue_type: "vehicle"`.
 Status OC/UFG jest recznie zapisywany jako `vehicle_insurance_status`:
-`unknown`, `insured` albo `uninsured`. Aplikacja nie pobiera danych z UFG automatycznie
+`unknown`, `insured` albo `uninsured`. Dla recznie sprawdzonych statusow
+`insured` i `uninsured` aplikacja zapisuje tez `vehicle_insurance_checked_at`,
+czyli date zapisania wyniku sprawdzenia w UFG. Aplikacja nie pobiera danych z UFG automatycznie
 i nie zapisuje tablic ani VIN.
 
 ## Aktualne przeplywy
@@ -30,8 +32,8 @@ i nie zapisuje tablic ani VIN.
   i wraca do kolejki review.
 - Zgloszenie ZIP/PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
-- Zgloszenie zawiera tekstowy wynik recznego sprawdzenia OC/UFG w mailu,
-  `zgloszenie.txt`, `raport.html` i PDF.
+- Zgloszenie zawiera tekstowy wynik recznego sprawdzenia OC/UFG oraz date
+  sprawdzenia w mailu, `zgloszenie.txt`, `raport.html` i PDF.
 - Miniatury ortofoto sa dowodem generowanym podczas tworzenia pakietu raportu.
 - Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB ani w stalym
   katalogu runtime.

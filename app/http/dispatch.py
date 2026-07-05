@@ -27,6 +27,8 @@ def handle_head(handler) -> bool:
     path = unquote(urlsplit(handler.path).path)
     if http_static_files.handle_web_page(handler, path, include_body=False):
         return True
+    if http_static_files.handle_web_asset(handler, path, include_body=False):
+        return True
     if path.startswith("/api/"):
         http_responses.send_api_not_found(handler, include_body=False)
         return True
@@ -79,6 +81,8 @@ def handle_passthrough_get(handler, path: str) -> bool:
 def handle_get(handler) -> bool:
     path = unquote(urlsplit(handler.path).path)
     if http_static_files.handle_web_page(handler, path):
+        return True
+    if http_static_files.handle_web_asset(handler, path):
         return True
     if handle_static_api_get(handler, path):
         return True

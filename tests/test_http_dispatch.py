@@ -40,13 +40,26 @@ class HttpDispatchContractTests(unittest.TestCase):
         self.assertEqual(handler.status, 404)
         self.assertEqual(handler.payload()["error"], "Nie znaleziono endpointu.")
 
-    def test_get_non_api_falls_back_to_static_handler(self):
+    def test_get_web_asset_is_served_with_no_store_cache_header(self):
         handler = FakeHandler("/app.js")
 
         handled = dispatch.handle_get(handler)
 
-        self.assertFalse(handled)
-        self.assertIsNone(handler.status)
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertIn(("Content-Type", "text/javascript; charset=utf-8"), handler.response_headers)
+        self.assertIn(("Cache-Control", "no-store"), handler.response_headers)
+
+    def test_head_web_asset_omits_body_and_sets_no_store_cache_header(self):
+        handler = FakeHandler("/i18n/en.js")
+
+        handled = dispatch.handle_head(handler)
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(handler.wfile.getvalue(), b"")
+        self.assertIn(("Content-Type", "text/javascript; charset=utf-8"), handler.response_headers)
+        self.assertIn(("Cache-Control", "no-store"), handler.response_headers)
 
     def test_get_tile_proxy_routes_to_geoportal_proxy(self):
         handler = FakeHandler("/tile_proxy/geoportal-standard/7/65/42?enhancementSettings=123")

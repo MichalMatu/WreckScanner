@@ -1,5 +1,36 @@
 let vehicleMarkers = [];
 let vehicleLayerVisible = true;
+const VEHICLE_FILTER_ALL = 'all';
+const VEHICLE_INSURANCE_FILTER_INSURED = 'insured';
+const VEHICLE_INSURANCE_FILTER_UNINSURED = 'uninsured';
+const VEHICLE_INSURANCE_FILTER_UNKNOWN = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+const VEHICLE_INSURANCE_FILTERS = new Set([
+    VEHICLE_FILTER_ALL,
+    VEHICLE_INSURANCE_FILTER_INSURED,
+    VEHICLE_INSURANCE_FILTER_UNINSURED,
+    VEHICLE_INSURANCE_FILTER_UNKNOWN,
+]);
+const VEHICLE_STANDING_FILTER_OFF = 0;
+const VEHICLE_INSURANCE_FILTER_CYCLE = [
+    VEHICLE_FILTER_ALL,
+    VEHICLE_INSURANCE_FILTER_INSURED,
+    VEHICLE_INSURANCE_FILTER_UNINSURED,
+    VEHICLE_INSURANCE_FILTER_UNKNOWN,
+];
+const VEHICLE_STANDING_FILTER_DAYS_CYCLE = [
+    VEHICLE_STANDING_FILTER_OFF,
+    ...VEHICLE_LONG_STANDING_DAY_OPTIONS,
+];
+const VEHICLE_PHOTO_FILTER_OFF = 0;
+const VEHICLE_PHOTO_FILTER_MIN_OPTIONS = [2, 3];
+const VEHICLE_PHOTO_FILTER_MIN_CYCLE = [
+    VEHICLE_PHOTO_FILTER_OFF,
+    ...VEHICLE_PHOTO_FILTER_MIN_OPTIONS,
+];
+const VEHICLE_MARKER_BASE_Z_INDEX = 1200;
+let vehicleInsuranceFilter = VEHICLE_FILTER_ALL;
+let vehicleStandingFilterDays = loadVehicleStandingFilterDays();
+let vehiclePhotoFilterMin = VEHICLE_PHOTO_FILTER_OFF;
 let pendingVehiclePhotoFocusId = '';
 let vehiclePhotoFocusDone = false;
 
@@ -162,14 +193,359 @@ function vehicleGroupInsuranceStatus(group) {
     return statuses.length ? FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN : '';
 }
 
+function vehicleGroupInsuranceCheckedAt(group) {
+    const status = vehicleGroupInsuranceStatus(group);
+    if (status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) return '';
+    const checkedAtValues = (group.photos || [])
+        .filter(photo => vehicleInsuranceStatus(photo.vehicle_insurance_status) === status)
+        .map(photo => String(photo.vehicle_insurance_checked_at || '').trim())
+        .filter(Boolean);
+    return checkedAtValues.sort().at(-1) || '';
+}
+
+function normalizeVehicleStandingFilterDays(days) {
+    const safeDays = Number(days);
+    if (safeDays === VEHICLE_STANDING_FILTER_OFF) return VEHICLE_STANDING_FILTER_OFF;
+    return VEHICLE_LONG_STANDING_DAY_OPTIONS.includes(safeDays) ? safeDays : VEHICLE_STANDING_FILTER_OFF;
+}
+
+function normalizeVehiclePhotoFilterMin(value) {
+    const safeValue = Number(value);
+    if (safeValue === VEHICLE_PHOTO_FILTER_OFF) return VEHICLE_PHOTO_FILTER_OFF;
+    return VEHICLE_PHOTO_FILTER_MIN_OPTIONS.includes(safeValue) ? safeValue : VEHICLE_PHOTO_FILTER_OFF;
+}
+
+function loadVehicleStandingFilterDays() {
+    try {
+        return normalizeVehicleStandingFilterDays(localStorage.getItem(VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY));
+    } catch (_) {
+        return VEHICLE_STANDING_FILTER_OFF;
+    }
+}
+
+function saveVehicleStandingFilterDays(days) {
+    try {
+        localStorage.setItem(VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY, String(days));
+    } catch (_) {}
+}
+
+function activeVehicleLongStandingDays() {
+    return vehicleStandingFilterDays || VEHICLE_LONG_STANDING_DEFAULT_DAYS;
+}
+
+function vehicleLongStandingMs(days = activeVehicleLongStandingDays()) {
+    return days * 24 * 60 * 60 * 1000;
+}
+
+function vehicleGroupIsLongStanding(group, nowMs = Date.now(), days = activeVehicleLongStandingDays()) {
+    const startTimestampMs = fieldPhotoGroupStartTimestamp(group.photos, nowMs);
+    return Number.isFinite(startTimestampMs) && nowMs - startTimestampMs >= vehicleLongStandingMs(days);
+}
+
+function normalizeVehicleInsuranceFilter(filter) {
+    const safeFilter = String(filter || '');
+    return VEHICLE_INSURANCE_FILTERS.has(safeFilter) ? safeFilter : VEHICLE_FILTER_ALL;
+}
+
+function vehicleGroupMatchesInsuranceFilter(group, filter = vehicleInsuranceFilter) {
+    switch (normalizeVehicleInsuranceFilter(filter)) {
+        case VEHICLE_INSURANCE_FILTER_INSURED:
+            return vehicleGroupInsuranceStatus(group) === 'insured';
+        case VEHICLE_INSURANCE_FILTER_UNINSURED:
+            return vehicleGroupInsuranceStatus(group) === 'uninsured';
+        case VEHICLE_INSURANCE_FILTER_UNKNOWN:
+            return vehicleGroupInsuranceStatus(group) === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+        case VEHICLE_FILTER_ALL:
+        default:
+            return true;
+    }
+}
+
+function vehicleGroupMatchesStandingFilter(group, days = vehicleStandingFilterDays) {
+    const safeDays = normalizeVehicleStandingFilterDays(days);
+    return safeDays === VEHICLE_STANDING_FILTER_OFF || vehicleGroupIsLongStanding(group, Date.now(), safeDays);
+}
+
+function vehicleGroupMatchesPhotoFilter(group, minPhotos = vehiclePhotoFilterMin) {
+    const safeMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    return safeMinPhotos === VEHICLE_PHOTO_FILTER_OFF || vehicleGroupPhotoCount(group) >= safeMinPhotos;
+}
+
+function vehicleGroupMatchesFilters(group) {
+    return vehicleGroupMatchesInsuranceFilter(group)
+        && vehicleGroupMatchesStandingFilter(group)
+        && vehicleGroupMatchesPhotoFilter(group);
+}
+
+function visibleVehicleGroups(photos = fieldPhotoLayerData) {
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return [];
+    return buildVehicleGroups(photos).filter(group =>
+        vehicleGroupPhotoCount(group) > 0
+        && vehicleGroupMatchesFilters(group)
+    );
+}
+
+function vehicleGroupStatusPriority(group) {
+    const insuranceStatus = vehicleGroupInsuranceStatus(group);
+    let priority = 0;
+    if (insuranceStatus === 'insured') priority += 10;
+    if (insuranceStatus === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) priority += 20;
+    if (vehicleGroupIsLongStanding(group)) priority += 40;
+    if (insuranceStatus === 'uninsured') priority += 80;
+    return priority;
+}
+
+function vehicleGroupZIndexOffset(group) {
+    return VEHICLE_MARKER_BASE_Z_INDEX + vehicleGroupStatusPriority(group);
+}
+
+function prioritizedVehicleGroups(photos = fieldPhotoLayerData) {
+    return visibleVehicleGroups(photos).sort((a, b) => vehicleGroupStatusPriority(a) - vehicleGroupStatusPriority(b));
+}
+
+function emptyVehicleFilterCounts() {
+    const counts = {
+        unknown: 0,
+        insured: 0,
+        uninsured: 0,
+        standingByDays: {},
+        photoByMin: {},
+    };
+    VEHICLE_LONG_STANDING_DAY_OPTIONS.forEach(days => {
+        counts.standingByDays[days] = 0;
+    });
+    VEHICLE_PHOTO_FILTER_MIN_OPTIONS.forEach(minPhotos => {
+        counts.photoByMin[minPhotos] = 0;
+    });
+    return counts;
+}
+
+function vehicleFilterCounts(photos = fieldPhotoLayerData) {
+    const counts = emptyVehicleFilterCounts();
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return counts;
+    const nowMs = Date.now();
+    buildVehicleGroups(photos)
+        .filter(group => vehicleGroupPhotoCount(group) > 0)
+        .forEach(group => {
+            const insuranceStatus = vehicleGroupInsuranceStatus(group);
+            if (Object.prototype.hasOwnProperty.call(counts, insuranceStatus)) counts[insuranceStatus] += 1;
+            VEHICLE_LONG_STANDING_DAY_OPTIONS.forEach(days => {
+                if (vehicleGroupIsLongStanding(group, nowMs, days)) counts.standingByDays[days] += 1;
+            });
+            VEHICLE_PHOTO_FILTER_MIN_OPTIONS.forEach(minPhotos => {
+                if (vehicleGroupPhotoCount(group) >= minPhotos) counts.photoByMin[minPhotos] += 1;
+            });
+        });
+    return counts;
+}
+
+function vehicleInsuranceFilterLabel(filter) {
+    switch (normalizeVehicleInsuranceFilter(filter)) {
+        case VEHICLE_INSURANCE_FILTER_INSURED:
+            return t('layers.vehicleInsuranceCycleStatus', { status: t('vehicle.markerInsuranceShort.insured') });
+        case VEHICLE_INSURANCE_FILTER_UNINSURED:
+            return t('layers.vehicleInsuranceCycleStatus', { status: t('vehicle.markerInsuranceShort.uninsured') });
+        case VEHICLE_INSURANCE_FILTER_UNKNOWN:
+            return t('layers.vehicleInsuranceCycleStatus', { status: t('vehicle.markerInsuranceShort.unknown') });
+        case VEHICLE_FILTER_ALL:
+        default:
+            return t('layers.vehicleInsuranceCycleOff');
+    }
+}
+
+function vehicleStandingFilterLabel(days) {
+    const safeDays = normalizeVehicleStandingFilterDays(days);
+    return safeDays === VEHICLE_STANDING_FILTER_OFF
+        ? t('layers.vehicleStandingCycleOff')
+        : t('layers.vehicleStandingCycleDays', { days: safeDays });
+}
+
+function vehiclePhotoFilterLabel(minPhotos) {
+    const safeMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    return safeMinPhotos === VEHICLE_PHOTO_FILTER_OFF
+        ? t('layers.vehiclePhotoCycleOff')
+        : t('layers.vehiclePhotoCycleMin', { n: safeMinPhotos });
+}
+
+function vehicleInsuranceFilterCount(counts, filter = vehicleInsuranceFilter) {
+    switch (normalizeVehicleInsuranceFilter(filter)) {
+        case VEHICLE_INSURANCE_FILTER_INSURED:
+            return counts.insured;
+        case VEHICLE_INSURANCE_FILTER_UNINSURED:
+            return counts.uninsured;
+        case VEHICLE_INSURANCE_FILTER_UNKNOWN:
+            return counts.unknown;
+        case VEHICLE_FILTER_ALL:
+        default:
+            return null;
+    }
+}
+
+function vehicleInsuranceFilterDotClass(filter = vehicleInsuranceFilter) {
+    switch (normalizeVehicleInsuranceFilter(filter)) {
+        case VEHICLE_INSURANCE_FILTER_INSURED:
+            return 'map-pin-status-ring map-pin-status-ring--insured';
+        case VEHICLE_INSURANCE_FILTER_UNINSURED:
+            return 'map-pin-status-ring map-pin-status-ring--uninsured';
+        case VEHICLE_INSURANCE_FILTER_UNKNOWN:
+            return 'map-pin-status-ring map-pin-status-ring--unknown';
+        case VEHICLE_FILTER_ALL:
+        default:
+            return 'vehicle-filter-off-dot';
+    }
+}
+
+function vehiclePhotoFilterDotClass(minPhotos = vehiclePhotoFilterMin) {
+    return normalizeVehiclePhotoFilterMin(minPhotos) === VEHICLE_PHOTO_FILTER_OFF
+        ? 'vehicle-filter-off-dot'
+        : 'vehicle-photo-dot';
+}
+
+function nextVehicleCycleValue(values, current) {
+    const index = values.indexOf(current);
+    return values[(index + 1) % values.length];
+}
+
+function setVehicleInsuranceFilter(filter) {
+    const nextFilter = normalizeVehicleInsuranceFilter(filter);
+    if (nextFilter === vehicleInsuranceFilter) {
+        updateVehicleFilterControlsAndCounts();
+        return;
+    }
+    vehicleInsuranceFilter = nextFilter;
+    refreshVehicleLayer();
+}
+
+function cycleVehicleInsuranceFilter() {
+    setVehicleInsuranceFilter(nextVehicleCycleValue(VEHICLE_INSURANCE_FILTER_CYCLE, vehicleInsuranceFilter));
+}
+
+function setVehicleStandingFilterDays(days) {
+    const nextDays = normalizeVehicleStandingFilterDays(days);
+    if (nextDays === vehicleStandingFilterDays) {
+        updateVehicleFilterControlsAndCounts();
+        return;
+    }
+    vehicleStandingFilterDays = nextDays;
+    saveVehicleStandingFilterDays(vehicleStandingFilterDays);
+    refreshVehicleLayer();
+}
+
+function cycleVehicleStandingFilterDays() {
+    setVehicleStandingFilterDays(nextVehicleCycleValue(VEHICLE_STANDING_FILTER_DAYS_CYCLE, vehicleStandingFilterDays));
+}
+
+function setVehiclePhotoFilterMin(minPhotos) {
+    const nextMinPhotos = normalizeVehiclePhotoFilterMin(minPhotos);
+    if (nextMinPhotos === vehiclePhotoFilterMin) {
+        updateVehicleFilterControlsAndCounts();
+        return;
+    }
+    vehiclePhotoFilterMin = nextMinPhotos;
+    refreshVehicleLayer();
+}
+
+function cycleVehiclePhotoFilterMin() {
+    setVehiclePhotoFilterMin(nextVehicleCycleValue(VEHICLE_PHOTO_FILTER_MIN_CYCLE, vehiclePhotoFilterMin));
+}
+
+function updateVehicleFilterCount(id, count, label = '') {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    const hasCount = Number.isFinite(count);
+    const safeCount = hasCount ? count : 0;
+    badge.textContent = hasCount ? String(safeCount) : '';
+    badge.classList.toggle('is-empty', !hasCount);
+    if (hasCount) {
+        badge.removeAttribute('aria-hidden');
+        badge.setAttribute('aria-label', t('layers.vehicleFilterCountLabel', { label, n: safeCount }));
+    } else {
+        badge.setAttribute('aria-hidden', 'true');
+        badge.removeAttribute('aria-label');
+    }
+}
+
+function updateVehicleFilterButton({ buttonId, labelSelector, dotSelector, countId, label, count, dotClass, active }) {
+    const button = document.getElementById(buttonId);
+    const labelEl = document.querySelector(labelSelector);
+    const dotEl = document.querySelector(dotSelector);
+    if (button) {
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        button.setAttribute('aria-label', label);
+    }
+    if (labelEl) labelEl.textContent = label;
+    if (dotEl) dotEl.className = dotClass;
+    updateVehicleFilterCount(countId, count, label);
+}
+
+function vehicleMarkerTooltip(group) {
+    const status = vehicleInsuranceStatus(vehicleGroupInsuranceStatus(group));
+    const parts = [
+        t('vehicle.markerTooltipPhotos', { n: vehicleGroupPhotoCount(group) }),
+    ];
+    const age = popupElapsedAgeText(group.photos);
+    if (age) parts.push(t('vehicle.markerTooltipAge', { age }));
+    parts.push(t('vehicle.markerTooltipInsurance', {
+        status: t(`vehicle.markerInsuranceShort.${status}`),
+    }));
+    return parts.join(', ');
+}
+
+function updateVehicleFilterControlsAndCounts() {
+    const counts = vehicleFilterCounts();
+    updateVehicleFilterButton({
+        buttonId: 'vehicle-insurance-cycle-filter',
+        labelSelector: '[data-vehicle-insurance-filter-label]',
+        dotSelector: '[data-vehicle-insurance-filter-dot]',
+        countId: 'vehicle-insurance-filter-count',
+        label: vehicleInsuranceFilterLabel(vehicleInsuranceFilter),
+        count: vehicleInsuranceFilterCount(counts, vehicleInsuranceFilter),
+        dotClass: vehicleInsuranceFilterDotClass(vehicleInsuranceFilter),
+        active: vehicleInsuranceFilter !== VEHICLE_FILTER_ALL,
+    });
+    updateVehicleFilterButton({
+        buttonId: 'vehicle-standing-cycle-filter',
+        labelSelector: '[data-vehicle-standing-filter-label]',
+        dotSelector: '[data-vehicle-standing-filter-dot]',
+        countId: 'vehicle-standing-filter-count',
+        label: vehicleStandingFilterLabel(vehicleStandingFilterDays),
+        count: vehicleStandingFilterDays === VEHICLE_STANDING_FILTER_OFF
+            ? null
+            : counts.standingByDays[vehicleStandingFilterDays],
+        dotClass: vehicleStandingFilterDays === VEHICLE_STANDING_FILTER_OFF
+            ? 'vehicle-filter-off-dot'
+            : 'map-pin-age-dot',
+        active: vehicleStandingFilterDays !== VEHICLE_STANDING_FILTER_OFF,
+    });
+    updateVehicleFilterButton({
+        buttonId: 'vehicle-photo-cycle-filter',
+        labelSelector: '[data-vehicle-photo-filter-label]',
+        dotSelector: '[data-vehicle-photo-filter-dot]',
+        countId: 'vehicle-photo-filter-count',
+        label: vehiclePhotoFilterLabel(vehiclePhotoFilterMin),
+        count: vehiclePhotoFilterMin === VEHICLE_PHOTO_FILTER_OFF
+            ? null
+            : counts.photoByMin[vehiclePhotoFilterMin],
+        dotClass: vehiclePhotoFilterDotClass(vehiclePhotoFilterMin),
+        active: vehiclePhotoFilterMin !== VEHICLE_PHOTO_FILTER_OFF,
+    });
+}
+
 function vehiclePhotoPopup(group) {
     const photoCount = vehicleGroupPhotoCount(group);
     const title = photoCount > 1
         ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
+    const insuranceStatus = vehicleGroupInsuranceStatus(group);
+    const insuranceCheckedAt = vehicleGroupInsuranceCheckedAt(group);
     return mapPopup(`
-            ${popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])}
+            ${popupHeader(title, [
+                vehicleInsuranceHeaderBadge(insuranceStatus, insuranceCheckedAt),
+                vehicleInsuranceCheckedBadge(insuranceStatus, insuranceCheckedAt),
+                popupElapsedAgeBadge(group.photos),
+            ])}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}
@@ -183,14 +559,28 @@ function vehicleGroupPopup(group) {
 function placeVehicleMarkers() {
     clearVehicleMarkers();
     if (!vehicleLayerAllowed()) return;
-    buildVehicleGroups().forEach(group => {
+    prioritizedVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
+        const markerTooltip = vehicleMarkerTooltip(group);
         const marker = L.marker([group.lat, group.lon], {
-            icon: vehicleIcon(vehicleGroupPhotoCount(group)),
-            zIndexOffset: 1200,
+            icon: vehicleIcon(
+                vehicleGroupPhotoCount(group),
+                'approved',
+                vehicleGroupInsuranceStatus(group),
+                vehicleGroupIsLongStanding(group)
+            ),
+            zIndexOffset: vehicleGroupZIndexOffset(group),
             draggable: canDrag,
             autoPan: canDrag,
+            alt: markerTooltip,
         }).addTo(map).bindPopup(vehicleGroupPopup(group), mapPopupOptions());
+        marker.getElement()?.setAttribute('aria-label', markerTooltip);
+        marker.bindTooltip(markerTooltip, {
+            className: 'vehicle-marker-tooltip',
+            direction: 'top',
+            opacity: 0.96,
+            sticky: true,
+        });
         if (canDrag) {
             marker.on('dragstart', () => marker.closePopup());
             marker.on('dragend', () => updateFieldPhotoGroupLocation(

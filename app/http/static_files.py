@@ -7,6 +7,19 @@ from app.http import responses as http_responses
 
 HTML_PAGE_PATHS = {"/", "/index.html", "/privacy", "/report"}
 HTML_INCLUDE_RE = re.compile(r"^[ \t]*<!--\s*include:([A-Za-z0-9_./-]+)\s*-->\s*$", re.MULTILINE)
+WEB_ASSET_CONTENT_TYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".map": "application/json; charset=utf-8",
+    ".ico": "image/x-icon",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+    ".woff2": "font/woff2",
+}
 
 
 def send_file(
@@ -105,3 +118,21 @@ def handle_web_page(handler, path: str, *, include_body: bool = True) -> bool:
         send_web_page(handler, "index.html", include_body=include_body)
         return True
     return False
+
+
+def handle_web_asset(handler, path: str, *, include_body: bool = True) -> bool:
+    if path in HTML_PAGE_PATHS:
+        return False
+    relative_path = unquote(urlsplit(path).path).lstrip("/")
+    try:
+        relative = safe_web_relative_path(relative_path)
+    except FileNotFoundError:
+        return False
+    content_type = WEB_ASSET_CONTENT_TYPES.get(relative.suffix.lower())
+    if not content_type:
+        return False
+    asset_path = config.WEB_DIR / relative
+    if not asset_path.is_file():
+        return False
+    send_file(handler, asset_path, content_type, cache_control="no-store", include_body=include_body)
+    return True

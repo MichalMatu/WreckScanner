@@ -48,6 +48,7 @@ Następujące rzeczy nie mogą stać się tabelami ani trwałym API bazy:
 - `created_at`, `captured_at`
 - `issue_type`
 - `vehicle_insurance_status`
+- `vehicle_insurance_checked_at`
 - `lat`, `lon`, `coordinate_source`, `position_updated_at`
 - `public_review_status`, `reviewed_at`, `redactions`
 - `original_filename`, `content_type`, `format`, `size_bytes`, `image_width`, `image_height`

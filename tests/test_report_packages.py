@@ -84,6 +84,9 @@ def create_field_photo_fixture(
             "image_height": 24,
             "issue_type": issue_type,
             "vehicle_insurance_status": (vehicle_insurance_status if issue_type == "vehicle" else "unknown"),
+            "vehicle_insurance_checked_at": (
+                "2026-07-05T12:30:00Z" if issue_type == "vehicle" and vehicle_insurance_status != "unknown" else None
+            ),
             "lat": 51.1,
             "lon": 17.2,
             "coordinate_source": "map",
@@ -195,6 +198,7 @@ class ReportPackageTests(unittest.TestCase):
             self.assertIn("Dane działki ewidencyjnej", result["body"])
             self.assertIn("Status OC/UFG pojazdu", result["body"])
             self.assertIn("- Wynik ręcznego sprawdzenia: pojazd ma OC", result["body"])
+            self.assertIn("- Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", result["body"])
             self.assertIn("- Numer działki: 87", result["body"])
             self.assertIn("- Typ terenu: B - tereny mieszkaniowe", result["body"])
             self.assertNotIn("- Powierzchnia:", result["body"])
@@ -223,6 +227,7 @@ class ReportPackageTests(unittest.TestCase):
                 report_html = archive.read("raport.html").decode("utf-8")
                 self.assertIn(place_url, text)
                 self.assertIn("Wynik ręcznego sprawdzenia: pojazd ma OC", text)
+                self.assertIn("Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", text)
                 self.assertIn("Identyfikator działki: 026401_1.0022.AR_27.87", text)
                 self.assertIn("Typ terenu: B - tereny mieszkaniowe", text)
                 self.assertNotIn("Powierzchnia:", text)
@@ -231,6 +236,7 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Geoportal działki", text)
                 self.assertIn("Link do miejsca w WreckScanner", report_html)
                 self.assertIn("Wynik ręcznego sprawdzenia: pojazd ma OC", report_html)
+                self.assertIn("Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", report_html)
                 self.assertIn("Otwórz miejsce w WreckScanner", report_html)
                 self.assertIn('class="report-inline-link"', report_html)
                 self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", report_html)
@@ -254,6 +260,26 @@ class ReportPackageTests(unittest.TestCase):
                 create_field_photo_report_package(
                     valid_fields(), [photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
                 )
+
+    def test_report_package_omits_insurance_check_date_when_status_is_unknown(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, photo_id = create_field_photo_fixture(root, vehicle_insurance_status="unknown")
+
+            with patch("core.report_evidence.save_location_crops", side_effect=fake_save_location_crops):
+                result = create_field_photo_report_package(
+                    valid_fields(), [photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
+                )
+
+            self.assertIn("- Wynik ręcznego sprawdzenia: nie sprawdzono", result["body"])
+            self.assertNotIn("Data sprawdzenia w UFG", result["body"])
+            with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
+                text = archive.read("zgloszenie.txt").decode("utf-8")
+                report_html = archive.read("raport.html").decode("utf-8")
+                self.assertIn("Wynik ręcznego sprawdzenia: nie sprawdzono", text)
+                self.assertIn("Wynik ręcznego sprawdzenia: nie sprawdzono", report_html)
+                self.assertNotIn("Data sprawdzenia w UFG", text)
+                self.assertNotIn("Data sprawdzenia w UFG", report_html)
 
     def test_report_pdf_starts_with_formal_letter_before_evidence(self):
         with TemporaryDirectory() as tmp:

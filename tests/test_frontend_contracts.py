@@ -36,11 +36,46 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn(".app-menu-footer-icon", panel_css)
         self.assertIn(".app-menu-footer-icon--lang", panel_css)
         self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
+        self.assertIn(".app-menu-drawer-section", panel_css)
+        map_panel_css = panel_css.split(".app-menu-map-panel {", 1)[1].split("}", 1)[0]
+        drawer_section_css = panel_css.split(".app-menu-drawer-section {", 1)[1].split("}", 1)[0]
+        self.assertIn("--app-menu-item-gap: 7px;", panel_css)
+        self.assertIn("gap: var(--app-menu-item-gap);", map_panel_css)
+        self.assertIn("padding: 0 var(--space-5) var(--app-menu-item-gap);", map_panel_css)
+        self.assertIn("gap: var(--app-menu-item-gap);", drawer_section_css)
+        self.assertNotIn("padding: var(--space-2) 0;", drawer_section_css)
+        self.assertNotIn("border-top:", drawer_section_css)
+        self.assertIn("border: 1px solid var(--border);", panel_css)
+        self.assertIn("border-radius: var(--radius-md);", panel_css)
+        self.assertIn("background: var(--surface-subtle);", panel_css)
+        self.assertNotIn("border-left: 3px solid transparent;", panel_css)
         self.assertNotIn("app-menu-admin-icon", html + panel_css)
         self.assertIn('-apple-system, BlinkMacSystemFont, "SF Pro Text"', tokens_css)
         self.assertNotIn("fonts.googleapis.com", html)
         self.assertNotIn("Plus Jakarta Sans", html + tokens_css)
         self.assertNotIn("Outfit", html + tokens_css)
+
+    def test_base_map_menu_uses_compact_slider_toggle(self):
+        html = read_index_html()
+        map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")
+        map_controls_css = (ROOT_DIR / "web" / "styles" / "map_controls.css").read_text(encoding="utf-8")
+
+        panel_id = html.index('id="panel-map-source"')
+        panel_start = html.rfind("<label", 0, panel_id)
+        panel_block = html[panel_start : html.index("</label>", panel_id)]
+        self.assertIn('class="layer-toggle panel-map-source"', panel_block)
+        self.assertLess(
+            panel_block.index('id="map-source-slider-toggle"'), panel_block.index("layer-pin--base-map-osm")
+        )
+        self.assertLess(panel_block.index("layer-pin--base-map-osm"), panel_block.index('data-i18n="panel.baseMap"'))
+        self.assertLess(
+            panel_block.index('data-i18n="panel.baseMap"'), panel_block.index('id="map-source-current-badge"')
+        )
+        self.assertIn("document.getElementById('map-source-current-badge')", map_sources_js)
+        self.assertIn("menuBadge.textContent = source.shortLabel", map_sources_js)
+        self.assertNotIn("map-source-menu-options", html + map_sources_js + map_controls_css)
+        self.assertNotIn("map-source-option", html + map_sources_js + map_controls_css)
+        self.assertNotIn("map-source-slider-toggle-mark", html + map_controls_css)
 
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
         html = read_index_html()
@@ -158,6 +193,7 @@ class FrontendContracts(unittest.TestCase):
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         privacy_requests_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
         welcome_js = (ROOT_DIR / "web" / "app" / "welcome.js").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
@@ -168,14 +204,27 @@ class FrontendContracts(unittest.TestCase):
             + photo_review_js
             + privacy_requests_js
             + welcome_js
+            + config_js
             + admin_css
             + modals_css
             + i18n_js
         )
+        settings_modal_css = modals_css.split(".modal--settings {", 1)[1].split("}", 1)[0]
+        admin_modal_css = modals_css.split(".modal--admin-panel {", 1)[1].split("}", 1)[0]
 
         self.assertIn('class="admin-panel-stack"', html)
         self.assertIn("grid-template-columns: minmax(260px, 0.82fr) minmax(360px, 1.18fr);", admin_css)
-        self.assertIn("width: min(860px, calc(100vw - 24px));", modals_css)
+        self.assertIn("width: min(860px, calc(100vw - 48px));", modals_css)
+        self.assertNotIn("position:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("top:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("right:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("pointer-events:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("modal-backdrop--floating", frontend)
+        self.assertNotIn("draggable-modal", frontend)
+        self.assertNotIn("modal-drag-handle", frontend)
+        self.assertNotIn("MODAL_POSITION_STORAGE_PREFIX", frontend)
+        self.assertNotIn("restoreDraggableModalPosition", ui_js)
+        self.assertNotIn("saveDraggableModalPosition", ui_js)
         self.assertIn("'modal.adminPanel.publicLayers': 'Warstwy'", i18n_js)
         self.assertIn("'modal.adminPanel.publicFeatures': 'Funkcje'", i18n_js)
         self.assertIn("'modal.adminPanel.publicFeatures': 'Features'", i18n_js)
@@ -341,6 +390,7 @@ class FrontendContracts(unittest.TestCase):
     def test_frontend_uses_one_vehicle_layer_for_cases_and_vehicle_photos(self):
         html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        map_markers_js = (ROOT_DIR / "web" / "app" / "map_markers.js").read_text(encoding="utf-8")
         map_helpers_js = (ROOT_DIR / "web" / "map_helpers.js").read_text(encoding="utf-8")
         settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
         field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
@@ -353,6 +403,7 @@ class FrontendContracts(unittest.TestCase):
         frontend = (
             html
             + config_js
+            + map_markers_js
             + map_helpers_js
             + settings_js
             + field_photos_js
@@ -373,10 +424,8 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("function toggleVehicleLayer", vehicle_layer_js)
         self.assertIn("bindPopup(vehicleGroupPopup(group), mapPopupOptions())", vehicle_layer_js)
         self.assertIn("mapPopupMediaModifiers(previews, 'map-popup--vehicle-photo')", vehicle_layer_js)
-        self.assertIn(
-            "popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])",
-            vehicle_layer_js,
-        )
+        self.assertIn("vehicleInsuranceHeaderBadge(insuranceStatus, insuranceCheckedAt)", vehicle_layer_js)
+        self.assertIn("vehicleInsuranceCheckedBadge(insuranceStatus, insuranceCheckedAt)", vehicle_layer_js)
         self.assertIn("function openFieldPhotoUploadModal", field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadFromPanel", html + field_photo_upload_js)
         self.assertIn("openFieldPhotoUploadAtContextPoint", html + map_context_js)
@@ -425,7 +474,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("--pin-vehicle-ring:", styles)
         self.assertIn("background: var(--pin-vehicle-bg);", styles)
         self.assertIn("border: 2px solid var(--pin-vehicle-ring);", styles)
+        self.assertIn('class="vehicle-pin-glyph" aria-hidden="true"', map_markers_js)
+        self.assertIn(".vehicle-pin-glyph", styles)
+        self.assertNotIn("content: 'A';", styles)
         self.assertIn("background: var(--pin-infrastructure-bg);", styles)
+        self.assertIn("content: '!';", styles)
+        self.assertIn("content: '~';", styles)
+        self.assertNotIn("content: 'D';", styles)
+        self.assertIn(".pending-submission-pin::before", styles)
+        self.assertNotIn("pending-submission-pin--photo", frontend)
+        self.assertNotIn("content: 'W';", styles)
+        self.assertNotIn("content: 'P';", styles)
         self.assertNotIn("map-popup-action--photo", frontend)
         self.assertNotIn("map-popup-action--delete", frontend)
         self.assertNotIn("fieldPhoto.openOriginal", i18n_js)
@@ -506,63 +565,6 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("modal.fieldPhotoSummary.discard", i18n_js)
         self.assertIn("returnToFieldPhotoSummary", review_js)
 
-    def test_vehicle_insurance_ufg_badge_is_shared_and_editable(self):
-        html = read_index_html()
-        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
-        popups_js = (ROOT_DIR / "web" / "app" / "popups.js").read_text(encoding="utf-8")
-        field_photo_popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
-        upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
-        review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
-        popups_css = (ROOT_DIR / "web" / "styles" / "popups.css").read_text(encoding="utf-8")
-        forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
-        review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
-        i18n_js = read_i18n_bundle()
-        frontend = html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + i18n_js
-
-        self.assertIn("const UFG_OC_CHECK_URL = 'https://www.ufg.pl/';", config_js)
-        self.assertIn("FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES", config_js)
-        self.assertIn('id="field-photo-insurance-section"', html)
-        self.assertIn('id="field-photo-insurance-status"', html)
-        self.assertIn('id="photo-review-vehicle-insurance-section"', html)
-        self.assertIn('id="photo-review-vehicle-insurance"', html)
-        self.assertIn('href="https://www.ufg.pl/" target="_blank"', html)
-        self.assertIn("function vehicleInsuranceHeaderBadge", popups_js)
-        self.assertIn(
-            "function vehicleGroupInsuranceStatus",
-            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
-        )
-        self.assertIn(
-            "vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group))",
-            (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8"),
-        )
-        self.assertNotIn('class="map-popup-photo-tile"', popups_js)
-        self.assertIn('class="map-popup-photo"', popups_js)
-        self.assertNotIn("${vehicleInsuranceUfgBadge(photo)}", popups_js)
-        self.assertIn("href: UFG_OC_CHECK_URL", popups_js)
-        self.assertIn('href="${escapeHtml(badge.href)}"', popups_js)
-        self.assertNotIn(
-            "vehicleInsuranceStatus: fieldPhotoIssueType(photo) === FIELD_PHOTO_ISSUE_TYPE_VEHICLE",
-            field_photo_popups_js,
-        )
-        self.assertIn("formData.append('vehicle_insurance_status'", upload_js)
-        self.assertIn("photoReviewVehicleInsurancePayload", review_js)
-        self.assertIn("vehicle_insurance_status", review_js)
-        self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
-        self.assertIn(".map-popup-head-value--insurance-uninsured", popups_css)
-        self.assertNotIn(".map-popup-ufg-link", popups_css)
-        self.assertIn(".field-photo-insurance-head", forms_css)
-        self.assertIn(".photo-review-insurance", review_css)
-        for key in (
-            "fieldPhoto.vehicleInsurance.unknown",
-            "fieldPhoto.vehicleInsurance.insured",
-            "fieldPhoto.vehicleInsurance.uninsured",
-            "fieldPhoto.vehicleInsurance.badge.insured",
-            "fieldPhoto.vehicleInsurance.badge.uninsured",
-            "fieldPhoto.vehicleInsurance.ufgTitle",
-            "modal.photoReview.vehicleInsurance",
-        ):
-            self.assertIn(key, frontend)
-
     def test_modal_select_options_keep_dark_theme(self):
         html = read_index_html()
         forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
@@ -601,6 +603,15 @@ class FrontendContracts(unittest.TestCase):
         self.assertNotIn("cadastralParcelGeoportalUrl", map_context_js)
         self.assertNotIn("parcelOpenGeoportal", map_context_js + i18n_js)
         self.assertNotIn("identifyParcel=", map_context_js)
+
+    def test_field_photo_popup_omits_unstable_geoportal_deep_link(self):
+        popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
+
+        self.assertNotIn("links.geoportal", popups_js)
+        self.assertNotIn("popup.geoportal", popups_js + i18n_js)
+        self.assertIn("links.street_view", popups_js)
+        self.assertIn("links.google_maps_satellite", popups_js)
 
     def test_approved_field_photo_popups_hide_redundant_metadata(self):
         popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")

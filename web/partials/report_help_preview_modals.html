@@ -1,7 +1,7 @@
     <!-- ─── MODAL: GENERATOR ZGŁOSZENIA ─────────────────── -->
     <div class="modal-backdrop" id="modal-report-package" hidden onclick="closeModal(this)">
-        <div class="modal modal--report draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--report" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.report.title">Zgłoszenie do weryfikacji</h2>
                 <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
                     aria-label="Zamknij">
@@ -92,8 +92,8 @@
 
     <!-- ─── MODAL: POMOC / POWITANIE ────────────────────── -->
     <div class="modal-backdrop" id="modal-help" hidden onclick="closeModal(this)">
-        <div class="modal modal--welcome draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--welcome" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.help.title">WreckScanner</h2>
                 <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
                     aria-label="Zamknij">
@@ -124,8 +124,8 @@
 
                 <section class="welcome-section">
                     <h3 data-i18n="modal.help.mapTitle">Warstwy i podkłady</h3>
-                    <p data-i18n="modal.help.mapBody" data-i18n-html>Filtry warstw są w menu. Suwak na dole przełącza
-                        ortofoto <b>POL</b>, <b>OSM</b> i roczniki <b>2020-2025</b>.</p>
+                    <p data-i18n="modal.help.mapBody" data-i18n-html>Filtry warstw i podkład mapy są w menu. Dolny suwak
+                        zostaje szybkim skrótem do ortofoto <b>POL</b>, <b>OSM</b> i roczników <b>2020-2025</b>.</p>
                 </section>
 
                 <section class="welcome-section">
@@ -145,8 +145,8 @@
 
     <!-- ─── MODAL: PODGLĄD ZDJĘCIA ─────────────────────── -->
     <div class="modal-backdrop" id="modal-photo-preview" hidden onclick="closeModal(this)">
-        <div class="modal modal--photo-preview draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--photo-preview" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 id="photo-preview-title" data-i18n="modal.photoPreview.title">Podgląd zdjęcia</h2>
                 <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
                     aria-label="Zamknij">

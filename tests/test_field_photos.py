@@ -141,7 +141,9 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertTrue((private_dir / record["private_original_file"]).exists())
             self.assertEqual(record["issue_type"], "vehicle")
             self.assertEqual(record["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(record.get("vehicle_insurance_checked_at"))
             self.assertEqual(photo["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(photo.get("vehicle_insurance_checked_at"))
             self.assertFalse((record_dir / "public.jpg").exists())
             pending_list = list_field_photos(Path(tmp), private_dir=private_dir)
             self.assertEqual(len(pending_list), 1)
@@ -405,7 +407,9 @@ class FieldPhotoTests(unittest.TestCase):
             photo_id = result["photo"]["id"]
 
             self.assertEqual(result["photo"]["vehicle_insurance_status"], "uninsured")
+            self.assertRegex(result["photo"]["vehicle_insurance_checked_at"], r"^20\d{2}-")
             self.assertEqual(db_record(storage_dir, photo_id)["vehicle_insurance_status"], "uninsured")
+            self.assertRegex(db_record(storage_dir, photo_id)["vehicle_insurance_checked_at"], r"^20\d{2}-")
 
             review_result = review_field_photo(
                 photo_id,
@@ -418,8 +422,24 @@ class FieldPhotoTests(unittest.TestCase):
             public_list = list_field_photos(storage_dir, private_dir=private_dir)
 
             self.assertEqual(review_result["photo"]["vehicle_insurance_status"], "insured")
+            self.assertRegex(review_result["photo"]["vehicle_insurance_checked_at"], r"^20\d{2}-")
             self.assertEqual(db_record(storage_dir, photo_id)["vehicle_insurance_status"], "insured")
+            self.assertRegex(db_record(storage_dir, photo_id)["vehicle_insurance_checked_at"], r"^20\d{2}-")
             self.assertEqual(public_list[0]["vehicle_insurance_status"], "insured")
+            self.assertRegex(public_list[0]["vehicle_insurance_checked_at"], r"^20\d{2}-")
+
+            unknown_result = review_field_photo(
+                photo_id,
+                storage_dir,
+                status="approved",
+                redactions=[],
+                vehicle_insurance_status="unknown",
+                private_dir=private_dir,
+            )
+
+            self.assertEqual(unknown_result["photo"]["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(unknown_result["photo"]["vehicle_insurance_checked_at"])
+            self.assertIsNone(db_record(storage_dir, photo_id)["vehicle_insurance_checked_at"])
 
     def test_admin_vehicle_insurance_status_updates_same_vehicle_group(self):
         with TemporaryDirectory() as tmp:
@@ -467,8 +487,15 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(set(result["vehicle_insurance_updated_photo_ids"]), {first, same_group})
             self.assertEqual(db_record(storage_dir, first)["vehicle_insurance_status"], "insured")
             self.assertEqual(db_record(storage_dir, same_group)["vehicle_insurance_status"], "insured")
+            self.assertRegex(db_record(storage_dir, first)["vehicle_insurance_checked_at"], r"^20\d{2}-")
+            self.assertEqual(
+                db_record(storage_dir, first)["vehicle_insurance_checked_at"],
+                db_record(storage_dir, same_group)["vehicle_insurance_checked_at"],
+            )
             self.assertEqual(db_record(storage_dir, other_vehicle)["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(db_record(storage_dir, other_vehicle).get("vehicle_insurance_checked_at"))
             self.assertEqual(db_record(storage_dir, infrastructure)["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(db_record(storage_dir, infrastructure).get("vehicle_insurance_checked_at"))
 
     def test_owner_vehicle_insurance_update_does_not_touch_neighboring_photos(self):
         with TemporaryDirectory() as tmp:
@@ -501,7 +528,9 @@ class FieldPhotoTests(unittest.TestCase):
             )
 
             self.assertEqual(db_record(storage_dir, first)["vehicle_insurance_status"], "uninsured")
+            self.assertRegex(db_record(storage_dir, first)["vehicle_insurance_checked_at"], r"^20\d{2}-")
             self.assertEqual(db_record(storage_dir, neighbor)["vehicle_insurance_status"], "unknown")
+            self.assertIsNone(db_record(storage_dir, neighbor).get("vehicle_insurance_checked_at"))
 
     def test_vehicle_insurance_status_is_vehicle_only(self):
         with TemporaryDirectory() as tmp:

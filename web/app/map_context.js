@@ -3,7 +3,7 @@ map.on('popupopen', () => {
 });
 
 const mapContextMenu = document.getElementById('map-context-menu');
-const contextMenuCoords = document.getElementById('context-menu-coords');
+const contextMenuCoordsValue = document.getElementById('context-menu-coords-value');
 let contextMenuLatLng = null;
 let activeCadastralParcel = null;
 
@@ -38,11 +38,11 @@ function closeMapContextMenu() {
 }
 
 function openMapContextMenu(e) {
-    if (!mapContextMenu || !contextMenuCoords) return;
+    if (!mapContextMenu || !contextMenuCoordsValue) return;
     if (typeof closeAppMenu === 'function') closeAppMenu();
     if (typeof cancelFieldPhotoLocationPick === 'function') cancelFieldPhotoLocationPick({ clearStatus: true });
     contextMenuLatLng = e.latlng;
-    contextMenuCoords.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
+    contextMenuCoordsValue.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
     mapContextMenu.hidden = false;
 
     const originalEvent = e.originalEvent;
@@ -53,9 +53,6 @@ function openMapContextMenu(e) {
     const y = Math.min(originalEvent.clientY, window.innerHeight - menuHeight - margin);
     mapContextMenu.style.left = `${Math.max(margin, x)}px`;
     mapContextMenu.style.top = `${Math.max(margin, y)}px`;
-    requestAnimationFrame(() => {
-        mapContextMenu.querySelector('button:not([hidden])')?.focus({ preventScroll: true });
-    });
 }
 
 map.on('contextmenu', (e) => {

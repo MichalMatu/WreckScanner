@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from core.field_photo_metadata import issue_type, vehicle_insurance_status
+from core.field_photo_metadata import issue_type, vehicle_insurance_checked_at, vehicle_insurance_status
 from core.photo_privacy import is_approved, review_status
 
 
@@ -26,6 +26,11 @@ def field_photo_summary(record: dict[str, Any]) -> dict[str, Any]:
         "vehicle_insurance_status": vehicle_insurance_status(
             issue_type_text,
             record.get("vehicle_insurance_status"),
+        ),
+        "vehicle_insurance_checked_at": vehicle_insurance_checked_at(
+            issue_type_text,
+            record.get("vehicle_insurance_status"),
+            record.get("vehicle_insurance_checked_at"),
         ),
         "lat": record.get("lat"),
         "lon": record.get("lon"),
@@ -65,6 +70,11 @@ def review_item(record: dict[str, Any]) -> dict[str, Any]:
         "vehicle_insurance_status": vehicle_insurance_status(
             issue_type_text,
             record.get("vehicle_insurance_status"),
+        ),
+        "vehicle_insurance_checked_at": vehicle_insurance_checked_at(
+            issue_type_text,
+            record.get("vehicle_insurance_status"),
+            record.get("vehicle_insurance_checked_at"),
         ),
         "lat": record.get("lat"),
         "lon": record.get("lon"),

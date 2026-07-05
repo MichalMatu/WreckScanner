@@ -155,6 +155,12 @@ a.map-popup-head-value {
     color: var(--popup-ufg-uninsured-text);
 }
 
+.map-popup-head-value--insurance-checked {
+    border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    color: var(--text-soft);
+}
+
 .map-popup-meta {
     margin-top: 4px;
     display: flex;

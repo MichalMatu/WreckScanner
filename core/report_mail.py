@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from core import config
 from core.cadastral import cadastral_code_label
 from core.field_photo_metadata import vehicle_insurance_status_label
 
@@ -90,7 +91,14 @@ Wnoszę o:
 
 
 def _vehicle_insurance_context_text(record: dict[str, Any]) -> str:
-    return f"Status OC/UFG pojazdu:\n- Wynik ręcznego sprawdzenia: {vehicle_insurance_status_label(record.get('vehicle_insurance_status'))}"
+    status = str(record.get("vehicle_insurance_status") or config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS)
+    lines = [
+        "Status OC/UFG pojazdu:",
+        f"- Wynik ręcznego sprawdzenia: {vehicle_insurance_status_label(status)}",
+    ]
+    if status != config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS:
+        lines.append(f"- Data sprawdzenia w UFG: {_field_datetime_text(record.get('vehicle_insurance_checked_at'))}")
+    return "\n".join(lines)
 
 
 def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: dict[str, str]) -> tuple[str, str]:

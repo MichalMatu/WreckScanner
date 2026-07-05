@@ -82,6 +82,15 @@ class RuntimeEncodingContractTests(unittest.TestCase):
         self.assertIn("./scripts/check.sh", makefile)
         self.assertIn('scripts/smoke_runtime.py --base-url "$(SERVER_URL)"', makefile)
 
+    def test_github_check_workflow_installs_frontend_dependencies(self):
+        workflow = (ROOT_DIR / ".github" / "workflows" / "check.yml").read_text(encoding="utf-8")
+
+        self.assertIn("uses: actions/setup-node@v4", workflow)
+        self.assertIn('node-version: "22"', workflow)
+        self.assertIn('cache: "npm"', workflow)
+        self.assertIn("run: npm ci", workflow)
+        self.assertLess(workflow.index("run: npm ci"), workflow.index("run: scripts/check.sh"))
+
     def test_server_entrypoint_respects_autostart_disable_file(self):
         entrypoint = (ROOT_DIR / "server.py").read_text(encoding="utf-8")
 

@@ -12,6 +12,7 @@ class ReportMailTests(unittest.TestCase):
                 "lon": 17.2,
                 "links": {"street_view": "https://example.test/street"},
                 "vehicle_insurance_status": "uninsured",
+                "vehicle_insurance_checked_at": "2026-07-05T12:30:00Z",
                 "report_history": [
                     {
                         "created_at": "2026-06-01T10:00:00Z",
@@ -39,6 +40,7 @@ class ReportMailTests(unittest.TestCase):
         self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
         self.assertIn("Status OC/UFG pojazdu", body)
         self.assertIn("- Wynik ręcznego sprawdzenia: brak OC", body)
+        self.assertIn("- Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", body)
         self.assertIn("Zakres oczekiwanej odpowiedzi", body)
         self.assertIn("art. 241 Kodeksu postępowania administracyjnego", body)
         self.assertIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)
@@ -82,6 +84,31 @@ class ReportMailTests(unittest.TestCase):
         self.assertIn("parkingu osiedlowego...", location_part)
         self.assertNotIn(" w...", location_part)
         self.assertNotIn("bezpośredni...", location_part)
+
+    def test_build_mail_draft_omits_insurance_check_date_when_status_is_unknown(self):
+        _subject, body = build_mail_draft(
+            {
+                "id": "wreck_51100000_17200000",
+                "lat": 51.1,
+                "lon": 17.2,
+                "links": {},
+                "vehicle_insurance_status": "unknown",
+                "vehicle_insurance_checked_at": None,
+            },
+            {"labels_present": []},
+            {
+                "reporter_name": "Jan Kowalski",
+                "reporter_address": "ul. Testowa 1, Wrocław",
+                "reporter_phone": "500 600 700",
+                "reporter_email": "jan@example.com",
+                "location_description": "ul. Długa 10, parking przy szkole",
+                "observed_at": "2026-06-02T12:30",
+                "vehicle_description": "Pojazd długo stoi w tym samym miejscu.",
+            },
+        )
+
+        self.assertIn("- Wynik ręcznego sprawdzenia: nie sprawdzono", body)
+        self.assertNotIn("Data sprawdzenia w UFG", body)
 
 
 if __name__ == "__main__":
