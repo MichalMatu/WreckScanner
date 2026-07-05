@@ -64,9 +64,7 @@ function openMapSourcePanelFromContext() {
     requestAnimationFrame(() => {
         const panel = document.getElementById('panel-map-source');
         panel?.scrollIntoView({ block: 'nearest' });
-        const activeOption = panel?.querySelector('.map-source-option.is-active')
-            || panel?.querySelector('.map-source-option');
-        activeOption?.focus({ preventScroll: true });
+        panel?.querySelector('#map-source-slider-toggle')?.focus({ preventScroll: true });
     });
 }
 

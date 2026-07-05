@@ -231,25 +231,6 @@ function renderMapSourceTicks(visibleIndices = visibleMapSourceIndices()) {
     });
 }
 
-function renderMapSourceMenuOptions(visibleIndices = visibleMapSourceIndices()) {
-    const options = document.getElementById('map-source-menu-options');
-    if (!options) return;
-    options.innerHTML = '';
-    visibleIndices.forEach(index => {
-        const source = MAP_SOURCES[index];
-        const isActive = index === currentMapSourceIndex;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = `map-source-option${isActive ? ' is-active' : ''}`;
-        button.textContent = source.shortLabel;
-        button.title = source.label;
-        button.setAttribute('aria-label', source.label);
-        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        button.addEventListener('click', () => setMapSource(index));
-        options.appendChild(button);
-    });
-}
-
 function isMapSourceSliderVisible() {
     return mapSourceSliderVisible;
 }
@@ -277,6 +258,11 @@ function updateMapSourceUi() {
         currentLabel.textContent = source.shortLabel;
         currentLabel.title = source.label;
     }
+    const menuBadge = document.getElementById('map-source-current-badge');
+    if (menuBadge) {
+        menuBadge.textContent = source.shortLabel;
+        menuBadge.title = source.label;
+    }
     const range = document.getElementById('year-range');
     if (range) {
         range.min = 0;
@@ -284,7 +270,6 @@ function updateMapSourceUi() {
         range.value = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices);
     }
     renderMapSourceTicks(visibleIndices);
-    renderMapSourceMenuOptions(visibleIndices);
     applyMapSourceSliderVisibility();
     document.getElementById('year-prev')?.toggleAttribute('disabled', mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices) <= 0);
     document.getElementById('year-next')?.toggleAttribute(

@@ -36,11 +36,44 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn(".app-menu-footer-icon", panel_css)
         self.assertIn(".app-menu-footer-icon--lang", panel_css)
         self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
+        self.assertIn(".app-menu-drawer-section", panel_css)
+        map_panel_css = panel_css.split(".app-menu-map-panel {", 1)[1].split("}", 1)[0]
+        drawer_section_css = panel_css.split(".app-menu-drawer-section {", 1)[1].split("}", 1)[0]
+        self.assertIn("--app-menu-item-gap: 7px;", panel_css)
+        self.assertIn("gap: var(--app-menu-item-gap);", map_panel_css)
+        self.assertIn("padding: 0 var(--space-5) var(--app-menu-item-gap);", map_panel_css)
+        self.assertIn("gap: var(--app-menu-item-gap);", drawer_section_css)
+        self.assertNotIn("padding: var(--space-2) 0;", drawer_section_css)
+        self.assertNotIn("border-top:", drawer_section_css)
+        self.assertIn("border: 1px solid var(--border);", panel_css)
+        self.assertIn("border-radius: var(--radius-md);", panel_css)
+        self.assertIn("background: var(--surface-subtle);", panel_css)
+        self.assertNotIn("border-left: 3px solid transparent;", panel_css)
         self.assertNotIn("app-menu-admin-icon", html + panel_css)
         self.assertIn('-apple-system, BlinkMacSystemFont, "SF Pro Text"', tokens_css)
         self.assertNotIn("fonts.googleapis.com", html)
         self.assertNotIn("Plus Jakarta Sans", html + tokens_css)
         self.assertNotIn("Outfit", html + tokens_css)
+
+    def test_base_map_menu_uses_compact_slider_toggle(self):
+        html = read_index_html()
+        map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")
+        map_context_js = (ROOT_DIR / "web" / "app" / "map_context.js").read_text(encoding="utf-8")
+        map_controls_css = (ROOT_DIR / "web" / "styles" / "map_controls.css").read_text(encoding="utf-8")
+
+        panel_id = html.index('id="panel-map-source"')
+        panel_start = html.rfind("<label", 0, panel_id)
+        panel_block = html[panel_start:html.index("</label>", panel_id)]
+        self.assertIn('class="layer-toggle panel-map-source"', panel_block)
+        self.assertLess(panel_block.index('id="map-source-slider-toggle"'), panel_block.index("layer-pin--base-map-osm"))
+        self.assertLess(panel_block.index("layer-pin--base-map-osm"), panel_block.index('data-i18n="panel.baseMap"'))
+        self.assertLess(panel_block.index('data-i18n="panel.baseMap"'), panel_block.index('id="map-source-current-badge"'))
+        self.assertIn("document.getElementById('map-source-current-badge')", map_sources_js)
+        self.assertIn("menuBadge.textContent = source.shortLabel", map_sources_js)
+        self.assertIn("panel?.querySelector('#map-source-slider-toggle')?.focus", map_context_js)
+        self.assertNotIn("map-source-menu-options", html + map_sources_js + map_controls_css)
+        self.assertNotIn("map-source-option", html + map_sources_js + map_context_js + map_controls_css)
+        self.assertNotIn("map-source-slider-toggle-mark", html + map_controls_css)
 
     def test_problem_report_uses_modal_instead_of_standalone_page(self):
         html = read_index_html()

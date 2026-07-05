@@ -78,6 +78,7 @@
 }
 
 .app-menu-drawer {
+    --app-menu-item-gap: 7px;
     position: fixed;
     top: 0;
     left: 0;
@@ -126,35 +127,41 @@
 
 .app-menu-map-panel {
     display: grid;
-    gap: var(--space-3);
-    padding: 0 var(--space-5) var(--space-4);
+    gap: var(--app-menu-item-gap);
+    padding: 0 var(--space-5) var(--app-menu-item-gap);
 }
 
 .app-menu-drawer-section {
     display: grid;
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--border);
+    gap: var(--app-menu-item-gap);
+    padding: 0 var(--space-5) var(--space-4);
 }
 
 .app-menu-drawer-item {
-    min-height: 54px;
+    min-height: var(--control-height-comfortable);
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-columns: 18px minmax(0, 1fr);
     align-items: center;
-    gap: var(--space-3);
-    padding: 0 var(--space-7);
-    background: transparent;
-    border-left: 3px solid transparent;
+    gap: 10px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-subtle);
     color: var(--text);
-    font-size: 1rem;
-    font-weight: 650;
+    font-size: 0.86rem;
+    font-weight: 750;
     text-align: left;
     text-decoration: none;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
 }
 
 .app-menu-drawer-item:hover,
 .app-menu-drawer-item:focus-visible {
-    background: var(--surface-subtle);
+    background: var(--primary-soft);
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
     color: var(--primary);
     outline: none;
 }
@@ -261,7 +268,7 @@
 }
 
 .app-menu-map-panel .panel-section {
-    gap: var(--space-2);
+    gap: var(--app-menu-item-gap);
 }
 
 /* Size slider */
@@ -448,8 +455,12 @@ select:focus {
         padding-inline: var(--space-4);
     }
 
+    .app-menu-drawer-section {
+        padding-inline: var(--space-4);
+    }
+
     .app-menu-drawer-item {
-        padding-inline: var(--space-5);
+        padding-inline: 12px;
     }
 
     .app-menu-drawer-footer {

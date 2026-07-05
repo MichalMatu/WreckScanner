@@ -32,22 +32,16 @@
                 <span data-panel-add-photo-label data-i18n="panel.addPhoto">Dodaj zdjęcie</span>
             </button>
 
-            <section class="panel-section panel-map-source" id="panel-map-source"
-                data-i18n-attr="aria-label:panel.baseMap" aria-label="Podkład mapy">
-                <div class="panel-section-heading">
-                    <span data-i18n="panel.baseMap">Podkład mapy</span>
-                    <label class="map-source-slider-toggle"
-                        data-i18n-attr="title:panel.baseMapSliderToggle"
-                        title="Pokaż dolny suwak">
-                        <input type="checkbox" id="map-source-slider-toggle"
-                            data-i18n-attr="aria-label:panel.baseMapSliderToggle"
-                            aria-label="Pokaż dolny suwak" onchange="setMapSourceSliderVisible(this.checked)" checked>
-                        <span class="map-source-slider-toggle-mark" aria-hidden="true"></span>
-                    </label>
-                </div>
-                <div class="map-source-menu-options" id="map-source-menu-options"
-                    data-i18n-attr="aria-label:panel.baseMap" aria-label="Podkład mapy" role="group"></div>
-            </section>
+            <label class="layer-toggle panel-map-source" id="panel-map-source"
+                data-i18n-attr="title:panel.baseMapSliderToggle"
+                title="Pokaż dolny suwak">
+                <input type="checkbox" id="map-source-slider-toggle"
+                    data-i18n-attr="aria-label:panel.baseMapSliderToggle"
+                    aria-label="Pokaż dolny suwak" onchange="setMapSourceSliderVisible(this.checked)" checked>
+                <span class="layer-pin layer-pin--base-map-osm"></span>
+                <span class="layer-label" data-i18n="panel.baseMap">Podkład mapy</span>
+                <span class="layer-count-badge" id="map-source-current-badge">POL</span>
+            </label>
 
             <section class="panel-section panel-layers">
                 <div id="map-layer-controls" class="map-layer-controls is-loading-public-layers" aria-label="Warstwy mapy">
