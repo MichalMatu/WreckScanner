@@ -126,89 +126,54 @@
     color: color-mix(in srgb, var(--danger) 54%, white);
 }
 
-.vehicle-status-filter {
+.layer-toggle--vehicle {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    cursor: default;
+}
+
+.layer-toggle--vehicle:hover {
+    background: var(--surface-subtle);
+    border-color: var(--border);
+}
+
+.layer-toggle-row {
+    min-height: var(--control-height-compact);
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    padding: 5px 0 0;
-}
-
-.vehicle-status-filter-option {
-    min-width: 0;
-    min-height: 30px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface-inset);
-    color: var(--text-soft);
-    font: 800 0.7rem var(--font);
-    line-height: 1.15;
-    text-align: center;
-    cursor: pointer;
-    transition:
-        background var(--duration-fast),
-        border-color var(--duration-fast),
-        color var(--duration-fast);
-}
-
-.vehicle-status-filter-option:hover {
-    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
-    background: var(--primary-soft);
-    color: var(--text-strong);
-}
-
-.vehicle-status-filter-option:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
-    outline-offset: 2px;
-}
-
-.vehicle-status-filter-option.is-active {
-    border-color: color-mix(in srgb, var(--primary) 74%, white);
-    background: var(--primary);
-    color: var(--text-strong);
-}
-
-.vehicle-age-threshold {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
-    padding-top: 2px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: background var(--duration-fast);
 }
 
-.vehicle-age-threshold-label {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--muted-strong);
-    font: 800 0.67rem var(--font);
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
+.layer-toggle-row:hover {
+    background: var(--primary-soft);
 }
 
-.vehicle-age-threshold-options {
-    display: inline-grid;
-    grid-template-columns: repeat(3, 40px);
-    gap: 5px;
+.vehicle-filter-tray {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 6px;
+    padding: 0 8px 8px 36px;
 }
 
-.vehicle-age-threshold-option {
+.vehicle-cycle-filter {
     min-width: 0;
     height: 28px;
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) 22px;
     align-items: center;
-    justify-content: center;
-    padding: 0 7px;
+    gap: 4px;
+    padding: 0 6px;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface-inset);
-    color: var(--text-soft);
-    font: 850 0.68rem var(--font);
+    color: var(--muted);
+    font: 850 0.64rem var(--font);
     line-height: 1;
     cursor: pointer;
     transition:
@@ -217,21 +182,38 @@
         color var(--duration-fast);
 }
 
-.vehicle-age-threshold-option:hover {
-    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
-    background: var(--primary-soft);
+.vehicle-cycle-filter:hover {
+    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+    background: var(--surface-control);
     color: var(--text-strong);
 }
 
-.vehicle-age-threshold-option:focus-visible {
+.vehicle-cycle-filter:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
     outline-offset: 2px;
 }
 
-.vehicle-age-threshold-option.is-active {
-    border-color: color-mix(in srgb, var(--primary) 70%, white);
-    background: color-mix(in srgb, var(--primary) 82%, transparent);
+.vehicle-cycle-filter.is-active {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
     color: var(--text-strong);
+}
+
+.vehicle-cycle-filter-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vehicle-filter-off-dot {
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: var(--surface-inset);
+    box-sizing: border-box;
+    flex: 0 0 auto;
 }
 
 .layer-pin {
@@ -287,77 +269,24 @@
     box-shadow: 0 0 0 2px var(--pin-pending-ring-soft);
 }
 
-.map-pin-legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 7px 9px;
-    padding: 8px 10px 2px;
-    color: var(--muted);
-    font: 750 0.68rem var(--font);
-    line-height: 1.2;
-}
-
-.map-pin-legend-title {
-    width: 100%;
-    color: var(--muted-strong);
-    font-size: 0.67rem;
-    text-transform: uppercase;
-}
-
-.map-pin-legend-item {
-    min-width: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
-}
-
-.map-pin-legend-filter {
-    padding: 3px 5px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    transition:
-        background var(--duration-fast),
-        border-color var(--duration-fast),
-        color var(--duration-fast);
-}
-
-.map-pin-legend-filter:hover {
-    border-color: color-mix(in srgb, var(--primary) 28%, transparent);
-    background: var(--surface-control);
-    color: var(--text-strong);
-}
-
-.map-pin-legend-filter:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
-    outline-offset: 2px;
-}
-
-.map-pin-legend-filter.is-active {
-    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
-    background: color-mix(in srgb, var(--primary) 20%, transparent);
-    color: var(--text-strong);
-}
-
-.map-pin-legend-count {
-    min-width: 20px;
-    height: 18px;
+.vehicle-filter-count {
+    min-width: 18px;
+    height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 6px;
+    padding: 0 5px;
     border: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
     border-radius: var(--radius-full);
     background: color-mix(in srgb, var(--surface-inset) 82%, transparent);
     color: var(--text-soft);
-    font: 850 0.66rem var(--font);
+    font: 850 0.6rem var(--font);
     font-variant-numeric: tabular-nums;
     line-height: 1;
+}
+
+.vehicle-filter-count.is-empty {
+    visibility: hidden;
 }
 
 .map-pin-status-ring {

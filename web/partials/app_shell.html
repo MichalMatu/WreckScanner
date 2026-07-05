@@ -51,13 +51,34 @@
 
             <section class="panel-section panel-layers">
                 <div id="map-layer-controls" class="map-layer-controls is-loading-public-layers" aria-label="Warstwy mapy">
-                    <label class="layer-toggle">
-                        <input type="checkbox" id="toggle-vehicles" checked
-                            onchange="toggleVehicleLayer(this.checked)">
-                        <span class="layer-pin layer-pin--vehicle"></span>
-                        <span class="layer-label" data-i18n="layers.vehicles">Pojazdy</span>
-                        <span class="layer-count-badge" id="layer-count-vehicles">0</span>
-                    </label>
+                    <div class="layer-toggle layer-toggle--vehicle">
+                        <label class="layer-toggle-row">
+                            <input type="checkbox" id="toggle-vehicles" checked
+                                onchange="toggleVehicleLayer(this.checked)">
+                            <span class="layer-pin layer-pin--vehicle"></span>
+                            <span class="layer-label" data-i18n="layers.vehicles">Pojazdy</span>
+                            <span class="layer-count-badge" id="layer-count-vehicles">0</span>
+                        </label>
+                        <div class="vehicle-filter-tray" data-i18n-attr="aria-label:layers.vehicleFilters"
+                            aria-label="Filtry pojazdów" role="group">
+                            <button type="button" class="vehicle-cycle-filter" id="vehicle-insurance-cycle-filter"
+                                aria-pressed="false" onclick="cycleVehicleInsuranceFilter()">
+                                <span class="vehicle-filter-off-dot" data-vehicle-insurance-filter-dot
+                                    aria-hidden="true"></span>
+                                <span class="vehicle-cycle-filter-label" data-vehicle-insurance-filter-label>OC: wył.</span>
+                                <span class="vehicle-filter-count is-empty" id="vehicle-insurance-filter-count"
+                                    aria-hidden="true"></span>
+                            </button>
+                            <button type="button" class="vehicle-cycle-filter" id="vehicle-standing-cycle-filter"
+                                aria-pressed="false" onclick="cycleVehicleStandingFilterDays()">
+                                <span class="vehicle-filter-off-dot" data-vehicle-standing-filter-dot
+                                    aria-hidden="true"></span>
+                                <span class="vehicle-cycle-filter-label" data-vehicle-standing-filter-label>Postój: wył.</span>
+                                <span class="vehicle-filter-count is-empty" id="vehicle-standing-filter-count"
+                                    aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
                     <label class="layer-toggle">
                         <input type="checkbox" id="toggle-field-photo-infrastructure" checked
                             onchange="toggleFieldPhotoIssueFilter('infrastructure', this.checked)">
@@ -85,72 +106,6 @@
                         <span class="layer-pin layer-pin--cadastral"></span>
                         <span class="layer-label" data-i18n="layers.cadastral">Granice działek</span>
                     </label>
-                </div>
-                <div class="vehicle-status-filter" data-i18n-attr="aria-label:layers.vehicleStatusFilter"
-                    aria-label="Filtr pojazdów" role="group">
-                    <button type="button" class="vehicle-status-filter-option is-active"
-                        data-vehicle-status-filter="all" aria-pressed="true"
-                        onclick="setVehicleStatusFilter('all')" data-i18n="layers.vehicleStatusFilterAll">Wszystkie</button>
-                    <button type="button" class="vehicle-status-filter-option"
-                        data-vehicle-status-filter="insured" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('insured')" data-i18n="layers.vehicleStatusFilterInsured">Ma OC</button>
-                    <button type="button" class="vehicle-status-filter-option"
-                        data-vehicle-status-filter="uninsured" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('uninsured')" data-i18n="layers.vehicleStatusFilterUninsured">Brak OC</button>
-                    <button type="button" class="vehicle-status-filter-option"
-                        data-vehicle-status-filter="long-standing" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('long-standing')" data-i18n="layers.vehicleStatusFilterLongStanding">Długo stoi</button>
-                    <button type="button" class="vehicle-status-filter-option"
-                        data-vehicle-status-filter="unknown" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('unknown')" data-i18n="layers.vehicleStatusFilterUnknown">Nie sprawdzono</button>
-                </div>
-                <div class="vehicle-age-threshold">
-                    <span class="vehicle-age-threshold-label" data-i18n="layers.vehicleLongStandingThreshold">Próg postoju</span>
-                    <div class="vehicle-age-threshold-options"
-                        data-i18n-attr="aria-label:layers.vehicleLongStandingThresholdAria"
-                        aria-label="Próg długo stojących pojazdów" role="group">
-                        <button type="button" class="vehicle-age-threshold-option is-active"
-                            data-vehicle-long-standing-days="30" aria-pressed="true"
-                            onclick="setVehicleLongStandingDays(30)">30d</button>
-                        <button type="button" class="vehicle-age-threshold-option"
-                            data-vehicle-long-standing-days="45" aria-pressed="false"
-                            onclick="setVehicleLongStandingDays(45)">45d</button>
-                        <button type="button" class="vehicle-age-threshold-option"
-                            data-vehicle-long-standing-days="60" aria-pressed="false"
-                            onclick="setVehicleLongStandingDays(60)">60d</button>
-                    </div>
-                </div>
-                <div class="map-pin-legend" data-i18n-attr="aria-label:layers.vehicleStatusLegend"
-                    aria-label="Status pojazdu">
-                    <span class="map-pin-legend-title" data-i18n="layers.vehicleStatusLegend">Status pojazdu</span>
-                    <button type="button" class="map-pin-legend-item map-pin-legend-filter"
-                        data-vehicle-status-filter="unknown" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('unknown')">
-                        <span class="map-pin-status-ring map-pin-status-ring--unknown" aria-hidden="true"></span>
-                        <span data-i18n="fieldPhoto.vehicleInsurance.unknown">Nie sprawdzono</span>
-                        <span class="map-pin-legend-count" id="vehicle-status-count-unknown">0</span>
-                    </button>
-                    <button type="button" class="map-pin-legend-item map-pin-legend-filter"
-                        data-vehicle-status-filter="insured" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('insured')">
-                        <span class="map-pin-status-ring map-pin-status-ring--insured" aria-hidden="true"></span>
-                        <span data-i18n="fieldPhoto.vehicleInsurance.insured">Ma OC</span>
-                        <span class="map-pin-legend-count" id="vehicle-status-count-insured">0</span>
-                    </button>
-                    <button type="button" class="map-pin-legend-item map-pin-legend-filter"
-                        data-vehicle-status-filter="uninsured" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('uninsured')">
-                        <span class="map-pin-status-ring map-pin-status-ring--uninsured" aria-hidden="true"></span>
-                        <span data-i18n="fieldPhoto.vehicleInsurance.uninsured">Brak OC</span>
-                        <span class="map-pin-legend-count" id="vehicle-status-count-uninsured">0</span>
-                    </button>
-                    <button type="button" class="map-pin-legend-item map-pin-legend-filter"
-                        data-vehicle-status-filter="long-standing" aria-pressed="false"
-                        onclick="setVehicleStatusFilter('long-standing')">
-                        <span class="map-pin-age-dot" aria-hidden="true"></span>
-                        <span data-vehicle-long-standing-label>Stoi 30+ dni</span>
-                        <span class="map-pin-legend-count" id="vehicle-status-count-long-standing">0</span>
-                    </button>
                 </div>
             </section>
 
