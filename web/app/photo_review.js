@@ -12,6 +12,7 @@ let photoReviewRedactions = [];
 let activePhotoReviewRedactionIndex = -1;
 let photoReviewDraftRect = null;
 let photoReviewDrawing = false;
+let photoReviewSelectionRequest = 0;
 
 async function openPhotoReviewForFieldPhotoGroup(encodedPhotoIds) {
     if (!(await ensureAdmin())) return;
@@ -276,13 +277,69 @@ function renderPhotoReviewQueue() {
             ? `<span class="photo-review-detail">${escapeHtml(display.detail)}</span>`
             : '';
         return `
-            <button type="button" class="photo-review-item ${active ? 'is-active' : ''}" onclick="selectPhotoReview('${escapeHtml(item.id)}')">
+            <button type="button"
+                class="photo-review-item ${active ? 'is-active' : ''}"
+                data-photo-review-id="${escapeHtml(item.id)}"
+                onclick="selectPhotoReview('${escapeHtml(item.id)}')">
                 <strong>${escapeHtml(display.title)}</strong>
                 <span class="photo-review-pill">${escapeHtml(photoReviewStatusLabel(item.public_review_status))}</span>
                 ${detailHtml}
             </button>
         `;
     }).join('');
+}
+
+function photoReviewActiveIndex(itemId = activePhotoReview?.id) {
+    return photoReviewItems.findIndex(item => item.id === itemId);
+}
+
+function photoReviewSelectionAfterReload(items, preferredId, fallbackIndex) {
+    if (preferredId && items.some(item => item.id === preferredId)) return preferredId;
+    if (!items.length) return null;
+    const boundedIndex = Number.isInteger(fallbackIndex)
+        ? Math.max(0, Math.min(items.length - 1, fallbackIndex))
+        : 0;
+    return items[boundedIndex]?.id || null;
+}
+
+function photoReviewItemButton(itemId) {
+    const list = document.getElementById('photo-review-list');
+    if (!list) return null;
+    return Array.from(list.querySelectorAll('.photo-review-item'))
+        .find(button => button.dataset.photoReviewId === itemId) || null;
+}
+
+function focusPhotoReviewItem(itemId) {
+    const button = photoReviewItemButton(itemId);
+    if (!button) return;
+    button.focus({ preventScroll: true });
+    button.scrollIntoView({ block: 'nearest' });
+}
+
+function photoReviewKeyboardTargetAllowsNavigation(target) {
+    if (!(target instanceof Element)) return true;
+    return !target.closest('input, textarea, select, [contenteditable="true"]');
+}
+
+function movePhotoReviewSelection(targetIndex) {
+    if (!photoReviewItems.length) return false;
+    const boundedIndex = Math.max(0, Math.min(photoReviewItems.length - 1, targetIndex));
+    const item = photoReviewItems[boundedIndex];
+    if (!item) return false;
+    if (activePhotoReview?.id === item.id) {
+        focusPhotoReviewItem(item.id);
+        return true;
+    }
+    selectPhotoReview(item.id, { focusListItem: true });
+    return true;
+}
+
+function stepPhotoReviewSelection(delta) {
+    const activeIndex = photoReviewActiveIndex();
+    const baseIndex = activeIndex >= 0
+        ? activeIndex
+        : (delta > 0 ? -1 : photoReviewItems.length);
+    return movePhotoReviewSelection(baseIndex + delta);
 }
 
 async function openPhotoReviewModal() {
@@ -297,9 +354,15 @@ async function openPhotoReviewModal() {
     await loadPhotoReviewQueue();
 }
 
-async function loadPhotoReviewQueue() {
+async function loadPhotoReviewQueue(options = {}) {
     if (photoReviewMode !== 'admin') return;
     if (!adminAuthenticated && !(await ensureAdmin())) return;
+    const previousActiveId = options.preferredPhotoId ?? activePhotoReview?.id ?? null;
+    const previousActiveIndex = Number.isInteger(options.fallbackIndex)
+        ? options.fallbackIndex
+        : photoReviewActiveIndex(previousActiveId);
+    const list = document.getElementById('photo-review-list');
+    const preservedScrollTop = options.preserveScroll ? list?.scrollTop : null;
     const filter = document.getElementById('photo-review-filter')?.value || 'pending';
     const query = document.getElementById('photo-review-search')?.value || '';
     setPhotoReviewStatusMessage(t('modal.photoReview.loading'));
@@ -316,7 +379,9 @@ async function loadPhotoReviewQueue() {
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.photoReview.loadError'));
         }
-        photoReviewItems = Array.isArray(data.photos) ? data.photos : [];
+        const nextItems = Array.isArray(data.photos) ? data.photos : [];
+        const nextActiveId = photoReviewSelectionAfterReload(nextItems, previousActiveId, previousActiveIndex);
+        photoReviewItems = nextItems;
         activePhotoReview = null;
         photoReviewImage = null;
         photoReviewRedactions = [];
@@ -324,7 +389,11 @@ async function loadPhotoReviewQueue() {
         updatePhotoReviewDeleteAction();
         renderPhotoReviewQueue();
         clearPhotoReviewCanvas();
-        if (photoReviewItems[0]) selectPhotoReview(photoReviewItems[0].id);
+        if (Number.isFinite(preservedScrollTop)) {
+            const nextList = document.getElementById('photo-review-list');
+            if (nextList) nextList.scrollTop = preservedScrollTop;
+        }
+        if (nextActiveId) selectPhotoReview(nextActiveId, { preserveScrollTop: preservedScrollTop });
         setPhotoReviewStatusMessage();
     } catch (err) {
         setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.loadError')));
@@ -335,6 +404,25 @@ document.getElementById('photo-review-search')?.addEventListener('input', () => 
     photoReviewExactPhotoIds = [];
     if (photoReviewSearchTimer) clearTimeout(photoReviewSearchTimer);
     photoReviewSearchTimer = setTimeout(loadPhotoReviewQueue, 250);
+});
+
+document.addEventListener('keydown', event => {
+    if (topOpenModalBackdrop()?.id !== 'modal-photo-review') return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!photoReviewKeyboardTargetAllowsNavigation(event.target)) return;
+    let handled = false;
+    if (event.key === 'ArrowDown') {
+        handled = stepPhotoReviewSelection(1);
+    } else if (event.key === 'ArrowUp') {
+        handled = stepPhotoReviewSelection(-1);
+    } else if (event.key === 'Home') {
+        handled = movePhotoReviewSelection(0);
+    } else if (event.key === 'End') {
+        handled = movePhotoReviewSelection(photoReviewItems.length - 1);
+    }
+    if (!handled) return;
+    event.preventDefault();
+    event.stopPropagation();
 });
 
 photoReviewVehicleInsuranceInputs().forEach(input => {
@@ -375,7 +463,7 @@ function revokeOwnerPhotoReviewObjectUrl() {
     ownerPhotoReviewObjectUrl = null;
 }
 
-async function photoReviewOriginalImageSrc(item) {
+async function photoReviewOriginalImageSrc(item, isCurrentSelection = () => true) {
     if (photoReviewMode !== 'owner') {
         return `${item.original_image}?ts=${Date.now()}`;
     }
@@ -384,19 +472,25 @@ async function photoReviewOriginalImageSrc(item) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ edit_token: ownerPhotoReviewToken }),
     });
+    if (!isCurrentSelection()) return null;
     if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
         throw new Error(data.error || t('modal.photoReview.imageError'));
     }
     const blob = await resp.blob();
+    if (!isCurrentSelection()) return null;
     revokeOwnerPhotoReviewObjectUrl();
     ownerPhotoReviewObjectUrl = URL.createObjectURL(blob);
     return ownerPhotoReviewObjectUrl;
 }
 
-async function selectPhotoReview(itemId) {
+async function selectPhotoReview(itemId, options = {}) {
     const item = photoReviewItems.find(candidate => candidate.id === itemId);
     if (!item) return;
+    const selectionRequest = ++photoReviewSelectionRequest;
+    const isCurrentSelection = () => selectionRequest === photoReviewSelectionRequest && activePhotoReview?.id === item.id;
+    const list = document.getElementById('photo-review-list');
+    const preservedScrollTop = Number.isFinite(options.preserveScrollTop) ? options.preserveScrollTop : null;
     activePhotoReview = item;
     updatePhotoReviewVehicleInsuranceUi();
     photoReviewRedactions = (Array.isArray(item.redactions) ? item.redactions : [])
@@ -406,9 +500,12 @@ async function selectPhotoReview(itemId) {
     photoReviewDraftRect = null;
     updatePhotoReviewDeleteAction();
     renderPhotoReviewQueue();
+    if (Number.isFinite(preservedScrollTop) && list) list.scrollTop = preservedScrollTop;
+    if (options.focusListItem) focusPhotoReviewItem(item.id);
     setPhotoReviewStatusMessage(t('modal.photoReview.imageLoading'));
     const image = new Image();
     image.onload = () => {
+        if (!isCurrentSelection()) return;
         photoReviewImage = image;
         const canvas = document.getElementById('photo-review-canvas');
         const empty = document.getElementById('photo-review-empty');
@@ -425,13 +522,17 @@ async function selectPhotoReview(itemId) {
         setPhotoReviewStatusMessage();
     };
     image.onerror = () => {
+        if (!isCurrentSelection()) return;
         photoReviewImage = null;
         clearPhotoReviewCanvas();
         setPhotoReviewStatusMessage(t('modal.photoReview.imageError'));
     };
     try {
-        image.src = await photoReviewOriginalImageSrc(item);
+        const imageSrc = await photoReviewOriginalImageSrc(item, isCurrentSelection);
+        if (!imageSrc || !isCurrentSelection()) return;
+        image.src = imageSrc;
     } catch (err) {
+        if (!isCurrentSelection()) return;
         photoReviewImage = null;
         clearPhotoReviewCanvas();
         setPhotoReviewStatusMessage(err.message || t('modal.photoReview.imageError'));
@@ -441,6 +542,10 @@ async function selectPhotoReview(itemId) {
 async function savePhotoReviewStatus(publicReviewStatus) {
     const endpoint = photoReviewEndpoint(activePhotoReview);
     if (!endpoint) return;
+    const savedPhotoId = activePhotoReview.id;
+    const savedPhotoIndex = photoReviewActiveIndex(savedPhotoId);
+    const list = document.getElementById('photo-review-list');
+    const savedScrollTop = list?.scrollTop;
     setPhotoReviewStatusMessage(t('modal.photoReview.saving'));
     try {
         const payload = photoReviewMode === 'owner'
@@ -469,7 +574,11 @@ async function savePhotoReviewStatus(publicReviewStatus) {
             return;
         }
         await loadFieldPhotos();
-        await loadPhotoReviewQueue();
+        await loadPhotoReviewQueue({
+            preferredPhotoId: savedPhotoId,
+            fallbackIndex: savedPhotoIndex,
+            preserveScroll: Number.isFinite(savedScrollTop),
+        });
     } catch (err) {
         setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.saveError')));
     }
@@ -478,6 +587,9 @@ async function savePhotoReviewStatus(publicReviewStatus) {
 async function deletePhotoReviewItem() {
     const endpoint = photoReviewDeleteEndpoint(activePhotoReview);
     if (!endpoint || activePhotoReview?.public_review_status !== 'rejected') return;
+    const deletedPhotoIndex = photoReviewActiveIndex(activePhotoReview.id);
+    const list = document.getElementById('photo-review-list');
+    const deletedScrollTop = list?.scrollTop;
     const confirmed = await confirmAction({
         title: t('modal.photoReview.deleteTitle'),
         message: t('modal.photoReview.deleteConfirm'),
@@ -492,7 +604,10 @@ async function deletePhotoReviewItem() {
         }
         setPhotoReviewStatusMessage(t('modal.photoReview.deleted'));
         await loadFieldPhotos();
-        await loadPhotoReviewQueue();
+        await loadPhotoReviewQueue({
+            fallbackIndex: deletedPhotoIndex,
+            preserveScroll: Number.isFinite(deletedScrollTop),
+        });
     } catch (err) {
         setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.deleteError')));
     }
