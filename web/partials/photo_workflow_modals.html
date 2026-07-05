@@ -195,13 +195,14 @@
                     <section class="photo-review-editor">
                         <section class="photo-review-insurance" id="photo-review-vehicle-insurance-section" hidden>
                             <div class="field-photo-insurance-head">
-                                <label class="modal-label" id="photo-review-vehicle-insurance-label"
-                                    data-i18n="modal.photoReview.vehicleInsurance">Status OC / UFG</label>
+                                <p class="photo-review-insurance-checked" id="photo-review-vehicle-insurance-checked"
+                                    aria-live="polite"></p>
                                 <a class="field-photo-insurance-link" href="https://www.ufg.pl/" target="_blank"
                                     rel="noopener" data-i18n="modal.fieldPhoto.vehicleInsuranceUfg">Sprawdź w UFG</a>
                             </div>
                             <div class="photo-review-insurance-options" id="photo-review-vehicle-insurance"
-                                role="radiogroup" aria-labelledby="photo-review-vehicle-insurance-label">
+                                role="radiogroup" aria-label="Status OC / UFG"
+                                data-i18n-attr="aria-label:modal.photoReview.vehicleInsurance">
                                 <label class="photo-review-insurance-option photo-review-insurance-option--unknown">
                                     <input type="radio" name="photo-review-vehicle-insurance-status" value="unknown">
                                     <span class="photo-review-insurance-mark" aria-hidden="true"></span>
@@ -218,9 +219,6 @@
                                     <span data-i18n="fieldPhoto.vehicleInsurance.uninsured">Brak OC</span>
                                 </label>
                             </div>
-                            <p class="photo-review-insurance-checked" id="photo-review-vehicle-insurance-checked"></p>
-                            <p class="modal-hint" data-i18n="modal.photoReview.vehicleInsuranceHint">Admin zapisuje
-                                ten wynik dla wszystkich zdjęć pojazdu z tej samej pinezki.</p>
                         </section>
                         <canvas id="photo-review-canvas"></canvas>
                         <p class="modal-hint" id="photo-review-empty" data-i18n="modal.photoReview.empty">Wybierz
@@ -285,7 +283,7 @@
                                 </button>
                             </div>
                         </div>
-                        <p class="modal-hint" id="photo-review-status"></p>
+                        <p class="modal-hint" id="photo-review-status" hidden></p>
                     </section>
                 </div>
             </div>

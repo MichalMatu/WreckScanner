@@ -209,6 +209,14 @@ function updatePhotoReviewVehicleInsuranceCheckedText() {
     if (checkedText) checkedText.textContent = photoReviewVehicleInsuranceCheckedText();
 }
 
+function setPhotoReviewStatusMessage(message = '') {
+    const status = document.getElementById('photo-review-status');
+    if (!status) return;
+    const text = String(message || '').trim();
+    status.textContent = text;
+    status.hidden = !text;
+}
+
 function photoReviewQueueDisplay(item, index = 0) {
     const originalName = String(item?.original_filename || '').trim();
     const technicalId = String(item?.photo_id || item?.id || '').trim();
@@ -294,8 +302,7 @@ async function loadPhotoReviewQueue() {
     if (!adminAuthenticated && !(await ensureAdmin())) return;
     const filter = document.getElementById('photo-review-filter')?.value || 'pending';
     const query = document.getElementById('photo-review-search')?.value || '';
-    const status = document.getElementById('photo-review-status');
-    if (status) status.textContent = t('modal.photoReview.loading');
+    setPhotoReviewStatusMessage(t('modal.photoReview.loading'));
     try {
         const params = new URLSearchParams({
             status: filter,
@@ -318,9 +325,9 @@ async function loadPhotoReviewQueue() {
         renderPhotoReviewQueue();
         clearPhotoReviewCanvas();
         if (photoReviewItems[0]) selectPhotoReview(photoReviewItems[0].id);
-        if (status) status.textContent = '';
+        setPhotoReviewStatusMessage();
     } catch (err) {
-        if (status) status.textContent = apiErrorMessage(err, t('modal.photoReview.loadError'));
+        setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.loadError')));
     }
 }
 
@@ -399,8 +406,7 @@ async function selectPhotoReview(itemId) {
     photoReviewDraftRect = null;
     updatePhotoReviewDeleteAction();
     renderPhotoReviewQueue();
-    const status = document.getElementById('photo-review-status');
-    if (status) status.textContent = t('modal.photoReview.imageLoading');
+    setPhotoReviewStatusMessage(t('modal.photoReview.imageLoading'));
     const image = new Image();
     image.onload = () => {
         photoReviewImage = image;
@@ -416,27 +422,26 @@ async function selectPhotoReview(itemId) {
         clearPhotoReviewCursorState(canvas);
         if (empty) empty.hidden = true;
         drawPhotoReviewCanvas();
-        if (status) status.textContent = t('modal.photoReview.drawHint');
+        setPhotoReviewStatusMessage();
     };
     image.onerror = () => {
         photoReviewImage = null;
         clearPhotoReviewCanvas();
-        if (status) status.textContent = t('modal.photoReview.imageError');
+        setPhotoReviewStatusMessage(t('modal.photoReview.imageError'));
     };
     try {
         image.src = await photoReviewOriginalImageSrc(item);
     } catch (err) {
         photoReviewImage = null;
         clearPhotoReviewCanvas();
-        if (status) status.textContent = err.message || t('modal.photoReview.imageError');
+        setPhotoReviewStatusMessage(err.message || t('modal.photoReview.imageError'));
     }
 }
 
 async function savePhotoReviewStatus(publicReviewStatus) {
     const endpoint = photoReviewEndpoint(activePhotoReview);
-    const status = document.getElementById('photo-review-status');
     if (!endpoint) return;
-    if (status) status.textContent = t('modal.photoReview.saving');
+    setPhotoReviewStatusMessage(t('modal.photoReview.saving'));
     try {
         const payload = photoReviewMode === 'owner'
             ? { edit_token: ownerPhotoReviewToken, redactions: photoReviewRedactions, ...photoReviewVehicleInsurancePayload() }
@@ -445,11 +450,11 @@ async function savePhotoReviewStatus(publicReviewStatus) {
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.photoReview.saveError'));
         }
-        if (status) status.textContent = photoReviewMode === 'owner'
+        setPhotoReviewStatusMessage(photoReviewMode === 'owner'
             ? t(data.photo?.public_review_status === 'draft'
                 ? 'modal.photoReview.ownerDraftSaved'
                 : 'modal.photoReview.ownerSaved')
-            : t('modal.photoReview.saved');
+            : t('modal.photoReview.saved'));
         if (photoReviewMode === 'owner') {
             activePhotoReview.public_review_status = data.photo?.public_review_status || 'pending';
             activePhotoReview.vehicle_insurance_status = data.photo?.vehicle_insurance_status
@@ -466,13 +471,12 @@ async function savePhotoReviewStatus(publicReviewStatus) {
         await loadFieldPhotos();
         await loadPhotoReviewQueue();
     } catch (err) {
-        if (status) status.textContent = apiErrorMessage(err, t('modal.photoReview.saveError'));
+        setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.saveError')));
     }
 }
 
 async function deletePhotoReviewItem() {
     const endpoint = photoReviewDeleteEndpoint(activePhotoReview);
-    const status = document.getElementById('photo-review-status');
     if (!endpoint || activePhotoReview?.public_review_status !== 'rejected') return;
     const confirmed = await confirmAction({
         title: t('modal.photoReview.deleteTitle'),
@@ -480,16 +484,16 @@ async function deletePhotoReviewItem() {
         confirmLabel: t('modal.photoReview.delete'),
     });
     if (!confirmed) return;
-    if (status) status.textContent = t('modal.photoReview.deleting');
+    setPhotoReviewStatusMessage(t('modal.photoReview.deleting'));
     try {
         const data = await apiDeleteJson(endpoint);
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.photoReview.deleteError'));
         }
-        if (status) status.textContent = t('modal.photoReview.deleted');
+        setPhotoReviewStatusMessage(t('modal.photoReview.deleted'));
         await loadFieldPhotos();
         await loadPhotoReviewQueue();
     } catch (err) {
-        if (status) status.textContent = apiErrorMessage(err, t('modal.photoReview.deleteError'));
+        setPhotoReviewStatusMessage(apiErrorMessage(err, t('modal.photoReview.deleteError')));
     }
 }

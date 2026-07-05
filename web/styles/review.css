@@ -3,6 +3,11 @@
     gap: 12px;
 }
 
+.photo-review-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 .photo-review-layout,
 .privacy-request-layout {
     display: grid;
@@ -11,12 +16,25 @@
     min-height: 420px;
 }
 
+.photo-review-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 .photo-review-list,
 .privacy-request-list {
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface-inset);
     overflow-y: auto;
+}
+
+.photo-review-list {
+    height: 100%;
+    min-height: 0;
+}
+
+.privacy-request-list {
     max-height: 560px;
 }
 
@@ -78,8 +96,8 @@
 
 .photo-review-insurance {
     display: grid;
-    gap: 8px;
-    padding: 9px;
+    gap: 7px;
+    padding: 8px 9px;
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
     background: var(--surface-subtle);
@@ -178,10 +196,14 @@
 
 .photo-review-insurance-checked {
     margin: 0;
-    min-height: 18px;
     color: var(--text-soft);
-    font: 750 0.72rem var(--font);
+    font: 800 0.76rem var(--font);
     line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.photo-review-insurance .field-photo-insurance-head {
+    align-items: center;
 }
 
 .privacy-request-detail {
@@ -233,7 +255,7 @@
     align-self: center;
     max-width: 100%;
     height: auto;
-    max-height: 58vh;
+    max-height: min(68vh, calc(100vh - 410px));
     border: 1px solid var(--border-strong);
     border-radius: 8px;
     background: var(--surface-canvas);

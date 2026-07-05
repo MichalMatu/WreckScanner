@@ -140,6 +140,10 @@
     max-width: 1100px;
 }
 
+.modal--photo-review {
+    height: calc(100vh - 48px);
+}
+
 .modal--photo-preview {
     width: min(960px, calc(100vw - 32px));
     max-width: none;
@@ -185,6 +189,10 @@
     .modal--admin-login {
         width: 100%;
         max-width: none;
+    }
+
+    .modal--photo-review {
+        height: calc(100dvh - 24px);
     }
 
     .modal-body {

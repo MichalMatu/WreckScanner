@@ -31,6 +31,7 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn('id="photo-review-vehicle-insurance"', html)
         self.assertIn('name="photo-review-vehicle-insurance-status"', html)
         self.assertIn('id="photo-review-vehicle-insurance-checked"', html)
+        self.assertIn('id="photo-review-status" hidden', html)
         self.assertIn('href="https://www.ufg.pl/" target="_blank"', html)
         self.assertIn("function vehicleInsuranceHeaderBadge", popups_js)
         self.assertIn("function vehicleInsuranceCheckedBadge", popups_js)
@@ -50,6 +51,8 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn("formData.append('vehicle_insurance_status'", upload_js)
         self.assertIn("photoReviewVehicleInsurancePayload", review_js)
         self.assertIn("photoReviewVehicleInsuranceInputs", review_js)
+        self.assertIn("setPhotoReviewStatusMessage", review_js)
+        self.assertNotIn("modal.photoReview.drawHint", review_js)
         self.assertIn("vehicle_insurance_status", review_js)
         self.assertIn("vehicle_insurance_checked_at", review_js)
         self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
@@ -60,7 +63,15 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn(".photo-review-insurance", review_css)
         self.assertIn(".photo-review-insurance-options", review_css)
         self.assertIn(".photo-review-insurance-option:has(input:checked)", review_css)
+        self.assertIn(".modal--photo-review", (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8"))
+        self.assertNotIn(
+            "max-height: 560px;\n}", review_css.split(".photo-review-list", 1)[1].split(".privacy-request-list", 1)[0]
+        )
         self.assertNotIn('<select class="modal-input" id="photo-review-vehicle-insurance">', html)
+        self.assertNotIn("Admin zapisuje ten wynik", frontend)
+        self.assertNotIn("Narysuj obszar na danych do zamazania", frontend)
+        self.assertNotIn("modal.photoReview.vehicleInsuranceHint", frontend)
+        self.assertNotIn("modal.photoReview.drawHint", frontend)
         for key in (
             "fieldPhoto.vehicleInsurance.unknown",
             "fieldPhoto.vehicleInsurance.insured",
