@@ -19,6 +19,7 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         popups_css = (ROOT_DIR / "web" / "styles" / "popups.css").read_text(encoding="utf-8")
         forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
+        modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
         review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
         frontend = html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + i18n_js
@@ -63,7 +64,12 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn(".photo-review-insurance", review_css)
         self.assertIn(".photo-review-insurance-options", review_css)
         self.assertIn(".photo-review-insurance-option:has(input:checked)", review_css)
-        self.assertIn(".modal--photo-review", (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8"))
+        self.assertIn("overflow: hidden;", modals_css)
+        self.assertIn(".modal--photo-review", modals_css)
+        self.assertIn("--photo-review-canvas-max-height", review_css)
+        self.assertIn(".photo-review-editor:has(.photo-review-insurance:not([hidden]))", review_css)
+        self.assertIn("max-height: var(--photo-review-canvas-max-height);", review_css)
+        self.assertIn("margin-top: auto;", review_css)
         self.assertNotIn(
             "max-height: 560px;\n}", review_css.split(".photo-review-list", 1)[1].split(".privacy-request-list", 1)[0]
         )

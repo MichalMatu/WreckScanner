@@ -88,10 +88,16 @@
 }
 
 .photo-review-editor {
+    --photo-review-canvas-max-height: min(78dvh, calc(100dvh - 300px));
+
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+}
+
+.photo-review-editor:has(.photo-review-insurance:not([hidden])) {
+    --photo-review-canvas-max-height: min(68dvh, calc(100dvh - 410px));
 }
 
 .photo-review-insurance {
@@ -255,7 +261,7 @@
     align-self: center;
     max-width: 100%;
     height: auto;
-    max-height: min(68vh, calc(100vh - 410px));
+    max-height: var(--photo-review-canvas-max-height);
     border: 1px solid var(--border-strong);
     border-radius: 8px;
     background: var(--surface-canvas);
@@ -291,6 +297,7 @@
     gap: 8px;
     align-items: center;
     justify-content: space-between;
+    margin-top: auto;
     min-width: 0;
 }
 
