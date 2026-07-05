@@ -191,6 +191,7 @@ class FrontendContracts(unittest.TestCase):
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         privacy_requests_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
         welcome_js = (ROOT_DIR / "web" / "app" / "welcome.js").read_text(encoding="utf-8")
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
@@ -201,14 +202,27 @@ class FrontendContracts(unittest.TestCase):
             + photo_review_js
             + privacy_requests_js
             + welcome_js
+            + config_js
             + admin_css
             + modals_css
             + i18n_js
         )
+        settings_modal_css = modals_css.split(".modal--settings {", 1)[1].split("}", 1)[0]
+        admin_modal_css = modals_css.split(".modal--admin-panel {", 1)[1].split("}", 1)[0]
 
         self.assertIn('class="admin-panel-stack"', html)
         self.assertIn("grid-template-columns: minmax(260px, 0.82fr) minmax(360px, 1.18fr);", admin_css)
-        self.assertIn("width: min(860px, calc(100vw - 24px));", modals_css)
+        self.assertIn("width: min(860px, calc(100vw - 48px));", modals_css)
+        self.assertNotIn("position:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("top:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("right:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("pointer-events:", settings_modal_css + admin_modal_css)
+        self.assertNotIn("modal-backdrop--floating", frontend)
+        self.assertNotIn("draggable-modal", frontend)
+        self.assertNotIn("modal-drag-handle", frontend)
+        self.assertNotIn("MODAL_POSITION_STORAGE_PREFIX", frontend)
+        self.assertNotIn("restoreDraggableModalPosition", ui_js)
+        self.assertNotIn("saveDraggableModalPosition", ui_js)
         self.assertIn("'modal.adminPanel.publicLayers': 'Warstwy'", i18n_js)
         self.assertIn("'modal.adminPanel.publicFeatures': 'Funkcje'", i18n_js)
         self.assertIn("'modal.adminPanel.publicFeatures': 'Features'", i18n_js)

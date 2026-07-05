@@ -2,7 +2,6 @@
 // przeglądarki; limity bezpieczeństwa backendu są osobno egzekwowane w Pythonie.
 
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
-const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
 const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisible.v1';

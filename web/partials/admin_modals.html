@@ -1,8 +1,8 @@
     <!-- ─── MODAL: LOGOWANIE ADMINA ─────────────────────── -->
     <div class="modal-backdrop" id="modal-admin-login" hidden onclick="closeAdminLoginModal(false, this)">
-        <form class="modal modal--admin-login draggable-modal" id="admin-login-form" onclick="event.stopPropagation()"
+        <form class="modal modal--admin-login" id="admin-login-form" onclick="event.stopPropagation()"
             onsubmit="submitAdminLogin(event)">
-            <div class="modal-header modal-drag-handle">
+            <div class="modal-header">
                 <h2 data-i18n="modal.admin.title">Panel administratora</h2>
                 <button type="button" class="modal-close" onclick="closeAdminLoginModal(false)"
                     data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
@@ -30,9 +30,9 @@
 
     <!-- ─── MODAL: POTWIERDZENIE AKCJI ─────────────────── -->
     <div class="modal-backdrop" id="modal-confirm" hidden onclick="closeConfirmModal(false, this)">
-        <form class="modal modal--confirm draggable-modal" id="confirm-form" onclick="event.stopPropagation()"
+        <form class="modal modal--confirm" id="confirm-form" onclick="event.stopPropagation()"
             onsubmit="submitConfirmAction(event)">
-            <div class="modal-header modal-drag-handle">
+            <div class="modal-header">
                 <h2 id="confirm-title" data-i18n="modal.confirm.title">Potwierdź akcję</h2>
                 <button type="button" class="modal-close" onclick="closeConfirmModal(false)"
                     data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
@@ -55,9 +55,9 @@
     </div>
 
     <!-- ─── MODAL: USTAWIENIA ───────────────────────────── -->
-    <div class="modal-backdrop modal-backdrop--floating" id="modal-settings" hidden onclick="closeModal(this)">
-        <div class="modal modal--settings draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+    <div class="modal-backdrop" id="modal-settings" hidden onclick="closeModal(this)">
+        <div class="modal modal--settings" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.settings.title">Ustawienia</h2>
                 <div class="modal-header-actions">
                     <button type="button" class="modal-icon-btn btn-lang" id="settings-toggle-lang"
@@ -129,9 +129,9 @@
     </div>
 
     <!-- ─── MODAL: PANEL ADMINISTRATORA ─────────────────────── -->
-    <div class="modal-backdrop modal-backdrop--floating" id="modal-admin-panel" hidden onclick="closeModal(this)">
-        <div class="modal modal--admin-panel draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+    <div class="modal-backdrop" id="modal-admin-panel" hidden onclick="closeModal(this)">
+        <div class="modal modal--admin-panel" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.adminPanel.title">Panel administratora</h2>
                 <div class="modal-header-actions">
                     <button type="button" class="modal-icon-btn" id="admin-login"
@@ -260,8 +260,8 @@
 
     <!-- ─── MODAL: PORZĄDKOWANIE ORYGINAŁÓW ─────────────────────── -->
     <div class="modal-backdrop" id="modal-photo-retention" hidden onclick="closeModal(this)">
-        <div class="modal modal--photo-retention draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--photo-retention" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.settings.photoRetention">Porządkowanie oryginałów</h2>
                 <button type="button" class="modal-close" onclick="closeModal()"
                     data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">

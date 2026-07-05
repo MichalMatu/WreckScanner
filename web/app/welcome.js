@@ -2,7 +2,6 @@ function openWelcomeModalIfNeeded() {
     try {
         if (localStorage.getItem(WELCOME_MODAL_SEEN_STORAGE_KEY) === '1') return;
         localStorage.setItem(WELCOME_MODAL_SEEN_STORAGE_KEY, '1');
-        localStorage.removeItem(`${MODAL_POSITION_STORAGE_PREFIX}modal-help`);
     } catch (_) {}
 
     window.setTimeout(() => {
@@ -14,7 +13,6 @@ function openWelcomeModalIfNeeded() {
 function openWelcomeModalFromAdminPanel() {
     try {
         localStorage.removeItem(WELCOME_MODAL_SEEN_STORAGE_KEY);
-        localStorage.removeItem(`${MODAL_POSITION_STORAGE_PREFIX}modal-help`);
     } catch (_) {}
     openAdminChildModal('modal-help');
 }

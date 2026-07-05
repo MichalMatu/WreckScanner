@@ -1,7 +1,7 @@
     <!-- ─── MODAL: ZDJĘCIA TERENOWE ─────────────────────── -->
     <div class="modal-backdrop" id="modal-field-photo-upload" hidden onclick="closeFieldPhotoUploadModal(this)">
-        <div class="modal modal--field-photo draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--field-photo" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 data-i18n="modal.fieldPhoto.title">Zdjęcia terenowe</h2>
                 <button type="button" class="modal-close" onclick="closeFieldPhotoUploadModal()"
                     data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
@@ -70,8 +70,8 @@
     </div>
 
     <div class="modal-backdrop" id="modal-field-photo-thanks" hidden onclick="closeFieldPhotoThanksModal(this)">
-        <div class="modal modal--field-photo-thanks draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--field-photo-thanks" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 id="field-photo-thanks-title" data-i18n="modal.fieldPhotoThanks.title">Dziękujemy za zdjęcie</h2>
                 <button type="button" class="modal-close" id="field-photo-thanks-close"
                     onclick="closeFieldPhotoThanksModal()" data-i18n-attr="aria-label:icon.close" aria-label="Zamknij">
@@ -130,9 +130,9 @@
     </div>
 
     <div class="modal-backdrop" id="modal-field-photo-owner" hidden onclick="closeModal(this)">
-        <form class="modal modal--field-photo-owner draggable-modal" id="field-photo-owner-form"
+        <form class="modal modal--field-photo-owner" id="field-photo-owner-form"
             onclick="event.stopPropagation()" onsubmit="submitFieldPhotoOwnerToken(event)">
-            <div class="modal-header modal-drag-handle">
+            <div class="modal-header">
                 <h2 data-i18n="modal.fieldPhotoOwner.title">Edycja mojego zdjęcia</h2>
                 <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
                     aria-label="Zamknij">
@@ -161,8 +161,8 @@
     </div>
 
     <div class="modal-backdrop" id="modal-photo-review" hidden onclick="handlePhotoReviewBackdropClose(this)">
-        <div class="modal modal--photo-review draggable-modal" onclick="event.stopPropagation()">
-            <div class="modal-header modal-drag-handle">
+        <div class="modal modal--photo-review" onclick="event.stopPropagation()">
+            <div class="modal-header">
                 <h2 id="photo-review-title" data-i18n="modal.photoReview.title">Przegląd zdjęć</h2>
                 <div class="modal-header-actions">
                     <button type="button" class="report-copy-btn field-photo-token-btn" id="photo-review-return-summary"
