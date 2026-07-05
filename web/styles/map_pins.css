@@ -3,6 +3,23 @@
     border: 0;
 }
 
+.leaflet-tooltip.vehicle-marker-tooltip {
+    padding: 6px 9px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: var(--glass-panel-bg-strong);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur-soft);
+    -webkit-backdrop-filter: var(--glass-blur-soft);
+    font: 800 0.72rem var(--font);
+    line-height: 1.2;
+}
+
+.leaflet-tooltip-top.vehicle-marker-tooltip::before {
+    border-top-color: var(--glass-panel-bg-strong);
+}
+
 .vehicle-pin {
     --pin-vehicle-current-ring: var(--pin-vehicle-ring);
     --pin-vehicle-current-ring-soft: var(--pin-vehicle-ring-soft);

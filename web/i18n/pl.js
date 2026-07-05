@@ -286,6 +286,7 @@ const TRANSLATIONS_PL = {
         'fieldPhoto.vehicleInsurance.ufgAria': 'Otwórz UFG, status OC: {status}',
         'vehicle.popup.photoTitle': 'Pojazd ze zdjęcia',
         'vehicle.popup.photoGroupTitle': 'Pojazd ze zdjęć: {n}',
+        'vehicle.markerInsurance': 'OC: {status}',
         'fieldPhoto.locationSaving': 'Aktualizuję pozycję zdjęć: {n}...',
         'fieldPhoto.locationUpdated': 'Zaktualizowano pozycję zdjęć: {n}.',
         'fieldPhoto.locationError': 'Nie udało się przesunąć zdjęcia terenowego.',

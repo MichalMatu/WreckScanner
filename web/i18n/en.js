@@ -281,6 +281,7 @@ const TRANSLATIONS_EN = {
         'fieldPhoto.vehicleInsurance.ufgAria': 'Open UFG, insurance status: {status}',
         'vehicle.popup.photoTitle': 'Vehicle from photo',
         'vehicle.popup.photoGroupTitle': 'Vehicle from photos: {n}',
+        'vehicle.markerInsurance': 'Insurance: {status}',
         'fieldPhoto.locationSaving': 'Updating photo position: {n}...',
         'fieldPhoto.locationUpdated': 'Updated photo position: {n}.',
         'fieldPhoto.locationError': 'Could not move the field photo.',

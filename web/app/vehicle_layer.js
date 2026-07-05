@@ -257,6 +257,20 @@ function updateVehicleStatusLegendCounts() {
     );
 }
 
+function vehicleMarkerTitle(group) {
+    const photoCount = vehicleGroupPhotoCount(group);
+    const title = photoCount > 1
+        ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
+        : t('vehicle.popup.photoTitle');
+    const parts = [
+        title,
+        t('vehicle.markerInsurance', { status: vehicleInsuranceStatusLabel(vehicleGroupInsuranceStatus(group)) }),
+    ];
+    const age = popupElapsedAgeText(group.photos);
+    if (age) parts.push(age);
+    return parts.join(' | ');
+}
+
 function updateVehicleStatusFilterControls() {
     document.querySelectorAll('[data-vehicle-status-filter]').forEach(button => {
         const active = normalizeVehicleStatusFilter(button.dataset.vehicleStatusFilter) === vehicleStatusFilter;
@@ -299,6 +313,7 @@ function placeVehicleMarkers() {
     if (!vehicleLayerAllowed()) return;
     visibleVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
+        const markerTitle = vehicleMarkerTitle(group);
         const marker = L.marker([group.lat, group.lon], {
             icon: vehicleIcon(
                 vehicleGroupPhotoCount(group),
@@ -309,7 +324,15 @@ function placeVehicleMarkers() {
             zIndexOffset: 1200,
             draggable: canDrag,
             autoPan: canDrag,
+            title: markerTitle,
+            alt: markerTitle,
         }).addTo(map).bindPopup(vehicleGroupPopup(group), mapPopupOptions());
+        marker.bindTooltip(markerTitle, {
+            className: 'vehicle-marker-tooltip',
+            direction: 'top',
+            opacity: 0.96,
+            sticky: true,
+        });
         if (canDrag) {
             marker.on('dragstart', () => marker.closePopup());
             marker.on('dragend', () => updateFieldPhotoGroupLocation(
