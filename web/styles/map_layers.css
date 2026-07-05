@@ -171,6 +171,69 @@
     color: var(--text-strong);
 }
 
+.vehicle-age-threshold {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.vehicle-age-threshold-label {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted-strong);
+    font: 800 0.67rem var(--font);
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.vehicle-age-threshold-options {
+    display: inline-grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 5px;
+}
+
+.vehicle-age-threshold-option {
+    min-width: 0;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+    color: var(--text-soft);
+    font: 850 0.68rem var(--font);
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.vehicle-age-threshold-option:hover {
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+    background: var(--primary-soft);
+    color: var(--text-strong);
+}
+
+.vehicle-age-threshold-option:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.vehicle-age-threshold-option.is-active {
+    border-color: color-mix(in srgb, var(--primary) 70%, white);
+    background: color-mix(in srgb, var(--primary) 82%, transparent);
+    color: var(--text-strong);
+}
+
 .layer-pin {
     width: 13px;
     height: 13px;

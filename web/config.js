@@ -6,6 +6,7 @@ const MODAL_POSITION_STORAGE_PREFIX = 'wroclaw-ortho-modal-position:';
 const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
 const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisible.v1';
+const VEHICLE_LONG_STANDING_DAYS_STORAGE_KEY = 'wreckscanner.vehicleLongStandingDays.v1';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
@@ -82,8 +83,8 @@ const METERS_PER_DEGREE_LAT = 111320;
 // Do tego momentu zachowują liczniki zdjęć.
 const MARKER_DETAIL_DOT_MAX_ZOOM = 16;
 const MAP_POPUP_PREVIEW_MAX_IMAGES = 6;
-const VEHICLE_LONG_STANDING_DAYS = 30;
-const VEHICLE_LONG_STANDING_MS = VEHICLE_LONG_STANDING_DAYS * 24 * 60 * 60 * 1000;
+const VEHICLE_LONG_STANDING_DEFAULT_DAYS = 30;
+const VEHICLE_LONG_STANDING_DAY_OPTIONS = [30, 45, 60];
 
 // Uploady: backend dalej waliduje te same limity, frontend tylko daje szybszy
 // komunikat przed wysłaniem formularza.

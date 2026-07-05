@@ -11,6 +11,7 @@ const VEHICLE_STATUS_FILTERS = new Set([
     VEHICLE_STATUS_FILTER_UNKNOWN,
 ]);
 let vehicleStatusFilter = VEHICLE_STATUS_FILTER_ALL;
+let vehicleLongStandingDays = loadVehicleLongStandingDays();
 let pendingVehiclePhotoFocusId = '';
 let vehiclePhotoFocusDone = false;
 
@@ -173,9 +174,32 @@ function vehicleGroupInsuranceStatus(group) {
     return statuses.length ? FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN : '';
 }
 
+function normalizeVehicleLongStandingDays(days) {
+    const safeDays = Number(days);
+    return VEHICLE_LONG_STANDING_DAY_OPTIONS.includes(safeDays) ? safeDays : VEHICLE_LONG_STANDING_DEFAULT_DAYS;
+}
+
+function loadVehicleLongStandingDays() {
+    try {
+        return normalizeVehicleLongStandingDays(localStorage.getItem(VEHICLE_LONG_STANDING_DAYS_STORAGE_KEY));
+    } catch (_) {
+        return VEHICLE_LONG_STANDING_DEFAULT_DAYS;
+    }
+}
+
+function saveVehicleLongStandingDays(days) {
+    try {
+        localStorage.setItem(VEHICLE_LONG_STANDING_DAYS_STORAGE_KEY, String(days));
+    } catch (_) {}
+}
+
+function vehicleLongStandingMs() {
+    return vehicleLongStandingDays * 24 * 60 * 60 * 1000;
+}
+
 function vehicleGroupIsLongStanding(group, nowMs = Date.now()) {
     const startTimestampMs = fieldPhotoGroupStartTimestamp(group.photos, nowMs);
-    return Number.isFinite(startTimestampMs) && nowMs - startTimestampMs >= VEHICLE_LONG_STANDING_MS;
+    return Number.isFinite(startTimestampMs) && nowMs - startTimestampMs >= vehicleLongStandingMs();
 }
 
 function normalizeVehicleStatusFilter(filter) {
@@ -222,11 +246,41 @@ function vehicleStatusCounts(photos = fieldPhotoLayerData) {
     return counts;
 }
 
-function updateVehicleStatusLegendCount(id, count, labelKey) {
+function vehicleLongStandingLegendLabel() {
+    return t('layers.vehicleLongStandingLegend', { days: vehicleLongStandingDays });
+}
+
+function updateVehicleLongStandingThresholdControls() {
+    document.querySelectorAll('[data-vehicle-long-standing-days]').forEach(button => {
+        const days = normalizeVehicleLongStandingDays(button.dataset.vehicleLongStandingDays);
+        const active = days === vehicleLongStandingDays;
+        const label = t('layers.vehicleLongStandingOption', { days });
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        button.title = label;
+        button.setAttribute('aria-label', label);
+    });
+    document.querySelectorAll('[data-vehicle-long-standing-label]').forEach(label => {
+        label.textContent = vehicleLongStandingLegendLabel();
+    });
+}
+
+function setVehicleLongStandingDays(days) {
+    const nextDays = normalizeVehicleLongStandingDays(days);
+    if (nextDays === vehicleLongStandingDays) {
+        updateVehicleLongStandingThresholdControls();
+        return;
+    }
+    vehicleLongStandingDays = nextDays;
+    saveVehicleLongStandingDays(vehicleLongStandingDays);
+    refreshVehicleLayer();
+}
+
+function updateVehicleStatusLegendCount(id, count, labelKey, labelParams = {}) {
     const badge = document.getElementById(id);
     if (!badge) return;
     const safeCount = Number.isFinite(count) ? count : 0;
-    const label = t(labelKey);
+    const label = t(labelKey, labelParams);
     const tooltip = t('layers.vehicleStatusCountTooltip', { label, n: safeCount });
     badge.textContent = String(safeCount);
     badge.title = tooltip;
@@ -234,6 +288,7 @@ function updateVehicleStatusLegendCount(id, count, labelKey) {
 }
 
 function updateVehicleStatusLegendCounts() {
+    updateVehicleLongStandingThresholdControls();
     const counts = vehicleStatusCounts();
     updateVehicleStatusLegendCount(
         'vehicle-status-count-unknown',
@@ -253,7 +308,8 @@ function updateVehicleStatusLegendCounts() {
     updateVehicleStatusLegendCount(
         'vehicle-status-count-long-standing',
         counts.longStanding,
-        'layers.vehicleLongStandingLegend'
+        'layers.vehicleLongStandingLegend',
+        { days: vehicleLongStandingDays }
     );
 }
 
