@@ -79,6 +79,7 @@ class DatabaseSchemaTests(unittest.TestCase):
             "submitted_at",
             "owner_redactions_updated_at",
             "vehicle_insurance_status",
+            "vehicle_insurance_checked_at",
         ):
             self.assertIn(column, columns)
         self.assertIn("edit_token_salt", columns)

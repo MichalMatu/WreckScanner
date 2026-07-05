@@ -177,6 +177,16 @@ function vehicleGroupInsuranceStatus(group) {
     return statuses.length ? FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN : '';
 }
 
+function vehicleGroupInsuranceCheckedAt(group) {
+    const status = vehicleGroupInsuranceStatus(group);
+    if (status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) return '';
+    const checkedAtValues = (group.photos || [])
+        .filter(photo => vehicleInsuranceStatus(photo.vehicle_insurance_status) === status)
+        .map(photo => String(photo.vehicle_insurance_checked_at || '').trim())
+        .filter(Boolean);
+    return checkedAtValues.sort().at(-1) || '';
+}
+
 function normalizeVehicleLongStandingDays(days) {
     const safeDays = Number(days);
     return VEHICLE_LONG_STANDING_DAY_OPTIONS.includes(safeDays) ? safeDays : VEHICLE_LONG_STANDING_DEFAULT_DAYS;
@@ -345,6 +355,8 @@ function vehicleMarkerTitle(group) {
         title,
         t('vehicle.markerInsurance', { status: vehicleInsuranceStatusLabel(vehicleGroupInsuranceStatus(group)) }),
     ];
+    const insuranceCheckedAt = humanDateTimeText(vehicleGroupInsuranceCheckedAt(group));
+    if (insuranceCheckedAt) parts.push(t('vehicle.markerInsuranceCheckedAt', { date: insuranceCheckedAt }));
     const age = popupElapsedAgeText(group.photos);
     if (age) parts.push(age);
     return parts.join(' | ');
@@ -375,8 +387,14 @@ function vehiclePhotoPopup(group) {
         ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
         : t('vehicle.popup.photoTitle');
     const previews = vehicleGroupPreviews(group);
+    const insuranceStatus = vehicleGroupInsuranceStatus(group);
+    const insuranceCheckedAt = vehicleGroupInsuranceCheckedAt(group);
     return mapPopup(`
-            ${popupHeader(title, [vehicleInsuranceHeaderBadge(vehicleGroupInsuranceStatus(group)), popupElapsedAgeBadge(group.photos)])}
+            ${popupHeader(title, [
+                vehicleInsuranceHeaderBadge(insuranceStatus, insuranceCheckedAt),
+                vehicleInsuranceCheckedBadge(insuranceStatus, insuranceCheckedAt),
+                popupElapsedAgeBadge(group.photos),
+            ])}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
             ${popupActions(vehicleGroupActions(group))}

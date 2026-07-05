@@ -10,7 +10,12 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf, report_zip
-from core.field_photo_metadata import grouped_vehicle_insurance_status, vehicle_insurance_status_from_record
+from core.field_photo_metadata import (
+    grouped_vehicle_insurance_checked_at,
+    grouped_vehicle_insurance_status,
+    vehicle_insurance_checked_at_from_record,
+    vehicle_insurance_status_from_record,
+)
 from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, load_field_photo_record
 from core.geo import external_map_links
 from core.map_crops import validate_crop_m
@@ -163,6 +168,7 @@ def _copy_public_field_photo(record_dir: Path, record: dict[str, Any], report_ro
         "image_height": record.get("image_height"),
         "issue_type": config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE,
         "vehicle_insurance_status": vehicle_insurance_status_from_record(record),
+        "vehicle_insurance_checked_at": vehicle_insurance_checked_at_from_record(record),
         "captured_at": record.get("captured_at"),
         "public_review_status": record.get("public_review_status"),
         "redactions": record.get("redactions") or [],
@@ -214,6 +220,7 @@ def _field_photo_report_record(
         "id": f"field_photo_group_{digest}",
         "status": "field_photo_group",
         "vehicle_insurance_status": grouped_vehicle_insurance_status([record for _, record in photo_records]),
+        "vehicle_insurance_checked_at": grouped_vehicle_insurance_checked_at([record for _, record in photo_records]),
         "lat": lat_float,
         "lon": lon_float,
         "labels_present": [],

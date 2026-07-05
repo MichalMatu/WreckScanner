@@ -155,6 +155,17 @@ function humanNameFromFilename(value) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
+function humanDateTimeText(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    const timestampMs = Date.parse(text);
+    if (!Number.isFinite(timestampMs)) return text.replace('T', ' ').replace(/Z$/, '');
+    return new Intl.DateTimeFormat(document.documentElement.lang || 'pl', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(new Date(timestampMs));
+}
+
 function photoPreviewDisplay(photo, index = 0) {
     const source = String(photo?.source || '');
     const rawLabel = String(photo?.label || '').trim();
@@ -208,14 +219,27 @@ function vehicleInsuranceStatusLabel(status) {
     return t(`fieldPhoto.vehicleInsurance.${vehicleInsuranceStatus(status)}`);
 }
 
-function vehicleInsuranceHeaderBadge(rawStatus) {
+function vehicleInsuranceHeaderBadge(rawStatus, checkedAt = '') {
     if (!String(rawStatus || '').trim()) return null;
     const status = vehicleInsuranceStatus(rawStatus);
     const label = vehicleInsuranceStatusLabel(status);
+    const checkedText = humanDateTimeText(checkedAt);
+    const title = checkedText
+        ? t('fieldPhoto.vehicleInsurance.ufgCheckedTitle', { status: label, date: checkedText })
+        : t('fieldPhoto.vehicleInsurance.ufgTitle', { status: label });
     return popupHeaderBadge(t(`fieldPhoto.vehicleInsurance.badge.${status}`), `insurance-${status}`, {
         href: UFG_OC_CHECK_URL,
-        title: t('fieldPhoto.vehicleInsurance.ufgTitle', { status: label }),
+        title,
         ariaLabel: t('fieldPhoto.vehicleInsurance.ufgAria', { status: label }),
+    });
+}
+
+function vehicleInsuranceCheckedBadge(rawStatus, checkedAt = '') {
+    const status = vehicleInsuranceStatus(rawStatus);
+    const checkedText = humanDateTimeText(checkedAt);
+    if (status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN || !checkedText) return null;
+    return popupHeaderBadge(t('fieldPhoto.vehicleInsurance.checkedBadge', { date: checkedText }), 'insurance-checked', {
+        title: t('fieldPhoto.vehicleInsurance.checkedTitle', { date: checkedText }),
     });
 }
 

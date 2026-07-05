@@ -27,6 +27,24 @@ def vehicle_insurance_status_from_record(record: dict[str, Any]) -> str:
     return vehicle_insurance_status(issue_type(record.get("issue_type")), record.get("vehicle_insurance_status"))
 
 
+def vehicle_insurance_checked_at(issue_type_text: str, status: Any, value: Any = None) -> str | None:
+    safe_status = vehicle_insurance_status(issue_type_text, status)
+    if issue_type_text != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        return None
+    if safe_status == config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS:
+        return None
+    text = str(value or "").strip()
+    return text or None
+
+
+def vehicle_insurance_checked_at_from_record(record: dict[str, Any]) -> str | None:
+    return vehicle_insurance_checked_at(
+        issue_type(record.get("issue_type")),
+        record.get("vehicle_insurance_status"),
+        record.get("vehicle_insurance_checked_at"),
+    )
+
+
 def grouped_vehicle_insurance_status(records: list[dict[str, Any]]) -> str:
     statuses: list[str] = []
     for record in records:
@@ -39,6 +57,23 @@ def grouped_vehicle_insurance_status(records: list[dict[str, Any]]) -> str:
     if "insured" in statuses:
         return "insured"
     return config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS
+
+
+def grouped_vehicle_insurance_checked_at(records: list[dict[str, Any]]) -> str | None:
+    grouped_status = grouped_vehicle_insurance_status(records)
+    if grouped_status == config.DEFAULT_FIELD_PHOTO_VEHICLE_INSURANCE_STATUS:
+        return None
+    checked_at_values: list[str] = []
+    for record in records:
+        try:
+            if vehicle_insurance_status_from_record(record) != grouped_status:
+                continue
+            checked_at = vehicle_insurance_checked_at_from_record(record)
+        except ValueError:
+            continue
+        if checked_at:
+            checked_at_values.append(checked_at)
+    return max(checked_at_values) if checked_at_values else None
 
 
 def vehicle_insurance_status_label(value: Any) -> str:

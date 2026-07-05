@@ -79,10 +79,109 @@
 .photo-review-insurance {
     display: grid;
     gap: 8px;
-    padding: 10px;
+    padding: 9px;
     border: 1px solid var(--border);
     border-radius: var(--radius-control);
     background: var(--surface-subtle);
+}
+
+.photo-review-insurance-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+    gap: 6px;
+}
+
+.photo-review-insurance-option {
+    min-width: 0;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+    color: var(--text-soft);
+    font: 850 0.72rem var(--font);
+    line-height: 1.1;
+    cursor: pointer;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    transition:
+        background var(--duration-fast),
+        border-color var(--duration-fast),
+        color var(--duration-fast);
+}
+
+.photo-review-insurance-option:hover {
+    border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+    background: var(--surface-control);
+    color: var(--text-strong);
+}
+
+.photo-review-insurance-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.photo-review-insurance-mark {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-full);
+    background: var(--surface-control);
+    box-sizing: border-box;
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.photo-review-insurance-option input:checked + .photo-review-insurance-mark {
+    border-color: color-mix(in srgb, var(--primary) 74%, white);
+    background: var(--primary);
+}
+
+.photo-review-insurance-option input:checked + .photo-review-insurance-mark::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    width: 4px;
+    height: 7px;
+    border: solid var(--text-strong);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.photo-review-insurance-option:has(input:checked) {
+    border-color: color-mix(in srgb, var(--primary) 62%, transparent);
+    background: color-mix(in srgb, var(--primary) 18%, var(--surface-control));
+    color: var(--text-strong);
+}
+
+.photo-review-insurance-option:has(input:focus-visible) {
+    outline: 2px solid color-mix(in srgb, var(--primary) 82%, white);
+    outline-offset: 2px;
+}
+
+.photo-review-insurance-option--insured:has(input:checked) {
+    border-color: color-mix(in srgb, var(--success) 58%, transparent);
+    background: color-mix(in srgb, var(--success) 18%, var(--surface-control));
+}
+
+.photo-review-insurance-option--uninsured:has(input:checked) {
+    border-color: color-mix(in srgb, var(--danger) 58%, transparent);
+    background: color-mix(in srgb, var(--danger) 18%, var(--surface-control));
+}
+
+.photo-review-insurance-checked {
+    margin: 0;
+    min-height: 18px;
+    color: var(--text-soft);
+    font: 750 0.72rem var(--font);
+    line-height: 1.25;
 }
 
 .privacy-request-detail {

@@ -65,6 +65,7 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("`zdjecia_terenowe/` - publiczne pliki zdjec terenowych", doc)
         self.assertIn("Kazde zdjecie terenowe musi miec jawne `issue_type`", doc)
         self.assertIn("`vehicle_insurance_status`", doc)
+        self.assertIn("`vehicle_insurance_checked_at`", doc)
         self.assertIn("Aplikacja nie pobiera danych z UFG automatycznie", doc)
         self.assertIn("Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu", doc)
         self.assertIn("`zgloszenie.txt`, `raport.html` i PDF", doc)
