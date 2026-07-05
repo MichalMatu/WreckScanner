@@ -69,6 +69,7 @@ const TRANSLATIONS_EN = {
         'layers.vehicleStatusFilterUnknown': 'Not checked',
         'layers.vehicleStatusLegend': 'Vehicle status',
         'layers.vehicleLongStandingLegend': 'Standing 30+ days',
+        'layers.vehicleStatusCountTooltip': '{label}: {n}',
         'layers.countVehiclesTooltip': 'Visible cars documented with field photos: {n}',
         'layers.countFieldPhotoInfrastructureTooltip': 'Grouped unsafe infrastructure points: {n}',
         'layers.countFieldPhotoSmokeTooltip': 'Grouped polluted air points: {n}',

@@ -205,6 +205,58 @@ function visibleVehicleGroups(photos = fieldPhotoLayerData) {
     );
 }
 
+function vehicleStatusCounts(photos = fieldPhotoLayerData) {
+    const counts = {
+        unknown: 0,
+        insured: 0,
+        uninsured: 0,
+        longStanding: 0,
+    };
+    if (!publicLayerAllowed(PUBLIC_LAYER_KEYS.vehicles)) return counts;
+    buildVehicleGroups(photos)
+        .filter(group => vehicleGroupPhotoCount(group) > 0)
+        .forEach(group => {
+            counts[vehicleGroupInsuranceStatus(group)] += 1;
+            if (vehicleGroupIsLongStanding(group)) counts.longStanding += 1;
+        });
+    return counts;
+}
+
+function updateVehicleStatusLegendCount(id, count, labelKey) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    const safeCount = Number.isFinite(count) ? count : 0;
+    const label = t(labelKey);
+    const tooltip = t('layers.vehicleStatusCountTooltip', { label, n: safeCount });
+    badge.textContent = String(safeCount);
+    badge.title = tooltip;
+    badge.setAttribute('aria-label', tooltip);
+}
+
+function updateVehicleStatusLegendCounts() {
+    const counts = vehicleStatusCounts();
+    updateVehicleStatusLegendCount(
+        'vehicle-status-count-unknown',
+        counts.unknown,
+        'fieldPhoto.vehicleInsurance.unknown'
+    );
+    updateVehicleStatusLegendCount(
+        'vehicle-status-count-insured',
+        counts.insured,
+        'fieldPhoto.vehicleInsurance.insured'
+    );
+    updateVehicleStatusLegendCount(
+        'vehicle-status-count-uninsured',
+        counts.uninsured,
+        'fieldPhoto.vehicleInsurance.uninsured'
+    );
+    updateVehicleStatusLegendCount(
+        'vehicle-status-count-long-standing',
+        counts.longStanding,
+        'layers.vehicleLongStandingLegend'
+    );
+}
+
 function updateVehicleStatusFilterControls() {
     document.querySelectorAll('[data-vehicle-status-filter]').forEach(button => {
         const active = normalizeVehicleStatusFilter(button.dataset.vehicleStatusFilter) === vehicleStatusFilter;

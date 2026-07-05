@@ -71,6 +71,7 @@ const TRANSLATIONS_PL = {
         'layers.vehicleStatusFilterUnknown': 'Nie sprawdzono',
         'layers.vehicleStatusLegend': 'Status pojazdu',
         'layers.vehicleLongStandingLegend': 'Stoi 30+ dni',
+        'layers.vehicleStatusCountTooltip': '{label}: {n}',
         'layers.countVehiclesTooltip': 'Widoczne auta udokumentowane zdjęciami w terenie: {n}',
         'layers.countFieldPhotoInfrastructureTooltip': 'Zgrupowane punkty niebezpiecznej infrastruktury: {n}',
         'layers.countFieldPhotoSmokeTooltip': 'Zgrupowane punkty zanieczyszczonego powietrza: {n}',

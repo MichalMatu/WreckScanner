@@ -250,6 +250,22 @@
     white-space: nowrap;
 }
 
+.map-pin-legend-count {
+    min-width: 20px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--surface-inset) 82%, transparent);
+    color: var(--text-soft);
+    font: 850 0.66rem var(--font);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
 .map-pin-status-ring {
     width: 12px;
     height: 12px;
