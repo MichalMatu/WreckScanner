@@ -114,6 +114,32 @@ class HttpStaticFilesContractTests(unittest.TestCase):
         self.assertEqual(handler.wfile.getvalue(), b"")
         self.assertIn(("Content-Length", str(len(expected_body))), handler.headers)
 
+    def test_handle_web_asset_serves_app_asset_without_cache(self):
+        with TemporaryDirectory() as tmp:
+            web_dir = Path(tmp) / "web"
+            (web_dir / "styles").mkdir(parents=True)
+            (web_dir / "styles" / "panel.css").write_text(".panel{}", encoding="utf-8")
+            handler = FakeHandler()
+
+            with patch.object(config, "WEB_DIR", web_dir):
+                handled = static_files.handle_web_asset(handler, "/styles/panel.css")
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(handler.wfile.getvalue(), b".panel{}")
+        self.assertIn(("Content-Type", "text/css; charset=utf-8"), handler.headers)
+        self.assertIn(("Cache-Control", "no-store"), handler.headers)
+
+    def test_handle_web_asset_rejects_unsafe_or_non_asset_paths(self):
+        with TemporaryDirectory() as tmp:
+            web_dir = Path(tmp) / "web"
+            web_dir.mkdir()
+            (web_dir / "index.html").write_text("<html></html>", encoding="utf-8")
+
+            with patch.object(config, "WEB_DIR", web_dir):
+                self.assertFalse(static_files.handle_web_asset(FakeHandler(), "/../secret.js"))
+                self.assertFalse(static_files.handle_web_asset(FakeHandler(), "/index.html"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -37,15 +37,18 @@ def json_response(payload: dict) -> FakeResponse:
     )
 
 
-def text_response(content_type: str, body: str) -> FakeResponse:
+def text_response(content_type: str, body: str, *, cache_control: str | None = None) -> FakeResponse:
+    headers = {
+        "Content-Type": content_type,
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "same-origin",
+        "X-Frame-Options": "SAMEORIGIN",
+    }
+    if cache_control:
+        headers["Cache-Control"] = cache_control
     return FakeResponse(
         200,
-        {
-            "Content-Type": content_type,
-            "X-Content-Type-Options": "nosniff",
-            "Referrer-Policy": "same-origin",
-            "X-Frame-Options": "SAMEORIGIN",
-        },
+        headers,
         body.encode("utf-8"),
     )
 
@@ -73,7 +76,7 @@ class RuntimeSmokeTests(unittest.TestCase):
             "/app/field_photo_upload.js",
             "/app/settings.js",
         }:
-            return text_response("text/plain", "asset")
+            return text_response("text/plain", "asset", cache_control="no-store")
         if path == "/api/health":
             return json_response(
                 {
