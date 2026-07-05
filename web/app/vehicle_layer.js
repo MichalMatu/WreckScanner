@@ -346,20 +346,17 @@ function updateVehicleStatusLegendCounts() {
     );
 }
 
-function vehicleMarkerTitle(group) {
-    const photoCount = vehicleGroupPhotoCount(group);
-    const title = photoCount > 1
-        ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
-        : t('vehicle.popup.photoTitle');
+function vehicleMarkerTooltip(group) {
+    const status = vehicleInsuranceStatus(vehicleGroupInsuranceStatus(group));
     const parts = [
-        title,
-        t('vehicle.markerInsurance', { status: vehicleInsuranceStatusLabel(vehicleGroupInsuranceStatus(group)) }),
+        t('vehicle.markerTooltipPhotos', { n: vehicleGroupPhotoCount(group) }),
     ];
-    const insuranceCheckedAt = humanDateTimeText(vehicleGroupInsuranceCheckedAt(group));
-    if (insuranceCheckedAt) parts.push(t('vehicle.markerInsuranceCheckedAt', { date: insuranceCheckedAt }));
     const age = popupElapsedAgeText(group.photos);
-    if (age) parts.push(age);
-    return parts.join(' | ');
+    if (age) parts.push(t('vehicle.markerTooltipAge', { age }));
+    parts.push(t('vehicle.markerTooltipInsurance', {
+        status: t(`vehicle.markerInsuranceShort.${status}`),
+    }));
+    return parts.join(', ');
 }
 
 function updateVehicleStatusFilterControls() {
@@ -410,7 +407,7 @@ function placeVehicleMarkers() {
     if (!vehicleLayerAllowed()) return;
     prioritizedVehicleGroups().forEach(group => {
         const canDrag = adminAuthenticated && group.photos.length > 0;
-        const markerTitle = vehicleMarkerTitle(group);
+        const markerTooltip = vehicleMarkerTooltip(group);
         const marker = L.marker([group.lat, group.lon], {
             icon: vehicleIcon(
                 vehicleGroupPhotoCount(group),
@@ -421,10 +418,10 @@ function placeVehicleMarkers() {
             zIndexOffset: vehicleGroupZIndexOffset(group),
             draggable: canDrag,
             autoPan: canDrag,
-            title: markerTitle,
-            alt: markerTitle,
+            alt: markerTooltip,
         }).addTo(map).bindPopup(vehicleGroupPopup(group), mapPopupOptions());
-        marker.bindTooltip(markerTitle, {
+        marker.getElement()?.setAttribute('aria-label', markerTooltip);
+        marker.bindTooltip(markerTooltip, {
             className: 'vehicle-marker-tooltip',
             direction: 'top',
             opacity: 0.96,
