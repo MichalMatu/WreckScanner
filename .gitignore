@@ -22,6 +22,7 @@ wreckscanner.sqlite3-wal
 .restic_password
 .cache/
 .backups/
+kopie_zapasowe/
 cloudflared-linux-arm64.deb
 report_*.pdf
 report_*.zip

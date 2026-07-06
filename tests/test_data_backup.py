@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import unittest
+import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -15,6 +16,7 @@ from core.data_backup import (
 )
 from core.database import apply_migrations, connect_database
 from core.field_photos import save_field_photo_record
+from core.zip_backup import create_zip_backup, restore_zip_backup
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -268,6 +270,64 @@ class DataBackupTests(unittest.TestCase):
             self.assertIn("zgloszenia_prywatnosci", payload["argv"])
             self.assertEqual(payload["repo"], str(root / "repo"))
             self.assertEqual(payload["password_file"], str(password_file))
+
+    def test_create_zip_backup_includes_database_photos_settings_and_secrets(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            prepare_root(root)
+            create_valid_database(root)
+            (root / ".admin_password").write_text("admin-secret\n", encoding="utf-8")
+            (root / "zdjecia_terenowe" / "public.txt").write_text("public photo placeholder", encoding="utf-8")
+            (root / "prywatne_zdjecia" / "private.txt").write_text("private photo placeholder", encoding="utf-8")
+
+            result = create_zip_backup(root_dir=root, check_images=False)
+
+            self.assertEqual(result.status, "ok")
+            self.assertIsNotNone(result.archive_path)
+            with zipfile.ZipFile(result.archive_path) as archive:
+                names = set(archive.namelist())
+                self.assertIn("wreckscanner.sqlite3", names)
+                self.assertIn("zdjecia_terenowe/public.txt", names)
+                self.assertIn("prywatne_zdjecia/private.txt", names)
+                self.assertIn("settings.json", names)
+                self.assertIn(".admin_password", names)
+                self.assertIn(".restic_password", names)
+                manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+
+            self.assertEqual(manifest["format"], "wreckscanner-data-snapshot-v1")
+            self.assertTrue(manifest["secrets_included"])
+            self.assertIn(".admin_password", manifest["secret_entries"])
+            self.assertIn(".restic_password", manifest["secret_entries"])
+
+    def test_restore_zip_backup_replaces_snapshot_paths_and_keeps_safety_copy(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            prepare_root(root)
+            create_valid_database(root)
+            (root / ".admin_password").write_text("original-admin\n", encoding="utf-8")
+            (root / "zdjecia_terenowe" / "snapshot.txt").write_text("snapshot public", encoding="utf-8")
+            (root / "prywatne_zdjecia" / "snapshot.txt").write_text("snapshot private", encoding="utf-8")
+            (root / "settings.json").write_text('{"version":"snapshot"}\n', encoding="utf-8")
+            backup = create_zip_backup(root_dir=root, check_images=False)
+
+            self.assertEqual(backup.status, "ok")
+            (root / ".admin_password").write_text("changed-admin\n", encoding="utf-8")
+            (root / "zdjecia_terenowe" / "changed.txt").write_text("changed public", encoding="utf-8")
+            (root / "prywatne_zdjecia" / "changed.txt").write_text("changed private", encoding="utf-8")
+            (root / "settings.json").write_text('{"version":"changed"}\n', encoding="utf-8")
+
+            result = restore_zip_backup(root_dir=root, archive_path=backup.archive_path)
+
+            self.assertEqual(result.status, "ok")
+            self.assertIsNotNone(result.safety_path)
+            self.assertEqual((root / ".admin_password").read_text(encoding="utf-8"), "original-admin\n")
+            self.assertTrue((root / "zdjecia_terenowe" / "snapshot.txt").exists())
+            self.assertTrue((root / "prywatne_zdjecia" / "snapshot.txt").exists())
+            self.assertFalse((root / "zdjecia_terenowe" / "changed.txt").exists())
+            self.assertFalse((root / "prywatne_zdjecia" / "changed.txt").exists())
+            self.assertEqual((root / "settings.json").read_text(encoding="utf-8"), '{"version":"snapshot"}\n')
+            self.assertTrue((result.safety_path / "settings.json").exists())
+            self.assertTrue((result.safety_path / "zdjecia_terenowe" / "changed.txt").exists())
 
 
 if __name__ == "__main__":
