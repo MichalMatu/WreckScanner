@@ -24,22 +24,34 @@ from core.data_backup import (  # noqa: E402
     run_backup,
 )
 from core.data_diagnostics import format_data_diagnostics  # noqa: E402
+from core.zip_backup import (  # noqa: E402
+    DEFAULT_ZIP_BACKUP_DIR,
+    create_zip_backup,
+    list_zip_backups,
+    restore_zip_backup,
+)
+
+
+def _root_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--root-dir", type=Path, default=ROOT_DIR, help="Katalog projektu WreckScanner.")
+    return parser
 
 
 def _common_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = _root_parser()
     parser.add_argument("--repo", help="Repozytorium restic. Alternatywnie ustaw RESTIC_REPOSITORY.")
     parser.add_argument(
         "--password-file", type=Path, help="Plik hasła restic. Alternatywnie ustaw RESTIC_PASSWORD_FILE."
     )
     parser.add_argument("--restic-bin", default="restic", help="Ścieżka do binarki restic.")
-    parser.add_argument("--root-dir", type=Path, default=ROOT_DIR, help="Katalog projektu WreckScanner.")
     return parser
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Backup lokalnej bazy WreckScanner przez restic.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    root_common = _root_parser()
     common = _common_parser()
 
     subparsers.add_parser("init", parents=[common], help="Zainicjuj repozytorium restic.")
@@ -65,6 +77,26 @@ def parse_args() -> argparse.Namespace:
     forget_parser.add_argument("--keep-weekly", type=int, default=8)
     forget_parser.add_argument("--keep-monthly", type=int, default=6)
     forget_parser.add_argument("--prune", action="store_true", help="Po retencji zwolnij nieużywane dane repozytorium.")
+
+    zip_parser = subparsers.add_parser(
+        "zip", parents=[root_common], help="Utwórz pełny snapshot danych aplikacji w ZIP."
+    )
+    zip_parser.add_argument("--output-dir", type=Path, default=DEFAULT_ZIP_BACKUP_DIR)
+    zip_parser.add_argument("--output", type=Path, help="Dokładna ścieżka pliku ZIP do utworzenia.")
+    zip_parser.add_argument("--diagnostics-output", type=Path, default=DEFAULT_DIAGNOSTICS_OUTPUT)
+    zip_parser.add_argument(
+        "--without-secrets", action="store_true", help="Nie dołączaj .admin_password i .restic_password."
+    )
+    zip_parser.add_argument("--no-image-check", action="store_true", help="Nie otwieraj obrazów podczas diagnostyki.")
+    zip_parser.add_argument(
+        "--strict", action="store_true", help="Przerwij backup także przy ostrzeżeniach diagnostyki."
+    )
+
+    restore_parser = subparsers.add_parser("restore-zip", parents=[root_common], help="Odtwórz dane z ZIP snapshotu.")
+    restore_parser.add_argument("--archive", type=Path, required=True, help="Ścieżka do archiwum ZIP.")
+
+    list_parser = subparsers.add_parser("list-zips", parents=[root_common], help="Pokaż lokalne snapshoty ZIP.")
+    list_parser.add_argument("--output-dir", type=Path, default=DEFAULT_ZIP_BACKUP_DIR)
 
     return parser.parse_args()
 
@@ -111,19 +143,67 @@ def _run_backup(args: argparse.Namespace) -> int:
     return 0 if result.status == "ok" else 1
 
 
+def _run_zip_backup(args: argparse.Namespace) -> int:
+    result = create_zip_backup(
+        root_dir=args.root_dir,
+        output_dir=args.output_dir,
+        output=args.output,
+        diagnostics_output=args.diagnostics_output,
+        include_secrets=not args.without_secrets,
+        strict=args.strict,
+        check_images=not args.no_image_check,
+    )
+
+    print(format_data_diagnostics(result.diagnostics_report))
+    print("")
+    print(f"Diagnostyka zapisana: {result.diagnostics_output}")
+    if result.backup_paths:
+        print("Ścieżki snapshotu:")
+        for path in result.backup_paths:
+            print(f"- {path}")
+    print(result.message)
+    if result.archive_path:
+        print(f"Archiwum ZIP: {result.archive_path}")
+    if result.manifest:
+        print(f"Liczba wpisów w archiwum: {len(result.manifest['entries'])}")
+    return 0 if result.status == "ok" else 1
+
+
+def _run_zip_restore(args: argparse.Namespace) -> int:
+    result = restore_zip_backup(root_dir=args.root_dir, archive_path=args.archive)
+    print(result.message)
+    print(f"Archiwum ZIP: {result.archive_path}")
+    if result.safety_path:
+        print(f"Kopia stanu sprzed odtwarzania: {result.safety_path}")
+    print("Odtworzone ścieżki:")
+    for path in result.restored_paths:
+        print(f"- {path}")
+    return 0 if result.status == "ok" else 1
+
+
+def _list_zip_backups(args: argparse.Namespace) -> int:
+    backups = list_zip_backups(root_dir=args.root_dir, output_dir=args.output_dir)
+    if not backups:
+        print("Brak lokalnych snapshotów ZIP.")
+        return 0
+    for path in backups:
+        size_mib = path.stat().st_size / (1024 * 1024)
+        print(f"{path}\t{size_mib:.1f} MiB")
+    return 0
+
+
 def main() -> int:
     args = parse_args()
-    options = _options(args)
     if args.command == "init":
-        return _print_restic_result(restic_init(options))
+        return _print_restic_result(restic_init(_options(args)))
     if args.command == "check":
-        return _print_restic_result(restic_check(options))
+        return _print_restic_result(restic_check(_options(args)))
     if args.command == "snapshots":
-        return _print_restic_result(restic_snapshots(options))
+        return _print_restic_result(restic_snapshots(_options(args)))
     if args.command == "forget":
         return _print_restic_result(
             restic_forget(
-                options,
+                _options(args),
                 keep_daily=args.keep_daily,
                 keep_weekly=args.keep_weekly,
                 keep_monthly=args.keep_monthly,
@@ -132,6 +212,12 @@ def main() -> int:
         )
     if args.command == "run":
         return _run_backup(args)
+    if args.command == "zip":
+        return _run_zip_backup(args)
+    if args.command == "restore-zip":
+        return _run_zip_restore(args)
+    if args.command == "list-zips":
+        return _list_zip_backups(args)
     raise AssertionError(f"Nieznana komenda: {args.command}")
 
 

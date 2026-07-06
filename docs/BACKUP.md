@@ -24,6 +24,47 @@ Backup obejmuje dane uzytkowe:
 
 Backup pomija zaleznosci, cache, `.backups/` i raporty wygenerowane do jednorazowego pobrania.
 
+## Snapshot ZIP z menu `make`
+
+Domyslne `make` otwiera menu z numerami. Opcja `6` zatrzymuje serwer na czas
+kopii i tworzy pelny snapshot ZIP w katalogu `kopie_zapasowe/`, a opcja `7`
+odtwarza dane z wybranego ZIP-a.
+
+Snapshot ZIP zawiera pelny stan danych potrzebny do odtworzenia dzialajacej
+instalacji na tym samym kodzie aplikacji:
+
+- `wreckscanner.sqlite3` jako spojny snapshot SQLite,
+- `zdjecia_terenowe/`,
+- `prywatne_zdjecia/`,
+- `zgloszenia_prywatnosci/`, jesli istnieje,
+- `settings.json`, jesli istnieje,
+- `analiza/data_diagnostics.json`,
+- `.admin_password` i `.restic_password`, jesli istnieja,
+- `manifest.json` z lista wpisow, rozmiarami i hashami SHA256 plikow.
+
+ZIP nie jest szyfrowany. Poniewaz zawiera hasla i prywatne zdjecia, trzymaj go
+poza repozytorium i poza jedyna karta SD Raspberry Pi, np. na dysku USB, NAS albo
+innym komputerze. Katalog `kopie_zapasowe/` jest ignorowany przez Git.
+
+Komendy bez menu:
+
+```bash
+make backup-data
+make list-backups
+make restore-data BACKUP=kopie_zapasowe/wreckscanner-snapshot-YYYYMMDD_HHMMSS.zip
+```
+
+Backup i odtwarzanie pamietaja poprzedni stan autostartu. Jesli autostart byl
+wylaczony przed operacja, po operacji pozostaje wylaczony.
+
+Odtwarzanie ZIP-a:
+
+1. wylacza autostart i zatrzymuje `server.py`,
+2. sprawdza archiwum i integralnosc bazy SQLite,
+3. przenosi obecny stan danych do `kopie_zapasowe/przed_odtworzeniem/`,
+4. podmienia dane z archiwum,
+5. wlacza serwer ponownie.
+
 ## Komendy
 
 ```bash

@@ -1,9 +1,12 @@
-.PHONY: help start stop restart status logs check test lint smoke e2e-report health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop
+.DEFAULT_GOAL := menu
+
+.PHONY: menu help start stop restart status logs check test lint smoke e2e-report health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop backup-data restore-data list-backups backup-db restore-db
 
 PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then printf './.venv/bin/python'; elif command -v python3 >/dev/null 2>&1; then command -v python3; else command -v python; fi)
 HOST ?= 127.0.0.1
 PORT ?= 8001
 SERVER_URL := http://$(HOST):$(PORT)
+BACKUP_DIR ?= kopie_zapasowe
 SERVER_PATTERN := [p]ython[^[:space:]]*[[:space:]].*$(CURDIR)/server\.py([[:space:]]|$$)
 SERVER_WAIT_SECONDS ?= 8
 SERVER_AUTOSTART_WAIT_SECONDS ?= 3
@@ -11,6 +14,39 @@ SERVER_LOG ?= .dev/server.log
 SERVER_PID_FILE ?= .dev/server.pid
 AUTOSTART_DISABLED_FILE ?= .dev/server.autostart.disabled
 AUTOSTART_ACTION := $(firstword $(filter start stop status,$(MAKECMDGOALS)))
+
+menu:
+	@printf '%s\n' \
+		'WreckScanner - menu:' \
+		'' \
+		'  1. Status serwera' \
+		'  2. Restart serwera' \
+		'  3. Zatrzymaj serwer' \
+		'  4. Uruchom serwer' \
+		'  5. Pelny check aplikacji' \
+		'  6. Stworz pelna kopie zapasowa ZIP' \
+		'  7. Odtworz dane z kopii ZIP' \
+		'  8. Pokaz lokalne kopie ZIP' \
+		'  9. Pokaz logi' \
+		'  0. Wyjscie' \
+		''
+	@printf 'Wybor: '; \
+	read choice; \
+	case "$$choice" in \
+		1) $(MAKE) status ;; \
+		2) $(MAKE) restart ;; \
+		3) $(MAKE) serwerstop ;; \
+		4) $(MAKE) serwerstart ;; \
+		5) $(MAKE) check ;; \
+		6) $(MAKE) backup-data ;; \
+		7) printf 'Sciezka do ZIP: '; read backup; \
+			if [ -z "$$backup" ]; then echo 'Brak sciezki do ZIP.'; exit 2; fi; \
+			$(MAKE) restore-data BACKUP="$$backup" ;; \
+		8) $(MAKE) list-backups ;; \
+		9) $(MAKE) logs ;; \
+		0) exit 0 ;; \
+		*) echo 'Nieznany wybor.'; exit 2 ;; \
+	esac
 
 help:
 	@printf '%s\n' \
@@ -34,6 +70,11 @@ help:
 		'make smoke' 'runtime smoke dzialajacego serwera' \
 		'make e2e-report' 'upload/review/map/raport ZIP+PDF dzialajacego serwera' \
 		'make health' 'alias status'
+	@printf '%s\n' '' 'Backup:'
+	@printf '  %-36s %s\n' \
+		'make backup-data' 'pelny snapshot ZIP, zatrzymuje serwer na czas kopii' \
+		'make restore-data BACKUP=plik.zip' 'odtworz pelny snapshot ZIP' \
+		'make list-backups' 'pokaz lokalne kopie ZIP'
 
 start:
 	@if pgrep -af '$(SERVER_PATTERN)' >/dev/null; then \
@@ -169,3 +210,44 @@ e2e-report:
 	@"$(PYTHON)" scripts/e2e_field_photo_report.py --base-url "$(SERVER_URL)"
 
 health: status
+
+backup-data:
+	@was_disabled=0; \
+	if [ -f "$(AUTOSTART_DISABLED_FILE)" ]; then was_disabled=1; fi; \
+	status=0; \
+	$(MAKE) autostart-stop || status=$$?; \
+	if [ "$$status" -eq 0 ]; then \
+		"$(PYTHON)" scripts/backup_data.py zip --root-dir "$(CURDIR)" --output-dir "$(BACKUP_DIR)" || status=$$?; \
+	fi; \
+	if [ "$$was_disabled" -eq 0 ]; then \
+		$(MAKE) autostart-start || true; \
+	else \
+		echo 'Autostart byl wylaczony przed backupem; zostawiam wylaczony.'; \
+	fi; \
+	exit "$$status"
+
+restore-data:
+	@if [ -z "$(BACKUP)" ]; then \
+		echo 'Podaj plik kopii: make restore-data BACKUP=kopie_zapasowe/plik.zip'; \
+		exit 2; \
+	fi
+	@was_disabled=0; \
+	if [ -f "$(AUTOSTART_DISABLED_FILE)" ]; then was_disabled=1; fi; \
+	status=0; \
+	$(MAKE) autostart-stop || status=$$?; \
+	if [ "$$status" -eq 0 ]; then \
+		"$(PYTHON)" scripts/backup_data.py restore-zip --root-dir "$(CURDIR)" --archive "$(BACKUP)" || status=$$?; \
+	fi; \
+	if [ "$$was_disabled" -eq 0 ]; then \
+		$(MAKE) autostart-start || true; \
+	else \
+		echo 'Autostart byl wylaczony przed odtwarzaniem; zostawiam wylaczony.'; \
+	fi; \
+	exit "$$status"
+
+list-backups:
+	@"$(PYTHON)" scripts/backup_data.py list-zips --root-dir "$(CURDIR)" --output-dir "$(BACKUP_DIR)"
+
+backup-db: backup-data
+
+restore-db: restore-data
