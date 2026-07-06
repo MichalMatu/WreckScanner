@@ -53,7 +53,10 @@ ADMIN_COOKIE_SECURE = os.environ.get("WRECKSCANNER_ADMIN_COOKIE_SECURE", "1").st
 }
 CORS_ALLOWED_ORIGINS = tuple(
     origin.strip()
-    for origin in os.environ.get("WRECKSCANNER_CORS_ALLOWED_ORIGINS", "https://wreckscanner.pl").split(",")
+    for origin in os.environ.get(
+        "WRECKSCANNER_CORS_ALLOWED_ORIGINS",
+        "https://wreckscanner.pl,https://ilestoi.pl,https://dlugostoi.pl",
+    ).split(",")
     if origin.strip()
 )
 

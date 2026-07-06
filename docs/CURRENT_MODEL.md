@@ -1,6 +1,6 @@
 # Current Data And UX Model
 
-Ten dokument opisuje aktualny wzorzec dzialania WreckScanner po usunieciu starego
+Ten dokument opisuje aktualny wzorzec dzialania IleStoi.pl po usunieciu starego
 modelu trwalych spraw pojazdow.
 
 ## Zrodlo prawdy

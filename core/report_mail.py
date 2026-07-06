@@ -106,7 +106,7 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
     place_url = _place_url_text(record)
-    place_section = f"\nLink do miejsca w WreckScanner:\n{place_url}\n" if place_url else ""
+    place_section = f"\nLink do miejsca w IleStoi.pl:\n{place_url}\n" if place_url else ""
     parcel_context = _parcel_context_text(record)
     parcel_section = f"\n{parcel_context}\n" if parcel_context else ""
     subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(fields['location_description'])}"
@@ -135,7 +135,7 @@ Opis stanu pojazdu:
 
 {_vehicle_insurance_context_text(record)}
 
-Materiał pomocniczy z aplikacji WreckScanner:
+Materiał pomocniczy z aplikacji IleStoi.pl:
 - pojazd widoczny na ortofotomapach z lat: {labels}
 
 Zakres oczekiwanej odpowiedzi:

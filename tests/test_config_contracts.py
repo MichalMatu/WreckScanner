@@ -48,7 +48,10 @@ class ConfigModuleContractTests(unittest.TestCase):
         )
         self.assertEqual(app_config.WMS_TIMEOUT, core_config.ORTHO_WMS_TIMEOUT)
         self.assertTrue(app_config.ADMIN_COOKIE_SECURE)
-        self.assertEqual(app_config.CORS_ALLOWED_ORIGINS, ("https://wreckscanner.pl",))
+        self.assertEqual(
+            app_config.CORS_ALLOWED_ORIGINS,
+            ("https://wreckscanner.pl", "https://ilestoi.pl", "https://dlugostoi.pl"),
+        )
 
     def test_web_config_is_loaded_before_application_code(self):
         html = read_index_html()

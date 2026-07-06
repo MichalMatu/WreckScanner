@@ -5,8 +5,8 @@
 Na Raspberry Pi kazda aplikacja ma osobny lokalny port:
 
 ```text
-PhotoMap      http://127.0.0.1:8000
-WreckScanner  http://127.0.0.1:8001
+PhotoMap    http://127.0.0.1:8000
+IleStoi.pl  http://127.0.0.1:8001
 ```
 
 Sprawdzenie:
@@ -34,7 +34,9 @@ ingress:
     service: http://127.0.0.1:8000
   - hostname: wreckscanner.pl
     service: http://127.0.0.1:8001
-  - hostname: www.wreckscanner.pl
+  - hostname: ilestoi.pl
+    service: http://127.0.0.1:8001
+  - hostname: dlugostoi.pl
     service: http://127.0.0.1:8001
   - service: http_status:404
 ```
@@ -47,4 +49,3 @@ systemctl status cloudflared.service --no-pager
 ```
 
 Usuniecie strony oznacza usuniecie jej wpisow `ingress`, usuniecie jej rekordow DNS w Cloudflare i zatrzymanie/wylaczenie jej uslugi systemd.
-

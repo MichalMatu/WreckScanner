@@ -96,7 +96,7 @@ class ReportHtmlTests(unittest.TestCase):
             },
             {"crops": [{"label": "2025", "file": "2025.jpg"}]},
             "Raport",
-            "Link do miejsca:\nhttps://wreckscanner.pl/?lat=51.100000&lon=17.200000&z=20&photo=photo_test",
+            "Link do miejsca:\nhttps://ilestoi.pl/?lat=51.100000&lon=17.200000&z=20&photo=photo_test",
         ).decode("utf-8")
 
         self.assertIn("miniatury_historyczne/2025.jpg", body)
@@ -105,13 +105,13 @@ class ReportHtmlTests(unittest.TestCase):
         self.assertNotIn("zdjecia_z_miejsca", body)
         self.assertNotIn("photos/pending/public.jpg", body)
         self.assertNotIn("photos/pending/public_thumb.jpg", body)
-        self.assertIn("Otwórz miejsce w WreckScanner", body)
+        self.assertIn("Otwórz miejsce w IleStoi.pl", body)
         self.assertIn('class="report-inline-link"', body)
         self.assertIn(
-            'href="https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000&amp;z=20&amp;photo=photo_test"',
+            'href="https://ilestoi.pl/?lat=51.100000&amp;lon=17.200000&amp;z=20&amp;photo=photo_test"',
             body,
         )
-        self.assertLess(body.index("Otwórz miejsce w WreckScanner"), body.index("Miniatury historyczne"))
+        self.assertLess(body.index("Otwórz miejsce w IleStoi.pl"), body.index("Miniatury historyczne"))
 
 
 if __name__ == "__main__":

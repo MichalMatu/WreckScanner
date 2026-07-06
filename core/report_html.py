@@ -57,7 +57,7 @@ def _linkify_urls(value: Any) -> str:
 
 def _url_label(raw_url: str) -> str:
     if "photo=" in raw_url and ("lat=" in raw_url or "lon=" in raw_url):
-        return "Otwórz miejsce w WreckScanner"
+        return "Otwórz miejsce w IleStoi.pl"
     return raw_url
 
 

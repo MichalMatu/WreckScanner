@@ -1,6 +1,6 @@
-# WreckScanner
+# IleStoi.pl
 
-WreckScanner to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
+IleStoi.pl to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
 
 Aktualne wydanie: `v3.1`.
 

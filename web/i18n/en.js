@@ -1,5 +1,5 @@
 const TRANSLATIONS_EN = {
-        'meta.title': 'WreckScanner',
+        'meta.title': 'IleStoi.pl',
         'meta.description': 'Map for documenting abandoned vehicles and field photos.',
         'page.nav.map': 'Map',
         'page.nav.privacy': 'Privacy',
@@ -7,12 +7,12 @@ const TRANSLATIONS_EN = {
         'appMenu.open': 'Open menu',
         'appMenu.close': 'Close menu',
 
-        'page.privacy.title': 'Privacy - WreckScanner',
+        'page.privacy.title': 'Privacy - IleStoi.pl',
         'page.privacy.description': 'Information about photo processing, anonymization, retention, and correction requests.',
         'page.privacy.heading': 'Privacy',
-        'page.privacy.intro': 'WreckScanner documents reports about unused or lingering vehicles in public space. Public entries are reports for verification, not a legal determination of the vehicle status.',
+        'page.privacy.intro': 'IleStoi.pl documents reports about unused or lingering vehicles in public space. Public entries are reports for verification, not a legal determination of the vehicle status.',
         'page.privacy.adminTitle': 'Controller and contact',
-        'page.privacy.adminBody': 'The data controller is the operator of the WreckScanner service. Privacy contact: <a href="mailto:privacy@wreckscanner.pl">privacy@wreckscanner.pl</a> or the <a href="/report">problem report form</a>.',
+        'page.privacy.adminBody': 'The data controller is the operator of the IleStoi.pl service. Privacy contact: <a href="mailto:privacy@ilestoi.pl">privacy@ilestoi.pl</a> or the <a href="/report">problem report form</a>.',
         'page.privacy.legalTitle': 'Legal basis',
         'page.privacy.legalBody': 'Data is processed to receive, verify, and document reports about vehicles that may be lingering in public space and to handle correction, anonymization, or removal requests. The legal basis is the controller’s legitimate interest in documenting reports for verification and preventing abuse; for correspondence, the basis is handling the request of the contacting person.',
         'page.privacy.scopeTitle': 'Data categories',
@@ -34,7 +34,7 @@ const TRANSLATIONS_EN = {
         'page.privacy.logsTitle': 'Technical logs',
         'page.privacy.logsBody': 'The server may store basic technical logs such as request time, IP address, URL path, response code, and diagnostic information. Logs are used to maintain security, diagnose errors, and protect against abuse.',
 
-        'page.report.title': 'Report a problem - WreckScanner',
+        'page.report.title': 'Report a problem - IleStoi.pl',
         'page.report.description': 'Request removal, anonymization, or correction of a public entry or photo.',
         'page.report.heading': 'Report a problem with an entry or photo',
         'page.report.intro': 'Use this form to request removal, anonymization, or correction of a public entry. Include a link to the entry, a photo identifier, or another description that lets the administrator find the request.',
@@ -391,8 +391,8 @@ const TRANSLATIONS_EN = {
         'modal.privacyRequests.saved': 'Request saved.',
         'modal.privacyRequests.saveError': 'Could not save the request.',
 
-        'modal.help.title': 'WreckScanner',
-        'modal.help.intro': 'WreckScanner helps document abandoned or long-standing vehicles and other public-space issues.',
+        'modal.help.title': 'IleStoi.pl',
+        'modal.help.intro': 'IleStoi.pl helps document abandoned or long-standing vehicles and other public-space issues.',
         'modal.help.photoTitle': 'How to add a photo',
         'modal.help.photoStep1': 'Click <b>Add photo</b> in the menu or right-click a place on the map.',
         'modal.help.photoStep2': 'Choose the issue type, add files, and keep the token after upload.',

@@ -1,6 +1,6 @@
 const TRANSLATIONS_PL = {
         // tytuł / meta
-        'meta.title': 'WreckScanner',
+        'meta.title': 'IleStoi.pl',
         'meta.description': 'Mapa dokumentowania porzuconych pojazdów i zdjęć terenowych.',
         'page.nav.map': 'Mapa',
         'page.nav.privacy': 'Prywatność',
@@ -8,12 +8,12 @@ const TRANSLATIONS_PL = {
         'appMenu.open': 'Otwórz menu',
         'appMenu.close': 'Zamknij menu',
 
-        'page.privacy.title': 'Prywatność - WreckScanner',
+        'page.privacy.title': 'Prywatność - IleStoi.pl',
         'page.privacy.description': 'Informacje o przetwarzaniu zdjęć, anonimizacji, retencji i zgłoszeniach korekty.',
         'page.privacy.heading': 'Prywatność',
-        'page.privacy.intro': 'WreckScanner służy do dokumentowania zgłoszeń dotyczących pojazdów nieużytkowanych albo zalegających w przestrzeni publicznej. Publiczne wpisy są zgłoszeniami do weryfikacji, a nie rozstrzygnięciem o stanie prawnym pojazdu.',
+        'page.privacy.intro': 'IleStoi.pl służy do dokumentowania zgłoszeń dotyczących pojazdów nieużytkowanych albo zalegających w przestrzeni publicznej. Publiczne wpisy są zgłoszeniami do weryfikacji, a nie rozstrzygnięciem o stanie prawnym pojazdu.',
         'page.privacy.adminTitle': 'Administrator i kontakt',
-        'page.privacy.adminBody': 'Administratorem danych jest operator serwisu WreckScanner. Kontakt w sprawach prywatności: <a href="mailto:privacy@wreckscanner.pl">privacy@wreckscanner.pl</a> albo <a href="/report">formularz zgłoszenia problemu</a>.',
+        'page.privacy.adminBody': 'Administratorem danych jest operator serwisu IleStoi.pl. Kontakt w sprawach prywatności: <a href="mailto:privacy@ilestoi.pl">privacy@ilestoi.pl</a> albo <a href="/report">formularz zgłoszenia problemu</a>.',
         'page.privacy.legalTitle': 'Podstawa prawna',
         'page.privacy.legalBody': 'Dane są przetwarzane w celu przyjęcia, weryfikacji i dokumentowania zgłoszeń dotyczących pojazdów mogących zalegać w przestrzeni publicznej oraz obsługi żądań korekty, anonimizacji albo usunięcia. Podstawą przetwarzania jest prawnie uzasadniony interes administratora polegający na dokumentowaniu zgłoszeń do weryfikacji i ochronie przed nadużyciami; w zakresie korespondencji podstawą jest obsługa żądania osoby kontaktującej się.',
         'page.privacy.scopeTitle': 'Zakres danych',
@@ -35,7 +35,7 @@ const TRANSLATIONS_PL = {
         'page.privacy.logsTitle': 'Logi techniczne',
         'page.privacy.logsBody': 'Serwer może zapisywać podstawowe logi techniczne, takie jak czas żądania, adres IP, ścieżka URL, kod odpowiedzi i informacje diagnostyczne. Logi służą utrzymaniu bezpieczeństwa, diagnozowaniu błędów i ochronie przed nadużyciami.',
 
-        'page.report.title': 'Zgłoś problem - WreckScanner',
+        'page.report.title': 'Zgłoś problem - IleStoi.pl',
         'page.report.description': 'Formularz żądania usunięcia, anonimizacji albo korekty publicznego wpisu lub zdjęcia.',
         'page.report.heading': 'Zgłoś problem z wpisem lub zdjęciem',
         'page.report.intro': 'Użyj formularza, jeżeli chcesz zgłosić prośbę o usunięcie, anonimizację albo korektę publicznego wpisu. Podaj link do wpisu, identyfikator zdjęcia albo inny opis, który pozwoli administratorowi znaleźć zgłoszenie.',
@@ -397,8 +397,8 @@ const TRANSLATIONS_PL = {
         'modal.privacyRequests.saveError': 'Nie udało się zapisać zgłoszenia.',
 
         // modal: pomoc
-        'modal.help.title': 'WreckScanner',
-        'modal.help.intro': 'WreckScanner pomaga dokumentować porzucone albo długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.',
+        'modal.help.title': 'IleStoi.pl',
+        'modal.help.intro': 'IleStoi.pl pomaga dokumentować porzucone albo długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.',
         'modal.help.photoTitle': 'Jak dodać zdjęcie',
         'modal.help.photoStep1': 'Kliknij <b>Dodaj zdjęcie</b> w menu albo kliknij prawym przyciskiem miejsce na mapie.',
         'modal.help.photoStep2': 'Wybierz typ zgłoszenia, dodaj pliki i zachowaj token edycji po wysyłce.',
