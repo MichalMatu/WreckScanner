@@ -8,9 +8,11 @@ function vehicleIcon(
     photoCount = 0,
     reviewStatus = 'approved',
     insuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN,
-    isLongStanding = false
+    isLongStanding = false,
+    pendingCount = 0
 ) {
     const numericCount = Math.max(0, Math.floor(Number(photoCount) || 0));
+    const numericPendingCount = Math.max(0, Math.floor(Number(pendingCount) || 0));
     const badge = countBadge(numericCount, 'vehicle-pin-count');
     const safeStatus = reviewStatus === 'pending' || reviewStatus === 'rejected' ? reviewStatus : 'approved';
     const safeInsuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES.has(insuranceStatus)
@@ -20,8 +22,12 @@ function vehicleIcon(
     if (numericCount > 0) classes.push('vehicle-pin--with-photos');
     if (safeStatus === 'approved') classes.push(`vehicle-pin--insurance-${safeInsuranceStatus}`);
     if (safeStatus === 'approved' && isLongStanding) classes.push('vehicle-pin--long-standing');
+    if (safeStatus === 'approved' && numericPendingCount > 0) classes.push('vehicle-pin--mixed-pending');
     const className = classes.join(' ');
-    const html = `<div class="${className}"><span class="vehicle-pin-glyph" aria-hidden="true"></span>${badge}</div>`;
+    const pendingIndicator = numericPendingCount > 0
+        ? '<span class="vehicle-pin-pending-indicator" aria-hidden="true"></span>'
+        : '';
+    const html = `<div class="${className}"><span class="vehicle-pin-glyph" aria-hidden="true"></span>${pendingIndicator}${badge}</div>`;
     return L.divIcon({ html, className: 'map-pin-icon', iconSize: [34,34], iconAnchor:[17,34] });
 }
 

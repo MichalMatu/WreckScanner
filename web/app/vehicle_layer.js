@@ -58,7 +58,7 @@ function vehiclePhotoIsApproved(photo) {
 }
 
 function emptyVehicleGroup(lat, lon) {
-    return { lat, lon, photos: [] };
+    return { lat, lon, photos: [], pendingPhotos: [] };
 }
 
 function nearestVehicleGroup(groups, lat, lon) {
@@ -78,6 +78,24 @@ function addVehiclePhotoToGroup(group, photo, lat, lon) {
     group.lon = ((group.lon * (count - 1)) + lon) / count;
 }
 
+function vehiclePendingPhotoIsVisible(photo) {
+    return fieldPhotoIssueType(photo) === FIELD_PHOTO_ISSUE_TYPE_VEHICLE
+        && fieldPhotoReviewStatus(photo) === 'pending'
+        && pendingFieldPhotoLayerAllowed();
+}
+
+function attachPendingVehiclePhotosToGroups(groups, photos = fieldPhotoLayerData) {
+    if (!groups.length || !pendingFieldPhotoLayerAllowed()) return groups;
+    (photos || []).filter(vehiclePendingPhotoIsVisible).forEach(photo => {
+        const lat = Number(photo.lat);
+        const lon = Number(photo.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        const group = nearestVehicleGroup(groups, lat, lon);
+        if (group) group.pendingPhotos.push(photo);
+    });
+    return groups;
+}
+
 function buildVehicleGroups(photos = fieldPhotoLayerData) {
     const groups = [];
     (photos || []).filter(vehiclePhotoIsApproved).forEach(photo => {
@@ -91,16 +109,26 @@ function buildVehicleGroups(photos = fieldPhotoLayerData) {
         }
         addVehiclePhotoToGroup(group, photo, lat, lon);
     });
-    return groups;
+    return attachPendingVehiclePhotosToGroups(groups, photos);
 }
 
 function vehicleGroupPhotoCount(group) {
     return Array.isArray(group?.photos) ? group.photos.length : 0;
 }
 
+function vehicleGroupPendingPhotos(group) {
+    return Array.isArray(group?.pendingPhotos) ? group.pendingPhotos : [];
+}
+
+function vehicleGroupPendingPhotoCount(group) {
+    return vehicleGroupPendingPhotos(group).length;
+}
+
 function vehicleGroupHasPhotoId(group, photoId) {
     const safePhotoId = String(photoId || '').replace(/[^A-Za-z0-9_-]/g, '');
-    return Boolean(safePhotoId) && (group.photos || []).some(photo => safeFieldPhotoId(photo.id) === safePhotoId);
+    return Boolean(safePhotoId)
+        && [...(group.photos || []), ...vehicleGroupPendingPhotos(group)]
+            .some(photo => safeFieldPhotoId(photo.id) === safePhotoId);
 }
 
 function focusVehicleMarkerFromUrl(group, marker) {
@@ -118,11 +146,13 @@ function focusVehicleMarkerFromUrl(group, marker) {
 
 function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload = true } = {}) {
     const photos = group.photos || [];
+    const editablePhotos = [...photos, ...vehicleGroupPendingPhotos(group)];
     if (!photos.length) return [];
     const lat = Number(group.lat);
     const lon = Number(group.lon);
-    const encodedPhotoIds = encodedFieldPhotoIdsForGroup(group);
-    const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
+    const encodedApprovedPhotoIds = encodedFieldPhotoIdsForGroup({ photos });
+    const encodedEditablePhotoIds = encodedFieldPhotoIdsForGroup({ photos: editablePhotos });
+    const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedApprovedPhotoIds;
     const canCreateReport = includeReport
         && coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
@@ -130,11 +160,11 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         && coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
         && fieldPhotoIssueAllowed(FIELD_PHOTO_ISSUE_TYPE_VEHICLE);
-    const ownerButton = encodedPhotoIds
+    const ownerButton = encodedEditablePhotoIds
         ? mapPopupIconAction(
             'map-popup-action--primary',
             t('fieldPhoto.editMyPhoto'),
-            `openFieldPhotoOwnerEditor('${encodedPhotoIds}')`,
+            `openFieldPhotoOwnerEditor('${encodedEditablePhotoIds}')`,
             'M11 17h2v-6h-2v6zm0-8h2V7h-2v2zm1-7a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z'
         )
         : '';
@@ -142,7 +172,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         ? mapPopupIconAction(
             'map-popup-action--report',
             t('fieldPhoto.reportPackage'),
-            `openFieldPhotoGroupReport(${lat}, ${lon}, '${encodedPhotoIds}', this)`,
+            `openFieldPhotoGroupReport(${lat}, ${lon}, '${encodedApprovedPhotoIds}', this)`,
             'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h8v2H8v-2zm0 4h8v2H8v-2z'
         )
         : '';
@@ -150,23 +180,23 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
         ? mapPopupIconAction(
             'map-popup-action--primary',
             t('fieldPhoto.addPhotosHere'),
-            `openFieldPhotoGroupPhotoUpload(${lat}, ${lon}, '${encodedPhotoIds}', '${FIELD_PHOTO_ISSUE_TYPE_VEHICLE}', this)`,
+            `openFieldPhotoGroupPhotoUpload(${lat}, ${lon}, '${encodedApprovedPhotoIds}', '${FIELD_PHOTO_ISSUE_TYPE_VEHICLE}', this)`,
             'M5 7h2.8L9.4 5h5.2l1.6 2H19c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2zm7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-5h-2v2h-2v2h2v2h2v-2h2v-2h-2v-2z'
         )
         : '';
-    const reviewButton = adminAuthenticated && encodedPhotoIds
+    const reviewButton = adminAuthenticated && encodedEditablePhotoIds
         ? mapPopupIconAction(
             'map-popup-action--primary',
             t('fieldPhoto.reviewPhotos'),
-            `openPhotoReviewForFieldPhotoGroup('${encodedPhotoIds}')`,
+            `openPhotoReviewForFieldPhotoGroup('${encodedEditablePhotoIds}')`,
             'M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm10-9.5 1.1-1.1 1.5 1.5-1.1 1.1-1.5-1.5zm-6.5 6.5L18 5.5 19.5 7 13 13.5H11.5V12z'
         )
         : '';
-    const deleteButton = adminAuthenticated && encodedPhotoIds
+    const deleteButton = adminAuthenticated && encodedApprovedPhotoIds
         ? mapPopupIconAction(
             'map-popup-action--danger',
             t('fieldPhoto.delete'),
-            `deleteFieldPhotoGroup('${encodedPhotoIds}', this)`,
+            `deleteFieldPhotoGroup('${encodedApprovedPhotoIds}', this)`,
             'M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z'
         )
         : '';
@@ -484,6 +514,8 @@ function vehicleMarkerTooltip(group) {
     const parts = [
         t('vehicle.markerTooltipPhotos', { n: vehicleGroupPhotoCount(group) }),
     ];
+    const pendingCount = vehicleGroupPendingPhotoCount(group);
+    if (pendingCount) parts.push(t('vehicle.markerTooltipPendingPhotos', { n: pendingCount }));
     const age = popupElapsedAgeText(group.photos);
     if (age) parts.push(t('vehicle.markerTooltipAge', { age }));
     parts.push(t('vehicle.markerTooltipInsurance', {
@@ -534,6 +566,7 @@ function updateVehicleFilterControlsAndCounts() {
 
 function vehiclePhotoPopup(group) {
     const photoCount = vehicleGroupPhotoCount(group);
+    const pendingCount = vehicleGroupPendingPhotoCount(group);
     const title = photoCount > 1
         ? t('vehicle.popup.photoGroupTitle', { n: photoCount })
         : t('vehicle.popup.photoTitle');
@@ -543,8 +576,8 @@ function vehiclePhotoPopup(group) {
     return mapPopup(`
             ${popupHeader(title, [
                 vehicleInsuranceHeaderBadge(insuranceStatus, insuranceCheckedAt),
-                vehicleInsuranceCheckedBadge(insuranceStatus, insuranceCheckedAt),
                 popupElapsedAgeBadge(group.photos),
+                pendingCount ? popupHeaderBadge(t('vehicle.popup.pendingBadge', { n: pendingCount }), 'status') : '',
             ])}
             ${popupPhotoSection('', previews, { className: 'map-popup-photo-grid--field', total: photoCount, showHeader: false })}
             ${vehicleGroupLinks(group)}
@@ -567,7 +600,8 @@ function placeVehicleMarkers() {
                 vehicleGroupPhotoCount(group),
                 'approved',
                 vehicleGroupInsuranceStatus(group),
-                vehicleGroupIsLongStanding(group)
+                vehicleGroupIsLongStanding(group),
+                vehicleGroupPendingPhotoCount(group)
             ),
             zIndexOffset: vehicleGroupZIndexOffset(group),
             draggable: canDrag,

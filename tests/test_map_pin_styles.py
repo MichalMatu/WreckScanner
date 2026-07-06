@@ -133,3 +133,25 @@ class MapPinStyleContracts(unittest.TestCase):
         self.assertIn(".marker-detail--dots .pending-submission-pin {", css)
         self.assertIn("border: 2px dashed var(--pin-pending-ring);", css)
         self.assertNotIn("width: 12px;\n    height: 12px;\n    border-radius: 50%;", css)
+
+    def test_pending_vehicle_photos_decorate_existing_vehicle_pin(self):
+        css = (ROOT_DIR / "web" / "styles" / "map_pins.css").read_text(encoding="utf-8")
+        markers_js = (ROOT_DIR / "web" / "app" / "map_markers.js").read_text(encoding="utf-8")
+        field_photos_js = (ROOT_DIR / "web" / "app" / "field_photos.js").read_text(encoding="utf-8")
+        vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
+        i18n_js = "\n".join(
+            (ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js")
+        )
+
+        self.assertIn("pendingCount = 0", markers_js)
+        self.assertIn("vehicle-pin--mixed-pending", markers_js + css)
+        self.assertIn("vehicle-pin-pending-indicator", markers_js + css)
+        self.assertIn("function attachPendingVehiclePhotosToGroups", vehicle_layer_js)
+        self.assertIn("pendingPhotos.push(photo)", vehicle_layer_js)
+        self.assertIn("function pendingVehiclePhotoAttachedToApprovedGroup", field_photos_js)
+        self.assertIn("!pendingVehiclePhotoAttachedToApprovedGroup(photo, approvedVehicleGroups)", field_photos_js)
+        self.assertIn("const approvedVehicleGroups = vehicleLayerAllowed() ? visibleVehicleGroups(photos) : [];", field_photos_js)
+        self.assertIn("encodedApprovedPhotoIds", vehicle_layer_js)
+        self.assertIn("encodedEditablePhotoIds", vehicle_layer_js)
+        self.assertIn("vehicle.popup.pendingBadge", i18n_js)
+        self.assertIn("vehicle.markerTooltipPendingPhotos", i18n_js)

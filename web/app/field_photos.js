@@ -48,6 +48,22 @@ function fieldPhotoGroupReviewStatus(group) {
     return group?.reviewStatus === 'pending' ? 'pending' : 'approved';
 }
 
+function pendingFieldPhotoLayerAllowed() {
+    return pendingFieldPhotoLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoPending);
+}
+
+function pendingVehiclePhotoAttachedToApprovedGroup(photo, approvedVehicleGroups = []) {
+    if (fieldPhotoIssueType(photo) !== FIELD_PHOTO_ISSUE_TYPE_VEHICLE || fieldPhotoReviewStatus(photo) !== 'pending') {
+        return false;
+    }
+    const lat = Number(photo.lat);
+    const lon = Number(photo.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+    return (approvedVehicleGroups || []).some(group =>
+        metersBetween(group.lat, group.lon, lat, lon) <= FIELD_PHOTO_GROUP_RADIUS_M
+    );
+}
+
 function updateFieldPhotoIssueOptions() {
     const select = document.getElementById('field-photo-issue-type');
     if (!(select instanceof HTMLSelectElement)) return;
@@ -66,12 +82,13 @@ function updateFieldPhotoIssueOptions() {
     if (typeof updateFieldPhotoVehicleInsuranceUi === 'function') updateFieldPhotoVehicleInsuranceUi();
 }
 
-function filteredFieldPhotos(photos = fieldPhotoLayerData) {
+function filteredFieldPhotos(photos = fieldPhotoLayerData, options = {}) {
+    const approvedVehicleGroups = Array.isArray(options.approvedVehicleGroups) ? options.approvedVehicleGroups : [];
     return (photos || []).filter(photo => {
         const issueType = fieldPhotoIssueType(photo);
         const reviewStatus = fieldPhotoReviewStatus(photo);
         if (reviewStatus === 'pending') {
-            return pendingFieldPhotoLayerVisible && publicLayerAllowed(PUBLIC_LAYER_KEYS.fieldPhotoPending);
+            return pendingFieldPhotoLayerAllowed() && !pendingVehiclePhotoAttachedToApprovedGroup(photo, approvedVehicleGroups);
         }
         if (issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return false;
         return fieldPhotoIssueVisible(issueType);
@@ -156,7 +173,8 @@ function updateLayerCounters() {
 
 function placeFieldPhotos(photos = fieldPhotoLayerData) {
     clearFieldPhotoMarkers();
-    groupFieldPhotos(filteredFieldPhotos(photos)).forEach(group => {
+    const approvedVehicleGroups = vehicleLayerAllowed() ? visibleVehicleGroups(photos) : [];
+    groupFieldPhotos(filteredFieldPhotos(photos, { approvedVehicleGroups })).forEach(group => {
         const reviewStatus = fieldPhotoGroupReviewStatus(group);
         const marker = L.marker([group.lat, group.lon], {
             icon: reviewStatus === 'pending' ? pendingSubmissionIcon() : fieldPhotoIcon(group.photos.length, group.issueType),

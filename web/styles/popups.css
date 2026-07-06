@@ -102,12 +102,12 @@
 }
 
 .map-popup-head-values {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 4px;
-    max-width: min(54%, 220px);
+    gap: 3px 4px;
+    max-width: min(62%, 260px);
     min-width: 0;
 }
 
@@ -120,7 +120,8 @@
     font-size: 11px;
     line-height: 1.25;
     text-align: right;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 a.map-popup-head-value {
@@ -153,12 +154,6 @@ a.map-popup-head-value {
     border: 1px solid var(--popup-ufg-uninsured-border);
     background: var(--popup-ufg-uninsured-bg);
     color: var(--popup-ufg-uninsured-text);
-}
-
-.map-popup-head-value--insurance-checked {
-    border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
-    background: color-mix(in srgb, var(--primary) 16%, transparent);
-    color: var(--text-soft);
 }
 
 .map-popup-meta {

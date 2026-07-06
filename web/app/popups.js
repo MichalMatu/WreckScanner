@@ -44,11 +44,14 @@ function popupHeaderBadgeHtml(value) {
         : popupHeaderBadge(value);
     if (!badge) return '';
     const variantClass = badge.variant ? ` map-popup-head-value--${badge.variant}` : '';
-    const title = badge.title || badge.label;
+    const title = badge.title || '';
+    const ariaLabel = badge.ariaLabel || title;
     if (badge.href) {
-        return `<a class="map-popup-head-value${variantClass}" href="${escapeHtml(badge.href)}" target="_blank" rel="noopener" title="${escapeHtml(title)}" aria-label="${escapeHtml(badge.ariaLabel || title)}">${escapeHtml(badge.label)}</a>`;
+        return `<a class="map-popup-head-value${variantClass}" href="${escapeHtml(badge.href)}" target="_blank" rel="noopener" title="${escapeHtml(title || badge.label)}" aria-label="${escapeHtml(ariaLabel || badge.label)}">${escapeHtml(badge.label)}</a>`;
     }
-    return `<span class="map-popup-head-value${variantClass}">${escapeHtml(badge.label)}</span>`;
+    const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+    const ariaAttr = ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : '';
+    return `<span class="map-popup-head-value${variantClass}"${titleAttr}${ariaAttr}>${escapeHtml(badge.label)}</span>`;
 }
 
 function popupHeader(title, value = '') {
@@ -142,8 +145,16 @@ function popupElapsedAgeText(photos, nowMs = Date.now()) {
     });
 }
 
+function popupElapsedAgeTitle(photos, nowMs = Date.now()) {
+    const startTimestampMs = fieldPhotoGroupStartTimestamp(photos, nowMs);
+    if (!Number.isFinite(startTimestampMs)) return '';
+    return t('popup.ageTitle', { date: humanDateTimeText(new Date(startTimestampMs).toISOString()) });
+}
+
 function popupElapsedAgeBadge(photos, nowMs = Date.now()) {
-    return popupHeaderBadge(popupElapsedAgeText(photos, nowMs), 'age');
+    return popupHeaderBadge(popupElapsedAgeText(photos, nowMs), 'age', {
+        title: popupElapsedAgeTitle(photos, nowMs),
+    });
 }
 
 function humanNameFromFilename(value) {
@@ -160,10 +171,17 @@ function humanDateTimeText(value) {
     if (!text) return '';
     const timestampMs = Date.parse(text);
     if (!Number.isFinite(timestampMs)) return text.replace('T', ' ').replace(/Z$/, '');
-    return new Intl.DateTimeFormat(document.documentElement.lang || 'pl', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    }).format(new Date(timestampMs));
+    const date = new Date(timestampMs);
+    const pad = number => String(number).padStart(2, '0');
+    return [
+        `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`,
+        `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+    ].join(' ');
+}
+
+function humanDateText(value) {
+    const dateTime = humanDateTimeText(value);
+    return dateTime.split(' ')[0] || dateTime;
 }
 
 function photoPreviewDisplay(photo, index = 0) {
@@ -224,22 +242,19 @@ function vehicleInsuranceHeaderBadge(rawStatus, checkedAt = '') {
     const status = vehicleInsuranceStatus(rawStatus);
     const label = vehicleInsuranceStatusLabel(status);
     const checkedText = humanDateTimeText(checkedAt);
+    const checkedDate = humanDateText(checkedAt);
+    const badgeLabel = status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN
+        ? t('fieldPhoto.vehicleInsurance.badge.unknown')
+        : t(checkedDate ? 'fieldPhoto.vehicleInsurance.badge.checked' : 'fieldPhoto.vehicleInsurance.badge.checkedMissing', {
+            date: checkedDate,
+        });
     const title = checkedText
         ? t('fieldPhoto.vehicleInsurance.ufgCheckedTitle', { status: label, date: checkedText })
         : t('fieldPhoto.vehicleInsurance.ufgTitle', { status: label });
-    return popupHeaderBadge(t(`fieldPhoto.vehicleInsurance.badge.${status}`), `insurance-${status}`, {
+    return popupHeaderBadge(badgeLabel, `insurance-${status}`, {
         href: UFG_OC_CHECK_URL,
         title,
         ariaLabel: t('fieldPhoto.vehicleInsurance.ufgAria', { status: label }),
-    });
-}
-
-function vehicleInsuranceCheckedBadge(rawStatus, checkedAt = '') {
-    const status = vehicleInsuranceStatus(rawStatus);
-    const checkedText = humanDateTimeText(checkedAt);
-    if (status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN || !checkedText) return null;
-    return popupHeaderBadge(t('fieldPhoto.vehicleInsurance.checkedBadge', { date: checkedText }), 'insurance-checked', {
-        title: t('fieldPhoto.vehicleInsurance.checkedTitle', { date: checkedText }),
     });
 }
 
