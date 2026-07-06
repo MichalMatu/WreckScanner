@@ -48,6 +48,27 @@ function updateLangLabel() {
 updateLangLabel();
 document.addEventListener('langchange', updateLangLabel);
 
+// ─── PARKING COSTS INFO ─────────────────────────
+// Mały tabset w modalu informacyjnym, bez zależności od frameworka.
+function setParkingCostsTab(tab) {
+    const selectedTab = String(tab || 'owner');
+    document.querySelectorAll('[data-parking-costs-tab]').forEach(button => {
+        const isActive = button.dataset.parkingCostsTab === selectedTab;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-parking-costs-panel]').forEach(panel => {
+        const isActive = panel.dataset.parkingCostsPanel === selectedTab;
+        panel.classList.toggle('is-active', isActive);
+        panel.hidden = !isActive;
+    });
+}
+
+function openParkingCostsModal() {
+    setParkingCostsTab('owner');
+    openModal('modal-parking-costs');
+}
+
 // ─── MODALS (pomoc + ustawienia) ────────────────
 // Otwarcie po id; zamykanie kliknięciem w backdrop, ✕, lub ESC.
 let pendingConfirmResolve = null;

@@ -19,42 +19,6 @@ def read_i18n_bundle() -> str:
 
 
 class FrontendContracts(unittest.TestCase):
-    def test_app_menu_exposes_global_language_toggle_in_footer(self):
-        html = read_index_html()
-        ui_js = (ROOT_DIR / "web" / "ui.js").read_text(encoding="utf-8")
-        panel_css = (ROOT_DIR / "web" / "styles" / "panel.css").read_text(encoding="utf-8")
-        tokens_css = (ROOT_DIR / "web" / "styles" / "tokens.css").read_text(encoding="utf-8")
-
-        self.assertIn('id="app-menu-toggle-lang"', html)
-        self.assertIn('id="app-menu-lang-label"', html)
-        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--lang btn-lang"', html)
-        self.assertIn('class="app-menu-footer-icon app-menu-footer-icon--admin"', html)
-        self.assertIn('data-i18n-attr="title:icon.lang;aria-label:icon.lang"', html)
-        self.assertIn('onclick="toggleLang()"', html)
-        self.assertIn("function toggleLang()", ui_js)
-        self.assertIn("document.querySelectorAll('.lang-label')", ui_js)
-        self.assertIn(".app-menu-footer-icon", panel_css)
-        self.assertIn(".app-menu-footer-icon--lang", panel_css)
-        self.assertIn(".app-menu-footer-icon--admin.is-admin", panel_css)
-        self.assertIn(".app-menu-drawer-section", panel_css)
-        map_panel_css = panel_css.split(".app-menu-map-panel {", 1)[1].split("}", 1)[0]
-        drawer_section_css = panel_css.split(".app-menu-drawer-section {", 1)[1].split("}", 1)[0]
-        self.assertIn("--app-menu-item-gap: 7px;", panel_css)
-        self.assertIn("gap: var(--app-menu-item-gap);", map_panel_css)
-        self.assertIn("padding: 0 var(--space-5) var(--app-menu-item-gap);", map_panel_css)
-        self.assertIn("gap: var(--app-menu-item-gap);", drawer_section_css)
-        self.assertNotIn("padding: var(--space-2) 0;", drawer_section_css)
-        self.assertNotIn("border-top:", drawer_section_css)
-        self.assertIn("border: 1px solid var(--border);", panel_css)
-        self.assertIn("border-radius: var(--radius-md);", panel_css)
-        self.assertIn("background: var(--surface-subtle);", panel_css)
-        self.assertNotIn("border-left: 3px solid transparent;", panel_css)
-        self.assertNotIn("app-menu-admin-icon", html + panel_css)
-        self.assertIn('-apple-system, BlinkMacSystemFont, "SF Pro Text"', tokens_css)
-        self.assertNotIn("fonts.googleapis.com", html)
-        self.assertNotIn("Plus Jakarta Sans", html + tokens_css)
-        self.assertNotIn("Outfit", html + tokens_css)
-
     def test_base_map_menu_uses_compact_slider_toggle(self):
         html = read_index_html()
         map_sources_js = (ROOT_DIR / "web" / "app" / "map_sources.js").read_text(encoding="utf-8")

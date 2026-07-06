@@ -98,6 +98,10 @@
     max-width: 620px;
 }
 
+.modal--parking-costs {
+    max-width: 680px;
+}
+
 .modal--welcome .modal-body {
     min-height: min(520px, calc(100dvh - 132px));
 }

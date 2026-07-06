@@ -11,6 +11,7 @@
 
 .app-menu-button,
 .app-menu-drawer-item,
+.app-menu-footer-link,
 .app-menu-footer-icon {
     border: 0;
     font-family: var(--font);
@@ -169,11 +170,48 @@
 .app-menu-drawer-footer {
     margin-top: auto;
     padding: var(--space-3) var(--space-5) var(--space-4);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    border-top: 1px solid var(--border);
+}
+
+.app-menu-footer-links {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.app-menu-footer-link {
+    padding: 4px 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.73rem;
+    font-weight: 720;
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    opacity: 0.82;
+    transition:
+        color var(--duration-fast),
+        opacity var(--duration-fast);
+}
+
+.app-menu-footer-link:hover,
+.app-menu-footer-link:focus-visible {
+    color: var(--text-soft);
+    opacity: 1;
+    outline: none;
+}
+
+.app-menu-footer-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-2);
-    border-top: 1px solid var(--border);
 }
 
 .app-menu-footer-icon {

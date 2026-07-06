@@ -143,6 +143,105 @@
         </div>
     </div>
 
+    <div class="modal-backdrop" id="modal-parking-costs" hidden onclick="closeModal(this)">
+        <div class="modal modal--parking-costs" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 data-i18n="modal.parkingCosts.title">Koszty postoju</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body parking-costs-body">
+                <p class="parking-costs-lead" data-i18n="modal.parkingCosts.intro">
+                    Auto, które długo stoi, nadal zajmuje zasoby i potrafi szybko tracić wartość.
+                </p>
+
+                <div class="parking-costs-tabs" role="tablist" data-i18n-attr="aria-label:modal.parkingCosts.tabsLabel"
+                    aria-label="Sekcje kosztów postoju">
+                    <button type="button" class="parking-costs-tab is-active" id="parking-costs-tab-owner"
+                        role="tab" aria-selected="true" aria-controls="parking-costs-panel-owner"
+                        onclick="setParkingCostsTab('owner')" data-parking-costs-tab="owner"
+                        data-i18n="modal.parkingCosts.tabOwner">Właściciel</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-public"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-public"
+                        onclick="setParkingCostsTab('public')" data-parking-costs-tab="public"
+                        data-i18n="modal.parkingCosts.tabPublic">Otoczenie</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-risk"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-risk"
+                        onclick="setParkingCostsTab('risk')" data-parking-costs-tab="risk"
+                        data-i18n="modal.parkingCosts.tabRisk">Ryzyka</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-alternatives"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-alternatives"
+                        onclick="setParkingCostsTab('alternatives')" data-parking-costs-tab="alternatives"
+                        data-i18n="modal.parkingCosts.tabAlternatives">Alternatywy</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-numbers"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-numbers"
+                        onclick="setParkingCostsTab('numbers')" data-parking-costs-tab="numbers"
+                        data-i18n="modal.parkingCosts.tabNumbers">Liczby</button>
+                </div>
+
+                <section class="parking-costs-panel is-active" id="parking-costs-panel-owner"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-owner" data-parking-costs-panel="owner">
+                    <h3 data-i18n="modal.parkingCosts.ownerTitle">Koszty właściciela</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.ownerItem1">OC, przegląd i podstawowe serwisowanie wracają co roku.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem2">Akumulator, opony, hamulce, płyny i paliwo starzeją się także bez jazdy.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem3">Korozja i zastane elementy potrafią zamienić postój w drogą naprawę.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem4">Im dłużej auto stoi, tym trudniej sprzedać je za sensowną cenę.</li>
+                    </ul>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-public"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-public" data-parking-costs-panel="public" hidden>
+                    <h3 data-i18n="modal.parkingCosts.publicTitle">Koszt dla otoczenia</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.publicItem1">Jedno auto może blokować miejsce rotacyjne przez tygodnie lub miesiące.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem2">Inni kierowcy krążą dłużej albo parkują dalej od celu.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem3">Presja parkingowa wypycha auta na chodniki, przejścia, zieleń i narożniki ulic.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem4">Nielegalne parkowanie niszczy nawierzchnię i ogranicza widoczność.</li>
+                    </ul>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-risk"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-risk" data-parking-costs-panel="risk" hidden>
+                    <h3 data-i18n="modal.parkingCosts.riskTitle">Ryzyka</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.riskItem1">Brak ciągłości OC może oznaczać wysoką karę.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem2">Brak przeglądu komplikuje kontrolę, sprzedaż i ewentualną szkodę.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem3">Wycieki płynów i rdza zwiększają koszt późniejszego uporządkowania auta.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem4">Auto wyglądające na nieużywane może trafić do procedury usunięcia z drogi.</li>
+                    </ul>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-alternatives"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-alternatives" data-parking-costs-panel="alternatives" hidden>
+                    <h3 data-i18n="modal.parkingCosts.alternativesTitle">Alternatywy</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.alternativesItem1">Sprzedaż albo skup może zatrzymać spadek wartości.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem2">Legalny demontaż zamyka temat OC, miejsca i odpowiedzialności.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem3">Naprawa ma sens, jeśli auto realnie wróci do używania.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem4">Komunikacja, rower, carsharing lub taxi często wygrywają przy sporadycznych trasach.</li>
+                    </ul>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-numbers"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-numbers" data-parking-costs-panel="numbers" hidden>
+                    <h3 data-i18n="modal.parkingCosts.numbersTitle">Liczby do uzupełnienia</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.numbersItem1">Dodamy aktualne stawki OC, przeglądu, odholowania i przechowywania.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem2">Porównamy utrzymanie auta z transportem publicznym, taxi i krótkim najmem.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem3">Oszacujemy wartość jednego miejsca postojowego pod blokiem.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem4">Źródła i daty aktualizacji trafią obok każdej liczby.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <!-- ─── MODAL: PODGLĄD ZDJĘCIA ─────────────────────── -->
     <div class="modal-backdrop" id="modal-photo-preview" hidden onclick="closeModal(this)">
         <div class="modal modal--photo-preview" onclick="event.stopPropagation()">

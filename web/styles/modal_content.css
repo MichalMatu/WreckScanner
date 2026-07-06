@@ -101,6 +101,86 @@
     padding: 0 14px;
 }
 
+.parking-costs-body {
+    gap: var(--space-3);
+}
+
+.parking-costs-lead {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.94rem;
+    line-height: 1.5;
+}
+
+.parking-costs-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+}
+
+.parking-costs-tab {
+    min-height: var(--control-height-compact);
+    flex: 1 1 104px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-2);
+    background: transparent;
+    color: var(--muted-strong);
+    font-size: 0.8rem;
+    font-weight: 750;
+    white-space: nowrap;
+    transition:
+        background var(--duration-fast),
+        color var(--duration-fast),
+        box-shadow var(--duration-fast);
+}
+
+.parking-costs-tab:hover,
+.parking-costs-tab:focus-visible {
+    background: var(--surface-control);
+    color: var(--text-strong);
+    outline: none;
+}
+
+.parking-costs-tab:focus-visible {
+    box-shadow: var(--shadow-focus);
+}
+
+.parking-costs-tab.is-active {
+    background: var(--primary-soft);
+    color: var(--primary-hover);
+}
+
+.parking-costs-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-3);
+}
+
+.parking-costs-panel h3 {
+    margin: 0;
+    color: var(--text-strong);
+    font: 800 0.9rem var(--font-display);
+}
+
+.parking-costs-panel ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--muted-strong);
+    font-size: 0.86rem;
+    line-height: 1.48;
+}
+
+.parking-costs-panel li + li {
+    margin-top: var(--space-1);
+}
+
 .photo-preview-body {
     gap: 12px;
 }
