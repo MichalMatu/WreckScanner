@@ -312,6 +312,7 @@ def create_field_photo_report_pdf(
             record_dir=work_dir,
             evidence_base_dir=work_dir,
             recipient=config.REPORT_RECIPIENT,
+            reporter=fields,
             subject=subject,
             mail_body=mail_body,
         )

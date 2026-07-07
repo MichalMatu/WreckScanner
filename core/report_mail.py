@@ -93,11 +93,14 @@ def _compact_lower(value: Any) -> str:
     return " ".join(str(value or "").lower().split())
 
 
-def _is_auto_location_description(value: Any) -> bool:
+def _is_auto_map_location_description(value: Any) -> bool:
     text = _compact_lower(value)
-    return any(marker in text for marker in AUTO_LOCATION_MARKERS) or any(
-        text.startswith(prefix) for prefix in AUTO_ADDRESS_PREFIXES
-    )
+    return any(marker in text for marker in AUTO_LOCATION_MARKERS)
+
+
+def _is_auto_address_description(value: Any) -> bool:
+    text = _compact_lower(value)
+    return any(text.startswith(prefix) for prefix in AUTO_ADDRESS_PREFIXES)
 
 
 def _location_section(record: dict[str, Any], fields: dict[str, str]) -> str:
@@ -105,10 +108,12 @@ def _location_section(record: dict[str, Any], fields: dict[str, str]) -> str:
     address_context = _address_context_text(record)
     if not address_context:
         return description
-    if _is_auto_location_description(description):
+    if _is_auto_map_location_description(description):
         return address_context
     address = record.get("address") if isinstance(record.get("address"), dict) else {}
     formatted = _compact_lower(address.get("formatted"))
+    if _is_auto_address_description(description):
+        return address_context if formatted and formatted in _compact_lower(description) else description
     if formatted and formatted in _compact_lower(description):
         return description
     return f"{description}\n\n{address_context}" if description else address_context
@@ -159,15 +164,7 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     parcel_section = _optional_section(parcel_context)
     insurance_section = _optional_section(_vehicle_insurance_context_text(record))
     subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(_subject_location(record, fields))}"
-    body = f"""Dzień dobry,
-
-zgłaszam pojazd, który według mojej obserwacji może spełniać przesłanki z art. 50a ust. 1 Prawa o ruchu drogowym.
-
-Dane zgłaszającego:
-- Imię i nazwisko: {fields["reporter_name"]}
-- Miejsce zamieszkania: {fields["reporter_address"]}
-- E-mail: {fields["reporter_email"]}
-- Telefon: {fields["reporter_phone"]}
+    body = f"""Zgłaszam pojazd, który według mojej obserwacji może spełniać przesłanki z art. 50a ust. 1 Prawa o ruchu drogowym.
 
 Miejsce pojazdu:
 {location_section}

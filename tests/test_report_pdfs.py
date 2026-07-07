@@ -261,6 +261,12 @@ class ReportPdfTests(unittest.TestCase):
                 record_dir=record_dir,
                 evidence_base_dir=record_dir,
                 recipient="interwencje@example.test",
+                reporter={
+                    "reporter_name": "Jan Kowalski",
+                    "reporter_address": "ul. Testowa 1, Wrocław",
+                    "reporter_email": "jan@example.com",
+                    "reporter_phone": "500 600 700",
+                },
                 subject="Zgłoszenie",
                 mail_body="Treść zgłoszenia",
             )

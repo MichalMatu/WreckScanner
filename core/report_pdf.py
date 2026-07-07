@@ -10,6 +10,7 @@ from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -21,7 +22,7 @@ from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Space
 from core import config
 from core.photo_privacy import is_approved
 
-PAGE_BG = colors.HexColor("#f8fafc")
+PAGE_BG = colors.white
 CARD_BG = colors.white
 CARD_BORDER = colors.HexColor("#cbd5e1")
 TEXT = colors.HexColor("#0f172a")
@@ -88,10 +89,20 @@ def _styles() -> dict[str, ParagraphStyle]:
         "title": ParagraphStyle(
             "ReportTitle",
             fontName=bold,
-            fontSize=18,
-            leading=22,
+            fontSize=16,
+            leading=20,
             textColor=TEXT,
             spaceAfter=6,
+            alignment=TA_CENTER,
+        ),
+        "right": ParagraphStyle(
+            "ReportRight",
+            fontName=regular,
+            fontSize=9,
+            leading=11.2,
+            textColor=TEXT,
+            spaceAfter=6,
+            alignment=TA_RIGHT,
         ),
         "heading": ParagraphStyle(
             "ReportHeading",
@@ -160,15 +171,36 @@ def _report_datetime_text(value: Any) -> str:
     return parsed.strftime("%d.%m.%Y, godz. %H:%M")
 
 
+def _report_date_text(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "brak daty"
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return _compact_datetime(text)
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone()
+    return parsed.strftime("%d.%m.%Y r.")
+
+
 def _recipient_lines(recipient: str) -> list[str]:
     if recipient == config.REPORT_RECIPIENT:
         return [
-            "Adresat:",
             "Straż Miejska Wrocławia",
             "ul. Na Grobli 14/16, 50-421 Wrocław",
             recipient,
         ]
-    return ["Adresat:", recipient]
+    return [recipient]
+
+
+def _reporter_lines(reporter: dict[str, Any]) -> list[str]:
+    return [
+        str(reporter.get("reporter_name") or "").strip(),
+        str(reporter.get("reporter_address") or "").strip(),
+        str(reporter.get("reporter_email") or "").strip(),
+        str(reporter.get("reporter_phone") or "").strip(),
+    ]
 
 
 def _escape_text(value: Any) -> str:
@@ -208,12 +240,49 @@ def _mail_body_flowables(mail_body: str, styles: dict[str, ParagraphStyle]) -> l
     return paragraphs
 
 
-def _email_paragraph(lines: list[str]) -> str:
-    escaped = [_escape_text(line) for line in lines]
-    if escaped:
-        email = escaped[-1]
-        escaped[-1] = f'<a href="mailto:{email}" color="{LINK.hexval()}">{email}</a>'
+def _lines_paragraph(lines: list[str]) -> str:
+    escaped = []
+    for line in lines:
+        text = str(line or "").strip()
+        if not text:
+            continue
+        escaped_text = _escape_text(text)
+        if "@" in text and " " not in text:
+            escaped_mail = html.escape(text, quote=True)
+            escaped_text = f'<a href="mailto:{escaped_mail}" color="{LINK.hexval()}">{escaped_text}</a>'
+        escaped.append(escaped_text)
     return "<br/>".join(escaped)
+
+
+def _office_header(
+    *,
+    recipient: str,
+    reporter: dict[str, Any],
+    created_at: Any,
+    styles: dict[str, ParagraphStyle],
+    content_width: float,
+) -> list[Any]:
+    left = Paragraph(f"<b>Adresat</b><br/>{_lines_paragraph(_recipient_lines(recipient))}", styles["body"])
+    right = Paragraph(f"<b>Zgłaszający</b><br/>{_lines_paragraph(_reporter_lines(reporter))}", styles["body"])
+    table = Table(
+        [[left, right]],
+        colWidths=[(content_width - GAP) / 2, (content_width - GAP) / 2],
+        style=TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        ),
+    )
+    return [
+        Paragraph(f"Wrocław, dnia {_report_date_text(created_at)}", styles["right"]),
+        Spacer(1, 5 * mm),
+        table,
+        Spacer(1, 10 * mm),
+    ]
 
 
 def _page_background(canvas, _doc) -> None:
@@ -376,6 +445,7 @@ def build_report_pdf(
     record_dir: Path,
     evidence_base_dir: Path,
     recipient: str,
+    reporter: dict[str, Any],
     subject: str,
     mail_body: str,
 ) -> bytes:
@@ -397,10 +467,15 @@ def build_report_pdf(
     evidence_images = _evidence_photos(evidence, evidence_base_dir)
 
     story: list[Any] = [
+        *_office_header(
+            recipient=recipient,
+            reporter=reporter,
+            created_at=evidence.get("created_at"),
+            styles=styles,
+            content_width=content_width,
+        ),
         Paragraph("Zgłoszenie dotyczące pojazdu nieużytkowanego", styles["title"]),
-        Paragraph(f"Data zgłoszenia: {_report_datetime_text(evidence.get('created_at'))}", styles["muted"]),
-        Paragraph(_email_paragraph(_recipient_lines(recipient)), styles["body"]),
-        Paragraph(f"<b>Dotyczy:</b> {_escape_text(subject)}", styles["body"]),
+        Spacer(1, 4 * mm),
         *_mail_body_flowables(mail_body, styles),
     ]
 

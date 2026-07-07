@@ -4,7 +4,7 @@ from core.report_mail import build_mail_draft
 
 
 class ReportMailTests(unittest.TestCase):
-    def test_build_mail_draft_includes_reporter_and_evidence_labels_without_technical_noise(self):
+    def test_build_mail_draft_includes_evidence_labels_without_technical_noise(self):
         subject, body = build_mail_draft(
             {
                 "id": "wreck_51100000_17200000",
@@ -34,8 +34,13 @@ class ReportMailTests(unittest.TestCase):
         )
 
         self.assertEqual(subject, "Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10, parking przy szkole")
-        self.assertIn("- Imię i nazwisko: Jan Kowalski", body)
-        self.assertIn("- Miejsce zamieszkania: ul. Testowa 1, Wrocław", body)
+        self.assertTrue(body.startswith("Zgłaszam pojazd"))
+        self.assertNotIn("Dzień dobry", body)
+        self.assertNotIn("Dane zgłaszającego", body)
+        self.assertNotIn("- Imię i nazwisko: Jan Kowalski", body)
+        self.assertNotIn("- Miejsce zamieszkania: ul. Testowa 1, Wrocław", body)
+        self.assertNotIn("- E-mail: jan@example.com", body)
+        self.assertNotIn("- Telefon: 500 600 700", body)
         self.assertIn("02.06.2026, godz. 12:30", body)
         self.assertNotIn("2026-06-02T12:30", body)
         self.assertIn("może spełniać przesłanki z art. 50a ust. 1", body)
@@ -156,6 +161,35 @@ class ReportMailTests(unittest.TestCase):
             body,
         )
         self.assertIn("Współrzędne GPS:\n51.087994, 17.039629", body)
+
+    def test_build_mail_draft_preserves_prefilled_address_when_backend_address_differs(self):
+        _subject, body = build_mail_draft(
+            {
+                "id": "wreck_51087994_17039629",
+                "lat": 51.087994,
+                "lon": 17.039629,
+                "links": {},
+                "address": {
+                    "formatted": "Świętego Jerzego, 50-518, Wrocław",
+                    "source_label": "OpenStreetMap/Nominatim",
+                    "distance_m": "93",
+                },
+            },
+            {"labels_present": ["2024", "2025"]},
+            {
+                "reporter_name": "Jan Kowalski",
+                "reporter_address": "ul. Testowa 1, Wrocław",
+                "reporter_phone": "500 600 700",
+                "reporter_email": "jan@example.com",
+                "location_description": "Najbliższy adres: ul. św. Jerzego 11, 50-518, Wrocław.",
+                "observed_at": "2026-06-02T12:30",
+                "vehicle_description": "Pojazd długo stoi w tym samym miejscu.",
+            },
+        )
+
+        self.assertIn("Najbliższy adres: ul. św. Jerzego 11, 50-518, Wrocław.", body)
+        self.assertNotIn("OpenStreetMap/Nominatim", body)
+        self.assertNotIn("Świętego Jerzego, 50-518, Wrocław", body)
 
     def test_build_mail_draft_omits_insurance_check_date_when_status_is_unknown(self):
         _subject, body = build_mail_draft(
