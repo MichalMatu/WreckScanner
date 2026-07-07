@@ -8,7 +8,7 @@ class DocumentationContractTests(unittest.TestCase):
     def test_readme_links_only_essential_docs(self):
         readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("Aktualne wydanie: `v3.4`", readme)
+        self.assertIn("Aktualne wydanie: `v3.5`", readme)
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
@@ -68,9 +68,10 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("`vehicle_insurance_checked_at`", doc)
         self.assertIn("Aplikacja nie pobiera danych z UFG automatycznie", doc)
         self.assertIn("Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu", doc)
-        self.assertIn("`zgloszenie.txt`, `raport.html` i PDF", doc)
-        self.assertIn("`POST /api/field-photo-reports/report-package`", doc)
-        self.assertIn("Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB ani w stalym", doc)
+        self.assertIn("Zgloszenie PDF jest generowane", doc)
+        self.assertIn("sprawdzenia w tresci PDF", doc)
+        self.assertIn("`POST /api/field-photo-reports/report-pdf`", doc)
+        self.assertIn("Raporty PDF i cropy mapy nie sa zapisywane w DB ani w stalym", doc)
         self.assertIn("Nie ma publicznego ani administracyjnego API `/api/wrecks`.", doc)
         self.assertIn("test ! -e zidentyfikowane_wraki", doc)
         self.assertIn("test ! -e prywatne_zgloszenia", doc)

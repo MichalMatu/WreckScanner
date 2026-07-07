@@ -41,9 +41,9 @@ function fieldPhotoGroupActions(group) {
     const lon = Number(group.lon);
     const encodedPhotoIds = encodedFieldPhotoIdsForGroup(group);
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedPhotoIds;
-    const reportPackagesAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
+    const reportPdfsAllowed = publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPdfs);
     const issueType = FIELD_PHOTO_ISSUE_TYPES.has(group.issueType) ? group.issueType : FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    const canCreateVehicleReport = coordinatesOk && reportPackagesAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
+    const canCreateVehicleReport = coordinatesOk && reportPdfsAllowed && issueType === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
     const canAddFieldPhotosHere = coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
         && fieldPhotoIssueAllowed(issueType);
@@ -58,7 +58,7 @@ function fieldPhotoGroupActions(group) {
     const reportButton = canCreateVehicleReport
         ? mapPopupIconAction(
             'map-popup-action--report',
-            t('fieldPhoto.reportPackage'),
+            t('fieldPhoto.reportPdf'),
             `openFieldPhotoGroupReport(${lat}, ${lon}, '${encodedPhotoIds}', this)`,
             'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h8v2H8v-2zm0 4h8v2H8v-2z'
         )

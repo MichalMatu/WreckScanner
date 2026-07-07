@@ -30,6 +30,11 @@ class MapContextFrontendContracts(unittest.TestCase):
             "contextMenuCoordsValue.textContent",
             'onclick="copyContextPlaceLink()"',
             'onclick="copyContextCoords()"',
+            'id="context-show-address"',
+            'onclick="showAddressAtContextPoint()"',
+            "ADDRESS_REVERSE_URL",
+            "context.addressTitle",
+            "context.addressSource",
         ):
             self.assertIn(expected, frontend)
         for retired in (

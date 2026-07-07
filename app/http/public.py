@@ -5,7 +5,7 @@ from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from app.http import static_files as http_static_files
-from app.http.public_data import lookup_cadastral_parcel
+from app.http.public_data import lookup_cadastral_parcel, lookup_nearest_address
 from core import config as core_config
 from core.field_photos import (
     discard_field_photo_drafts_by_owner,
@@ -16,11 +16,11 @@ from core.field_photos import (
     submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
-from core.report_packages import create_field_photo_report_package
+from core.report_pdfs import create_field_photo_report_pdf
 from core.uploads import UploadedFile
 
 
-def reject_report_package_files(files: list[UploadedFile]) -> None:
+def reject_report_pdf_files(files: list[UploadedFile]) -> None:
     if any(file.filename or file.data for file in files):
         raise ValueError(
             "Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych. "
@@ -51,6 +51,18 @@ def _report_cadastral_context(lat: str | None, lon: str | None) -> tuple[dict | 
         return None, str(exc)
     except Exception:
         return None, "Nie udało się automatycznie pobrać danych działki ewidencyjnej."
+
+
+def _report_address_context(lat: str | None, lon: str | None) -> dict | None:
+    try:
+        lat_float = float(lat or "")
+        lon_float = float(lon or "")
+    except ValueError:
+        return None
+    try:
+        return lookup_nearest_address(lat_float, lon_float)
+    except Exception:
+        return None
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -151,23 +163,24 @@ def handle_discard_field_photo_drafts(handler) -> None:
         )
 
 
-def handle_field_photo_report_package(handler) -> None:
+def handle_field_photo_report_pdf(handler) -> None:
     if not access.require_public_feature(
-        handler, "report_packages", "Generowanie raportów przez niezalogowanych jest teraz wyłączone."
+        handler, "report_pdfs", "Generowanie raportów przez niezalogowanych jest teraz wyłączone."
     ):
         return
     try:
-        fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PACKAGE_BODY_BYTES)
-        reject_report_package_files(files)
+        fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PDF_BODY_BYTES)
+        reject_report_pdf_files(files)
         parcel, parcel_error = _report_cadastral_context(fields.get("lat"), fields.get("lon"))
-        result = create_field_photo_report_package(
+        address = _report_address_context(fields.get("lat"), fields.get("lon"))
+        result = create_field_photo_report_pdf(
             fields,
             _report_photo_ids(fields),
             lat=fields.get("lat"),
             lon=fields.get("lon"),
-            place_url=fields.get("place_url"),
             parcel=parcel,
             parcel_error=parcel_error,
+            address=address,
             field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)
@@ -179,7 +192,7 @@ def handle_field_photo_report_package(handler) -> None:
         http_responses.send_internal_error(
             handler,
             500,
-            "Field photo report package creation failed",
+            "Field photo report PDF creation failed",
             exc,
             public_error="Nie udało się przygotować raportu ze zdjęć terenowych.",
         )

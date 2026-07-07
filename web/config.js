@@ -1,11 +1,30 @@
 // Centralna konfiguracja frontendu. Zmiany tutaj wpływają tylko na zachowanie
 // przeglądarki; limity bezpieczeństwa backendu są osobno egzekwowane w Pythonie.
 
+function normalizeDefaultMapView(raw, fallback) {
+    const lat = Number(raw?.lat);
+    const lon = Number(raw?.lon);
+    const zoom = Number(raw?.zoom);
+    if (
+        Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+        Number.isFinite(lon) && lon >= -180 && lon <= 180 &&
+        Number.isFinite(zoom) && zoom >= 0 && zoom <= 22
+    ) {
+        return { center: [lat, lon], zoom: Math.round(zoom) };
+    }
+    return { center: [...fallback.center], zoom: fallback.zoom };
+}
+
+function setDefaultMapView(raw) {
+    DEFAULT_MAP_VIEW = normalizeDefaultMapView(raw, STATIC_DEFAULT_MAP_VIEW);
+}
+
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
-const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
+const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3';
 const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisible.v1';
 const VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY = 'wreckscanner.vehicleStandingFilterDays.v1';
+const REPORT_REPORTER_STORAGE_KEY = 'wreckscanner.reportReporter.v1';
 const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
@@ -13,6 +32,7 @@ const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 // twardego hosta i portu w JS.
 const SETTINGS_URL = '/api/settings';
 const FIELD_PHOTOS_URL = '/api/field-photos';
+const ADDRESS_REVERSE_URL = '/api/address/reverse';
 const CADASTRAL_IDENTIFY_URL = '/api/cadastral/identify';
 const ADMIN_STATUS_URL = '/api/admin/status';
 const ADMIN_LOGIN_URL = '/api/admin/login';
@@ -31,7 +51,7 @@ const PUBLIC_LAYER_KEYS = {
 };
 
 const PUBLIC_FEATURE_KEYS = {
-    reportPackages: 'report_packages',
+    reportPdfs: 'report_pdfs',
     photoUploads: 'photo_uploads',
 };
 
@@ -71,11 +91,12 @@ const MAP_SOURCES = [
 const DEFAULT_MAP_SOURCE_KEY = 'poland-ortho';
 const CADASTRAL_WMS_URL = 'https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow';
 const CADASTRAL_WMS_LAYERS = 'dzialki,numery_dzialek';
-const DEFAULT_MAP_VIEW = {
-    center: [52.1, 19.4],
-    zoom: 7,
+const STATIC_DEFAULT_MAP_VIEW = {
+    center: [51.107883, 17.038538],
+    zoom: 13,
 };
 const MAX_MAP_ZOOM = 22;
+let DEFAULT_MAP_VIEW = normalizeDefaultMapView(window.WRECKSCANNER_APP_SETTINGS?.map_view, STATIC_DEFAULT_MAP_VIEW);
 const METERS_PER_DEGREE_LAT = 111320;
 
 // Przy dalekim oddaleniu pinezki przechodzą w małe klikane kropki.

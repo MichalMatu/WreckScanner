@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import core.settings_store as settings_store
 from core.settings_store import (
+    map_view_settings_from_dict,
     public_feature_settings_from_dict,
     public_layer_settings_from_dict,
 )
@@ -44,19 +45,47 @@ class PublicFeatureSettingsTests(unittest.TestCase):
         self.assertEqual(
             public_feature_settings_from_dict({}),
             {
-                "report_packages": True,
+                "report_pdfs": True,
                 "photo_uploads": True,
             },
         )
 
     def test_public_feature_settings_accept_booleans_per_feature(self):
         self.assertEqual(
-            public_feature_settings_from_dict({"report_packages": False, "photo_uploads": False}),
+            public_feature_settings_from_dict({"report_pdfs": False, "photo_uploads": False}),
             {
-                "report_packages": False,
+                "report_pdfs": False,
                 "photo_uploads": False,
             },
         )
+
+
+class MapViewSettingsTests(unittest.TestCase):
+    def test_missing_map_view_defaults_to_wroclaw(self):
+        self.assertEqual(
+            map_view_settings_from_dict({}),
+            {
+                "lat": 51.107883,
+                "lon": 17.038538,
+                "zoom": 13,
+            },
+        )
+
+    def test_map_view_settings_accept_valid_coordinates_and_zoom(self):
+        self.assertEqual(
+            map_view_settings_from_dict({"lat": "51.1091234", "lon": "17.0419876", "zoom": "14.4"}),
+            {
+                "lat": 51.109123,
+                "lon": 17.041988,
+                "zoom": 14,
+            },
+        )
+
+    def test_map_view_settings_reject_out_of_range_values_together(self):
+        default = map_view_settings_from_dict({})
+        self.assertEqual(map_view_settings_from_dict({"lat": 91, "lon": 17, "zoom": 14}), default)
+        self.assertEqual(map_view_settings_from_dict({"lat": 51, "lon": 181, "zoom": 14}), default)
+        self.assertEqual(map_view_settings_from_dict({"lat": 51, "lon": 17, "zoom": 23}), default)
 
 
 class AppSettingsPersistenceTests(unittest.TestCase):

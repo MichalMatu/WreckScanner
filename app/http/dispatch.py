@@ -45,6 +45,7 @@ def handle_static_api_get(handler, path: str) -> bool:
             handler, http_retention.snapshot()
         ),
         "/api/settings": lambda: http_settings.handle_get_settings(handler),
+        "/api/address/reverse": lambda: http_public_data.handle_reverse_address(handler),
         "/api/cadastral/identify": lambda: http_public_data.handle_cadastral_identify(handler),
         "/api/field-photos": lambda: http_public_data.handle_field_photos(handler),
     }
@@ -166,8 +167,8 @@ def handle_post(handler) -> None:
     if request_path == "/api/admin/photo-retention/run":
         http_request_body.dispatch_json_request(handler, http_retention.handle_run_photo_retention, handler)
         return
-    if request_path == "/api/field-photo-reports/report-package":
-        http_public.handle_field_photo_report_package(handler)
+    if request_path == "/api/field-photo-reports/report-pdf":
+        http_public.handle_field_photo_report_pdf(handler)
         return
     field_photo_owner_original_route = http_routes.field_photo_owner_original_route(request_path)
     if field_photo_owner_original_route:

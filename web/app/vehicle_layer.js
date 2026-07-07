@@ -155,7 +155,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedApprovedPhotoIds;
     const canCreateReport = includeReport
         && coordinatesOk
-        && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages);
+        && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPdfs);
     const canAddFieldPhotosHere = includeUpload
         && coordinatesOk
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)
@@ -171,7 +171,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
     const reportButton = canCreateReport
         ? mapPopupIconAction(
             'map-popup-action--report',
-            t('fieldPhoto.reportPackage'),
+            t('fieldPhoto.reportPdf'),
             `openFieldPhotoGroupReport(${lat}, ${lon}, '${encodedApprovedPhotoIds}', this)`,
             'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h8v2H8v-2zm0 4h8v2H8v-2z'
         )

@@ -42,15 +42,15 @@ def save_report_evidence(
         "path": evidence_rel,
         "crops": crops,
         "links": links,
-        "source": "report_package",
+        "source": "report_pdf",
         "crop_m": float(crop_m),
     }
     _write_json(evidence_dir / "links.json", links)
     _write_json(evidence_dir / "metadata.json", metadata)
     _write_json(
-        evidence_dir / "report_package.json",
+        evidence_dir / "report_pdf.json",
         {
-            "source": "report_package",
+            "source": "report_pdf",
             "created_at": created_at,
             "lat": lat,
             "lon": lon,

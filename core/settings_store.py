@@ -19,8 +19,13 @@ DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
     "base_map_osm": True,
 }
 DEFAULT_PUBLIC_FEATURES: dict[str, bool] = {
-    "report_packages": True,
+    "report_pdfs": True,
     "photo_uploads": True,
+}
+DEFAULT_MAP_VIEW: dict[str, float | int] = {
+    "lat": 51.107883,
+    "lon": 17.038538,
+    "zoom": 13,
 }
 
 _ENHANCEMENT_LIMITS: dict[str, tuple[float, float]] = {
@@ -71,9 +76,29 @@ def enhancement_settings_from_dict(raw: Any) -> EnhancementSettings:
 def default_app_settings() -> dict[str, Any]:
     return {
         "enhancement": enhancement_settings_to_dict(DEFAULT_ENHANCEMENT_SETTINGS),
+        "map_view": DEFAULT_MAP_VIEW.copy(),
         "public_layers": DEFAULT_PUBLIC_LAYERS.copy(),
         "public_features": DEFAULT_PUBLIC_FEATURES.copy(),
     }
+
+
+def map_view_settings_from_dict(raw: Any) -> dict[str, float | int]:
+    settings = DEFAULT_MAP_VIEW.copy()
+    if not isinstance(raw, dict):
+        return settings
+
+    try:
+        lat = float(raw.get("lat"))
+        lon = float(raw.get("lon"))
+        zoom = int(round(float(raw.get("zoom"))))
+    except (TypeError, ValueError):
+        return settings
+
+    if -90 <= lat <= 90 and -180 <= lon <= 180 and 0 <= zoom <= 22:
+        settings["lat"] = round(lat, 6)
+        settings["lon"] = round(lon, 6)
+        settings["zoom"] = zoom
+    return settings
 
 
 def public_layer_settings_from_dict(raw: Any) -> dict[str, bool]:
@@ -126,6 +151,7 @@ def load_app_settings() -> dict[str, Any]:
 
     settings = default_app_settings()
     settings["enhancement"] = enhancement_settings_to_dict(enhancement_settings_from_dict(raw.get("enhancement")))
+    settings["map_view"] = map_view_settings_from_dict(raw.get("map_view"))
     settings["public_layers"] = public_layer_settings_from_dict(raw.get("public_layers"))
     settings["public_features"] = public_feature_settings_from_dict(raw.get("public_features"))
     return settings
@@ -135,6 +161,8 @@ def save_app_settings(raw: dict[str, Any]) -> dict[str, Any]:
     current = load_app_settings()
     if "enhancement" in raw:
         current["enhancement"] = enhancement_settings_to_dict(enhancement_settings_from_dict(raw["enhancement"]))
+    if "map_view" in raw:
+        current["map_view"] = map_view_settings_from_dict(raw["map_view"])
     if "public_layers" in raw:
         current["public_layers"] = public_layer_settings_from_dict(raw["public_layers"])
     if "public_features" in raw:

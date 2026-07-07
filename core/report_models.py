@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 REQUIRED_REPORT_FIELDS = {
     "reporter_name": "imię i nazwisko",
@@ -23,16 +21,6 @@ def safe_text(value: Any, max_len: int = 4000) -> str:
     return text
 
 
-def safe_report_url(value: Any, max_len: int = 1000) -> str:
-    text = safe_text(value, max_len=max_len)
-    if not text:
-        return ""
-    parsed = urlsplit(text)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return ""
-    return text
-
-
 def validate_report_fields(raw_fields: dict[str, str]) -> dict[str, str]:
     fields = {key: safe_text(raw_fields.get(key)) for key in REQUIRED_REPORT_FIELDS}
     missing = [label for key, label in REQUIRED_REPORT_FIELDS.items() if not fields[key]]
@@ -41,10 +29,3 @@ def validate_report_fields(raw_fields: dict[str, str]) -> dict[str, str]:
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", fields["reporter_email"]):
         raise ValueError("Podaj prawidłowy adres e-mail zgłaszającego.")
     return fields
-
-
-def safe_filename(raw_name: str, fallback: str, ext: str) -> str:
-    stem = Path(raw_name or "").stem or fallback
-    stem = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._-") or fallback
-    stem = stem[:70]
-    return f"{stem}{ext}"
