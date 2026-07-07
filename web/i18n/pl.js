@@ -87,7 +87,6 @@ const TRANSLATIONS_PL = {
         'context.addressDistrict': 'Osiedle / rejon',
         'context.addressCity': 'Miejscowość',
         'context.addressSource': 'Źródło',
-        'context.addressCoords': 'Współrzędne punktu',
         'context.addressDistance': 'Odległość wyniku',
         'context.addressFull': 'Pełny opis',
         'context.addressCopyData': 'Kopiuj adres',

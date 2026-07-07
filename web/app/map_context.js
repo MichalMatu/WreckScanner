@@ -145,7 +145,6 @@ function reverseAddressClipboardText(address = {}) {
     const lines = [
         `${t('context.addressTitle')}: ${address.formatted || '-'}`,
         address.display_name ? `${t('context.addressFull')}: ${address.display_name}` : '',
-        `${t('context.addressCoords')}: ${address.query_lat || ''}, ${address.query_lon || ''}`,
         Number.isFinite(Number(address.distance_m)) ? `${t('context.addressDistance')}: ${address.distance_m} m` : '',
     ];
     return lines.filter(Boolean).join('\n');
@@ -171,7 +170,6 @@ function reverseAddressPopup(address = {}) {
         [t('context.addressCity'), [address.postcode, address.city].filter(Boolean).join(' ')],
         [t('context.addressSource'), address.source_label || address.source],
         [t('context.addressDistance'), Number.isFinite(Number(address.distance_m)) ? `${address.distance_m} m` : ''],
-        [t('context.addressCoords'), `${address.query_lat}, ${address.query_lon}`],
     ].filter(([, value]) => value);
     const rowHtml = rows.map(([label, value]) => `
         <div class="parcel-popup-row">
