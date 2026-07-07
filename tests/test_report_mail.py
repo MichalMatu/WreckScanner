@@ -152,8 +152,7 @@ class ReportMailTests(unittest.TestCase):
             "Zgłoszenie pojazdu nieużytkowanego - ul. św. Jerzego 11, 50-518, Wrocław",
         )
         self.assertIn(
-            "Najbliższy adres według PRG/GUGiK: ul. św. Jerzego 11, 50-518, Wrocław "
-            "(ok. 26 m od wskazanego punktu).",
+            "Najbliższy adres według PRG/GUGiK: ul. św. Jerzego 11, 50-518, Wrocław (ok. 26 m od wskazanego punktu).",
             body,
         )
         self.assertNotIn("Miejsce wskazane na mapie przy współrzędnych GPS", body)

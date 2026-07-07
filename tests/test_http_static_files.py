@@ -87,7 +87,7 @@ class HttpStaticFilesContractTests(unittest.TestCase):
             web_dir = Path(tmp) / "web"
             web_dir.mkdir()
             (web_dir / "index.html").write_text(
-                "<script src=\"/i18n.js\"></script>\n<!-- app-settings-bootstrap -->\n<script src=\"/config.js\"></script>\n",
+                '<script src="/i18n.js"></script>\n<!-- app-settings-bootstrap -->\n<script src="/config.js"></script>\n',
                 encoding="utf-8",
             )
 
@@ -105,7 +105,9 @@ class HttpStaticFilesContractTests(unittest.TestCase):
             '<script>window.WRECKSCANNER_APP_SETTINGS={"map_view":{"lat":51.107883,"lon":17.038538,"zoom":13}};</script>',
             rendered,
         )
-        self.assertLess(rendered.index("WRECKSCANNER_APP_SETTINGS"), rendered.index('<script src="/config.js"></script>'))
+        self.assertLess(
+            rendered.index("WRECKSCANNER_APP_SETTINGS"), rendered.index('<script src="/config.js"></script>')
+        )
 
     def test_render_web_template_rejects_unsafe_partials(self):
         with TemporaryDirectory() as tmp:
