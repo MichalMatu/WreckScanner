@@ -15,9 +15,7 @@ from core.settings_store import enhancement_settings_from_dict, enhancement_sett
 
 _MAX_PROXY_PATH_CHARS = 2048
 _MAX_TILE_BYTES = 8 * BYTES_PER_MIB
-_ALLOWED_PROXY_PATH_CHARS = frozenset(
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~/%?&=:+,;@"
-)
+_ALLOWED_PROXY_PATH_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~/%?&=:+,;@")
 
 
 def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:

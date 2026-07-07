@@ -8,6 +8,7 @@ import secrets
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import RLock
 from typing import Any, Literal
 
 from PIL import Image, UnidentifiedImageError
@@ -78,6 +79,7 @@ from core.photo_tokens import new_photo_edit_token_hash, normalize_photo_edit_to
 from core.uploads import UploadedFile
 
 FIELD_PHOTO_ID_RE = _FIELD_PHOTO_ID_RE
+_FIELD_PHOTO_MUTATION_LOCK = RLock()
 
 
 def _now_utc() -> datetime:
@@ -423,10 +425,14 @@ def update_field_photo_location(
     return {"status": "ok", "photo": _summary(record)}
 
 
-def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | None = None) -> dict[str, Any]:
-    record_dir = _record_dir_for(photo_id, storage_dir)
-    private_root = _private_dir(private_dir)
-    record = _load_field_record(record_dir, private_root)
+def _delete_loaded_field_photo(
+    photo_id: str,
+    storage_dir: Path,
+    *,
+    record_dir: Path,
+    private_root: Path,
+    record: dict[str, Any],
+) -> dict[str, Any]:
     try:
         private_rel = record.get("private_original_file")
         original = safe_child(private_root, private_rel) if private_rel else None
@@ -440,6 +446,20 @@ def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | 
         shutil.rmtree(record_dir)
     _delete_field_record(storage_dir, photo_id)
     return {"status": "ok", "deleted": photo_id}
+
+
+def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | None = None) -> dict[str, Any]:
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        private_root = _private_dir(private_dir)
+        record = _load_field_record(record_dir, private_root)
+        return _delete_loaded_field_photo(
+            photo_id,
+            storage_dir,
+            record_dir=record_dir,
+            private_root=private_root,
+            record=record,
+        )
 
 
 def field_photo_asset(
@@ -496,27 +516,29 @@ def review_field_photo(
     vehicle_insurance_status: Any = None,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
-    record_dir = _record_dir_for(photo_id, storage_dir)
-    record = _load_field_record(record_dir, _private_dir(private_dir))
-    validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
-    apply_review_update(
-        record,
-        record_dir,
-        _private_dir(private_dir),
-        status=status,
-        redactions=redactions,
-        thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
-        thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
-    )
-    if validated_vehicle_insurance_status is not None:
-        updated_ids = _save_vehicle_insurance_group_update(storage_dir, record, validated_vehicle_insurance_status)
-    else:
-        updated_ids = []
-        _save_field_record(storage_dir, record)
-    result = {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
-    if validated_vehicle_insurance_status is not None:
-        result["vehicle_insurance_updated_photo_ids"] = updated_ids
-    return result
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        private_root = _private_dir(private_dir)
+        record = _load_field_record(record_dir, private_root)
+        validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
+        apply_review_update(
+            record,
+            record_dir,
+            private_root,
+            status=status,
+            redactions=redactions,
+            thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
+            thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
+        )
+        if validated_vehicle_insurance_status is not None:
+            updated_ids = _save_vehicle_insurance_group_update(storage_dir, record, validated_vehicle_insurance_status)
+        else:
+            updated_ids = []
+            _save_field_record(storage_dir, record)
+        result = {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
+        if validated_vehicle_insurance_status is not None:
+            result["vehicle_insurance_updated_photo_ids"] = updated_ids
+        return result
 
 
 def review_field_photo_by_owner(
@@ -528,29 +550,31 @@ def review_field_photo_by_owner(
     vehicle_insurance_status: Any = None,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
-    record_dir = _record_dir_for(photo_id, storage_dir)
-    record = _load_field_record(record_dir, _private_dir(private_dir))
-    _require_edit_token(record, edit_token)
-    validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
-    status = "draft" if review_status(record) == "draft" else "pending"
-    apply_review_update(
-        record,
-        record_dir,
-        _private_dir(private_dir),
-        status=status,
-        redactions=redactions,
-        thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
-        thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
-    )
-    if validated_vehicle_insurance_status is not None:
-        _set_vehicle_insurance(
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        private_root = _private_dir(private_dir)
+        record = _load_field_record(record_dir, private_root)
+        _require_edit_token(record, edit_token)
+        validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
+        status = "draft" if review_status(record) == "draft" else "pending"
+        apply_review_update(
             record,
-            validated_vehicle_insurance_status,
-            _vehicle_insurance_checked_at_for_status(validated_vehicle_insurance_status),
+            record_dir,
+            private_root,
+            status=status,
+            redactions=redactions,
+            thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
+            thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
         )
-    record["owner_redactions_updated_at"] = _now_iso()
-    _save_field_record(storage_dir, record)
-    return {"status": "ok", "photo": _summary(record)}
+        if validated_vehicle_insurance_status is not None:
+            _set_vehicle_insurance(
+                record,
+                validated_vehicle_insurance_status,
+                _vehicle_insurance_checked_at_for_status(validated_vehicle_insurance_status),
+            )
+        record["owner_redactions_updated_at"] = _now_iso()
+        _save_field_record(storage_dir, record)
+        return {"status": "ok", "photo": _summary(record)}
 
 
 def submit_field_photos_by_owner(
@@ -594,41 +618,3 @@ def submit_field_photos_by_owner(
     if not photos:
         raise PermissionError("Nieprawidłowy token edycji zdjęcia albo zdjęcie nie jest szkicem.")
     return {"status": "ok", "photos": sorted(photos, key=lambda item: str(item.get("created_at") or ""), reverse=True)}
-
-
-def discard_field_photo_drafts_by_owner(
-    photo_ids: list[Any],
-    edit_token: Any,
-    storage_dir: Path,
-    *,
-    private_dir: Path | None = None,
-) -> dict[str, Any]:
-    normalize_photo_edit_token(edit_token)
-    private_root = _private_dir(private_dir)
-    draft_ids: list[str] = []
-    for raw_photo_id in photo_ids:
-        photo_id = str(raw_photo_id or "").strip()
-        if not photo_id or photo_id in draft_ids:
-            continue
-        photo_id = _validate_photo_id(photo_id)
-        record_dir = _record_dir_for(photo_id, storage_dir)
-        try:
-            record = _load_field_record(record_dir, private_root)
-        except FileNotFoundError:
-            continue
-        try:
-            _require_edit_token(record, edit_token)
-        except PermissionError:
-            continue
-        if review_status(record) == "draft":
-            draft_ids.append(photo_id)
-    if not draft_ids:
-        raise PermissionError("Nieprawidłowy token edycji zdjęcia albo szkic został już wysłany.")
-
-    deleted: list[str] = []
-    for photo_id in draft_ids:
-        result = delete_field_photo(photo_id, storage_dir, private_dir=private_root)
-        deleted_id = str(result.get("deleted") or "")
-        if deleted_id:
-            deleted.append(deleted_id)
-    return {"status": "ok", "deleted": deleted}

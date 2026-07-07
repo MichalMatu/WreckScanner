@@ -7,18 +7,14 @@ from app.http import responses as http_responses
 from app.http import static_files as http_static_files
 from app.http.public_data import lookup_cadastral_parcel, lookup_nearest_address
 from core import config as core_config
+from core.field_photo_owner_actions import delete_field_photos_by_owner, discard_field_photo_drafts_by_owner
 from core.field_photos import (
-    delete_field_photo,
-    discard_field_photo_drafts_by_owner,
     field_photo_owner_original_asset,
     list_owner_field_photo_review_items,
-    load_field_photo_record,
     review_field_photo_by_owner,
     save_field_photo,
     submit_field_photos_by_owner,
 )
-from core.photo_privacy import review_status
-from core.photo_tokens import verify_photo_edit_token
 from core.privacy_requests import create_privacy_request
 from core.report_pdfs import create_field_photo_report_pdf
 from core.uploads import UploadedFile
@@ -83,41 +79,14 @@ def _owner_photo_ids(data: dict) -> list[str]:
     return photo_ids
 
 
-def _require_owner_delete_permission(photo_id: str, edit_token: object) -> None:
-    record = load_field_photo_record(
-        photo_id,
+def _delete_field_photos_by_owner(photo_ids: list[str], edit_token: object) -> dict:
+    return delete_field_photos_by_owner(
+        photo_ids,
+        edit_token,
         core_config.FIELD_PHOTOS_DIR,
         private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        allowed_review_statuses=OWNER_DELETABLE_REVIEW_STATUSES,
     )
-    try:
-        token_matches = verify_photo_edit_token(
-            edit_token,
-            record.get("edit_token_salt"),
-            record.get("edit_token_hash"),
-        )
-    except ValueError as exc:
-        raise PermissionError("Nieprawidłowy token edycji zdjęcia.") from exc
-    if not token_matches:
-        raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
-    if review_status(record) not in OWNER_DELETABLE_REVIEW_STATUSES:
-        raise PermissionError("Możesz usunąć tylko szkic albo zdjęcie oczekujące na weryfikację.")
-
-
-def _delete_field_photos_by_owner(photo_ids: list[str], edit_token: object) -> dict:
-    for photo_id in photo_ids:
-        _require_owner_delete_permission(photo_id, edit_token)
-
-    deleted: list[str] = []
-    for photo_id in photo_ids:
-        result = delete_field_photo(
-            photo_id,
-            core_config.FIELD_PHOTOS_DIR,
-            private_dir=core_config.PRIVATE_PHOTOS_DIR,
-        )
-        deleted_id = str(result.get("deleted") or "")
-        if deleted_id:
-            deleted.append(deleted_id)
-    return {"status": "ok", "deleted": deleted}
 
 
 def handle_create_privacy_request(handler) -> None:

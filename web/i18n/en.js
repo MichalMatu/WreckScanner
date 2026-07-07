@@ -372,6 +372,8 @@ const TRANSLATIONS_EN = {
         'modal.photoReview.deleteShort': 'Delete',
         'modal.photoReview.deleteTitle': 'Delete rejected photo?',
         'modal.photoReview.deleteConfirm': 'The photo will be permanently removed from the queue and private storage.',
+        'modal.photoReview.ownerDeleteTitle': 'Delete your photo?',
+        'modal.photoReview.ownerDeleteConfirm': 'The draft or pending submission will be permanently removed from the map and private storage.',
         'modal.photoReview.deleting': 'Deleting photo...',
         'modal.photoReview.deleted': 'Photo deleted.',
         'modal.photoReview.deleteError': 'Could not delete the photo.',

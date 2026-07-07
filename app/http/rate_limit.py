@@ -3,8 +3,11 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
+from functools import lru_cache
+from ipaddress import ip_address, ip_network
 from threading import Lock
 
+from app import config
 from app.http import responses as http_responses
 
 
@@ -92,6 +95,8 @@ _RULES = (
 _BUCKETS: defaultdict[tuple[str, str], deque[float]] = defaultdict(deque)
 _BUCKET_LOCK = Lock()
 _CLIENT_ID_SAFE_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_:")
+_MAX_RATE_LIMIT_BUCKETS = 10000
+_RULE_BY_NAME = {rule.name: rule for rule in _RULES}
 
 
 def _safe_client_token(value: object) -> str:
@@ -100,13 +105,37 @@ def _safe_client_token(value: object) -> str:
     return safe or "unknown"
 
 
-def client_key(handler) -> str:
-    for header in ("CF-Connecting-IP", "X-Forwarded-For"):
-        value = _safe_client_token(handler.headers.get(header))
-        if value != "unknown":
-            return value
+def _client_host(handler) -> str:
     client_address = getattr(handler, "client_address", ("unknown",))
     return _safe_client_token(client_address[0] if client_address else "unknown")
+
+
+@lru_cache(maxsize=1)
+def _trusted_proxy_networks():
+    networks = []
+    for value in config.TRUSTED_PROXY_ADDRESSES:
+        try:
+            networks.append(ip_network(value, strict=False))
+        except ValueError:
+            continue
+    return tuple(networks)
+
+
+def _request_from_trusted_proxy(handler) -> bool:
+    try:
+        client_ip = ip_address(_client_host(handler))
+    except ValueError:
+        return False
+    return any(client_ip in network for network in _trusted_proxy_networks())
+
+
+def client_key(handler) -> str:
+    if _request_from_trusted_proxy(handler):
+        for header in ("CF-Connecting-IP", "X-Forwarded-For"):
+            value = _safe_client_token(handler.headers.get(header))
+            if value != "unknown":
+                return value
+    return _client_host(handler)
 
 
 def matching_rule(method: str, path: str) -> RateLimitRule | None:
@@ -114,6 +143,19 @@ def matching_rule(method: str, path: str) -> RateLimitRule | None:
         if rule.matches(method, path):
             return rule
     return None
+
+
+def _prune_buckets(now: float) -> None:
+    for key, bucket in list(_BUCKETS.items()):
+        rule = _RULE_BY_NAME.get(key[0])
+        if rule is None:
+            del _BUCKETS[key]
+            continue
+        cutoff = now - rule.window_seconds
+        while bucket and bucket[0] <= cutoff:
+            bucket.popleft()
+        if not bucket:
+            del _BUCKETS[key]
 
 
 def reject_limited(handler, method: str, path: str) -> bool:
@@ -141,4 +183,6 @@ def reject_limited(handler, method: str, path: str) -> bool:
             )
             return True
         bucket.append(now)
+        if len(_BUCKETS) > _MAX_RATE_LIMIT_BUCKETS:
+            _prune_buckets(now)
     return False

@@ -34,8 +34,8 @@ async function deleteOwnerPhotoReviewItem() {
     if (!deletedPhotoId) return;
     const deletedPhotoIndex = photoReviewActiveIndex(activePhotoReview.id);
     const confirmed = await confirmAction({
-        title: t('modal.photoReview.deleteTitle'),
-        message: t('modal.photoReview.deleteConfirm'),
+        title: t('modal.photoReview.ownerDeleteTitle'),
+        message: t('modal.photoReview.ownerDeleteConfirm'),
         confirmLabel: t('modal.photoReview.delete'),
     });
     if (!confirmed) return;

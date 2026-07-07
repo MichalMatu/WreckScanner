@@ -75,6 +75,11 @@ CORS_ALLOWED_ORIGINS = tuple(
     ).split(",")
     if origin.strip()
 )
+TRUSTED_PROXY_ADDRESSES = tuple(
+    address.strip()
+    for address in os.environ.get("WRECKSCANNER_TRUSTED_PROXY_ADDRESSES", "127.0.0.1,::1").split(",")
+    if address.strip()
+)
 
 # JSON endpointy przenoszą małe komendy i ustawienia. Większe payloady zdjęć
 # idą przez multipart i mają osobne limity w core.config.
