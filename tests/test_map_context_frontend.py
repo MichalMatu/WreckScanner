@@ -34,6 +34,7 @@ class MapContextFrontendContracts(unittest.TestCase):
             'onclick="showAddressAtContextPoint()"',
             "ADDRESS_REVERSE_URL",
             "context.addressTitle",
+            "context.addressSource",
         ):
             self.assertIn(expected, frontend)
         for retired in (

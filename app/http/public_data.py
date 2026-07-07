@@ -10,6 +10,7 @@ from core import config as core_config
 from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
 from core.field_photos import list_field_photos
 from core.geo import validate_coordinates
+from core.prg_addresses import parse_prg_address_features, prg_address_wfs_params
 from core.reverse_geocoding import normalize_reverse_geocode_result
 
 
@@ -59,7 +60,24 @@ def lookup_cadastral_parcel(lat: float, lon: float) -> dict[str, Any]:
 
 
 @lru_cache(maxsize=512)
-def _lookup_nearest_address_cached(lat: float, lon: float) -> dict[str, Any]:
+def _lookup_prg_address_cached(lat: float, lon: float) -> dict[str, Any]:
+    response = map_downloads.get_http_session().get(
+        config.PRG_ADDRESS_WFS_URL,
+        params=prg_address_wfs_params(
+            lat,
+            lon,
+            radius_m=config.PRG_ADDRESS_SEARCH_RADIUS_M,
+            count=config.PRG_ADDRESS_MAX_FEATURES,
+        ),
+        timeout=config.PRG_ADDRESS_WFS_TIMEOUT,
+    )
+    response.raise_for_status()
+    response.encoding = "utf-8"
+    return parse_prg_address_features(response.text, query_lat=lat, query_lon=lon)
+
+
+@lru_cache(maxsize=512)
+def _lookup_nominatim_address_cached(lat: float, lon: float) -> dict[str, Any]:
     response = map_downloads.get_http_session().get(
         config.NOMINATIM_REVERSE_URL,
         params={
@@ -82,7 +100,12 @@ def _lookup_nearest_address_cached(lat: float, lon: float) -> dict[str, Any]:
 
 def lookup_nearest_address(lat: float, lon: float) -> dict[str, Any]:
     lat, lon = validate_coordinates(lat, lon)
-    return _lookup_nearest_address_cached(round(lat, 6), round(lon, 6))
+    rounded_lat = round(lat, 6)
+    rounded_lon = round(lon, 6)
+    try:
+        return _lookup_prg_address_cached(rounded_lat, rounded_lon)
+    except Exception:
+        return _lookup_nominatim_address_cached(rounded_lat, rounded_lon)
 
 
 def _query_coordinates(handler) -> tuple[float, float]:

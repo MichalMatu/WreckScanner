@@ -87,6 +87,7 @@ const TRANSLATIONS_PL = {
         'context.addressStreet': 'Ulica i numer',
         'context.addressDistrict': 'Osiedle / rejon',
         'context.addressCity': 'Miejscowość',
+        'context.addressSource': 'Źródło',
         'context.addressCoords': 'Współrzędne punktu',
         'context.addressDistance': 'Odległość wyniku',
         'context.addressFull': 'Pełny opis',

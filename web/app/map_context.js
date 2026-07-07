@@ -169,6 +169,7 @@ function reverseAddressPopup(address = {}) {
         [t('context.addressStreet'), [address.road, address.house_number].filter(Boolean).join(' ')],
         [t('context.addressDistrict'), address.district],
         [t('context.addressCity'), [address.postcode, address.city].filter(Boolean).join(' ')],
+        [t('context.addressSource'), address.source_label || address.source],
         [t('context.addressDistance'), Number.isFinite(Number(address.distance_m)) ? `${address.distance_m} m` : ''],
         [t('context.addressCoords'), `${address.query_lat}, ${address.query_lon}`],
     ].filter(([, value]) => value);

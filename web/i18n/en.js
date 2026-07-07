@@ -85,6 +85,7 @@ const TRANSLATIONS_EN = {
         'context.addressStreet': 'Street and number',
         'context.addressDistrict': 'Area',
         'context.addressCity': 'Locality',
+        'context.addressSource': 'Source',
         'context.addressCoords': 'Point coordinates',
         'context.addressDistance': 'Result distance',
         'context.addressFull': 'Full description',

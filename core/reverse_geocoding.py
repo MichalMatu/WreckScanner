@@ -59,4 +59,5 @@ def normalize_reverse_geocode_result(payload: dict[str, Any], *, query_lat: floa
         "lon": _text(payload.get("lon"), max_len=40),
         "distance_m": _result_distance_m(query_lat, query_lon, payload),
         "source": "nominatim",
+        "source_label": "OpenStreetMap/Nominatim",
     }

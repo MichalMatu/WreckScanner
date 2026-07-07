@@ -31,6 +31,13 @@ WMS_TILE_CACHE_CONTROL = "public, max-age=86400"
 CADASTRAL_WMS_URL = "https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow"
 CADASTRAL_WMS_FALLBACK_URL = "https://integracja01.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow"
 CADASTRAL_WMS_TIMEOUT = (10, 30)
+PRG_ADDRESS_WFS_URL = os.environ.get(
+    "WRECKSCANNER_PRG_ADDRESS_WFS_URL",
+    "https://mapy.geoportal.gov.pl/wss/ext/KrajowaIntegracjaNumeracjiAdresowej",
+)
+PRG_ADDRESS_WFS_TIMEOUT = (3, 10)
+PRG_ADDRESS_SEARCH_RADIUS_M = 160.0
+PRG_ADDRESS_MAX_FEATURES = 50
 NOMINATIM_REVERSE_URL = os.environ.get(
     "WRECKSCANNER_NOMINATIM_REVERSE_URL",
     "https://nominatim.openstreetmap.org/reverse",
