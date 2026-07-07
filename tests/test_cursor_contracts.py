@@ -4,7 +4,6 @@ import re
 import unittest
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 STYLE_DIR = ROOT_DIR / "web" / "styles"
 
