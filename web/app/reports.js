@@ -72,8 +72,7 @@ async function applyReportAddressDefault(form, target) {
         if (!address || target !== reportPdfTarget) return;
         const current = String(locationField.value || '');
         if (current && current !== expectedDefault) return;
-        const coords = { address, lat: lat.toFixed(6), lon: lon.toFixed(6) };
-        reportPdfDefaultLocationDescription = t('modal.report.defaultLocationWithAddress', coords);
+        reportPdfDefaultLocationDescription = t('modal.report.defaultLocationWithAddress', { address });
         locationField.value = reportPdfDefaultLocationDescription;
     } catch (_) {}
 }

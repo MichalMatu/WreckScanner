@@ -10,6 +10,14 @@ from core.field_photo_metadata import vehicle_insurance_status_label
 
 DANGLING_SUBJECT_WORDS = {"i", "o", "u", "w", "z", "do", "na", "od", "po"}
 REPORT_TIMEZONE = ZoneInfo("Europe/Warsaw")
+AUTO_LOCATION_MARKERS = (
+    "miejsce wskazane na mapie przy współrzędnych gps",
+    "location indicated on the map at gps coordinates",
+)
+AUTO_ADDRESS_PREFIXES = (
+    "najbliższy adres:",
+    "nearest address:",
+)
 
 
 def _first_line(value: str, max_len: int = 90) -> str:
@@ -69,18 +77,41 @@ def _parcel_context_text(record: dict[str, Any]) -> str:
     return ""
 
 
-def _address_context_text(record: dict[str, Any], location_description: str) -> str:
+def _address_context_text(record: dict[str, Any]) -> str:
     address = record.get("address") if isinstance(record.get("address"), dict) else {}
     formatted = str(address.get("formatted") or "").strip()
     if not formatted:
-        return ""
-    if formatted.lower() in str(location_description or "").lower():
         return ""
     source_label = str(address.get("source_label") or address.get("source") or "").strip()
     source_clause = f" według {source_label}" if source_label else ""
     distance_text = str(address.get("distance_m") or "").strip()
     distance_clause = f" (ok. {distance_text} m od wskazanego punktu)" if distance_text else ""
     return f"Najbliższy adres{source_clause}: {formatted}{distance_clause}."
+
+
+def _compact_lower(value: Any) -> str:
+    return " ".join(str(value or "").lower().split())
+
+
+def _is_auto_location_description(value: Any) -> bool:
+    text = _compact_lower(value)
+    return any(marker in text for marker in AUTO_LOCATION_MARKERS) or any(
+        text.startswith(prefix) for prefix in AUTO_ADDRESS_PREFIXES
+    )
+
+
+def _location_section(record: dict[str, Any], fields: dict[str, str]) -> str:
+    description = str(fields["location_description"] or "").strip()
+    address_context = _address_context_text(record)
+    if not address_context:
+        return description
+    if _is_auto_location_description(description):
+        return address_context
+    address = record.get("address") if isinstance(record.get("address"), dict) else {}
+    formatted = _compact_lower(address.get("formatted"))
+    if formatted and formatted in _compact_lower(description):
+        return description
+    return f"{description}\n\n{address_context}" if description else address_context
 
 
 def _subject_location(record: dict[str, Any], fields: dict[str, str]) -> str:
@@ -123,8 +154,7 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
-    address_context = _address_context_text(record, fields["location_description"])
-    address_section = f"\n{address_context}" if address_context else ""
+    location_section = _location_section(record, fields)
     parcel_context = _parcel_context_text(record)
     parcel_section = _optional_section(parcel_context)
     insurance_section = _optional_section(_vehicle_insurance_context_text(record))
@@ -140,8 +170,7 @@ Dane zgłaszającego:
 - Telefon: {fields["reporter_phone"]}
 
 Miejsce pojazdu:
-{fields["location_description"]}
-{address_section}
+{location_section}
 
 Współrzędne GPS:
 {lat:.6f}, {lon:.6f}

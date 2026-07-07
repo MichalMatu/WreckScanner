@@ -527,7 +527,7 @@ const TRANSLATIONS_PL = {
         'modal.report.observedAt': 'Data i godzina obserwacji',
         'modal.report.vehicleDescription': 'Opis pojazdu lub miejsca',
         'modal.report.defaultLocation': 'Miejsce wskazane na mapie przy współrzędnych GPS {lat}, {lon}. Pojazd znajduje się w lokalizacji widocznej na załączonych zdjęciach.',
-        'modal.report.defaultLocationWithAddress': 'Najbliższy adres: {address}. Miejsce wskazane na mapie przy współrzędnych GPS {lat}, {lon}. Pojazd znajduje się w lokalizacji widocznej na załączonych zdjęciach.',
+        'modal.report.defaultLocationWithAddress': 'Najbliższy adres: {address}.',
         'modal.report.defaultVehicleDescription': 'Pojazd wygląda na długotrwale nieużytkowany lub porzucony. Według dokumentacji zdjęciowej stoi w tym samym miejscu od dłuższego czasu, a jego stan i brak bieżącego użytkowania mogą wskazywać na spełnienie przesłanek do weryfikacji w trybie art. 50a ust. 1 Prawa o ruchu drogowym. Proszę o sprawdzenie pojazdu w terenie i podjęcie właściwych czynności.',
         'modal.report.mapEvidence': 'Miniatury ortofoto',
         'modal.report.crop': 'Zoom miniatur w raporcie',

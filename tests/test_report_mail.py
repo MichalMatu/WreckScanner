@@ -146,6 +146,15 @@ class ReportMailTests(unittest.TestCase):
             "(ok. 26 m od wskazanego punktu).",
             body,
         )
+        self.assertNotIn("Miejsce wskazane na mapie przy współrzędnych GPS", body)
+        self.assertNotIn("Pojazd znajduje się w lokalizacji widocznej na załączonych zdjęciach", body)
+        self.assertIn(
+            "Miejsce pojazdu:\n"
+            "Najbliższy adres według PRG/GUGiK: ul. św. Jerzego 11, 50-518, Wrocław "
+            "(ok. 26 m od wskazanego punktu).\n\n"
+            "Współrzędne GPS:",
+            body,
+        )
         self.assertIn("Współrzędne GPS:\n51.087994, 17.039629", body)
 
     def test_build_mail_draft_omits_insurance_check_date_when_status_is_unknown(self):
