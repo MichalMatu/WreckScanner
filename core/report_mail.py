@@ -62,7 +62,9 @@ def _parcel_context_text(record: dict[str, Any]) -> str:
         terrain_type = _terrain_type(parcel)
         if terrain_type:
             return f"Teren według ewidencji gruntów (pomocniczo): {terrain_type}{_parcel_short_note(parcel)}."
-        return f"Działka ewidencyjna (pomocniczo): brak automatycznie ustalonego typu użytku{_parcel_short_note(parcel)}."
+        return (
+            f"Działka ewidencyjna (pomocniczo): brak automatycznie ustalonego typu użytku{_parcel_short_note(parcel)}."
+        )
     parcel_error = str(record.get("parcel_error") or "").strip()
     if parcel_error:
         return (
