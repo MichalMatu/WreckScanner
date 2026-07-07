@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -8,6 +9,8 @@ from app.http import responses as http_responses
 from core import config as core_config
 from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
 from core.field_photos import list_field_photos
+from core.geo import validate_coordinates
+from core.reverse_geocoding import normalize_reverse_geocode_result
 
 
 def handle_field_photos(handler) -> None:
@@ -55,15 +58,45 @@ def lookup_cadastral_parcel(lat: float, lon: float) -> dict[str, Any]:
     return parcel
 
 
+@lru_cache(maxsize=512)
+def _lookup_nearest_address_cached(lat: float, lon: float) -> dict[str, Any]:
+    response = map_downloads.get_http_session().get(
+        config.NOMINATIM_REVERSE_URL,
+        params={
+            "format": "jsonv2",
+            "lat": f"{lat:.8f}",
+            "lon": f"{lon:.8f}",
+            "addressdetails": "1",
+            "zoom": "18",
+            "accept-language": "pl",
+        },
+        headers={
+            "User-Agent": config.NOMINATIM_USER_AGENT,
+            "Accept": "application/json",
+        },
+        timeout=config.NOMINATIM_TIMEOUT,
+    )
+    response.raise_for_status()
+    return normalize_reverse_geocode_result(response.json(), query_lat=lat, query_lon=lon)
+
+
+def lookup_nearest_address(lat: float, lon: float) -> dict[str, Any]:
+    lat, lon = validate_coordinates(lat, lon)
+    return _lookup_nearest_address_cached(round(lat, 6), round(lon, 6))
+
+
+def _query_coordinates(handler) -> tuple[float, float]:
+    query = parse_qs(urlsplit(handler.path).query)
+    return validate_coordinates((query.get("lat") or [""])[0], (query.get("lon") or [""])[0])
+
+
 def handle_cadastral_identify(handler) -> None:
     if not access.require_public_layer(
         handler, "cadastral", "Warstwa dzialek jest teraz wylaczona dla niezalogowanych."
     ):
         return
-    query = parse_qs(urlsplit(handler.path).query)
     try:
-        lat = float((query.get("lat") or [""])[0])
-        lon = float((query.get("lon") or [""])[0])
+        lat, lon = _query_coordinates(handler)
     except ValueError:
         http_responses.send_json(handler, 400, {"status": "error", "error": "Nieprawidłowe współrzędne."})
         return
@@ -86,3 +119,27 @@ def handle_cadastral_identify(handler) -> None:
         )
         return
     http_responses.send_json(handler, 200, {"status": "ok", "parcel": parcel})
+
+
+def handle_reverse_address(handler) -> None:
+    try:
+        lat, lon = _query_coordinates(handler)
+    except ValueError:
+        http_responses.send_json(handler, 400, {"status": "error", "error": "Nieprawidłowe współrzędne."})
+        return
+
+    try:
+        address = lookup_nearest_address(lat, lon)
+    except LookupError as exc:
+        http_responses.send_json(handler, 404, {"status": "not_found", "error": str(exc)})
+        return
+    except Exception as exc:
+        http_responses.send_internal_error(
+            handler,
+            502,
+            "Reverse geocoding upstream request failed",
+            exc,
+            public_error="Nie udało się pobrać adresu.",
+        )
+        return
+    http_responses.send_json(handler, 200, {"status": "ok", "address": address})

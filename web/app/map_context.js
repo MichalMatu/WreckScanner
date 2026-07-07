@@ -6,6 +6,7 @@ const mapContextMenu = document.getElementById('map-context-menu');
 const contextMenuCoordsValue = document.getElementById('context-menu-coords-value');
 let contextMenuLatLng = null;
 let activeCadastralParcel = null;
+let activeReverseAddress = null;
 
 const CADASTRAL_LAND_USE_LABEL_KEYS = {
     B: 'context.landUse.B',
@@ -138,6 +139,83 @@ function cadastralParcelPopup(parcel = {}) {
             <div class="parcel-popup-rows">${rowHtml}</div>
             ${actions}
     `, 'map-popup--parcel');
+}
+
+function reverseAddressClipboardText(address = {}) {
+    const lines = [
+        `${t('context.addressTitle')}: ${address.formatted || '-'}`,
+        address.display_name ? `${t('context.addressFull')}: ${address.display_name}` : '',
+        `${t('context.addressCoords')}: ${address.query_lat || ''}, ${address.query_lon || ''}`,
+        Number.isFinite(Number(address.distance_m)) ? `${t('context.addressDistance')}: ${address.distance_m} m` : '',
+    ];
+    return lines.filter(Boolean).join('\n');
+}
+
+async function copyActiveReverseAddress() {
+    if (!activeReverseAddress) return;
+    try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(reverseAddressClipboardText(activeReverseAddress));
+        statusEl.textContent = t('context.addressCopied');
+        statusEl.className = 'ok';
+    } catch (_) {
+        statusEl.textContent = t('context.copyError');
+        statusEl.className = 'err';
+    }
+}
+
+function reverseAddressPopup(address = {}) {
+    const rows = [
+        [t('context.addressStreet'), [address.road, address.house_number].filter(Boolean).join(' ')],
+        [t('context.addressDistrict'), address.district],
+        [t('context.addressCity'), [address.postcode, address.city].filter(Boolean).join(' ')],
+        [t('context.addressDistance'), Number.isFinite(Number(address.distance_m)) ? `${address.distance_m} m` : ''],
+        [t('context.addressCoords'), `${address.query_lat}, ${address.query_lon}`],
+    ].filter(([, value]) => value);
+    const rowHtml = rows.map(([label, value]) => `
+        <div class="parcel-popup-row">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+        </div>
+    `).join('');
+    const actions = popupActions([
+        `<button type="button" class="map-popup-text-action" onclick="copyActiveReverseAddress()">${escapeHtml(t('context.addressCopyData'))}</button>`,
+    ]);
+    return mapPopup(`
+            ${popupHeader(t('context.addressTitle'), address.formatted || '')}
+            <p class="parcel-popup-hint">${escapeHtml(t('context.addressHint'))}</p>
+            <div class="parcel-popup-rows">${rowHtml}</div>
+            ${actions}
+    `, 'map-popup--address');
+}
+
+async function showAddressAtContextPoint() {
+    if (!contextMenuLatLng) return;
+    const latLng = L.latLng(contextMenuLatLng.lat, contextMenuLatLng.lng);
+    closeMapContextMenu();
+    activeReverseAddress = null;
+    const popup = L.popup(mapPopupOptions())
+        .setLatLng(latLng)
+        .setContent(mapPopup(escapeHtml(t('context.addressLoading')), 'map-popup--address'))
+        .openOn(map);
+    try {
+        const url = `${ADDRESS_REVERSE_URL}?lat=${encodeURIComponent(latLng.lat.toFixed(8))}&lon=${encodeURIComponent(latLng.lng.toFixed(8))}`;
+        const data = await apiJson(url, { cache: 'no-store' });
+        if (data.status !== 'ok') {
+            throw new Error(data.error || t('context.addressError'));
+        }
+        activeReverseAddress = {
+            ...(data.address || {}),
+            query_lat: latLng.lat.toFixed(6),
+            query_lon: latLng.lng.toFixed(6),
+        };
+        popup.setContent(reverseAddressPopup(activeReverseAddress));
+    } catch (err) {
+        popup.setContent(mapPopup(`
+                ${popupHeader(t('context.addressTitle'))}
+                <p class="parcel-popup-hint">${escapeHtml(err.message || t('context.addressError'))}</p>
+        `, 'map-popup--address'));
+    }
 }
 
 async function identifyCadastralParcelAtContextPoint() {

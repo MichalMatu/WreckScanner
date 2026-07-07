@@ -70,6 +70,15 @@ class HttpDispatchContractTests(unittest.TestCase):
         self.assertTrue(handled)
         tile_proxy.assert_called_once_with(handler)
 
+    def test_get_reverse_address_routes_to_public_data_handler(self):
+        handler = FakeHandler("/api/address/reverse?lat=51.1&lon=17.1")
+
+        with patch.object(dispatch.http_public_data, "handle_reverse_address") as reverse_address:
+            handled = dispatch.handle_get(handler)
+
+        self.assertTrue(handled)
+        reverse_address.assert_called_once_with(handler)
+
     def test_report_route_serves_app_shell_with_problem_report_modal(self):
         handler = FakeHandler("/report")
 

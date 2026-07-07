@@ -32,6 +32,7 @@ const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 // twardego hosta i portu w JS.
 const SETTINGS_URL = '/api/settings';
 const FIELD_PHOTOS_URL = '/api/field-photos';
+const ADDRESS_REVERSE_URL = '/api/address/reverse';
 const CADASTRAL_IDENTIFY_URL = '/api/cadastral/identify';
 const ADMIN_STATUS_URL = '/api/admin/status';
 const ADMIN_LOGIN_URL = '/api/admin/login';

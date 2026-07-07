@@ -45,6 +45,7 @@ def handle_static_api_get(handler, path: str) -> bool:
             handler, http_retention.snapshot()
         ),
         "/api/settings": lambda: http_settings.handle_get_settings(handler),
+        "/api/address/reverse": lambda: http_public_data.handle_reverse_address(handler),
         "/api/cadastral/identify": lambda: http_public_data.handle_cadastral_identify(handler),
         "/api/field-photos": lambda: http_public_data.handle_field_photos(handler),
     }
