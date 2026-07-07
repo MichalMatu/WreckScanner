@@ -30,12 +30,12 @@ i nie zapisuje tablic ani VIN.
 - Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu w tej
   samej grupie mapy. Edycja wlasciciela przez token dotyczy tylko jego zdjecia
   i wraca do kolejki review.
-- Zgloszenie ZIP/PDF jest generowane na zadanie z listy `field_photo.id` i
+- Zgloszenie PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
 - Zgloszenie zawiera tekstowy wynik recznego sprawdzenia OC/UFG oraz date
-  sprawdzenia w mailu, `zgloszenie.txt`, `raport.html` i PDF.
-- Miniatury ortofoto sa dowodem generowanym podczas tworzenia pakietu raportu.
-- Raporty, cropy mapy i paczki ZIP/PDF nie sa zapisywane w DB ani w stalym
+  sprawdzenia w tresci PDF.
+- Miniatury ortofoto sa dowodem generowanym podczas tworzenia raportu PDF.
+- Raporty PDF i cropy mapy nie sa zapisywane w DB ani w stalym
   katalogu runtime.
 
 ## Endpointy domenowe
@@ -43,7 +43,7 @@ i nie zapisuje tablic ani VIN.
 - `GET /api/field-photos`
 - `POST /api/field-photos`
 - `PATCH /api/field-photos/:id/location`
-- `POST /api/field-photo-reports/report-package`
+- `POST /api/field-photo-reports/report-pdf`
 - `GET /api/admin/photos`
 - `PATCH /api/admin/photos/field/:id/review`
 - `DELETE /api/admin/photos/field/:id`

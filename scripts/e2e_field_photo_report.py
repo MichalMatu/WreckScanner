@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 import time
-import zipfile
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
 from pathlib import Path
@@ -226,7 +225,7 @@ def public_photo(client: HttpClient, photo_id: str) -> dict[str, Any]:
     return photo
 
 
-def report_fields(photo_id: str, *, lat: float, lon: float, base_url: str) -> dict[str, str]:
+def report_fields(photo_id: str, *, lat: float, lon: float) -> dict[str, str]:
     return {
         "reporter_name": "WreckScanner E2E",
         "reporter_address": "Testowa 1, 50-000 Wrocław",
@@ -238,68 +237,25 @@ def report_fields(photo_id: str, *, lat: float, lon: float, base_url: str) -> di
         "photo_ids": json.dumps([photo_id]),
         "lat": f"{lat:.6f}",
         "lon": f"{lon:.6f}",
-        "place_url": f"{base_url}/?lat={lat:.6f}&lon={lon:.6f}&z=20&photo={quote(photo_id)}",
         "crop_m": "5",
     }
 
 
-def create_report_package(client: HttpClient, photo_id: str, *, lat: float, lon: float) -> dict[str, Any]:
-    content_type, body = multipart_body(report_fields(photo_id, lat=lat, lon=lon, base_url=client.base_url), [])
+def create_report_pdf(client: HttpClient, photo_id: str, *, lat: float, lon: float) -> dict[str, Any]:
+    content_type, body = multipart_body(report_fields(photo_id, lat=lat, lon=lon), [])
     data = client.json(
         "POST",
-        "/api/field-photo-reports/report-package",
+        "/api/field-photo-reports/report-pdf",
         body=body,
         headers={"Content-Type": content_type},
         expected_status=200,
     )
     expect(data.get("status") == "ok", f"Raport nie zwrócił statusu ok: {data!r}")
     expect(data.get("photo_count") == 1, "Raport powinien zawierać jedno zatwierdzone zdjęcie.")
-    expect(
-        "Wynik ręcznego sprawdzenia: pojazd ma OC" in str(data.get("body") or ""),
-        "Raport nie zawiera statusu OC/UFG w treści zgłoszenia.",
-    )
-    expect(
-        "Data sprawdzenia w UFG:" in str(data.get("body") or ""),
-        "Raport nie zawiera daty sprawdzenia OC/UFG w treści zgłoszenia.",
-    )
-    zip_bytes = base64.b64decode(str(data.get("zip_base64") or ""))
     pdf_bytes = base64.b64decode(str(data.get("pdf_base64") or ""))
-    expect(zip_bytes[:2] == b"PK", "ZIP raportu nie ma poprawnego nagłówka.")
     expect(pdf_bytes[:5] == b"%PDF-", "PDF raportu nie ma poprawnego nagłówka.")
-
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
-        names = set(archive.namelist())
-        expect("zgloszenie.txt" in names, "ZIP nie zawiera zgloszenie.txt.")
-        expect("raport.html" in names, "ZIP nie zawiera raport.html.")
-        expect(f"photos/{photo_id}/public.jpg" in names, "ZIP nie zawiera publicznego zdjęcia.")
-        expect(f"photos/{photo_id}/public_thumb.jpg" in names, "ZIP nie zawiera miniatury zdjęcia.")
-        expect(
-            any(name.startswith("miniatury_historyczne/") and name.endswith(".jpg") for name in names),
-            "ZIP nie zawiera tymczasowych cropów mapy.",
-        )
-        expect(
-            not any(name.endswith(".json") for name in names),
-            "ZIP nie powinien zawierać technicznych JSON-ów evidence.",
-        )
-        expect(not any("original" in name for name in names), "ZIP nie powinien zawierać prywatnego oryginału.")
-        text = archive.read("zgloszenie.txt").decode("utf-8")
-        html = archive.read("raport.html").decode("utf-8")
-        expect(
-            "Wynik ręcznego sprawdzenia: pojazd ma OC" in text,
-            "zgloszenie.txt nie zawiera statusu OC/UFG.",
-        )
-        expect(
-            "Data sprawdzenia w UFG:" in text,
-            "zgloszenie.txt nie zawiera daty sprawdzenia OC/UFG.",
-        )
-        expect(
-            "Wynik ręcznego sprawdzenia: pojazd ma OC" in html,
-            "raport.html nie zawiera statusu OC/UFG.",
-        )
-        expect(
-            "Data sprawdzenia w UFG:" in html,
-            "raport.html nie zawiera daty sprawdzenia OC/UFG.",
-        )
+    expect("zip_base64" not in data, "Endpoint PDF nie powinien zwracać ZIP-a.")
+    expect("body" not in data, "Endpoint PDF nie powinien zwracać osobnego tekstu zgłoszenia.")
     return data
 
 
@@ -416,8 +372,8 @@ def run_e2e(args: argparse.Namespace) -> list[str]:
         checks.append("admin-review")
         public_photo(client, photo_id)
         checks.append("public-map-contract")
-        create_report_package(client, photo_id, lat=args.lat, lon=args.lon)
-        checks.append("report-package-zip-pdf")
+        create_report_pdf(client, photo_id, lat=args.lat, lon=args.lon)
+        checks.append("report-pdf")
         assert_no_persistent_report_artifacts()
         checks.append("no-persistent-report-artifacts")
         if not args.skip_browser:
@@ -458,7 +414,7 @@ def run_e2e(args: argparse.Namespace) -> list[str]:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="E2E: field photo upload, review, map contract and report package.")
+    parser = argparse.ArgumentParser(description="E2E: field photo upload, review, map contract and report PDF.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8001")
     parser.add_argument("--admin-password-file", type=Path, default=ROOT_DIR / ".admin_password")
     parser.add_argument("--output-dir", type=Path, default=ROOT_DIR / "analiza")

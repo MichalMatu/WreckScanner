@@ -1,5 +1,5 @@
     <!-- ─── MODAL: GENERATOR ZGŁOSZENIA ─────────────────── -->
-    <div class="modal-backdrop" id="modal-report-package" hidden onclick="closeModal(this)">
+    <div class="modal-backdrop" id="modal-report-pdf" hidden onclick="closeModal(this)">
         <div class="modal modal--report" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2 data-i18n="modal.report.title">Zgłoszenie do weryfikacji</h2>
@@ -11,7 +11,7 @@
                     </svg>
                 </button>
             </div>
-            <form class="modal-body report-form" id="report-package-form" onsubmit="submitReportPackage(event)">
+            <form class="modal-body report-form" id="report-pdf-form" onsubmit="submitReportPdf(event)">
                 <section class="modal-section">
                     <label class="modal-label" data-i18n="modal.report.reporter">Dane zgłaszającego</label>
                     <div class="report-grid">
@@ -67,25 +67,21 @@
                             </select>
                         </label>
                     </div>
-                    <p class="modal-hint" data-i18n="modal.report.cropHint">Wielkość wycinka w generowanym pakiecie.</p>
+                    <p class="modal-hint" data-i18n="modal.report.cropHint">Wielkość wycinka w generowanym PDF.</p>
                 </section>
 
                 <div class="report-actions">
-                    <button type="submit" class="btn-download report-submit-btn" id="report-package-submit">
+                    <button type="submit" class="btn-download report-submit-btn" id="report-pdf-submit">
                         <span data-i18n="modal.report.submit">Generuj zgłoszenie</span>
                     </button>
-                    <div class="report-download-actions" id="report-package-result" hidden>
-                        <a id="report-package-download" class="btn-download report-download-btn" target="_blank"
-                            rel="noopener" download>
-                            <span data-i18n="modal.report.download">Pobierz ZIP</span>
-                        </a>
-                        <a id="report-package-pdf" class="btn-download report-download-btn" target="_blank"
+                    <div class="report-download-actions" id="report-pdf-result" hidden>
+                        <a id="report-pdf-download" class="btn-download report-download-btn" target="_blank"
                             rel="noopener" download>
                             <span data-i18n="modal.report.downloadPdf">Pobierz PDF</span>
                         </a>
                     </div>
                 </div>
-                <p class="modal-hint" id="report-package-status"></p>
+                <p class="modal-hint" id="report-pdf-status"></p>
             </form>
         </div>
     </div>

@@ -16,7 +16,7 @@ class ReportMailTests(unittest.TestCase):
                 "report_history": [
                     {
                         "created_at": "2026-06-01T10:00:00Z",
-                        "package_id": "report_20260601T100000Z_deadbeef",
+                        "report_id": "report_20260601T100000Z_deadbeef",
                         "public": True,
                     }
                 ],
@@ -35,18 +35,25 @@ class ReportMailTests(unittest.TestCase):
 
         self.assertEqual(subject, "Zgłoszenie pojazdu nieużytkowanego - ul. Długa 10, parking przy szkole")
         self.assertIn("- Imię i nazwisko: Jan Kowalski", body)
+        self.assertIn("- Miejsce zamieszkania: ul. Testowa 1, Wrocław", body)
         self.assertIn("02.06.2026, godz. 12:30", body)
         self.assertNotIn("2026-06-02T12:30", body)
-        self.assertIn("- pojazd widoczny na ortofotomapach z lat: 2024, 2025", body)
-        self.assertIn("Status OC/UFG pojazdu", body)
-        self.assertIn("- Wynik ręcznego sprawdzenia: brak OC", body)
-        self.assertIn("- Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", body)
-        self.assertIn("Zakres oczekiwanej odpowiedzi", body)
-        self.assertIn("art. 241 Kodeksu postępowania administracyjnego", body)
-        self.assertIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)
-        self.assertIn("Materiał dowodowy stanowią zdjęcia z miejsca oraz miniatury historyczne", body)
+        self.assertIn("może spełniać przesłanki z art. 50a ust. 1", body)
+        self.assertIn("Informacja pomocnicza o OC", body)
+        self.assertIn("- Ręczne sprawdzenie w UFG: brak OC", body)
+        self.assertIn("- Data sprawdzenia w UFG: 05.07.2026, godz. 14:30", body)
+        self.assertIn("Proszę potraktować tę informację pomocniczo", body)
+        self.assertIn("Załączniki:", body)
+        self.assertIn("- zdjęcia z miejsca", body)
+        self.assertIn("- materiał pomocniczy z miniaturami historycznymi ortofoto z lat: 2024, 2025", body)
+        self.assertIn("nie zastępują oględzin w terenie", body)
+        self.assertIn("przekazanie zgłoszenia właściwej jednostce", body)
+        self.assertIn("właściwego zarządcy/podmiotu", body)
+        self.assertNotIn("Zakres oczekiwanej odpowiedzi", body)
+        self.assertNotIn("art. 241 Kodeksu postępowania administracyjnego", body)
+        self.assertNotIn("art. 237 § 1 oraz art. 244 § 1 i § 2", body)
+        self.assertNotIn("Źródła prawne i pomocnicze", body)
         self.assertNotIn("pakiet dowodowy ZIP", body)
-        self.assertNotIn("W załączniku", body)
         self.assertNotIn("Historia działań", body)
         self.assertNotIn("report_20260601T100000Z_deadbeef", body)
         self.assertNotIn("lokalna sprawa", body)
@@ -56,12 +63,22 @@ class ReportMailTests(unittest.TestCase):
         self.assertNotIn("https://example.test/street", body)
 
     def test_build_mail_draft_shortens_subject_at_word_boundary(self):
-        subject, _body = build_mail_draft(
+        subject, body = build_mail_draft(
             {
                 "id": "wreck_51100000_17200000",
                 "lat": 51.1,
                 "lon": 17.2,
                 "links": {},
+                "parcel": {
+                    "parcel_number": "87",
+                    "parcel_id": "026401_1.0022.AR_27.87",
+                    "district": "Południe",
+                    "municipality": "Wrocław",
+                    "county": "Wrocław",
+                    "voivodeship": "dolnośląskie",
+                    "contour": "B",
+                    "published_at": "2026-06-05",
+                },
             },
             {"labels_present": []},
             {
@@ -85,6 +102,13 @@ class ReportMailTests(unittest.TestCase):
         self.assertNotIn(" w...", location_part)
         self.assertNotIn("bezpośredni...", location_part)
 
+        self.assertIn("Dane działki ewidencyjnej (pomocniczo)", body)
+        self.assertIn('działka 87, identyfikator 026401_1.0022.AR_27.87 ma użytek "B - tereny mieszkaniowe"', body)
+        self.assertNotIn("Obręb:", body)
+        self.assertNotIn("Powiat:", body)
+        self.assertNotIn("Województwo:", body)
+        self.assertIn("na drodze publicznej, w strefie zamieszkania albo w strefie ruchu", body)
+
     def test_build_mail_draft_omits_insurance_check_date_when_status_is_unknown(self):
         _subject, body = build_mail_draft(
             {
@@ -107,7 +131,8 @@ class ReportMailTests(unittest.TestCase):
             },
         )
 
-        self.assertIn("- Wynik ręcznego sprawdzenia: nie sprawdzono", body)
+        self.assertNotIn("Informacja pomocnicza o OC", body)
+        self.assertNotIn("Ręczne sprawdzenie w UFG", body)
         self.assertNotIn("Data sprawdzenia w UFG", body)
 
 

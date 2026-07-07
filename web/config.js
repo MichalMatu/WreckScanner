@@ -49,7 +49,7 @@ const PUBLIC_LAYER_KEYS = {
 };
 
 const PUBLIC_FEATURE_KEYS = {
-    reportPackages: 'report_packages',
+    reportPdfs: 'report_pdfs',
     photoUploads: 'photo_uploads',
 };
 

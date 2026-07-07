@@ -29,7 +29,7 @@ const publicLayerControls = {
     [PUBLIC_LAYER_KEYS.baseMapOsm]: document.getElementById('admin-layer-base-map-osm'),
 };
 const publicFeatureControls = {
-    [PUBLIC_FEATURE_KEYS.reportPackages]: document.getElementById('admin-feature-report-packages'),
+    [PUBLIC_FEATURE_KEYS.reportPdfs]: document.getElementById('admin-feature-report-pdfs'),
     [PUBLIC_FEATURE_KEYS.photoUploads]: document.getElementById('admin-feature-photo-uploads'),
 };
 const publicLayerToggleRows = {

@@ -19,7 +19,7 @@ DEFAULT_PUBLIC_LAYERS: dict[str, bool] = {
     "base_map_osm": True,
 }
 DEFAULT_PUBLIC_FEATURES: dict[str, bool] = {
-    "report_packages": True,
+    "report_pdfs": True,
     "photo_uploads": True,
 }
 DEFAULT_MAP_VIEW: dict[str, float | int] = {

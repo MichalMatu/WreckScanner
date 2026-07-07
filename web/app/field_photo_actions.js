@@ -54,14 +54,14 @@ function decodeFieldPhotoIds(encodedPhotoIds) {
 }
 
 async function openFieldPhotoGroupReport(lat, lon, encodedPhotoIds, button = null) {
-    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPackages)) return;
+    if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPdfs)) return;
     const btn = button instanceof HTMLElement ? button : null;
     if (btn) btn.disabled = true;
     statusEl.textContent = '';
     statusEl.className = '';
     try {
         const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
-        await openFieldPhotoReportPackageModal(lat, lon, photoIds);
+        await openFieldPhotoReportPdfModal(lat, lon, photoIds);
     } catch (err) {
         statusEl.textContent = apiErrorMessage(err, t('modal.report.generateError'));
         statusEl.className = 'err';

@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from core import config, report_assets, report_mail, report_models, report_pdf, report_zip
+from core import config, report_assets, report_mail, report_models, report_pdf
 from core.field_photo_metadata import (
     grouped_vehicle_insurance_checked_at,
     grouped_vehicle_insurance_status,
@@ -45,7 +45,7 @@ def _iso(dt: datetime) -> str:
     return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def _package_id(source_id: str, fields: dict[str, str]) -> str:
+def _report_id(source_id: str, fields: dict[str, str]) -> str:
     stamp = _now_utc().strftime("%Y%m%dT%H%M%SZ")
     digest = hashlib.sha1(
         f"{source_id}:{fields['location_description']}:{stamp}:{secrets.token_urlsafe(8)}".encode(),
@@ -196,19 +196,15 @@ def _field_photo_report_record(
     photo_records: list[tuple[Path, dict[str, Any]]],
     lat: Any,
     lon: Any,
-    place_url: Any = "",
     parcel: dict[str, Any] | None = None,
     parcel_error: Any = "",
     report_root: Path,
 ) -> dict[str, Any]:
     lat_float = _float_coordinate(lat, "lat")
     lon_float = _float_coordinate(lon, "lon")
-    safe_place_url = report_models.safe_report_url(place_url)
     safe_parcel = _normalize_report_parcel(parcel)
     safe_parcel_error = _report_context_text(parcel_error, max_len=500)
     links = external_map_links(lat_float, lon_float)
-    if safe_place_url:
-        links["wreckscanner_place"] = safe_place_url
     attached_photos = [
         _copy_public_field_photo(record_dir, record, report_root) for record_dir, record in photo_records
     ]
@@ -227,7 +223,6 @@ def _field_photo_report_record(
         "first_seen_year": None,
         "last_seen_year": None,
         "links": links,
-        "place_url": safe_place_url,
         "parcel": safe_parcel,
         "parcel_error": "" if safe_parcel else safe_parcel_error,
         "evidences": [],
@@ -237,53 +232,45 @@ def _field_photo_report_record(
 
 def _download_payload(
     *,
-    package_id: str,
+    report_id: str,
     recipient: str,
     subject: str,
-    mail_body: str,
     photo_count: int,
-    zip_bytes: bytes,
     pdf_bytes: bytes,
 ) -> dict[str, Any]:
     return {
         "status": "ok",
         "recipient": recipient,
         "subject": subject,
-        "body": mail_body,
-        "package_id": package_id,
-        "zip_filename": report_assets.report_package_download_name(package_id, "zip"),
-        "pdf_filename": report_assets.report_package_download_name(package_id, "pdf"),
-        "zip_base64": base64.b64encode(zip_bytes).decode("ascii"),
+        "report_id": report_id,
+        "pdf_filename": report_assets.report_pdf_download_name(report_id),
         "pdf_base64": base64.b64encode(pdf_bytes).decode("ascii"),
         "photo_count": photo_count,
-        "zip_size_bytes": len(zip_bytes),
         "pdf_size_bytes": len(pdf_bytes),
     }
 
 
-def create_field_photo_report_package(
+def create_field_photo_report_pdf(
     fields: dict[str, str],
     photo_ids: list[Any],
     *,
     lat: Any,
     lon: Any,
-    place_url: Any = "",
     parcel: dict[str, Any] | None = None,
     parcel_error: Any = "",
     field_photos_dir: Path,
 ) -> dict[str, Any]:
     crop_m = _report_crop_m(fields)
     fields = report_models.validate_report_fields(fields)
-    package_id = _package_id("field_photo_group", fields)
+    report_id = _report_id("field_photo_group", fields)
     photo_records = _field_photo_records(photo_ids, field_photos_dir)
 
-    with TemporaryDirectory(prefix=f"{package_id}_") as work_dir_name:
+    with TemporaryDirectory(prefix=f"{report_id}_") as work_dir_name:
         work_dir = Path(work_dir_name)
         report_record = _field_photo_report_record(
             photo_records=photo_records,
             lat=lat,
             lon=lon,
-            place_url=place_url,
             parcel=parcel,
             parcel_error=parcel_error,
             report_root=work_dir,
@@ -291,15 +278,6 @@ def create_field_photo_report_package(
         evidence = _build_report_evidence(report_record, work_dir, crop_m=crop_m)
         report_record = _record_with_report_evidence(report_record, evidence)
         subject, mail_body = report_mail.build_mail_draft(report_record, evidence, fields)
-        zip_bytes = report_zip.build_public_zip(
-            work_dir,
-            work_dir,
-            report_record,
-            evidence,
-            config.REPORT_RECIPIENT,
-            subject,
-            mail_body,
-        )
         pdf_bytes = report_pdf.build_report_pdf(
             record=report_record,
             evidence=evidence,
@@ -311,11 +289,9 @@ def create_field_photo_report_package(
         )
 
     return _download_payload(
-        package_id=package_id,
+        report_id=report_id,
         recipient=config.REPORT_RECIPIENT,
         subject=subject,
-        mail_body=mail_body,
         photo_count=_approved_photo_count(report_record),
-        zip_bytes=zip_bytes,
         pdf_bytes=pdf_bytes,
     )

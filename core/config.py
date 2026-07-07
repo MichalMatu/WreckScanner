@@ -43,7 +43,7 @@ REVIEW_CROP_M_MAX = 20.0
 REVIEW_JPEG_QUALITY = 95
 
 # Uploady i raporty. Zwiększenie limitów poprawia wygodę, ale podnosi zużycie
-# pamięci przy parsowaniu multipart i rozmiar lokalnych paczek zgłoszeniowych.
+# pamięci przy parsowaniu multipart i generowaniu PDF.
 ALLOWED_UPLOAD_IMAGE_FORMATS = {
     "JPEG": (".jpg", "image/jpeg"),
     "PNG": (".png", "image/png"),
@@ -70,7 +70,7 @@ FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES = {
 FIELD_PHOTO_GROUP_RADIUS_M = 1.0
 
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"
-MAX_REPORT_PACKAGE_BODY_BYTES = 2 * BYTES_PER_MIB
+MAX_REPORT_PDF_BODY_BYTES = 2 * BYTES_PER_MIB
 
 # Publiczne dodawanie zdjęć zapisuje materiały jako "pending".
 # Limity chronią dysk przed zalaniem kolejki przed moderacją.

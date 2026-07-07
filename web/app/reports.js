@@ -3,17 +3,17 @@ function localDatetimeValue(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-let reportPackageDownloadUrls = [];
-let reportPackageTarget = null;
+let reportPdfDownloadUrls = [];
+let reportPdfTarget = null;
 
-function revokeReportPackageDownloadUrls() {
-    for (const url of reportPackageDownloadUrls) {
+function revokeReportPdfDownloadUrls() {
+    for (const url of reportPdfDownloadUrls) {
         URL.revokeObjectURL(url);
     }
-    reportPackageDownloadUrls = [];
+    reportPdfDownloadUrls = [];
 }
 
-function reportPackageBlobUrl(base64, contentType) {
+function reportPdfBlobUrl(base64, contentType) {
     const binary = atob(base64 || '');
     const chunks = [];
     for (let offset = 0; offset < binary.length; offset += 8192) {
@@ -25,18 +25,18 @@ function reportPackageBlobUrl(base64, contentType) {
         chunks.push(bytes);
     }
     const url = URL.createObjectURL(new Blob(chunks, { type: contentType }));
-    reportPackageDownloadUrls.push(url);
+    reportPdfDownloadUrls.push(url);
     return url;
 }
 
-function resetReportPackageModal(target) {
-    const form = document.getElementById('report-package-form');
-    const result = document.getElementById('report-package-result');
-    const status = document.getElementById('report-package-status');
-    const submit = document.getElementById('report-package-submit');
+function resetReportPdfModal(target) {
+    const form = document.getElementById('report-pdf-form');
+    const result = document.getElementById('report-pdf-result');
+    const status = document.getElementById('report-pdf-status');
+    const submit = document.getElementById('report-pdf-submit');
     form?.reset();
-    revokeReportPackageDownloadUrls();
-    reportPackageTarget = target;
+    revokeReportPdfDownloadUrls();
+    reportPdfTarget = target;
     updatePublicFeatureAccess();
     const observedAt = form?.querySelector('[name="observed_at"]');
     if (observedAt) observedAt.value = localDatetimeValue();
@@ -49,29 +49,27 @@ function resetReportPackageModal(target) {
     }
 }
 
-async function openFieldPhotoReportPackageModal(lat, lon, photoIds) {
+async function openFieldPhotoReportPdfModal(lat, lon, photoIds) {
     const latNumber = Number(lat);
     const lonNumber = Number(lon);
     const safePhotoIds = (photoIds || []).map(safeFieldPhotoId).filter(Boolean);
     if (!Number.isFinite(latNumber) || !Number.isFinite(lonNumber) || !safePhotoIds.length) return;
-    const placeZoom = Math.max(Number(map?.getZoom?.()) || 0, 19);
-    resetReportPackageModal({
+    resetReportPdfModal({
         type: 'field-photos',
         lat: latNumber,
         lon: lonNumber,
         photoIds: safePhotoIds,
-        placeUrl: appPlaceUrl(latNumber, lonNumber, placeZoom, { photoId: safePhotoIds[0] }),
     });
-    openModal('modal-report-package');
+    openModal('modal-report-pdf');
 }
 
-async function submitReportPackage(event) {
+async function submitReportPdf(event) {
     event.preventDefault();
-    const form = document.getElementById('report-package-form');
-    const status = document.getElementById('report-package-status');
-    const submit = document.getElementById('report-package-submit');
-    const result = document.getElementById('report-package-result');
-    const target = reportPackageTarget;
+    const form = document.getElementById('report-pdf-form');
+    const status = document.getElementById('report-pdf-status');
+    const submit = document.getElementById('report-pdf-submit');
+    const result = document.getElementById('report-pdf-result');
+    const target = reportPdfTarget;
     if (!form || !target) return;
     if (!form.reportValidity()) return;
 
@@ -89,8 +87,7 @@ async function submitReportPackage(event) {
         formData.set('photo_ids', JSON.stringify(target.photoIds || []));
         formData.set('lat', String(target.lat));
         formData.set('lon', String(target.lon));
-        formData.set('place_url', target.placeUrl || '');
-        const reportUrl = '/api/field-photo-reports/report-package';
+        const reportUrl = '/api/field-photo-reports/report-pdf';
         const data = await apiJson(reportUrl, {
             method: 'POST',
             body: formData,
@@ -98,18 +95,13 @@ async function submitReportPackage(event) {
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.report.generateError'));
         }
-        if (!data.zip_filename || !data.pdf_filename || !data.zip_base64 || !data.pdf_base64) {
+        if (!data.pdf_filename || !data.pdf_base64) {
             throw new Error(t('modal.report.generateError'));
         }
-        revokeReportPackageDownloadUrls();
-        const zipLink = document.getElementById('report-package-download');
-        const pdfLink = document.getElementById('report-package-pdf');
-        if (zipLink) {
-            zipLink.href = reportPackageBlobUrl(data.zip_base64, 'application/zip');
-            zipLink.download = data.zip_filename;
-        }
+        revokeReportPdfDownloadUrls();
+        const pdfLink = document.getElementById('report-pdf-download');
         if (pdfLink) {
-            pdfLink.href = reportPackageBlobUrl(data.pdf_base64, 'application/pdf');
+            pdfLink.href = reportPdfBlobUrl(data.pdf_base64, 'application/pdf');
             pdfLink.download = data.pdf_filename;
         }
         if (submit) submit.hidden = true;
