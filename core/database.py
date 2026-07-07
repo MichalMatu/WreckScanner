@@ -12,6 +12,7 @@ from core.field_photo_metadata import vehicle_insurance_checked_at_from_record, 
 from core.photo_privacy import safe_existing_child
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+SQLITE_BUSY_TIMEOUT_MS = 5000
 
 
 @dataclass(frozen=True)
@@ -54,9 +55,12 @@ def read_json_object(path: Path) -> dict[str, Any]:
 
 def connect_database(database_path: Path = config.DATABASE_PATH) -> sqlite3.Connection:
     database_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(database_path)
+    connection = sqlite3.connect(database_path, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+    connection.execute("PRAGMA journal_mode = WAL")
+    connection.execute("PRAGMA synchronous = NORMAL")
     return connection
 
 
