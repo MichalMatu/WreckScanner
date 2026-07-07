@@ -8,16 +8,22 @@ from app.http import static_files as http_static_files
 from app.http.public_data import lookup_cadastral_parcel, lookup_nearest_address
 from core import config as core_config
 from core.field_photos import (
+    delete_field_photo,
     discard_field_photo_drafts_by_owner,
     field_photo_owner_original_asset,
     list_owner_field_photo_review_items,
+    load_field_photo_record,
     review_field_photo_by_owner,
     save_field_photo,
     submit_field_photos_by_owner,
 )
+from core.photo_privacy import review_status
+from core.photo_tokens import verify_photo_edit_token
 from core.privacy_requests import create_privacy_request
 from core.report_pdfs import create_field_photo_report_pdf
 from core.uploads import UploadedFile
+
+OWNER_DELETABLE_REVIEW_STATUSES = {"draft", "pending"}
 
 
 def reject_report_pdf_files(files: list[UploadedFile]) -> None:
@@ -63,6 +69,55 @@ def _report_address_context(lat: str | None, lon: str | None) -> dict | None:
         return lookup_nearest_address(lat_float, lon_float)
     except Exception:
         return None
+
+
+def _owner_photo_ids(data: dict) -> list[str]:
+    raw_photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+    photo_ids: list[str] = []
+    for raw_photo_id in raw_photo_ids:
+        photo_id = str(raw_photo_id or "").strip()
+        if photo_id and photo_id not in photo_ids:
+            photo_ids.append(photo_id)
+    if not photo_ids:
+        raise ValueError("Wskaż zdjęcie do usunięcia.")
+    return photo_ids
+
+
+def _require_owner_delete_permission(photo_id: str, edit_token: object) -> None:
+    record = load_field_photo_record(
+        photo_id,
+        core_config.FIELD_PHOTOS_DIR,
+        private_dir=core_config.PRIVATE_PHOTOS_DIR,
+    )
+    try:
+        token_matches = verify_photo_edit_token(
+            edit_token,
+            record.get("edit_token_salt"),
+            record.get("edit_token_hash"),
+        )
+    except ValueError as exc:
+        raise PermissionError("Nieprawidłowy token edycji zdjęcia.") from exc
+    if not token_matches:
+        raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
+    if review_status(record) not in OWNER_DELETABLE_REVIEW_STATUSES:
+        raise PermissionError("Możesz usunąć tylko szkic albo zdjęcie oczekujące na weryfikację.")
+
+
+def _delete_field_photos_by_owner(photo_ids: list[str], edit_token: object) -> dict:
+    for photo_id in photo_ids:
+        _require_owner_delete_permission(photo_id, edit_token)
+
+    deleted: list[str] = []
+    for photo_id in photo_ids:
+        result = delete_field_photo(
+            photo_id,
+            core_config.FIELD_PHOTOS_DIR,
+            private_dir=core_config.PRIVATE_PHOTOS_DIR,
+        )
+        deleted_id = str(result.get("deleted") or "")
+        if deleted_id:
+            deleted.append(deleted_id)
+    return {"status": "ok", "deleted": deleted}
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -160,6 +215,27 @@ def handle_discard_field_photo_drafts(handler) -> None:
             "Field photo draft discard failed",
             exc,
             public_error="Nie udało się porzucić szkicu zdjęć.",
+        )
+
+
+def handle_delete_field_photos_by_owner(handler) -> None:
+    try:
+        data = http_request_body.read_json_body(handler)
+        result = _delete_field_photos_by_owner(_owner_photo_ids(data), data.get("edit_token"))
+        http_responses.send_json(handler, 200, result)
+    except PermissionError as e:
+        http_responses.send_json(handler, 403, {"error": str(e)})
+    except FileNotFoundError as e:
+        http_responses.send_json(handler, 404, {"error": str(e)})
+    except ValueError as e:
+        http_responses.send_json(handler, 400, {"error": str(e)})
+    except Exception as exc:
+        http_responses.send_internal_error(
+            handler,
+            500,
+            "Field photo owner delete failed",
+            exc,
+            public_error="Nie udało się usunąć zdjęć.",
         )
 
 
