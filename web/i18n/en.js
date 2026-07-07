@@ -507,6 +507,8 @@ const TRANSLATIONS_EN = {
         'modal.report.location': 'Exact vehicle location',
         'modal.report.observedAt': 'Observation date and time',
         'modal.report.vehicleDescription': 'Vehicle or location description',
+        'modal.report.defaultLocation': 'Location indicated on the map at GPS coordinates {lat}, {lon}. The vehicle is in the place shown in the attached photos.',
+        'modal.report.defaultVehicleDescription': 'The vehicle appears to be long-unused or abandoned. According to the photo documentation, it has been standing in the same place for a longer period, and its condition and lack of current use may justify verification under the abandoned-vehicle procedure. Please inspect the vehicle in the field and take the appropriate action.',
         'modal.report.mapEvidence': 'Orthophoto thumbnails',
         'modal.report.crop': 'Thumbnail zoom in the report',
         'modal.report.crop5': '5 m — tight',

@@ -3,8 +3,59 @@ function localDatetimeValue(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+const REPORT_REPORTER_FIELDS = ['reporter_name', 'reporter_email', 'reporter_phone', 'reporter_address'];
+
 let reportPdfDownloadUrls = [];
 let reportPdfTarget = null;
+
+function reportFormField(form, name) {
+    return form?.querySelector(`[name="${name}"]`) || null;
+}
+
+function setReportFormValue(form, name, value) {
+    const field = reportFormField(form, name);
+    if (!field || field.value) return;
+    field.value = value;
+}
+
+function loadReportReporterDefaults() {
+    try {
+        const raw = localStorage.getItem(REPORT_REPORTER_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function applyReportReporterDefaults(form) {
+    const defaults = loadReportReporterDefaults();
+    for (const name of REPORT_REPORTER_FIELDS) {
+        const value = String(defaults[name] || '').trim();
+        if (value) setReportFormValue(form, name, value);
+    }
+}
+
+function saveReportReporterDefaults(form) {
+    const values = {};
+    for (const name of REPORT_REPORTER_FIELDS) {
+        values[name] = String(reportFormField(form, name)?.value || '').trim();
+    }
+    try {
+        localStorage.setItem(REPORT_REPORTER_STORAGE_KEY, JSON.stringify(values));
+    } catch (_) {}
+}
+
+function applyReportDescriptionDefaults(form, target) {
+    const lat = Number(target?.lat);
+    const lon = Number(target?.lon);
+    const coords = {
+        lat: Number.isFinite(lat) ? lat.toFixed(6) : '',
+        lon: Number.isFinite(lon) ? lon.toFixed(6) : '',
+    };
+    setReportFormValue(form, 'location_description', t('modal.report.defaultLocation', coords));
+    setReportFormValue(form, 'vehicle_description', t('modal.report.defaultVehicleDescription'));
+}
 
 function revokeReportPdfDownloadUrls() {
     for (const url of reportPdfDownloadUrls) {
@@ -40,6 +91,8 @@ function resetReportPdfModal(target) {
     updatePublicFeatureAccess();
     const observedAt = form?.querySelector('[name="observed_at"]');
     if (observedAt) observedAt.value = localDatetimeValue();
+    applyReportReporterDefaults(form);
+    applyReportDescriptionDefaults(form, target);
     if (result) result.hidden = true;
     if (status) status.textContent = '';
     if (submit) {
@@ -84,6 +137,7 @@ async function submitReportPdf(event) {
     try {
         const formData = new FormData(form);
         if (target.type !== 'field-photos') throw new Error(t('modal.report.generateError'));
+        saveReportReporterDefaults(form);
         formData.set('photo_ids', JSON.stringify(target.photoIds || []));
         formData.set('lat', String(target.lat));
         formData.set('lon', String(target.lon));
