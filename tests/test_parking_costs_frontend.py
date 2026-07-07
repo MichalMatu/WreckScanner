@@ -29,18 +29,33 @@ class ParkingCostsFrontendContracts(unittest.TestCase):
         self.assertIn('id="modal-parking-costs"', html)
         self.assertIn('class="modal modal--parking-costs"', html)
         self.assertIn('class="parking-costs-tabs" role="tablist"', html)
-        self.assertEqual(html.count('data-parking-costs-tab="'), 5)
-        self.assertEqual(html.count('data-parking-costs-panel="'), 5)
+        self.assertEqual(html.count('data-parking-costs-tab="'), 6)
+        self.assertEqual(html.count('data-parking-costs-panel="'), 6)
         self.assertIn('data-i18n="modal.parkingCosts.menu"', html)
         self.assertIn("function setParkingCostsTab(tab)", ui_js)
         self.assertIn("function openParkingCostsModal()", ui_js)
         self.assertIn(".parking-costs-tab.is-active", styles)
         self.assertIn("background: var(--primary-soft);", styles)
+        self.assertIn("grid-template-columns: repeat(6, minmax(0, 1fr));", styles)
+        self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr));", styles)
+        self.assertIn("grid-template-columns: repeat(2, minmax(0, 1fr));", styles)
+        self.assertNotIn("flex: 1 1 104px;", styles)
+        self.assertIn('data-i18n="modal.parkingCosts.tabIdentify">Sygnały</button>', html)
+        self.assertIn('data-parking-costs-panel="identify"', html)
+        self.assertIn('data-i18n="modal.parkingCosts.sourceWroclawReports"', html)
         self.assertIn('data-i18n="modal.parkingCosts.tabNumbers">Rachunek</button>', html)
         self.assertIn('class="parking-costs-metrics"', html)
         self.assertIn('data-i18n="modal.parkingCosts.metricTicketsValue"', html)
         self.assertIn('data-i18n="modal.parkingCosts.sourceTransit"', html)
         self.assertIn('data-i18n="modal.parkingCosts.sourceSenior"', html)
+        self.assertIn(
+            "'modal.parkingCosts.identifyTitle': 'Jak rozpoznać auto do weryfikacji'",
+            i18n_js,
+        )
+        self.assertIn(
+            "'modal.parkingCosts.identifyTitle': 'How to spot a car worth checking'",
+            i18n_js,
+        )
         self.assertIn(
             "'modal.parkingCosts.numbersTitle': 'Co za to masz'",
             i18n_js,

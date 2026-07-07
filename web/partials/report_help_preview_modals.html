@@ -162,6 +162,10 @@
                         role="tab" aria-selected="true" aria-controls="parking-costs-panel-owner"
                         onclick="setParkingCostsTab('owner')" data-parking-costs-tab="owner"
                         data-i18n="modal.parkingCosts.tabOwner">Właściciel</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-identify"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-identify"
+                        onclick="setParkingCostsTab('identify')" data-parking-costs-tab="identify"
+                        data-i18n="modal.parkingCosts.tabIdentify">Sygnały</button>
                     <button type="button" class="parking-costs-tab" id="parking-costs-tab-public"
                         role="tab" aria-selected="false" aria-controls="parking-costs-panel-public"
                         onclick="setParkingCostsTab('public')" data-parking-costs-tab="public"
@@ -202,6 +206,29 @@
                             target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceWroclaw">Wrocław 2026</a>
                         <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
                             target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                    </div>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-identify"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-identify" data-parking-costs-panel="identify" hidden>
+                    <h3 data-i18n="modal.parkingCosts.identifyTitle">Jak rozpoznać auto do weryfikacji</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.identifyItem1">Sam długi postój nie przesądza sprawy. Ustawa mówi o braku tablic albo stanie wskazującym, że pojazd nie jest używany.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem2">Sygnały to m.in. brak tablic, brak powietrza w oponach, wybite szyby, zdewastowane wnętrze, brak części, silna korozja, ślady wycieku albo auto zarastające liśćmi i brudem pod kołami.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem3">Dokumentuj bez ingerencji: zdjęcie całego auta i widocznych sygnałów, przybliżona lokalizacja, data obserwacji. Nie dotykaj pojazdu, nie zaglądaj do środka i nie publikuj danych właściciela.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem4">We Wrocławiu interwencje przyjmuje Straż Miejska pod numerem 986 oraz mailowo. Na terenie prywatnym najpierw potrzebny jest właściciel lub zarządca terenu.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                        <a href="https://bip.strazmiejska.wroclaw.pl/dokumenty/12" target="_blank" rel="noopener"
+                            data-i18n="modal.parkingCosts.sourceWroclawReports">Zgłoszenia Wrocław</a>
+                        <a href="https://strazmiejska.gda.pl/co-i-jak/jak-uprzatnac-porzucony-pojazd%2Ca%2C3074"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceGuide">Poradnik SM</a>
+                        <a href="https://www.strazmiejska.katowice.pl/aktualnosci/index/Zniszczone-zdewastowane-i-zapomnianeGdzie-sa-ich-wlasciciele/idn%3A854"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceExamples">Przykłady sygnałów</a>
                     </div>
                 </section>
 

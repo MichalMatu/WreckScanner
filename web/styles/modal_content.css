@@ -106,8 +106,8 @@
 }
 
 .parking-costs-tabs {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: var(--space-1);
     padding: var(--space-1);
     border: 1px solid var(--border);
@@ -117,7 +117,7 @@
 
 .parking-costs-tab {
     min-height: var(--control-height-compact);
-    flex: 1 1 104px;
+    min-width: 0;
     border: 0;
     border-radius: var(--radius-sm);
     padding: 0 var(--space-2);
@@ -230,8 +230,18 @@
 }
 
 @media (max-width: 520px) {
+    .parking-costs-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .parking-costs-metrics {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 380px) {
+    .parking-costs-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
