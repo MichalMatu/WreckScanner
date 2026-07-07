@@ -46,28 +46,23 @@ def _terrain_type(parcel: dict[str, Any]) -> str:
     return cadastral_code_label(parcel.get("land_use") or parcel.get("contour"))
 
 
-def _parcel_reference(parcel: dict[str, Any]) -> str:
+def _parcel_short_note(parcel: dict[str, Any]) -> str:
     number = str(parcel.get("parcel_number") or "").strip()
     parcel_id = str(parcel.get("parcel_id") or "").strip()
-    if number and parcel_id:
-        return f"działka {number}, identyfikator {parcel_id}"
     if number:
-        return f"działka {number}"
+        return f" (działka {number})"
     if parcel_id:
-        return f"działka o identyfikatorze {parcel_id}"
-    return "wskazana działka"
+        return f" (identyfikator działki {parcel_id})"
+    return ""
 
 
 def _parcel_context_text(record: dict[str, Any]) -> str:
     parcel = record.get("parcel") if isinstance(record.get("parcel"), dict) else {}
     if parcel:
         terrain_type = _terrain_type(parcel)
-        terrain_clause = f"ma użytek \"{terrain_type}\"" if terrain_type else "ma nieustalony automatycznie typ użytku"
-        return (
-            "Dane działki ewidencyjnej (pomocniczo): według danych ewidencyjnych "
-            f"{_parcel_reference(parcel)} {terrain_clause}; proszę jednak o Państwa własną ocenę, "
-            "czy miejsce znajduje się na drodze publicznej, w strefie zamieszkania albo w strefie ruchu."
-        )
+        if terrain_type:
+            return f"Teren według ewidencji gruntów (pomocniczo): {terrain_type}{_parcel_short_note(parcel)}."
+        return f"Działka ewidencyjna (pomocniczo): brak automatycznie ustalonego typu użytku{_parcel_short_note(parcel)}."
     parcel_error = str(record.get("parcel_error") or "").strip()
     if parcel_error:
         return (

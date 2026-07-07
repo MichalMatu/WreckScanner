@@ -107,12 +107,17 @@ class ReportMailTests(unittest.TestCase):
         self.assertNotIn(" w...", location_part)
         self.assertNotIn("bezpośredni...", location_part)
 
-        self.assertIn("Dane działki ewidencyjnej (pomocniczo)", body)
-        self.assertIn('działka 87, identyfikator 026401_1.0022.AR_27.87 ma użytek "B - tereny mieszkaniowe"', body)
+        self.assertIn("Teren według ewidencji gruntów (pomocniczo)", body)
+        self.assertIn(
+            "Teren według ewidencji gruntów (pomocniczo): B - tereny mieszkaniowe (działka 87).",
+            body,
+        )
+        self.assertNotIn("026401_1.0022.AR_27.87", body)
         self.assertNotIn("Obręb:", body)
         self.assertNotIn("Powiat:", body)
         self.assertNotIn("Województwo:", body)
-        self.assertIn("na drodze publicznej, w strefie zamieszkania albo w strefie ruchu", body)
+        self.assertNotIn("proszę jednak o Państwa własną ocenę", body)
+        self.assertNotIn("na drodze publicznej, w strefie zamieszkania albo w strefie ruchu", body)
 
     def test_build_mail_draft_uses_nearest_address_when_available(self):
         subject, body = build_mail_draft(
