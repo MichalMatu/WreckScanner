@@ -105,13 +105,6 @@
     gap: var(--space-3);
 }
 
-.parking-costs-lead {
-    margin: 0;
-    color: var(--text);
-    font-size: 0.94rem;
-    line-height: 1.5;
-}
-
 .parking-costs-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -179,6 +172,33 @@
 
 .parking-costs-panel li + li {
     margin-top: var(--space-1);
+}
+
+.parking-costs-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.parking-costs-sources span {
+    color: var(--muted-strong);
+    font-weight: 750;
+}
+
+.parking-costs-sources a {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.parking-costs-sources a:hover,
+.parking-costs-sources a:focus-visible {
+    color: var(--primary-hover);
 }
 
 .photo-preview-body {

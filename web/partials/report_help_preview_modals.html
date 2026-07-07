@@ -156,10 +156,6 @@
                 </button>
             </div>
             <div class="modal-body parking-costs-body">
-                <p class="parking-costs-lead" data-i18n="modal.parkingCosts.intro">
-                    Auto, które długo stoi, nadal zajmuje zasoby i potrafi szybko tracić wartość.
-                </p>
-
                 <div class="parking-costs-tabs" role="tablist" data-i18n-attr="aria-label:modal.parkingCosts.tabsLabel"
                     aria-label="Sekcje kosztów postoju">
                     <button type="button" class="parking-costs-tab is-active" id="parking-costs-tab-owner"
@@ -186,57 +182,102 @@
 
                 <section class="parking-costs-panel is-active" id="parking-costs-panel-owner"
                     role="tabpanel" aria-labelledby="parking-costs-tab-owner" data-parking-costs-panel="owner">
-                    <h3 data-i18n="modal.parkingCosts.ownerTitle">Koszty właściciela</h3>
+                    <h3 data-i18n="modal.parkingCosts.ownerTitle">Dla właściciela</h3>
                     <ul>
-                        <li data-i18n="modal.parkingCosts.ownerItem1">OC, przegląd i podstawowe serwisowanie wracają co roku.</li>
-                        <li data-i18n="modal.parkingCosts.ownerItem2">Akumulator, opony, hamulce, płyny i paliwo starzeją się także bez jazdy.</li>
-                        <li data-i18n="modal.parkingCosts.ownerItem3">Korozja i zastane elementy potrafią zamienić postój w drogą naprawę.</li>
-                        <li data-i18n="modal.parkingCosts.ownerItem4">Im dłużej auto stoi, tym trudniej sprzedać je za sensowną cenę.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem1">Zarejestrowane auto musi mieć OC także wtedy, gdy nie jeździ: w 2026 r. brak ciągłości dla osobówki to 1 920 zł (1-3 dni), 4 810 zł (4-14 dni) albo 9 610 zł (powyżej 14 dni).</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem2">Badanie techniczne kosztuje 149 zł dla osobówki albo 245 zł z LPG; bez ważnego badania auto nie powinno wracać do ruchu, a po postoju droższe bywają naprawy hamulców, opon, wycieków i akumulatora.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem3">Auto wyglądające na nieużywane może wejść w procedurę usunięcia z drogi; we Wrocławiu osobówka do 3,5 t to 400 zł odholowania i 50 zł za każdą dobę parkingu.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem4">Długi postój niszczy części: akumulator siada, paliwo się starzeje, tarcze i zaciski rdzewieją, opony oraz przewody parcieją, a wycieki mogą naruszać wymagania ochrony środowiska.</li>
                     </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://info.ufg.pl/smubob/portal/infoportal/szczegoly/tresci/12" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceUfg">UFG</a>
+                        <a href="https://www.gov.pl/web/infrastruktura/nowe-stawki-oplat-za-badanie-techniczne-pojazdow"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceInspection">Przeglądy</a>
+                        <a href="https://baw.um.wroc.pl/UrzadMiastaWroclawia/document/77089/Uchwala-XXV_518_25"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceWroclaw">Wrocław 2026</a>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                    </div>
                 </section>
 
                 <section class="parking-costs-panel" id="parking-costs-panel-public"
                     role="tabpanel" aria-labelledby="parking-costs-tab-public" data-parking-costs-panel="public" hidden>
-                    <h3 data-i18n="modal.parkingCosts.publicTitle">Koszt dla otoczenia</h3>
+                    <h3 data-i18n="modal.parkingCosts.publicTitle">Koszt dla ulicy</h3>
                     <ul>
-                        <li data-i18n="modal.parkingCosts.publicItem1">Jedno auto może blokować miejsce rotacyjne przez tygodnie lub miesiące.</li>
-                        <li data-i18n="modal.parkingCosts.publicItem2">Inni kierowcy krążą dłużej albo parkują dalej od celu.</li>
-                        <li data-i18n="modal.parkingCosts.publicItem3">Presja parkingowa wypycha auta na chodniki, przejścia, zieleń i narożniki ulic.</li>
-                        <li data-i18n="modal.parkingCosts.publicItem4">Nielegalne parkowanie niszczy nawierzchnię i ogranicza widoczność.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem1">Jedno legalne miejsce dla osobówki to co najmniej ok. 12,5 m² wspólnej przestrzeni, a przy parkowaniu równoległym także 6 m długości ulicy.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem2">Wrocław podaje, że w płatnej strefie w Śródmieściu co najmniej 15% przyulicznych miejsc pozostaje dostępne; poza strefą do 30% ruchu mogą generować kierowcy szukający postoju.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem3">Zalegające auto działa jak antyrotacja: tygodniami blokuje miejsce dla mieszkańca, opiekuna, dostawy, serwisu albo osoby z ograniczoną mobilnością.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem4">Gdy brakuje miejsc, auta lądują na chodnikach, narożnikach i zieleni; rośnie konflikt, spada widoczność i jakość chodzenia.</li>
                     </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://www.wroclaw.pl/komunikacja/strefa-platnego-parkowania" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceParking">Parkowanie Wrocław</a>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20190001065/O/D20191065.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceDimensions">Wymiary miejsc</a>
+                    </div>
                 </section>
 
                 <section class="parking-costs-panel" id="parking-costs-panel-risk"
                     role="tabpanel" aria-labelledby="parking-costs-tab-risk" data-parking-costs-panel="risk" hidden>
-                    <h3 data-i18n="modal.parkingCosts.riskTitle">Ryzyka</h3>
+                    <h3 data-i18n="modal.parkingCosts.riskTitle">Środowisko i prawo</h3>
                     <ul>
-                        <li data-i18n="modal.parkingCosts.riskItem1">Brak ciągłości OC może oznaczać wysoką karę.</li>
-                        <li data-i18n="modal.parkingCosts.riskItem2">Brak przeglądu komplikuje kontrolę, sprzedaż i ewentualną szkodę.</li>
-                        <li data-i18n="modal.parkingCosts.riskItem3">Wycieki płynów i rdza zwiększają koszt późniejszego uporządkowania auta.</li>
-                        <li data-i18n="modal.parkingCosts.riskItem4">Auto wyglądające na nieużywane może trafić do procedury usunięcia z drogi.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem1">Wycieki to nie tylko plama: olej, paliwo, płyn chłodniczy lub hamulcowy trafiają na nawierzchnię i mogą spływać z deszczem do kanalizacji deszczowej.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem2">Pojazd może zostać usunięty, jeżeli jego stan techniczny zagraża bezpieczeństwu, powoduje uszkodzenie drogi albo narusza wymagania ochrony środowiska.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem3">Opony mają dwa koszty: podczas jazdy ścierają się do pyłów i mikroplastiku, a podczas długiego postoju odkształcają się, parcieją i mogą skończyć jako odpad.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem4">Zardzewiałe hamulce, sparciałe przewody i stare paliwo zwiększają szansę, że auto nie odjedzie samo, tylko lawetą albo po kosztownym serwisie.</li>
                     </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                        <a href="https://www.gov.pl/web/witd-poznan/wycieki-plynow-eksploatacyjnych" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceLeaks">Wycieki</a>
+                        <a href="https://publications.jrc.ec.europa.eu/repository/handle/JRC135524" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceTyres">Opony i pyły</a>
+                    </div>
                 </section>
 
                 <section class="parking-costs-panel" id="parking-costs-panel-alternatives"
                     role="tabpanel" aria-labelledby="parking-costs-tab-alternatives" data-parking-costs-panel="alternatives" hidden>
                     <h3 data-i18n="modal.parkingCosts.alternativesTitle">Alternatywy</h3>
                     <ul>
-                        <li data-i18n="modal.parkingCosts.alternativesItem1">Sprzedaż albo skup może zatrzymać spadek wartości.</li>
-                        <li data-i18n="modal.parkingCosts.alternativesItem2">Legalny demontaż zamyka temat OC, miejsca i odpowiedzialności.</li>
-                        <li data-i18n="modal.parkingCosts.alternativesItem3">Naprawa ma sens, jeśli auto realnie wróci do używania.</li>
-                        <li data-i18n="modal.parkingCosts.alternativesItem4">Komunikacja, rower, carsharing lub taxi często wygrywają przy sporadycznych trasach.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem1">Jeśli auto ma wrócić do życia, warto dać sobie termin: OC, badanie, hamulce, opony, wycieki i akumulator w konkretnym miesiącu, nie „kiedyś”.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem2">Jeśli planu nie ma, sprzedaż, skup albo legalny demontaż kończą utratę wartości, miejsce postojowe i odpowiedzialność.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem3">Przeparkowywanie co kilka tygodni nie rozwiązuje problemu; tylko przesuwa go na inną część tej samej ulicy.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem4">Przy sporadycznych trasach komunikacja, rower, taxi, carsharing albo wynajem auta bywają tańsze niż utrzymywanie pojazdu „na wszelki wypadek”.</li>
                     </ul>
                 </section>
 
                 <section class="parking-costs-panel" id="parking-costs-panel-numbers"
                     role="tabpanel" aria-labelledby="parking-costs-tab-numbers" data-parking-costs-panel="numbers" hidden>
-                    <h3 data-i18n="modal.parkingCosts.numbersTitle">Liczby do uzupełnienia</h3>
+                    <h3 data-i18n="modal.parkingCosts.numbersTitle">Liczby</h3>
                     <ul>
-                        <li data-i18n="modal.parkingCosts.numbersItem1">Dodamy aktualne stawki OC, przeglądu, odholowania i przechowywania.</li>
-                        <li data-i18n="modal.parkingCosts.numbersItem2">Porównamy utrzymanie auta z transportem publicznym, taxi i krótkim najmem.</li>
-                        <li data-i18n="modal.parkingCosts.numbersItem3">Oszacujemy wartość jednego miejsca postojowego pod blokiem.</li>
-                        <li data-i18n="modal.parkingCosts.numbersItem4">Źródła i daty aktualizacji trafią obok każdej liczby.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem1">9 610 zł: kara UFG w 2026 r. za ponad 14 dni przerwy w OC samochodu osobowego.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem2">400 zł + 50 zł/doba: stawka Wrocławia na 2026 r. za usunięcie i przechowywanie auta do 3,5 t.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem3">149 zł lub 245 zł z LPG: badanie techniczne osobówki; to mały koszt obok hamulców, opon, lawety i wycieków po długim postoju.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem4">15% i 30%: Wrocław wiąże płatną strefę z dostępnością miejsc, a brak rotacji z ruchem kierowców szukających postoju.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem5">1/3-1/2: według JRC tyle niezamierzenie uwalnianych mikroplastików może pochodzić ze ścierania opon.</li>
                     </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://info.ufg.pl/smubob/portal/infoportal/szczegoly/tresci/12" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceUfg">UFG</a>
+                        <a href="https://baw.um.wroc.pl/UrzadMiastaWroclawia/document/77089/Uchwala-XXV_518_25"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceWroclaw">Wrocław 2026</a>
+                        <a href="https://www.gov.pl/web/infrastruktura/nowe-stawki-oplat-za-badanie-techniczne-pojazdow"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceInspection">Przeglądy</a>
+                        <a href="https://www.wroclaw.pl/komunikacja/strefa-platnego-parkowania" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceParking">Parkowanie Wrocław</a>
+                        <a href="https://publications.jrc.ec.europa.eu/repository/handle/JRC135524" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceTyres">Opony i pyły</a>
+                    </div>
                 </section>
             </div>
         </div>
