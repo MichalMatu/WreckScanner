@@ -81,7 +81,6 @@ const TRANSLATIONS_EN = {
         'context.showAddress': 'Show address',
         'context.addressLoading': 'Looking up nearest address...',
         'context.addressTitle': 'Nearest address',
-        'context.addressHint': 'This address comes from reverse geocoding and may point to the nearest object, not the exact parked position.',
         'context.addressStreet': 'Street and number',
         'context.addressDistrict': 'Area',
         'context.addressCity': 'Locality',

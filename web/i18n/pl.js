@@ -83,7 +83,6 @@ const TRANSLATIONS_PL = {
         'context.showAddress': 'Pokaż adres',
         'context.addressLoading': 'Szukam najbliższego adresu...',
         'context.addressTitle': 'Najbliższy adres',
-        'context.addressHint': 'Adres pochodzi z reverse geocodingu i może wskazywać najbliższy obiekt, nie dokładne miejsce postoju.',
         'context.addressStreet': 'Ulica i numer',
         'context.addressDistrict': 'Osiedle / rejon',
         'context.addressCity': 'Miejscowość',

@@ -184,7 +184,6 @@ function reverseAddressPopup(address = {}) {
     ]);
     return mapPopup(`
             ${popupHeader(t('context.addressTitle'), address.formatted || '')}
-            <p class="parcel-popup-hint">${escapeHtml(t('context.addressHint'))}</p>
             <div class="parcel-popup-rows">${rowHtml}</div>
             ${actions}
     `, 'map-popup--address');
