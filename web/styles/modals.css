@@ -215,7 +215,7 @@
     width: 30px;
     height: 30px;
     border-radius: var(--radius-control);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -241,7 +241,7 @@
     width: 30px;
     height: 30px;
     border-radius: var(--radius-control);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -312,7 +312,7 @@
 .modal--settings select:disabled,
 .modal--settings input:disabled,
 .modal--settings button:disabled {
-    cursor: not-allowed;
+    cursor: var(--cursor-disabled);
     opacity: 0.55;
 }
 
@@ -324,7 +324,7 @@
 .modal--settings input[type="range"]:disabled::-webkit-slider-thumb {
     background: var(--muted);
     box-shadow: none;
-    cursor: not-allowed;
+    cursor: var(--cursor-disabled);
 }
 
 .modal-hint {

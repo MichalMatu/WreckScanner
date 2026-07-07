@@ -161,6 +161,11 @@
     --control-height-compact: 38px;
     --control-height-comfortable: 44px;
     --control-hit-target: 44px;
+    --cursor-action: pointer;
+    --cursor-disabled: not-allowed;
+    --cursor-busy: wait;
+    --cursor-progress: progress;
+    --cursor-static: default;
     --blur-glass: var(--glass-blur);
     --shadow-panel: 0 16px 44px rgba(0, 0, 0, 0.42);
     --shadow-modal: 0 24px 72px rgba(0, 0, 0, 0.56);

@@ -278,7 +278,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .photo-preview-nav:hover:not(:disabled) {
@@ -288,7 +288,7 @@
 }
 
 .photo-preview-nav:disabled {
-    cursor: default;
+    cursor: var(--cursor-disabled);
     opacity: 0.42;
 }
 
@@ -333,7 +333,7 @@
     min-height: 38px;
     padding: 0 16px;
     font: 800 0.84rem var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: transform 0.15s, background 0.15s, border-color 0.15s;
 }
 

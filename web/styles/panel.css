@@ -15,7 +15,7 @@
 .app-menu-footer-icon {
     border: 0;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .app-menu-button {
@@ -117,7 +117,7 @@
     border: 0;
     background: transparent;
     color: var(--text-strong);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     font: 800 1.05rem var(--font-display);
     padding: 0;
 }
@@ -268,7 +268,7 @@
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, white), var(--info));
     color: var(--text-strong);
     box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 24%, transparent);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -292,7 +292,7 @@
 }
 
 .panel-photo-cta:disabled {
-    cursor: not-allowed;
+    cursor: var(--cursor-disabled);
     opacity: 0.55;
     transform: none;
     box-shadow: none;
@@ -344,7 +344,7 @@ input[type=range]::-webkit-slider-thumb {
     height: 18px;
     border-radius: 50%;
     background: var(--primary);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 38%, transparent);
 }
 
@@ -381,7 +381,7 @@ select {
     font-family: var(--font);
     font-size: 0.85rem;
     outline: none;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 select:focus {
@@ -397,7 +397,7 @@ select:focus {
     border-radius: 8px;
     font-size: 0.75rem;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: all 0.15s;
 }
 
@@ -417,7 +417,7 @@ select:focus {
     font-size: 0.95rem;
     font-weight: 700;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -438,7 +438,7 @@ select:focus {
 .btn-download:disabled {
     background: var(--surface-control);
     color: var(--muted);
-    cursor: wait;
+    cursor: var(--cursor-busy);
     box-shadow: none;
     transform: none;
 }

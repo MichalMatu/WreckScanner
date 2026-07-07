@@ -243,7 +243,7 @@ a.map-popup-head-value {
     border: 1px solid var(--popup-border);
     background: var(--popup-surface-soft);
     aspect-ratio: 4 / 3;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: border-color var(--duration-fast);
 }
 
@@ -252,7 +252,7 @@ a.map-popup-head-value {
     height: 100%;
     display: block;
     object-fit: cover;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .map-popup-photo:focus-visible {
@@ -327,7 +327,7 @@ a.map-popup-head-value {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition:
         background var(--duration-fast),
         border-color var(--duration-fast),
@@ -342,7 +342,7 @@ a.map-popup-head-value {
 }
 
 .map-popup-action:disabled {
-    cursor: progress;
+    cursor: var(--cursor-progress);
     opacity: 0.6;
 }
 
@@ -384,7 +384,7 @@ a.map-popup-head-value {
     background: var(--popup-action-success);
     color: var(--popup-on-action);
     font: 800 12px var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .map-popup-text-action:hover {
@@ -405,7 +405,7 @@ a.map-popup-head-value {
 }
 
 .map-popup-text-action:disabled {
-    cursor: default;
+    cursor: var(--cursor-static);
     opacity: 0.82;
 }
 

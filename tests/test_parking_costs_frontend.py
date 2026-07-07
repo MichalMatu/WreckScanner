@@ -36,12 +36,17 @@ class ParkingCostsFrontendContracts(unittest.TestCase):
         self.assertIn("function openParkingCostsModal()", ui_js)
         self.assertIn(".parking-costs-tab.is-active", styles)
         self.assertIn("background: var(--primary-soft);", styles)
+        self.assertIn('data-i18n="modal.parkingCosts.tabNumbers">Rachunek</button>', html)
+        self.assertIn('class="parking-costs-metrics"', html)
+        self.assertIn('data-i18n="modal.parkingCosts.metricTicketsValue"', html)
+        self.assertIn('data-i18n="modal.parkingCosts.sourceTransit"', html)
+        self.assertIn('data-i18n="modal.parkingCosts.sourceSenior"', html)
         self.assertIn(
-            "'modal.parkingCosts.numbersItem3': 'Oszacujemy wartość jednego miejsca postojowego pod blokiem.'",
+            "'modal.parkingCosts.numbersTitle': 'Co za to masz'",
             i18n_js,
         )
         self.assertIn(
-            "'modal.parkingCosts.numbersItem3': 'We will estimate the value of one residential parking space.'",
+            "'modal.parkingCosts.numbersTitle': 'What that money buys'",
             i18n_js,
         )
 
