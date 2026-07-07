@@ -1,6 +1,6 @@
 # Deploy Produkcyjny
 
-Ten runbook opisuje lokalny deploy WreckScanner na Raspberry Pi za tunelem
+Ten runbook opisuje lokalny deploy IleStoi.pl na Raspberry Pi za tunelem
 Cloudflare. Aktywnym stanem aplikacji jest SQLite oraz pliki zdjec na dysku.
 
 ## Sekrety i zmienne
@@ -13,7 +13,7 @@ WRECKSCANNER_PORT=8001
 WRECKSCANNER_ADMIN_PASSWORD=...
 WRECKSCANNER_ADMIN_SESSION_SECRET=...
 WRECKSCANNER_ADMIN_COOKIE_SECURE=1
-WRECKSCANNER_CORS_ALLOWED_ORIGINS=https://wreckscanner.pl,https://www.wreckscanner.pl
+WRECKSCANNER_CORS_ALLOWED_ORIGINS=https://wreckscanner.pl,https://ilestoi.pl,https://dlugostoi.pl
 WRECKSCANNER_PHOTO_RETENTION_AUTORUN=1
 ```
 
@@ -31,7 +31,7 @@ Przyklad jednostki:
 
 ```ini
 [Unit]
-Description=WreckScanner
+Description=IleStoi.pl
 After=network-online.target
 Wants=network-online.target
 

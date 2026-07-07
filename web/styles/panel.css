@@ -11,10 +11,11 @@
 
 .app-menu-button,
 .app-menu-drawer-item,
+.app-menu-footer-link,
 .app-menu-footer-icon {
     border: 0;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .app-menu-button {
@@ -116,7 +117,7 @@
     border: 0;
     background: transparent;
     color: var(--text-strong);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     font: 800 1.05rem var(--font-display);
     padding: 0;
 }
@@ -169,11 +170,48 @@
 .app-menu-drawer-footer {
     margin-top: auto;
     padding: var(--space-3) var(--space-5) var(--space-4);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    border-top: 1px solid var(--border);
+}
+
+.app-menu-footer-links {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.app-menu-footer-link {
+    padding: 4px 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.73rem;
+    font-weight: 720;
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    opacity: 0.82;
+    transition:
+        color var(--duration-fast),
+        opacity var(--duration-fast);
+}
+
+.app-menu-footer-link:hover,
+.app-menu-footer-link:focus-visible {
+    color: var(--text-soft);
+    opacity: 1;
+    outline: none;
+}
+
+.app-menu-footer-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-2);
-    border-top: 1px solid var(--border);
 }
 
 .app-menu-footer-icon {
@@ -230,7 +268,7 @@
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, white), var(--info));
     color: var(--text-strong);
     box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 24%, transparent);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -254,7 +292,7 @@
 }
 
 .panel-photo-cta:disabled {
-    cursor: not-allowed;
+    cursor: var(--cursor-disabled);
     opacity: 0.55;
     transform: none;
     box-shadow: none;
@@ -306,7 +344,7 @@ input[type=range]::-webkit-slider-thumb {
     height: 18px;
     border-radius: 50%;
     background: var(--primary);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 38%, transparent);
 }
 
@@ -343,7 +381,7 @@ select {
     font-family: var(--font);
     font-size: 0.85rem;
     outline: none;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 select:focus {
@@ -359,7 +397,7 @@ select:focus {
     border-radius: 8px;
     font-size: 0.75rem;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: all 0.15s;
 }
 
@@ -379,7 +417,7 @@ select:focus {
     font-size: 0.95rem;
     font-weight: 700;
     font-family: var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -400,7 +438,7 @@ select:focus {
 .btn-download:disabled {
     background: var(--surface-control);
     color: var(--muted);
-    cursor: wait;
+    cursor: var(--cursor-busy);
     box-shadow: none;
     transform: none;
 }

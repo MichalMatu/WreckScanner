@@ -35,11 +35,16 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn('id="photo-review-status" hidden', html)
         self.assertIn('href="https://www.ufg.pl/" target="_blank"', html)
         self.assertIn("function vehicleInsuranceHeaderBadge", popups_js)
-        self.assertIn("function vehicleInsuranceCheckedBadge", popups_js)
         self.assertIn("function humanDateTimeText", popups_js)
+        self.assertIn("function humanDateText", popups_js)
+        self.assertIn("${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}", popups_js)
+        self.assertIn("checkedDate ? 'fieldPhoto.vehicleInsurance.badge.checked'", popups_js)
+        self.assertIn(": 'fieldPhoto.vehicleInsurance.badge.checkedMissing'", popups_js)
+        self.assertNotIn("function vehicleInsuranceCheckedBadge", popups_js)
+        self.assertNotIn("new Intl.DateTimeFormat(document.documentElement.lang", popups_js)
         self.assertIn("function vehicleGroupInsuranceStatus", vehicle_layer_js)
         self.assertIn("function vehicleGroupInsuranceCheckedAt", vehicle_layer_js)
-        self.assertIn("vehicleInsuranceCheckedBadge(insuranceStatus, insuranceCheckedAt)", vehicle_layer_js)
+        self.assertNotIn("vehicleInsuranceCheckedBadge", vehicle_layer_js)
         self.assertNotIn('class="map-popup-photo-tile"', popups_js)
         self.assertIn('class="map-popup-photo"', popups_js)
         self.assertNotIn("${vehicleInsuranceUfgBadge(photo)}", popups_js)
@@ -58,7 +63,9 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertIn("vehicle_insurance_checked_at", review_js)
         self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
         self.assertIn(".map-popup-head-value--insurance-uninsured", popups_css)
-        self.assertIn(".map-popup-head-value--insurance-checked", popups_css)
+        self.assertNotIn(".map-popup-head-value--insurance-checked", popups_css)
+        self.assertIn("max-width: min(62%, 260px);", popups_css)
+        self.assertIn("white-space: nowrap;", popups_css)
         self.assertNotIn(".map-popup-ufg-link", popups_css)
         self.assertIn(".field-photo-insurance-head", forms_css)
         self.assertIn(".photo-review-insurance", review_css)
@@ -78,15 +85,27 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         self.assertNotIn("Narysuj obszar na danych do zamazania", frontend)
         self.assertNotIn("modal.photoReview.vehicleInsuranceHint", frontend)
         self.assertNotIn("modal.photoReview.drawHint", frontend)
+        self.assertIn("'fieldPhoto.vehicleInsurance.badge.checked': 'UFG: {date}'", i18n_js)
+        self.assertIn("'fieldPhoto.vehicleInsurance.badge.checkedMissing': 'UFG'", i18n_js)
+        self.assertNotIn("fieldPhoto.vehicleInsurance.badge.insured", i18n_js)
+        self.assertNotIn("fieldPhoto.vehicleInsurance.badge.uninsured", i18n_js)
+        self.assertNotIn("UFG yes", i18n_js)
+        self.assertNotIn("UFG tak", i18n_js)
+        self.assertNotIn("UFG: insured", i18n_js)
+        self.assertNotIn("UFG: OC", i18n_js)
+        self.assertNotIn("UFG: brak OC", i18n_js)
+        self.assertIn("'fieldPhoto.vehicleInsurance.ufgTitle': 'UFG: {status}'", i18n_js)
+        self.assertIn("'fieldPhoto.vehicleInsurance.ufgCheckedTitle': 'UFG: {status}, {date}'", i18n_js)
+        self.assertNotIn("Open insurance check", i18n_js)
+        self.assertNotIn("Otwórz sprawdzenie OC", i18n_js)
         for key in (
             "fieldPhoto.vehicleInsurance.unknown",
             "fieldPhoto.vehicleInsurance.insured",
             "fieldPhoto.vehicleInsurance.uninsured",
-            "fieldPhoto.vehicleInsurance.badge.insured",
-            "fieldPhoto.vehicleInsurance.badge.uninsured",
+            "fieldPhoto.vehicleInsurance.badge.checked",
+            "fieldPhoto.vehicleInsurance.badge.checkedMissing",
             "fieldPhoto.vehicleInsurance.ufgTitle",
             "fieldPhoto.vehicleInsurance.ufgCheckedTitle",
-            "fieldPhoto.vehicleInsurance.checkedBadge",
             "modal.photoReview.vehicleInsurance",
             "modal.photoReview.vehicleInsuranceCheckedAt",
             "modal.photoReview.vehicleInsuranceCheckedPending",

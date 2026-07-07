@@ -529,7 +529,7 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
     issue_summary = report["summary"]["issues"]
     issue_types = field["issue_types"]
     lines = [
-        "Diagnostyka danych WreckScanner",
+        "Diagnostyka danych IleStoi.pl",
         f"Status: {str(report['status']).upper()}",
         f"Zdjęcia terenowe: {field['records']} rekordów",
         "  typy: "

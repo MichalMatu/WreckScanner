@@ -1,1 +1,1 @@
-"""HTTP request helpers for the WreckScanner server."""
+"""HTTP request helpers for the IleStoi.pl server."""

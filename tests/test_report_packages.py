@@ -137,8 +137,8 @@ class ReportPackageTests(unittest.TestCase):
             validate_report_fields({**valid_fields(), "vehicle_description": "x" * 4001})
 
         self.assertEqual(
-            safe_report_url("https://wreckscanner.pl/?lat=51&lon=17"),
-            "https://wreckscanner.pl/?lat=51&lon=17",
+            safe_report_url("https://ilestoi.pl/?lat=51&lon=17"),
+            "https://ilestoi.pl/?lat=51&lon=17",
         )
         self.assertEqual(safe_report_url("javascript:alert(1)"), "")
 
@@ -165,7 +165,7 @@ class ReportPackageTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             field_dir, photo_id = create_field_photo_fixture(root)
-            place_url = f"https://wreckscanner.pl/?lat=51.100000&lon=17.200000&z=20&photo={photo_id}"
+            place_url = f"https://ilestoi.pl/?lat=51.100000&lon=17.200000&z=20&photo={photo_id}"
             parcel = {
                 "parcel_number": "87",
                 "parcel_id": "026401_1.0022.AR_27.87",
@@ -207,11 +207,11 @@ class ReportPackageTests(unittest.TestCase):
             self.assertNotIn("Geoportal działki", result["body"])
             self.assertNotIn("identifyParcel", result["body"])
             pdf_link = report_pdf._paragraph_text(place_url)
-            self.assertIn("Otwórz miejsce w WreckScanner", pdf_link)
-            self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", pdf_link)
+            self.assertIn("Otwórz miejsce w IleStoi.pl", pdf_link)
+            self.assertIn("https://ilestoi.pl/?lat=51.100000&amp;lon=17.200000", pdf_link)
             pdf_bytes = base64.b64decode(result["pdf_base64"])
             self.assertEqual(pdf_bytes[:5], b"%PDF-")
-            self.assertIn(b"https://wreckscanner.pl/?lat=51.100000", pdf_bytes)
+            self.assertIn(b"https://ilestoi.pl/?lat=51.100000", pdf_bytes)
             self.assertFalse((root / "zidentyfikowane_wraki").exists())
             with zipfile.ZipFile(io.BytesIO(base64.b64decode(result["zip_base64"]))) as archive:
                 names = set(archive.namelist())
@@ -234,12 +234,12 @@ class ReportPackageTests(unittest.TestCase):
                 self.assertNotIn("Kontur:", text)
                 self.assertNotIn("Użytek:", text)
                 self.assertNotIn("Geoportal działki", text)
-                self.assertIn("Link do miejsca w WreckScanner", report_html)
+                self.assertIn("Link do miejsca w IleStoi.pl", report_html)
                 self.assertIn("Wynik ręcznego sprawdzenia: pojazd ma OC", report_html)
                 self.assertIn("Data sprawdzenia w UFG: 05.07.2026, godz. 12:30", report_html)
-                self.assertIn("Otwórz miejsce w WreckScanner", report_html)
+                self.assertIn("Otwórz miejsce w IleStoi.pl", report_html)
                 self.assertIn('class="report-inline-link"', report_html)
-                self.assertIn("https://wreckscanner.pl/?lat=51.100000&amp;lon=17.200000", report_html)
+                self.assertIn("https://ilestoi.pl/?lat=51.100000&amp;lon=17.200000", report_html)
                 self.assertIn("Typ terenu: B - tereny mieszkaniowe", report_html)
                 self.assertNotIn("Powierzchnia:", report_html)
                 self.assertNotIn("Kontur:", report_html)

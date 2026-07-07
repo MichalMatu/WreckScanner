@@ -177,7 +177,7 @@ def _escape_text(value: Any) -> str:
 
 def _url_label(raw_url: str) -> str:
     if "photo=" in raw_url and ("lat=" in raw_url or "lon=" in raw_url):
-        return "Otwórz miejsce w WreckScanner"
+        return "Otwórz miejsce w IleStoi.pl"
     return raw_url
 
 
@@ -389,7 +389,7 @@ def build_report_pdf(
         bottomMargin=PAGE_MARGIN,
         pageCompression=0,
         title=subject,
-        author="WreckScanner",
+        author="IleStoi.pl",
     )
     styles = _styles()
     content_width = A4[0] - (PAGE_MARGIN * 2)

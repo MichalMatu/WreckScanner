@@ -26,7 +26,7 @@
     color: var(--text-soft);
     font: 700 0.68rem var(--font-display);
     padding: 0 10px;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
@@ -192,7 +192,7 @@
 .admin-panel-action {
     justify-content: flex-start;
     padding: 9px 12px;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     position: relative;
 }
@@ -220,7 +220,7 @@
 
 .admin-layer-toggle {
     padding: 8px 10px;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     line-height: 1.25;
 }
 
@@ -233,7 +233,7 @@
 
 .admin-layer-toggle:has(input:disabled) {
     opacity: 0.55;
-    cursor: not-allowed;
+    cursor: var(--cursor-disabled);
 }
 
 .admin-layer-toggle .layer-pin {

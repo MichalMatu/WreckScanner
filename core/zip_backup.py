@@ -409,7 +409,7 @@ def _safe_extract_zip(archive_path: Path, target_dir: Path) -> dict[str, Any]:
     if not manifest_payload:
         raise ValueError("Archiwum nie ma manifest.json.")
     if manifest_payload.get("format") != ZIP_SNAPSHOT_FORMAT:
-        raise ValueError("Archiwum nie jest snapshotem danych WreckScanner.")
+        raise ValueError("Archiwum nie jest snapshotem danych IleStoi.pl.")
     return manifest_payload
 
 

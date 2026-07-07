@@ -82,6 +82,29 @@
     transform: rotate(45deg);
 }
 
+.vehicle-pin--mixed-pending {
+    background: linear-gradient(135deg, var(--pin-vehicle-bg) 0 50%, var(--pin-vehicle-pending-bg) 50% 100%);
+    box-shadow:
+        var(--pin-shadow),
+        0 0 0 3px var(--pin-vehicle-current-ring-soft),
+        0 0 0 5px var(--pin-pending-ring-soft);
+}
+
+.vehicle-pin-pending-indicator {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--pin-pending-ring);
+    border: 2px solid var(--pin-pending-dot-border);
+    box-shadow: var(--pin-glyph-shadow);
+    box-sizing: border-box;
+    transform: rotate(45deg);
+    z-index: 2;
+}
+
 .vehicle-pin--pending {
     background: var(--pin-vehicle-pending-bg);
     border-color: var(--pin-pending-ring);
@@ -314,6 +337,7 @@
 .marker-detail--dots .vehicle-pin::before,
 .marker-detail--dots .vehicle-pin::after,
 .marker-detail--dots .vehicle-pin-glyph,
+.marker-detail--dots .vehicle-pin-pending-indicator,
 .marker-detail--dots .pending-submission-pin::before,
 .marker-detail--dots .pending-submission-pin::after,
 .marker-detail--dots .field-photo-pin::before,
@@ -343,6 +367,11 @@
         var(--pin-dot-shadow),
         0 0 0 2px var(--pin-vehicle-current-ring-soft),
         0 0 0 4px var(--pin-long-standing-halo);
+}
+
+.marker-detail--dots .vehicle-pin--mixed-pending {
+    background: linear-gradient(135deg, var(--pin-vehicle-bg) 0 50%, var(--pin-vehicle-pending-bg) 50% 100%);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-pending-ring-soft);
 }
 
 .marker-detail--dots .vehicle-pin--pending {

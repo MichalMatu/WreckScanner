@@ -130,7 +130,7 @@ select.modal-input option:disabled,
     background: var(--primary-soft);
     color: var(--text);
     font: 800 0.78rem var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
 }
 
@@ -262,7 +262,7 @@ select.modal-input option:disabled,
     font-size: 0.78rem;
     font-weight: 700;
     line-height: 1.35;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .field-photo-toggle input[type="checkbox"] {
@@ -278,7 +278,7 @@ select.modal-input option:disabled,
     background: var(--surface-inset);
     box-shadow: none;
     flex: 0 0 auto;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .field-photo-toggle input[type="checkbox"]:checked {
@@ -372,7 +372,7 @@ select.modal-input option:disabled,
     font: 800 0.78rem var(--font);
     min-height: 40px;
     padding: 0 12px;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .field-photo-retry-btn:hover {
@@ -381,7 +381,7 @@ select.modal-input option:disabled,
 }
 
 .field-photo-retry-btn:disabled {
-    cursor: wait;
+    cursor: var(--cursor-busy);
     opacity: 0.65;
 }
 
@@ -415,7 +415,7 @@ select.modal-input option:disabled,
     color: var(--text);
     font: 800 0.78rem var(--font);
     padding: 10px 12px;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .report-copy-btn:hover {

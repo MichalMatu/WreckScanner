@@ -94,7 +94,7 @@
     <div class="modal-backdrop" id="modal-help" hidden onclick="closeModal(this)">
         <div class="modal modal--welcome" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h2 data-i18n="modal.help.title">WreckScanner</h2>
+                <h2 data-i18n="modal.help.title">IleStoi.pl</h2>
                 <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
                     aria-label="Zamknij">
                     <svg viewBox="0 0 24 24">
@@ -104,7 +104,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p class="welcome-lead" data-i18n="modal.help.intro">WreckScanner pomaga dokumentować porzucone albo
+                <p class="welcome-lead" data-i18n="modal.help.intro">IleStoi.pl pomaga dokumentować porzucone albo
                     długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.</p>
 
                 <section class="welcome-section">
@@ -139,6 +139,198 @@
                         <span data-i18n="modal.help.start">Zaczynam</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-parking-costs" hidden onclick="closeModal(this)">
+        <div class="modal modal--parking-costs" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 data-i18n="modal.parkingCosts.title">Koszty postoju</h2>
+                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
+                    aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body parking-costs-body">
+                <div class="parking-costs-tabs" role="tablist" data-i18n-attr="aria-label:modal.parkingCosts.tabsLabel"
+                    aria-label="Sekcje kosztów postoju">
+                    <button type="button" class="parking-costs-tab is-active" id="parking-costs-tab-owner"
+                        role="tab" aria-selected="true" aria-controls="parking-costs-panel-owner"
+                        onclick="setParkingCostsTab('owner')" data-parking-costs-tab="owner"
+                        data-i18n="modal.parkingCosts.tabOwner">Właściciel</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-identify"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-identify"
+                        onclick="setParkingCostsTab('identify')" data-parking-costs-tab="identify"
+                        data-i18n="modal.parkingCosts.tabIdentify">Sygnały</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-public"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-public"
+                        onclick="setParkingCostsTab('public')" data-parking-costs-tab="public"
+                        data-i18n="modal.parkingCosts.tabPublic">Otoczenie</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-risk"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-risk"
+                        onclick="setParkingCostsTab('risk')" data-parking-costs-tab="risk"
+                        data-i18n="modal.parkingCosts.tabRisk">Ryzyka</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-alternatives"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-alternatives"
+                        onclick="setParkingCostsTab('alternatives')" data-parking-costs-tab="alternatives"
+                        data-i18n="modal.parkingCosts.tabAlternatives">Alternatywy</button>
+                    <button type="button" class="parking-costs-tab" id="parking-costs-tab-numbers"
+                        role="tab" aria-selected="false" aria-controls="parking-costs-panel-numbers"
+                        onclick="setParkingCostsTab('numbers')" data-parking-costs-tab="numbers"
+                        data-i18n="modal.parkingCosts.tabNumbers">Rachunek</button>
+                </div>
+
+                <section class="parking-costs-panel is-active" id="parking-costs-panel-owner"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-owner" data-parking-costs-panel="owner">
+                    <h3 data-i18n="modal.parkingCosts.ownerTitle">Dla właściciela</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.ownerItem1">Zarejestrowane auto musi mieć OC także wtedy, gdy nie jeździ: w 2026 r. brak ciągłości dla osobówki to 1 920 zł (1-3 dni), 4 810 zł (4-14 dni) albo 9 610 zł (powyżej 14 dni).</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem2">Badanie techniczne kosztuje 149 zł dla osobówki albo 245 zł z LPG; po postoju większym rachunkiem bywają hamulce, opony, wycieki, akumulator i laweta.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem3">Auto wyglądające na nieużywane może wejść w procedurę usunięcia z drogi; we Wrocławiu osobówka do 3,5 t to 400 zł odholowania i 50 zł za każdą dobę parkingu.</li>
+                        <li data-i18n="modal.parkingCosts.ownerItem4">Długi postój niszczy części: akumulator siada, paliwo się starzeje, tarcze i zaciski rdzewieją, opony oraz przewody parcieją, a wycieki mogą naruszać wymagania ochrony środowiska.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://info.ufg.pl/smubob/portal/infoportal/szczegoly/tresci/12" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceUfg">UFG</a>
+                        <a href="https://www.gov.pl/web/infrastruktura/nowe-stawki-oplat-za-badanie-techniczne-pojazdow"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceInspection">Przeglądy</a>
+                        <a href="https://autoserwishallera.pl/cennik/" target="_blank" rel="noopener"
+                            data-i18n="modal.parkingCosts.sourceService">Cennik serwisu</a>
+                        <a href="https://baw.um.wroc.pl/UrzadMiastaWroclawia/document/77089/Uchwala-XXV_518_25"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceWroclaw">Wrocław 2026</a>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                    </div>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-identify"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-identify" data-parking-costs-panel="identify" hidden>
+                    <h3 data-i18n="modal.parkingCosts.identifyTitle">Jak rozpoznać auto do weryfikacji</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.identifyItem1">Sam długi postój nie przesądza sprawy. Ustawa mówi o braku tablic albo stanie wskazującym, że pojazd nie jest używany.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem2">Sygnały to m.in. brak tablic, brak powietrza w oponach, wybite szyby, zdewastowane wnętrze, brak części, silna korozja, ślady wycieku albo auto zarastające liśćmi i brudem pod kołami.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem3">Dokumentuj bez ingerencji: zdjęcie całego auta i widocznych sygnałów, przybliżona lokalizacja, data obserwacji. Nie dotykaj pojazdu, nie zaglądaj do środka i nie publikuj danych właściciela.</li>
+                        <li data-i18n="modal.parkingCosts.identifyItem4">We Wrocławiu interwencje przyjmuje Straż Miejska pod numerem 986 oraz mailowo. Na terenie prywatnym najpierw potrzebny jest właściciel lub zarządca terenu.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                        <a href="https://bip.strazmiejska.wroclaw.pl/dokumenty/12" target="_blank" rel="noopener"
+                            data-i18n="modal.parkingCosts.sourceWroclawReports">Zgłoszenia Wrocław</a>
+                        <a href="https://strazmiejska.gda.pl/co-i-jak/jak-uprzatnac-porzucony-pojazd%2Ca%2C3074"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceGuide">Poradnik SM</a>
+                        <a href="https://www.strazmiejska.katowice.pl/aktualnosci/index/Zniszczone-zdewastowane-i-zapomnianeGdzie-sa-ich-wlasciciele/idn%3A854"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceExamples">Przykłady sygnałów</a>
+                    </div>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-public"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-public" data-parking-costs-panel="public" hidden>
+                    <h3 data-i18n="modal.parkingCosts.publicTitle">Koszt dla ulicy</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.publicItem1">Jedno legalne miejsce dla osobówki to co najmniej ok. 12,5 m² wspólnej przestrzeni, a przy parkowaniu równoległym także 6 m długości ulicy.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem2">Wrocław podaje, że w płatnej strefie w Śródmieściu co najmniej 15% przyulicznych miejsc pozostaje dostępne; poza strefą do 30% ruchu mogą generować kierowcy szukający postoju.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem3">Zalegające auto działa jak antyrotacja: tygodniami blokuje miejsce dla mieszkańca, opiekuna, dostawy, serwisu albo osoby z ograniczoną mobilnością.</li>
+                        <li data-i18n="modal.parkingCosts.publicItem4">Gdy brakuje miejsc, auta lądują na chodnikach, narożnikach i zieleni; rośnie konflikt, spada widoczność i jakość chodzenia.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://www.wroclaw.pl/komunikacja/strefa-platnego-parkowania" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceParking">Parkowanie Wrocław</a>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20190001065/O/D20191065.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceDimensions">Wymiary miejsc</a>
+                    </div>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-risk"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-risk" data-parking-costs-panel="risk" hidden>
+                    <h3 data-i18n="modal.parkingCosts.riskTitle">Środowisko i prawo</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.riskItem1">Wycieki to nie tylko plama: olej, paliwo, płyn chłodniczy lub hamulcowy trafiają na nawierzchnię i mogą spływać z deszczem do kanalizacji deszczowej.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem2">Pojazd może zostać usunięty, jeżeli jego stan techniczny zagraża bezpieczeństwu, powoduje uszkodzenie drogi albo narusza wymagania ochrony środowiska.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem3">Opony mają dwa koszty: podczas jazdy ścierają się do pyłów i mikroplastiku, a podczas długiego postoju odkształcają się, parcieją i mogą skończyć jako odpad.</li>
+                        <li data-i18n="modal.parkingCosts.riskItem4">Zardzewiałe hamulce, sparciałe przewody i stare paliwo zwiększają szansę, że auto nie odjedzie samo, tylko lawetą albo po kosztownym serwisie.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU19970980602/U/D19970602Lj.pdf"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceLaw">Prawo o ruchu drogowym</a>
+                        <a href="https://www.gov.pl/web/witd-poznan/wycieki-plynow-eksploatacyjnych" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceLeaks">Wycieki</a>
+                        <a href="https://publications.jrc.ec.europa.eu/repository/handle/JRC135524" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceTyres">Opony i pyły</a>
+                    </div>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-alternatives"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-alternatives" data-parking-costs-panel="alternatives" hidden>
+                    <h3 data-i18n="modal.parkingCosts.alternativesTitle">Alternatywy</h3>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.alternativesItem1">Jeśli auto ma wrócić do życia, warto dać sobie termin: OC, badanie, hamulce, opony, wycieki i akumulator w konkretnym miesiącu, nie „kiedyś”.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem2">Jeśli planu nie ma, sprzedaż, skup albo legalny demontaż kończą utratę wartości, miejsce postojowe i odpowiedzialność.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem3">Przeparkowywanie co kilka tygodni nie rozwiązuje problemu; tylko przesuwa go na inną część tej samej ulicy.</li>
+                        <li data-i18n="modal.parkingCosts.alternativesItem4">Przy sporadycznych trasach komunikacja, rower, taxi, carsharing albo wynajem auta bywają tańsze niż utrzymywanie pojazdu „na wszelki wypadek”.</li>
+                    </ul>
+                </section>
+
+                <section class="parking-costs-panel" id="parking-costs-panel-numbers"
+                    role="tabpanel" aria-labelledby="parking-costs-tab-numbers" data-parking-costs-panel="numbers" hidden>
+                    <h3 data-i18n="modal.parkingCosts.numbersTitle">Co za to masz</h3>
+                    <div class="parking-costs-metrics">
+                        <div class="parking-costs-metric">
+                            <strong data-i18n="modal.parkingCosts.metricTicketsValue">100 biletów</strong>
+                            <span data-i18n="modal.parkingCosts.metricTicketsText">30-min MPK za 400 zł odholowania</span>
+                        </div>
+                        <div class="parking-costs-metric">
+                            <strong data-i18n="modal.parkingCosts.metricTaxiValue">16 kursów</strong>
+                            <span data-i18n="modal.parkingCosts.metricTaxiText">taxi/app po 25 zł za 400 zł</span>
+                        </div>
+                        <div class="parking-costs-metric">
+                            <strong data-i18n="modal.parkingCosts.metricPassValue">106 miesięcy</strong>
+                            <span data-i18n="modal.parkingCosts.metricPassText">biletu 30-dniowego „Nasz Wrocław” za karę 9 610 zł</span>
+                        </div>
+                        <div class="parking-costs-metric">
+                            <strong data-i18n="modal.parkingCosts.metricSeniorValue">0 zł</strong>
+                            <span data-i18n="modal.parkingCosts.metricSeniorText">MPK dla osób, które ukończyły 65 lat</span>
+                        </div>
+                    </div>
+                    <ul>
+                        <li data-i18n="modal.parkingCosts.numbersItem1">Każde 100 zł kosztu auta to 25 biletów 30-min MPK albo 4 krótkie kursy taxi/app przy założeniu 25 zł za kurs.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem2">9 610 zł kary UFG to ponad 2 400 biletów 30-min albo prawie 9 lat biletu 30-dniowego „Nasz Wrocław” na wszystkie linie.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem3">400 zł odholowania to 100 biletów 30-min, zanim doliczysz 50 zł za każdą dobę parkingu.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem4">OC ma indywidualną cenę, więc traktuj je jako własny koszt roczny; do niego dochodzi przegląd 149 zł lub 245 zł z LPG.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem5">Dla seniora 65+ przejazdy komunikacją miejską we Wrocławiu kosztują 0 zł, więc trzymanie auta „na wszelki wypadek” wymaga szczególnie chłodnego rachunku.</li>
+                        <li data-i18n="modal.parkingCosts.numbersItem6">15% i 30%: Wrocław wiąże płatną strefę z dostępnością miejsc, a brak rotacji z ruchem kierowców szukających postoju.</li>
+                    </ul>
+                    <div class="parking-costs-sources" aria-label="Źródła"
+                        data-i18n-attr="aria-label:modal.parkingCosts.sourcesLabel">
+                        <span data-i18n="modal.parkingCosts.sourcesLabel">Źródła</span>
+                        <a href="https://info.ufg.pl/smubob/portal/infoportal/szczegoly/tresci/12" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceUfg">UFG</a>
+                        <a href="https://baw.um.wroc.pl/UrzadMiastaWroclawia/document/77089/Uchwala-XXV_518_25"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceWroclaw">Wrocław 2026</a>
+                        <a href="https://www.gov.pl/web/infrastruktura/nowe-stawki-oplat-za-badanie-techniczne-pojazdow"
+                            target="_blank" rel="noopener" data-i18n="modal.parkingCosts.sourceInspection">Przeglądy</a>
+                        <a href="https://autoserwishallera.pl/cennik/" target="_blank" rel="noopener"
+                            data-i18n="modal.parkingCosts.sourceService">Cennik serwisu</a>
+                        <a href="https://www.urbancard.pl/bilety-ceny-i-ich-rodzaje" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceTransit">Cennik MPK</a>
+                        <a href="https://www.wroclaw.pl/komunikacja/uprawnienia-do-ulg" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceSenior">Ulgi 65+</a>
+                        <a href="https://www.wroclaw.pl/komunikacja/strefa-platnego-parkowania" target="_blank"
+                            rel="noopener" data-i18n="modal.parkingCosts.sourceParking">Parkowanie Wrocław</a>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

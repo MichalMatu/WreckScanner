@@ -102,12 +102,12 @@
 }
 
 .map-popup-head-values {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 4px;
-    max-width: min(54%, 220px);
+    gap: 3px 4px;
+    max-width: min(62%, 260px);
     min-width: 0;
 }
 
@@ -120,7 +120,8 @@
     font-size: 11px;
     line-height: 1.25;
     text-align: right;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 a.map-popup-head-value {
@@ -153,12 +154,6 @@ a.map-popup-head-value {
     border: 1px solid var(--popup-ufg-uninsured-border);
     background: var(--popup-ufg-uninsured-bg);
     color: var(--popup-ufg-uninsured-text);
-}
-
-.map-popup-head-value--insurance-checked {
-    border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
-    background: color-mix(in srgb, var(--primary) 16%, transparent);
-    color: var(--text-soft);
 }
 
 .map-popup-meta {
@@ -248,7 +243,7 @@ a.map-popup-head-value {
     border: 1px solid var(--popup-border);
     background: var(--popup-surface-soft);
     aspect-ratio: 4 / 3;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition: border-color var(--duration-fast);
 }
 
@@ -257,7 +252,7 @@ a.map-popup-head-value {
     height: 100%;
     display: block;
     object-fit: cover;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .map-popup-photo:focus-visible {
@@ -332,7 +327,7 @@ a.map-popup-head-value {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     transition:
         background var(--duration-fast),
         border-color var(--duration-fast),
@@ -347,7 +342,7 @@ a.map-popup-head-value {
 }
 
 .map-popup-action:disabled {
-    cursor: progress;
+    cursor: var(--cursor-progress);
     opacity: 0.6;
 }
 
@@ -389,7 +384,7 @@ a.map-popup-head-value {
     background: var(--popup-action-success);
     color: var(--popup-on-action);
     font: 800 12px var(--font);
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .map-popup-text-action:hover {
@@ -410,7 +405,7 @@ a.map-popup-head-value {
 }
 
 .map-popup-text-action:disabled {
-    cursor: default;
+    cursor: var(--cursor-static);
     opacity: 0.82;
 }
 

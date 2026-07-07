@@ -50,7 +50,7 @@
     background: transparent;
     color: var(--text);
     text-align: left;
-    cursor: pointer;
+    cursor: var(--cursor-action);
 }
 
 .photo-review-item:hover,
@@ -129,7 +129,7 @@
     color: var(--text-soft);
     font: 850 0.72rem var(--font);
     line-height: 1.1;
-    cursor: pointer;
+    cursor: var(--cursor-action);
     text-align: center;
     white-space: normal;
     overflow-wrap: anywhere;
