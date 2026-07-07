@@ -1,8 +1,26 @@
 // Centralna konfiguracja frontendu. Zmiany tutaj wpływają tylko na zachowanie
 // przeglądarki; limity bezpieczeństwa backendu są osobno egzekwowane w Pythonie.
 
+function normalizeDefaultMapView(raw, fallback) {
+    const lat = Number(raw?.lat);
+    const lon = Number(raw?.lon);
+    const zoom = Number(raw?.zoom);
+    if (
+        Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+        Number.isFinite(lon) && lon >= -180 && lon <= 180 &&
+        Number.isFinite(zoom) && zoom >= 0 && zoom <= 22
+    ) {
+        return { center: [lat, lon], zoom: Math.round(zoom) };
+    }
+    return { center: [...fallback.center], zoom: fallback.zoom };
+}
+
+function setDefaultMapView(raw) {
+    DEFAULT_MAP_VIEW = normalizeDefaultMapView(raw, STATIC_DEFAULT_MAP_VIEW);
+}
+
 // Klucze localStorage. Zmiana nazwy resetuje zapisane preferencje użytkownika.
-const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2';
+const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3';
 const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisible.v1';
 const VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY = 'wreckscanner.vehicleStandingFilterDays.v1';
@@ -71,11 +89,12 @@ const MAP_SOURCES = [
 const DEFAULT_MAP_SOURCE_KEY = 'poland-ortho';
 const CADASTRAL_WMS_URL = 'https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow';
 const CADASTRAL_WMS_LAYERS = 'dzialki,numery_dzialek';
-const DEFAULT_MAP_VIEW = {
-    center: [52.1, 19.4],
-    zoom: 7,
+const STATIC_DEFAULT_MAP_VIEW = {
+    center: [51.107883, 17.038538],
+    zoom: 13,
 };
 const MAX_MAP_ZOOM = 22;
+let DEFAULT_MAP_VIEW = normalizeDefaultMapView(window.WRECKSCANNER_APP_SETTINGS?.map_view, STATIC_DEFAULT_MAP_VIEW);
 const METERS_PER_DEGREE_LAT = 111320;
 
 // Przy dalekim oddaleniu pinezki przechodzą w małe klikane kropki.

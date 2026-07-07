@@ -211,6 +211,38 @@
                         <p class="modal-hint" id="admin-public-features-status"
                             data-i18n="modal.adminPanel.publicFeaturesHint">Określa, co mogą robić niezalogowani.</p>
                     </section>
+
+                    <section class="modal-section admin-panel-section admin-panel-section--map-start">
+                        <div class="setting-toggle-row">
+                            <h3 data-i18n="modal.adminPanel.mapStart">Start mapy</h3>
+                            <div class="setting-actions admin-map-view-actions">
+                                <button type="button" class="settings-reset-btn" id="admin-map-view-current"
+                                    onclick="fillMapViewFromCurrentMap()"
+                                    data-i18n="modal.adminPanel.useCurrentMapView">Bieżący widok</button>
+                                <button type="button" class="settings-reset-btn" id="admin-map-view-save"
+                                    onclick="saveMapViewSettings()" data-i18n="modal.adminPanel.saveMapStart">Zapisz</button>
+                            </div>
+                        </div>
+                        <div class="admin-map-view-grid">
+                            <label class="admin-map-view-field">
+                                <span data-i18n="modal.adminPanel.mapStartLat">Szer.</span>
+                                <input type="number" class="modal-input" id="admin-map-view-lat" min="-90" max="90"
+                                    step="0.000001" value="51.107883">
+                            </label>
+                            <label class="admin-map-view-field">
+                                <span data-i18n="modal.adminPanel.mapStartLon">Dł.</span>
+                                <input type="number" class="modal-input" id="admin-map-view-lon" min="-180" max="180"
+                                    step="0.000001" value="17.038538">
+                            </label>
+                            <label class="admin-map-view-field">
+                                <span data-i18n="modal.adminPanel.mapStartZoom">Zoom</span>
+                                <input type="number" class="modal-input" id="admin-map-view-zoom" min="0" max="22"
+                                    step="1" value="13">
+                            </label>
+                        </div>
+                        <p class="modal-hint" id="admin-map-view-status"
+                            data-i18n="modal.adminPanel.mapStartHint">Start dla nowych wejść bez linku do miejsca.</p>
+                    </section>
                 </div>
 
                 <section class="modal-section admin-panel-section admin-panel-section--layers">

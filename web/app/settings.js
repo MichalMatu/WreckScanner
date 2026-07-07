@@ -47,6 +47,7 @@ const adminSettingsControls = [
     document.getElementById('admin-public-features-save'),
     ...Object.values(publicLayerControls),
     ...Object.values(publicFeatureControls),
+    ...mapViewAdminControls(),
 ].filter(Boolean);
 let publicLayerSettings = Object.fromEntries(Object.values(PUBLIC_LAYER_KEYS).map(key => [key, true]));
 let publicFeatureSettings = Object.fromEntries(Object.values(PUBLIC_FEATURE_KEYS).map(key => [key, true]));
@@ -368,6 +369,8 @@ async function loadAppSettings() {
         defaultEnhancementSettings = data.defaults?.enhancement || data.enhancement;
         applyEnhancementSettings(readStoredEnhancementSettings() || defaultEnhancementSettings || data.enhancement);
         saveLocalEnhancementSettings({ refresh: false });
+        applyMapViewSettings(data.map_view);
+        setDefaultMapView(data.map_view);
         applyPublicLayerSettings(data.public_layers);
         applyPublicFeatureSettings(data.public_features);
         loadedPublicLayers = true;
@@ -380,6 +383,7 @@ async function loadAppSettings() {
             updateEnhancementLabels();
             saveLocalEnhancementSettings({ refresh: false });
         }
+        applyMapViewSettings(window.WRECKSCANNER_APP_SETTINGS?.map_view);
     }
     if (!loadedPublicLayers) {
         publicLayerSettingsLoaded = true;
@@ -425,6 +429,18 @@ async function savePublicFeatureSettings() {
     }, {
         statusId: 'admin-public-features-status',
         errorMessage: t('modal.adminPanel.publicFeaturesSaveError'),
+    });
+}
+
+async function saveMapViewSettings() {
+    await saveSettings({ map_view: mapViewFormSettings() }, data => {
+        applyMapViewSettings(data.map_view);
+        setDefaultMapView(data.map_view);
+        const status = document.getElementById('admin-map-view-status');
+        if (status) status.textContent = t('modal.adminPanel.mapStartSaved');
+    }, {
+        statusId: 'admin-map-view-status',
+        errorMessage: t('modal.adminPanel.mapStartSaveError'),
     });
 }
 

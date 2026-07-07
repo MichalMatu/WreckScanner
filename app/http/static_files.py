@@ -1,12 +1,15 @@
+import json
 import re
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 from app import config
 from app.http import responses as http_responses
+from core.settings_store import default_app_settings, load_app_settings
 
 HTML_PAGE_PATHS = {"/", "/index.html", "/privacy", "/report"}
 HTML_INCLUDE_RE = re.compile(r"^[ \t]*<!--\s*include:([A-Za-z0-9_./-]+)\s*-->\s*$", re.MULTILINE)
+APP_SETTINGS_BOOTSTRAP_TOKEN = "<!-- app-settings-bootstrap -->"
 WEB_ASSET_CONTENT_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
@@ -20,6 +23,18 @@ WEB_ASSET_CONTENT_TYPES = {
     ".webp": "image/webp",
     ".woff2": "font/woff2",
 }
+
+
+def app_settings_bootstrap_json() -> str:
+    try:
+        settings = load_app_settings()
+    except Exception:
+        settings = default_app_settings()
+    return json.dumps(
+        {"map_view": settings.get("map_view")},
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).replace("</", "<\\/")
 
 
 def send_file(
@@ -94,7 +109,14 @@ def render_web_template(file_name: str, *, _seen: frozenset[str] = frozenset()) 
         include_path = safe_web_relative_path(match.group(1)).as_posix()
         return render_web_template(include_path, _seen=_seen | {key})
 
-    return HTML_INCLUDE_RE.sub(replace_include, template)
+    rendered = HTML_INCLUDE_RE.sub(replace_include, template)
+    if APP_SETTINGS_BOOTSTRAP_TOKEN not in rendered:
+        return rendered
+
+    return rendered.replace(
+        APP_SETTINGS_BOOTSTRAP_TOKEN,
+        f"<script>window.WRECKSCANNER_APP_SETTINGS={app_settings_bootstrap_json()};</script>",
+    )
 
 
 def send_web_page(handler, file_name: str = "index.html", *, include_body: bool = True) -> None:

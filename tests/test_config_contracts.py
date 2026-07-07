@@ -89,11 +89,12 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertNotIn("geoportal-trueortho", config_js)
         self.assertNotIn("PrawdziwaOrtofotomapa", config_js)
         self.assertIn("const DEFAULT_MAP_SOURCE_KEY = 'poland-ortho'", config_js)
-        self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v2'", config_js)
+        self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3'", config_js)
         self.assertIn("const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2'", config_js)
         self.assertIn("const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1'", config_js)
-        self.assertIn("center: [52.1, 19.4]", config_js)
-        self.assertIn("zoom: 7", config_js)
+        self.assertIn("center: [51.107883, 17.038538]", config_js)
+        self.assertIn("zoom: 13", config_js)
+        self.assertIn("let DEFAULT_MAP_VIEW = normalizeDefaultMapView", config_js)
         self.assertIn(
             "const CADASTRAL_WMS_URL = 'https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow'",
             config_js,

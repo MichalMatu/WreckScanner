@@ -216,6 +216,40 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn('id="context-add-field-photos"', html)
         self.assertIn('id="open-photo-review"', html)
 
+    def test_admin_panel_controls_default_map_start(self):
+        html = read_index_html()
+        config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
+        map_start_js = (ROOT_DIR / "web" / "app" / "map_start_settings.js").read_text(encoding="utf-8")
+        settings_js = (ROOT_DIR / "web" / "app" / "settings.js").read_text(encoding="utf-8")
+        admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
+        i18n_js = read_i18n_bundle()
+        frontend = html + config_js + map_start_js + settings_js + admin_css + i18n_js
+
+        self.assertIn("WRECKSCANNER_APP_SETTINGS", html)
+        self.assertLess(html.index("WRECKSCANNER_APP_SETTINGS"), html.index('<script src="/config.js"></script>'))
+        self.assertLess(
+            html.index('<script src="/app/map_start_settings.js"></script>'),
+            html.index('<script src="/app/settings.js"></script>'),
+        )
+        self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3';", config_js)
+        self.assertIn("center: [51.107883, 17.038538]", config_js)
+        self.assertIn("zoom: 13", config_js)
+        self.assertIn("let DEFAULT_MAP_VIEW = normalizeDefaultMapView", config_js)
+        self.assertIn("function setDefaultMapView", config_js)
+        self.assertIn('id="admin-map-view-lat"', html)
+        self.assertIn('id="admin-map-view-lon"', html)
+        self.assertIn('id="admin-map-view-zoom"', html)
+        self.assertIn('onclick="fillMapViewFromCurrentMap()"', html)
+        self.assertIn("function fillMapViewFromCurrentMap", map_start_js)
+        self.assertIn("function mapViewAdminControls", map_start_js)
+        self.assertIn("function saveMapViewSettings", settings_js)
+        self.assertIn("map_view: mapViewFormSettings()", settings_js)
+        self.assertIn("setDefaultMapView(data.map_view)", settings_js)
+        self.assertIn(".admin-map-view-grid", admin_css)
+        self.assertIn("'modal.adminPanel.mapStart': 'Start mapy'", i18n_js)
+        self.assertIn("'modal.adminPanel.mapStart': 'Map start'", i18n_js)
+        self.assertNotIn("center: [52.1, 19.4]", frontend)
+
     def test_frontend_removes_retired_vehicle_case_review_panel(self):
         html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
