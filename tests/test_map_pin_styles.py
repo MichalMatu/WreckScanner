@@ -150,7 +150,9 @@ class MapPinStyleContracts(unittest.TestCase):
         self.assertIn("pendingPhotos.push(photo)", vehicle_layer_js)
         self.assertIn("function pendingVehiclePhotoAttachedToApprovedGroup", field_photos_js)
         self.assertIn("!pendingVehiclePhotoAttachedToApprovedGroup(photo, approvedVehicleGroups)", field_photos_js)
-        self.assertIn("const approvedVehicleGroups = vehicleLayerAllowed() ? visibleVehicleGroups(photos) : [];", field_photos_js)
+        self.assertIn(
+            "const approvedVehicleGroups = vehicleLayerAllowed() ? visibleVehicleGroups(photos) : [];", field_photos_js
+        )
         self.assertIn("encodedApprovedPhotoIds", vehicle_layer_js)
         self.assertIn("encodedEditablePhotoIds", vehicle_layer_js)
         self.assertIn("vehicle.popup.pendingBadge", i18n_js)

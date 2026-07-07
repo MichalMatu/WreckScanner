@@ -31,7 +31,7 @@ class AppMenuFrontendContracts(unittest.TestCase):
         self.assertIn('data-i18n-attr="title:icon.lang;aria-label:icon.lang"', html)
         self.assertIn('onclick="openSettingsModal(); closeAppMenu()"', html)
         self.assertIn('onclick="toggleLang()"', html)
-        self.assertIn('onclick="openModal(\'modal-privacy-info\'); closeAppMenu()"', html)
+        self.assertIn("onclick=\"openModal('modal-privacy-info'); closeAppMenu()\"", html)
         self.assertIn('onclick="openProblemReportModal(); closeAppMenu()"', html)
         self.assertIn("function toggleLang()", ui_js)
         self.assertIn("document.querySelectorAll('.lang-label')", ui_js)

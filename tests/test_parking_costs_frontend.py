@@ -13,9 +13,7 @@ def read_index_html() -> str:
 
 
 def read_i18n_bundle() -> str:
-    return "\n".join(
-        (ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js")
-    )
+    return "\n".join((ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js"))
 
 
 class ParkingCostsFrontendContracts(unittest.TestCase):
