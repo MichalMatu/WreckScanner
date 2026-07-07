@@ -8,8 +8,8 @@ from tempfile import TemporaryDirectory
 from PIL import ExifTags, Image, TiffImagePlugin
 
 from core.config import MAX_FIELD_PHOTO_BYTES
+from core.field_photo_owner_actions import discard_field_photo_drafts_by_owner
 from core.field_photos import (
-    discard_field_photo_drafts_by_owner,
     field_photo_asset,
     field_photo_owner_original_asset,
     list_field_photo_review_items,

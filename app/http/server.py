@@ -25,6 +25,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def translate_path(self, path: str) -> str:
         return http_static_files.translate_path(path)
 
+    def list_directory(self, path: str):
+        http_responses.send_text_error(self, 404, "Nie znaleziono pliku.")
+        return None
+
     def end_headers(self):
         for key, value in http_responses.security_response_headers().items():
             self.send_header(key, value)
@@ -37,11 +41,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         if not http_dispatch.handle_head(self):
-            super().do_HEAD()
+            http_responses.send_text_error(self, 404, "Nie znaleziono pliku.", include_body=False)
 
     def do_GET(self):
         if not http_dispatch.handle_get(self):
-            super().do_GET()
+            http_responses.send_text_error(self, 404, "Nie znaleziono pliku.")
 
     def do_DELETE(self):
         http_dispatch.handle_delete(self)

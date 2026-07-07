@@ -377,6 +377,8 @@ const TRANSLATIONS_PL = {
         'modal.photoReview.deleteShort': 'Usuń',
         'modal.photoReview.deleteTitle': 'Usunąć odrzucone zdjęcie?',
         'modal.photoReview.deleteConfirm': 'Zdjęcie zostanie trwale usunięte z kolejki i prywatnego magazynu.',
+        'modal.photoReview.ownerDeleteTitle': 'Usunąć własne zdjęcie?',
+        'modal.photoReview.ownerDeleteConfirm': 'Szkic albo zgłoszenie oczekujące zostanie trwale usunięte z mapy i prywatnego magazynu.',
         'modal.photoReview.deleting': 'Usuwam zdjęcie...',
         'modal.photoReview.deleted': 'Zdjęcie usunięte.',
         'modal.photoReview.deleteError': 'Nie udało się usunąć zdjęcia.',

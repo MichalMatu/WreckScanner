@@ -52,6 +52,7 @@ class ConfigModuleContractTests(unittest.TestCase):
             app_config.CORS_ALLOWED_ORIGINS,
             ("https://wreckscanner.pl", "https://ilestoi.pl", "https://dlugostoi.pl"),
         )
+        self.assertEqual(app_config.TRUSTED_PROXY_ADDRESSES, ("127.0.0.1", "::1"))
 
     def test_web_config_is_loaded_before_application_code(self):
         html = read_index_html()

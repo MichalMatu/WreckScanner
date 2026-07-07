@@ -9,8 +9,13 @@ from urllib.parse import parse_qsl, unquote, urlsplit
 
 from app import config, map_downloads, wms_cache
 from app.http import responses as http_responses
+from core.config import BYTES_PER_MIB
 from core.enhancement import enhance_orthophoto
 from core.settings_store import enhancement_settings_from_dict, enhancement_settings_to_dict
+
+_MAX_PROXY_PATH_CHARS = 2048
+_MAX_TILE_BYTES = 8 * BYTES_PER_MIB
+_ALLOWED_PROXY_PATH_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~/%?&=:+,;@")
 
 
 def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
@@ -32,6 +37,49 @@ def _fallback_tile_png() -> bytes:
             _png_chunk(b"IEND", b""),
         ]
     )
+
+
+def _safe_proxy_path(upstream_path: str) -> bool:
+    if not upstream_path or len(upstream_path) > _MAX_PROXY_PATH_CHARS:
+        return False
+    if any(char not in _ALLOWED_PROXY_PATH_CHARS for char in upstream_path):
+        return False
+    parts = urlsplit(upstream_path)
+    if parts.scheme or parts.netloc:
+        return False
+    path = parts.path.strip("/")
+    if not path or "\\" in path:
+        return False
+    return all(part not in {"", ".", ".."} for part in path.split("/"))
+
+
+def _looks_like_image(data: bytes) -> bool:
+    return (
+        data.startswith(b"\x89PNG\r\n\x1a\n")
+        or data.startswith(b"\xff\xd8\xff")
+        or (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+    )
+
+
+def _read_image_response(resp) -> bytes:
+    resp.raise_for_status()
+    content_type = str(resp.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+    if content_type and not content_type.startswith("image/") and content_type != "application/octet-stream":
+        raise ValueError(f"Unexpected upstream content type: {content_type}")
+
+    chunks: list[bytes] = []
+    total = 0
+    for chunk in resp.iter_content(chunk_size=64 * 1024):
+        if not chunk:
+            continue
+        total += len(chunk)
+        if total > _MAX_TILE_BYTES:
+            raise ValueError("Upstream tile response is too large")
+        chunks.append(chunk)
+    data = b"".join(chunks)
+    if not _looks_like_image(data):
+        raise ValueError("Upstream response is not a supported image")
+    return data
 
 
 def _send_tile_response(
@@ -109,7 +157,6 @@ def _handle_enhanced_tile(
         )
         _send_tile_fallback(handler, cache_status="UPSTREAM_ERROR")
         return
-
     try:
         import cv2
         import numpy as np
@@ -122,7 +169,6 @@ def _handle_enhanced_tile(
     if img is None or img.size == 0:
         _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
         return
-
     try:
         enhanced = enhance_orthophoto(img, settings=enhancement_settings)
     except Exception as exc:
@@ -141,7 +187,6 @@ def _handle_enhanced_tile(
         logging.getLogger(__name__).warning("WMS PNG encoding failed; returning fallback tile")
         _send_tile_fallback(handler, cache_status="ENCODE_ERROR")
         return
-
     out_bytes = encoded.tobytes()
     wms_cache.write_tile_cache(cache_path, out_bytes)
     wms_cache.cleanup_tile_cache()
@@ -150,16 +195,15 @@ def _handle_enhanced_tile(
 
 def handle_wms_proxy(handler) -> None:
     upstream_path = handler.path[len("/wms_proxy/") :]
-    if not upstream_path or ".." in upstream_path:
+    if not _safe_proxy_path(upstream_path):
         http_responses.send_text_error(handler, 400, "Invalid wms_proxy path")
         return
 
     def fetch_raw_tile(stripped_upstream_path: str) -> bytes:
         upstream_url = f"{config.WMS_UPSTREAM_BASE}/{stripped_upstream_path}"
         session = map_downloads.get_http_session()
-        resp = session.get(upstream_url, timeout=config.WMS_TIMEOUT)
-        resp.raise_for_status()
-        return resp.content
+        with session.get(upstream_url, timeout=config.WMS_TIMEOUT, stream=True) as resp:
+            return _read_image_response(resp)
 
     _handle_enhanced_tile(
         handler,
@@ -189,7 +233,7 @@ def handle_geoportal_tile_proxy(handler) -> None:
 
     def fetch_raw_tile(_stripped_upstream_path: str) -> bytes:
         session = map_downloads.get_http_session()
-        resp = session.get(
+        with session.get(
             config.GEOPORTAL_STANDARD_WMTS_URL,
             params={
                 "SERVICE": "WMTS",
@@ -204,9 +248,9 @@ def handle_geoportal_tile_proxy(handler) -> None:
                 "TILECOL": str(x),
             },
             timeout=config.WMS_TIMEOUT,
-        )
-        resp.raise_for_status()
-        return resp.content
+            stream=True,
+        ) as resp:
+            return _read_image_response(resp)
 
     _handle_enhanced_tile(
         handler,

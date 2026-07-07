@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from app.http import wms_proxy
 
+JPEG_BYTES = b"\xff\xd8\xffjpeg"
+
 
 class FakeHandler:
     def __init__(self, path: str):
@@ -30,11 +32,22 @@ class FakeHandler:
 
 
 class FakeResponse:
-    def __init__(self, content: bytes = b"jpeg"):
+    def __init__(self, content: bytes = JPEG_BYTES, content_type: str = "image/jpeg"):
         self.content = content
+        self.headers = {"Content-Type": content_type}
 
     def raise_for_status(self) -> None:
         return None
+
+    def iter_content(self, chunk_size: int):
+        for index in range(0, len(self.content), chunk_size):
+            yield self.content[index : index + chunk_size]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
 
 
 class FakeSession:
@@ -98,7 +111,7 @@ class TileProxyTests(unittest.TestCase):
         self.assertEqual(kwargs["raw_content_type"], "image/jpeg")
 
         with patch.object(wms_proxy.map_downloads, "get_http_session", return_value=session):
-            self.assertEqual(kwargs["fetch_raw_tile"]("ignored"), b"jpeg")
+            self.assertEqual(kwargs["fetch_raw_tile"]("ignored"), JPEG_BYTES)
 
         self.assertEqual(len(session.calls), 1)
         url, request_kwargs = session.calls[0]

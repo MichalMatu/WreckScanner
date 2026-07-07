@@ -24,6 +24,11 @@ i nie zapisuje tablic ani VIN.
 ## Aktualne przeplywy
 
 - Dodanie materialu tworzy rekord `field_photos` w SQLite z tokenem edycji.
+- Publiczny upload uzytkownika najpierw tworzy szkic `draft`; wlasciciel moze
+  go zanonimizowac, wyslac do weryfikacji albo usunac tokenem.
+- Po wyslaniu do weryfikacji rekord przechodzi do `pending`. Pozostaje widoczny
+  na mapie zgodnie z ustawieniami warstw, a wlasciciel z poprawnym tokenem moze
+  nadal edytowac anonimizacje albo usunac swoje oczekujace zgloszenie.
 - Administrator zatwierdza albo odrzuca zdjecia w jednej kolejce photo review.
 - Pojazdy na mapie sa grupami zatwierdzonych zdjec terenowych, nie osobnymi
   rekordami spraw.
@@ -43,6 +48,11 @@ i nie zapisuje tablic ani VIN.
 - `GET /api/field-photos`
 - `POST /api/field-photos`
 - `PATCH /api/field-photos/:id/location`
+- `POST /api/field-photos/owner-claim`
+- `POST /api/field-photos/owner-submit`
+- `POST /api/field-photos/owner-discard`
+- `POST /api/field-photos/owner-delete`
+- `PATCH /api/field-photos/:id/owner-review`
 - `POST /api/field-photo-reports/report-pdf`
 - `GET /api/admin/photos`
 - `PATCH /api/admin/photos/field/:id/review`

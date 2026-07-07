@@ -6,6 +6,7 @@ from app.http import health as http_health
 from app.http import location as http_location
 from app.http import public as http_public
 from app.http import public_data as http_public_data
+from app.http import rate_limit as http_rate_limit
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from app.http import retention as http_retention
@@ -81,6 +82,8 @@ def handle_passthrough_get(handler, path: str) -> bool:
 
 def handle_get(handler) -> bool:
     path = unquote(urlsplit(handler.path).path)
+    if http_rate_limit.reject_limited(handler, "GET", path):
+        return True
     if http_static_files.handle_web_page(handler, path):
         return True
     if http_static_files.handle_web_asset(handler, path):
@@ -113,6 +116,9 @@ def handle_delete(handler) -> None:
 
 def handle_patch(handler) -> None:
     request_path = unquote(urlsplit(handler.path).path)
+    if http_rate_limit.reject_limited(handler, "PATCH", request_path):
+        return
+
     admin_photo_review_route = http_routes.admin_photo_review_route(request_path)
     if admin_photo_review_route:
         http_request_body.dispatch_json_request(
@@ -146,6 +152,8 @@ def handle_patch(handler) -> None:
 
 def handle_post(handler) -> None:
     request_path = unquote(urlsplit(handler.path).path)
+    if http_rate_limit.reject_limited(handler, "POST", request_path):
+        return
     if request_path == "/api/admin/login":
         http_request_body.dispatch_json_request(handler, http_admin.handle_admin_login, handler)
         return
@@ -163,6 +171,9 @@ def handle_post(handler) -> None:
         return
     if request_path == "/api/field-photos/owner-discard":
         http_request_body.dispatch_json_request(handler, http_public.handle_discard_field_photo_drafts, handler)
+        return
+    if request_path == "/api/field-photos/owner-delete":
+        http_request_body.dispatch_json_request(handler, http_public.handle_delete_field_photos_by_owner, handler)
         return
     if request_path == "/api/admin/photo-retention/run":
         http_request_body.dispatch_json_request(handler, http_retention.handle_run_photo_retention, handler)
