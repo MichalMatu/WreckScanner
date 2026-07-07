@@ -150,6 +150,17 @@ class ReportPdfTests(unittest.TestCase):
         self.assertIsNone(parcel)
         self.assertIn("automatycznie pobrać", error)
 
+    def test_report_address_context_is_best_effort(self):
+        with patch("app.http.public.lookup_nearest_address", return_value={"formatted": "ul. Testowa 1"}):
+            address = http_public._report_address_context("51.1", "17.2")
+
+        self.assertEqual(address, {"formatted": "ul. Testowa 1"})
+
+        with patch("app.http.public.lookup_nearest_address", side_effect=RuntimeError("upstream")):
+            address = http_public._report_address_context("51.1", "17.2")
+
+        self.assertIsNone(address)
+
     def test_create_field_photo_report_pdf_uses_field_photo_group_without_archived_case(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -174,13 +185,17 @@ class ReportPdfTests(unittest.TestCase):
                     lat=51.1,
                     lon=17.2,
                     parcel=parcel,
+                    address={"formatted": "ul. Testowa 1, 50-000, Wrocław", "source_label": "PRG/GUGiK"},
                     field_photos_dir=field_dir,
                 )
 
             self.assertEqual(result["status"], "ok")
             self.assertEqual(result["photo_count"], 1)
             self.assertEqual(result["pdf_filename"], report_pdf_download_name(result["report_id"]))
-            self.assertIn("Zgłoszenie pojazdu nieużytkowanego", result["subject"])
+            self.assertEqual(
+                result["subject"],
+                "Zgłoszenie pojazdu nieużytkowanego - ul. Testowa 1, 50-000, Wrocław",
+            )
             self.assertNotIn("body", result)
             self.assertNotIn("zip_filename", result)
             self.assertNotIn("zip_base64", result)

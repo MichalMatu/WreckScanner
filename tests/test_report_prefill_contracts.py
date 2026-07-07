@@ -15,8 +15,12 @@ class ReportPrefillFrontendContractTests(unittest.TestCase):
         self.assertIn("loadReportReporterDefaults", reports_js)
         self.assertIn("applyReportReporterDefaults(form)", reports_js)
         self.assertIn("saveReportReporterDefaults(form)", reports_js)
+        self.assertIn("applyReportAddressDefault", reports_js)
+        self.assertIn("ADDRESS_REVERSE_URL", reports_js)
         self.assertIn("modal.report.defaultLocation", reports_js + i18n_pl)
+        self.assertIn("modal.report.defaultLocationWithAddress", reports_js + i18n_pl)
         self.assertIn("modal.report.defaultVehicleDescription", reports_js + i18n_pl)
+        self.assertIn("Najbliższy adres: {address}", i18n_pl)
         self.assertIn("długotrwale nieużytkowany lub porzucony", i18n_pl)
         self.assertIn("art. 50a ust. 1 Prawa o ruchu drogowym", i18n_pl)
 

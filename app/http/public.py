@@ -5,7 +5,7 @@ from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from app.http import static_files as http_static_files
-from app.http.public_data import lookup_cadastral_parcel
+from app.http.public_data import lookup_cadastral_parcel, lookup_nearest_address
 from core import config as core_config
 from core.field_photos import (
     discard_field_photo_drafts_by_owner,
@@ -51,6 +51,18 @@ def _report_cadastral_context(lat: str | None, lon: str | None) -> tuple[dict | 
         return None, str(exc)
     except Exception:
         return None, "Nie udało się automatycznie pobrać danych działki ewidencyjnej."
+
+
+def _report_address_context(lat: str | None, lon: str | None) -> dict | None:
+    try:
+        lat_float = float(lat or "")
+        lon_float = float(lon or "")
+    except ValueError:
+        return None
+    try:
+        return lookup_nearest_address(lat_float, lon_float)
+    except Exception:
+        return None
 
 
 def handle_create_privacy_request(handler) -> None:
@@ -160,6 +172,7 @@ def handle_field_photo_report_pdf(handler) -> None:
         fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PDF_BODY_BYTES)
         reject_report_pdf_files(files)
         parcel, parcel_error = _report_cadastral_context(fields.get("lat"), fields.get("lon"))
+        address = _report_address_context(fields.get("lat"), fields.get("lon"))
         result = create_field_photo_report_pdf(
             fields,
             _report_photo_ids(fields),
@@ -167,6 +180,7 @@ def handle_field_photo_report_pdf(handler) -> None:
             lon=fields.get("lon"),
             parcel=parcel,
             parcel_error=parcel_error,
+            address=address,
             field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)

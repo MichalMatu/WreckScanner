@@ -35,6 +35,18 @@ REPORT_PARCEL_KEYS = (
     "contour",
     "published_at",
 )
+REPORT_ADDRESS_KEYS = (
+    "formatted",
+    "display_name",
+    "road",
+    "house_number",
+    "postcode",
+    "city",
+    "district",
+    "distance_m",
+    "source",
+    "source_label",
+)
 
 
 def _now_utc() -> datetime:
@@ -68,6 +80,17 @@ def _normalize_report_parcel(parcel: dict[str, Any] | None) -> dict[str, str]:
     normalized: dict[str, str] = {}
     for key in REPORT_PARCEL_KEYS:
         value = _report_context_text(parcel.get(key), max_len=240)
+        if value:
+            normalized[key] = value
+    return normalized
+
+
+def _normalize_report_address(address: dict[str, Any] | None) -> dict[str, str]:
+    if not isinstance(address, dict):
+        return {}
+    normalized: dict[str, str] = {}
+    for key in REPORT_ADDRESS_KEYS:
+        value = _report_context_text(address.get(key), max_len=500 if key == "display_name" else 240)
         if value:
             normalized[key] = value
     return normalized
@@ -198,11 +221,13 @@ def _field_photo_report_record(
     lon: Any,
     parcel: dict[str, Any] | None = None,
     parcel_error: Any = "",
+    address: dict[str, Any] | None = None,
     report_root: Path,
 ) -> dict[str, Any]:
     lat_float = _float_coordinate(lat, "lat")
     lon_float = _float_coordinate(lon, "lon")
     safe_parcel = _normalize_report_parcel(parcel)
+    safe_address = _normalize_report_address(address)
     safe_parcel_error = _report_context_text(parcel_error, max_len=500)
     links = external_map_links(lat_float, lon_float)
     attached_photos = [
@@ -225,6 +250,7 @@ def _field_photo_report_record(
         "links": links,
         "parcel": safe_parcel,
         "parcel_error": "" if safe_parcel else safe_parcel_error,
+        "address": safe_address,
         "evidences": [],
         "attached_photos": attached_photos,
     }
@@ -258,6 +284,7 @@ def create_field_photo_report_pdf(
     lon: Any,
     parcel: dict[str, Any] | None = None,
     parcel_error: Any = "",
+    address: dict[str, Any] | None = None,
     field_photos_dir: Path,
 ) -> dict[str, Any]:
     crop_m = _report_crop_m(fields)
@@ -273,6 +300,7 @@ def create_field_photo_report_pdf(
             lon=lon,
             parcel=parcel,
             parcel_error=parcel_error,
+            address=address,
             report_root=work_dir,
         )
         evidence = _build_report_evidence(report_record, work_dir, crop_m=crop_m)

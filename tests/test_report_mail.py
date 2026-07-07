@@ -109,6 +109,45 @@ class ReportMailTests(unittest.TestCase):
         self.assertNotIn("Województwo:", body)
         self.assertIn("na drodze publicznej, w strefie zamieszkania albo w strefie ruchu", body)
 
+    def test_build_mail_draft_uses_nearest_address_when_available(self):
+        subject, body = build_mail_draft(
+            {
+                "id": "wreck_51087994_17039629",
+                "lat": 51.087994,
+                "lon": 17.039629,
+                "links": {},
+                "address": {
+                    "formatted": "ul. św. Jerzego 11, 50-518, Wrocław",
+                    "source_label": "PRG/GUGiK",
+                    "distance_m": "26",
+                },
+            },
+            {"labels_present": ["2024", "2025"]},
+            {
+                "reporter_name": "Jan Kowalski",
+                "reporter_address": "ul. Testowa 1, Wrocław",
+                "reporter_phone": "500 600 700",
+                "reporter_email": "jan@example.com",
+                "location_description": (
+                    "Miejsce wskazane na mapie przy współrzędnych GPS 51.087994, 17.039629. "
+                    "Pojazd znajduje się w lokalizacji widocznej na załączonych zdjęciach."
+                ),
+                "observed_at": "2026-06-02T12:30",
+                "vehicle_description": "Pojazd długo stoi w tym samym miejscu.",
+            },
+        )
+
+        self.assertEqual(
+            subject,
+            "Zgłoszenie pojazdu nieużytkowanego - ul. św. Jerzego 11, 50-518, Wrocław",
+        )
+        self.assertIn(
+            "Najbliższy adres według PRG/GUGiK: ul. św. Jerzego 11, 50-518, Wrocław "
+            "(ok. 26 m od wskazanego punktu).",
+            body,
+        )
+        self.assertIn("Współrzędne GPS:\n51.087994, 17.039629", body)
+
     def test_build_mail_draft_omits_insurance_check_date_when_status_is_unknown(self):
         _subject, body = build_mail_draft(
             {

@@ -7,6 +7,7 @@ const REPORT_REPORTER_FIELDS = ['reporter_name', 'reporter_email', 'reporter_pho
 
 let reportPdfDownloadUrls = [];
 let reportPdfTarget = null;
+let reportPdfDefaultLocationDescription = '';
 
 function reportFormField(form, name) {
     return form?.querySelector(`[name="${name}"]`) || null;
@@ -53,8 +54,28 @@ function applyReportDescriptionDefaults(form, target) {
         lat: Number.isFinite(lat) ? lat.toFixed(6) : '',
         lon: Number.isFinite(lon) ? lon.toFixed(6) : '',
     };
-    setReportFormValue(form, 'location_description', t('modal.report.defaultLocation', coords));
+    reportPdfDefaultLocationDescription = t('modal.report.defaultLocation', coords);
+    setReportFormValue(form, 'location_description', reportPdfDefaultLocationDescription);
     setReportFormValue(form, 'vehicle_description', t('modal.report.defaultVehicleDescription'));
+}
+
+async function applyReportAddressDefault(form, target) {
+    const lat = Number(target?.lat);
+    const lon = Number(target?.lon);
+    const locationField = reportFormField(form, 'location_description');
+    if (!locationField || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    const expectedDefault = reportPdfDefaultLocationDescription;
+    try {
+        const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+        const data = await apiJson(`${ADDRESS_REVERSE_URL}?${params}`);
+        const address = String(data?.address?.formatted || '').trim();
+        if (!address || target !== reportPdfTarget) return;
+        const current = String(locationField.value || '');
+        if (current && current !== expectedDefault) return;
+        const coords = { address, lat: lat.toFixed(6), lon: lon.toFixed(6) };
+        reportPdfDefaultLocationDescription = t('modal.report.defaultLocationWithAddress', coords);
+        locationField.value = reportPdfDefaultLocationDescription;
+    } catch (_) {}
 }
 
 function revokeReportPdfDownloadUrls() {
@@ -114,6 +135,7 @@ async function openFieldPhotoReportPdfModal(lat, lon, photoIds) {
         photoIds: safePhotoIds,
     });
     openModal('modal-report-pdf');
+    applyReportAddressDefault(document.getElementById('report-pdf-form'), reportPdfTarget);
 }
 
 async function submitReportPdf(event) {

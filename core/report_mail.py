@@ -69,6 +69,25 @@ def _parcel_context_text(record: dict[str, Any]) -> str:
     return ""
 
 
+def _address_context_text(record: dict[str, Any], location_description: str) -> str:
+    address = record.get("address") if isinstance(record.get("address"), dict) else {}
+    formatted = str(address.get("formatted") or "").strip()
+    if not formatted:
+        return ""
+    if formatted.lower() in str(location_description or "").lower():
+        return ""
+    source_label = str(address.get("source_label") or address.get("source") or "").strip()
+    source_clause = f" według {source_label}" if source_label else ""
+    distance_text = str(address.get("distance_m") or "").strip()
+    distance_clause = f" (ok. {distance_text} m od wskazanego punktu)" if distance_text else ""
+    return f"Najbliższy adres{source_clause}: {formatted}{distance_clause}."
+
+
+def _subject_location(record: dict[str, Any], fields: dict[str, str]) -> str:
+    address = record.get("address") if isinstance(record.get("address"), dict) else {}
+    return str(address.get("formatted") or fields["location_description"])
+
+
 def _field_datetime_text(value: str) -> str:
     text = str(value or "").strip()
     if not text:
@@ -104,10 +123,12 @@ def build_mail_draft(record: dict[str, Any], evidence: dict[str, Any], fields: d
     lat = float(record.get("lat"))
     lon = float(record.get("lon"))
     labels = _labels_text(record, evidence)
+    address_context = _address_context_text(record, fields["location_description"])
+    address_section = f"\n{address_context}" if address_context else ""
     parcel_context = _parcel_context_text(record)
     parcel_section = _optional_section(parcel_context)
     insurance_section = _optional_section(_vehicle_insurance_context_text(record))
-    subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(fields['location_description'])}"
+    subject = f"Zgłoszenie pojazdu nieużytkowanego - {_first_line(_subject_location(record, fields))}"
     body = f"""Dzień dobry,
 
 zgłaszam pojazd, który według mojej obserwacji może spełniać przesłanki z art. 50a ust. 1 Prawa o ruchu drogowym.
@@ -120,6 +141,7 @@ Dane zgłaszającego:
 
 Miejsce pojazdu:
 {fields["location_description"]}
+{address_section}
 
 Współrzędne GPS:
 {lat:.6f}, {lon:.6f}
