@@ -14,6 +14,8 @@ class FutureDatabaseContractTests(unittest.TestCase):
         self.assertIn("`schema_migrations`", doc)
         self.assertIn("`vehicle_insurance_status`", doc)
         self.assertIn("`vehicle_insurance_checked_at`", doc)
+        self.assertIn("`vehicle_resolution_status`", doc)
+        self.assertIn("`vehicle_resolution_updated_at`", doc)
 
         for table in ("field_photos", "settings", "privacy_requests"):
             self.assertRegex(doc, rf"`{table}`")

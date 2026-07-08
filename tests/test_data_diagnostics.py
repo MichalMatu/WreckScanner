@@ -94,6 +94,7 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertEqual(report["summary"]["field_photos"]["records"], 2)
             self.assertEqual(report["summary"]["field_photos"]["issue_types"]["vehicle"], 1)
             self.assertEqual(report["summary"]["field_photos"]["issue_types"]["smoke"], 1)
+            self.assertEqual(report["summary"]["field_photos"]["vehicle_resolution_statuses"]["active"], 1)
             self.assertNotIn("wrecks_dir", report["roots"])
             self.assertIn("Zdjęcia terenowe: 2 rekordów", format_data_diagnostics(report))
             self.assertNotIn("Sprawy pojazdów", format_data_diagnostics(report))

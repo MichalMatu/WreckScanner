@@ -48,7 +48,7 @@ function applyI18n() {
         }
     });
 
-    // atrybuty: data-i18n-attr="title:icon.help" lub multiple: "title:x;aria-label:y"
+    // atrybuty: data-i18n-attr="title:icon.settings" lub multiple: "title:x;aria-label:y"
     document.querySelectorAll('[data-i18n-attr]').forEach(el => {
         const spec = el.dataset.i18nAttr;
         spec.split(';').forEach(pair => {

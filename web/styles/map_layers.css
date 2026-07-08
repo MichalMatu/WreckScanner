@@ -155,7 +155,7 @@
 
 .vehicle-filter-tray {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: 5px;
     padding: 0 8px 8px;
@@ -223,6 +223,17 @@
     border-radius: 50%;
     background: var(--pin-count-bg);
     box-shadow: 0 0 0 2px var(--pin-vehicle-photo-halo);
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+
+.vehicle-resolution-dot {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--pin-vehicle-removed-ring);
+    border-radius: 50%;
+    background: var(--pin-vehicle-removed-bg);
+    box-shadow: 0 0 0 2px var(--pin-vehicle-removed-ring-soft);
     box-sizing: border-box;
     flex: 0 0 auto;
 }

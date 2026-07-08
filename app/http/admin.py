@@ -239,9 +239,10 @@ def handle_review_photo(handler, route: tuple[str, tuple[str, ...]]) -> None:
         result = review_field_photo(
             ids[0],
             core_config.FIELD_PHOTOS_DIR,
-            status=data.get("public_review_status"),
-            redactions=data.get("redactions") or [],
+            status=data.get("public_review_status") if "public_review_status" in data else None,
+            redactions=data.get("redactions") if "redactions" in data else None,
             vehicle_insurance_status=data.get("vehicle_insurance_status"),
+            vehicle_resolution_status=data.get("vehicle_resolution_status"),
             private_dir=core_config.PRIVATE_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)

@@ -200,6 +200,12 @@
     background: color-mix(in srgb, var(--danger) 18%, var(--surface-control));
 }
 
+.review-action-btn--resolved {
+    border-color: color-mix(in srgb, var(--success) 42%, transparent);
+    background: var(--success-soft);
+    color: var(--success-text);
+}
+
 .photo-review-insurance-checked {
     margin: 0;
     color: var(--text-soft);

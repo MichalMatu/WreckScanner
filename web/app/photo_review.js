@@ -58,6 +58,7 @@ function setPhotoReviewMode(mode = 'admin') {
     });
     updatePhotoReviewReturnAction();
     updatePhotoReviewDeleteAction();
+    updatePhotoReviewVehicleResolutionAction();
 }
 
 function updatePhotoReviewReturnAction() {
@@ -169,49 +170,6 @@ function photoReviewStatusLabel(status) {
     return t('modal.photoReview.pending');
 }
 
-function photoReviewVehicleInsuranceInputs() {
-    return Array.from(document.querySelectorAll('input[name="photo-review-vehicle-insurance-status"]'));
-}
-
-function photoReviewVehicleInsuranceStatus() {
-    const checked = photoReviewVehicleInsuranceInputs().find(input => input.checked);
-    return vehicleInsuranceStatus(checked?.value || activePhotoReview?.vehicle_insurance_status);
-}
-
-function photoReviewVehicleInsurancePayload() {
-    if (activePhotoReview?.issue_type !== FIELD_PHOTO_ISSUE_TYPE_VEHICLE) return {};
-    return { vehicle_insurance_status: photoReviewVehicleInsuranceStatus() };
-}
-
-function updatePhotoReviewVehicleInsuranceUi() {
-    const section = document.getElementById('photo-review-vehicle-insurance-section');
-    const show = activePhotoReview?.issue_type === FIELD_PHOTO_ISSUE_TYPE_VEHICLE;
-    if (section) section.hidden = !show;
-    if (!show) return;
-    const status = vehicleInsuranceStatus(activePhotoReview?.vehicle_insurance_status);
-    photoReviewVehicleInsuranceInputs().forEach(input => {
-        input.checked = input.value === status;
-    });
-    updatePhotoReviewVehicleInsuranceCheckedText();
-}
-
-function photoReviewVehicleInsuranceCheckedText() {
-    const status = photoReviewVehicleInsuranceStatus();
-    if (status === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) {
-        return t('modal.photoReview.vehicleInsuranceCheckedUnknown');
-    }
-    const activeStatus = vehicleInsuranceStatus(activePhotoReview?.vehicle_insurance_status);
-    const checkedAt = status === activeStatus ? humanDateTimeText(activePhotoReview?.vehicle_insurance_checked_at) : '';
-    return checkedAt
-        ? t('modal.photoReview.vehicleInsuranceCheckedAt', { date: checkedAt })
-        : t('modal.photoReview.vehicleInsuranceCheckedPending');
-}
-
-function updatePhotoReviewVehicleInsuranceCheckedText() {
-    const checkedText = document.getElementById('photo-review-vehicle-insurance-checked');
-    if (checkedText) checkedText.textContent = photoReviewVehicleInsuranceCheckedText();
-}
-
 function setPhotoReviewStatusMessage(message = '') {
     const status = document.getElementById('photo-review-status');
     if (!status) return;
@@ -275,7 +233,10 @@ function updatePhotoReviewActionLock() {
     photoReviewActionControls().forEach(control => {
         control.disabled = photoReviewActionInFlight;
     });
-    if (!photoReviewActionInFlight) updatePhotoReviewDeleteAction();
+    if (!photoReviewActionInFlight) {
+        updatePhotoReviewDeleteAction();
+        updatePhotoReviewVehicleResolutionAction();
+    }
 }
 
 function setPhotoReviewActionInFlight(inFlight) {
@@ -296,6 +257,9 @@ function renderPhotoReviewQueue() {
         const detailHtml = display.detail
             ? `<span class="photo-review-detail">${escapeHtml(display.detail)}</span>`
             : '';
+        const resolutionPill = photoReviewItemIsRemoved(item)
+            ? `<span class="photo-review-pill">${escapeHtml(t('vehicle.resolution.badgeRemoved'))}</span>`
+            : '';
         return `
             <button type="button"
                 class="photo-review-item ${active ? 'is-active' : ''}"
@@ -303,6 +267,7 @@ function renderPhotoReviewQueue() {
                 onclick="selectPhotoReview('${escapeHtml(item.id)}')">
                 <strong>${escapeHtml(display.title)}</strong>
                 <span class="photo-review-pill">${escapeHtml(photoReviewStatusLabel(item.public_review_status))}</span>
+                ${resolutionPill}
                 ${detailHtml}
             </button>
         `;
@@ -482,6 +447,7 @@ function clearPhotoReviewCanvas() {
     if (empty) empty.hidden = false;
     updatePhotoReviewVehicleInsuranceUi();
     updatePhotoReviewDeleteAction();
+    updatePhotoReviewVehicleResolutionAction();
 }
 
 function revokeOwnerPhotoReviewObjectUrl() {
@@ -520,12 +486,14 @@ async function selectPhotoReview(itemId, options = {}) {
     const preservedScrollTop = Number.isFinite(options.preserveScrollTop) ? options.preserveScrollTop : null;
     activePhotoReview = item;
     updatePhotoReviewVehicleInsuranceUi();
+    updatePhotoReviewVehicleResolutionAction();
     photoReviewRedactions = (Array.isArray(item.redactions) ? item.redactions : [])
         .map(normalizePhotoReviewRedaction)
         .filter(Boolean);
     activePhotoReviewRedactionIndex = photoReviewRedactions.length ? photoReviewRedactions.length - 1 : -1;
     photoReviewDraftRect = null;
     updatePhotoReviewDeleteAction();
+    updatePhotoReviewVehicleResolutionAction();
     renderPhotoReviewQueue();
     if (Number.isFinite(preservedScrollTop) && list) list.scrollTop = preservedScrollTop;
     if (options.focusListItem) focusPhotoReviewItem(item.id);

@@ -84,7 +84,7 @@
     top: 0;
     left: 0;
     z-index: 910;
-    width: min(390px, calc(100vw - 44px));
+    width: min(310px, calc(100vw - 44px));
     height: 100vh;
     height: 100dvh;
     display: flex;
@@ -105,12 +105,15 @@
     padding: 0 var(--space-6) 0 84px;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
 }
 
 .app-menu-title-wrap {
     position: relative;
     display: inline-flex;
+    margin-left: auto;
     max-width: 100%;
+    text-align: right;
 }
 
 .app-menu-brand {
@@ -171,18 +174,20 @@
     margin-top: auto;
     padding: var(--space-3) var(--space-5) var(--space-4);
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-3);
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
     border-top: 1px solid var(--border);
 }
 
 .app-menu-footer-links {
     min-width: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
     align-items: center;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border);
 }
 
 .app-menu-footer-link {
@@ -482,7 +487,7 @@ select:focus {
     }
 
     .app-menu-drawer {
-        width: min(360px, calc(100vw - 32px));
+        width: min(280px, calc(100vw - 32px));
     }
 
     .app-menu-drawer-header {

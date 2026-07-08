@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from core.field_photo_metadata import issue_type, vehicle_insurance_checked_at, vehicle_insurance_status
+from core.field_photo_metadata import (
+    issue_type,
+    vehicle_insurance_checked_at,
+    vehicle_insurance_status,
+    vehicle_resolution_status,
+    vehicle_resolution_updated_at,
+)
 from core.photo_privacy import is_approved, review_status
 
 
@@ -31,6 +37,15 @@ def field_photo_summary(record: dict[str, Any]) -> dict[str, Any]:
             issue_type_text,
             record.get("vehicle_insurance_status"),
             record.get("vehicle_insurance_checked_at"),
+        ),
+        "vehicle_resolution_status": vehicle_resolution_status(
+            issue_type_text,
+            record.get("vehicle_resolution_status"),
+        ),
+        "vehicle_resolution_updated_at": vehicle_resolution_updated_at(
+            issue_type_text,
+            record.get("vehicle_resolution_status"),
+            record.get("vehicle_resolution_updated_at"),
         ),
         "lat": record.get("lat"),
         "lon": record.get("lon"),
@@ -75,6 +90,15 @@ def review_item(record: dict[str, Any]) -> dict[str, Any]:
             issue_type_text,
             record.get("vehicle_insurance_status"),
             record.get("vehicle_insurance_checked_at"),
+        ),
+        "vehicle_resolution_status": vehicle_resolution_status(
+            issue_type_text,
+            record.get("vehicle_resolution_status"),
+        ),
+        "vehicle_resolution_updated_at": vehicle_resolution_updated_at(
+            issue_type_text,
+            record.get("vehicle_resolution_status"),
+            record.get("vehicle_resolution_updated_at"),
         ),
         "lat": record.get("lat"),
         "lon": record.get("lon"),

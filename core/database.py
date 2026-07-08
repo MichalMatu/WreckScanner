@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from core import config
-from core.field_photo_metadata import vehicle_insurance_checked_at_from_record, vehicle_insurance_status_from_record
+from core.field_photo_metadata import (
+    vehicle_insurance_checked_at_from_record,
+    vehicle_insurance_status_from_record,
+    vehicle_resolution_status_from_record,
+    vehicle_resolution_updated_at_from_record,
+)
 from core.photo_privacy import safe_existing_child
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -137,6 +142,8 @@ def _field_photo_row(record: dict[str, Any]) -> tuple[Any, ...]:
         str(record["issue_type"]),
         vehicle_insurance_status_from_record(record),
         vehicle_insurance_checked_at_from_record(record),
+        vehicle_resolution_status_from_record(record),
+        vehicle_resolution_updated_at_from_record(record),
         float(record["lat"]),
         float(record["lon"]),
         str(record.get("coordinate_source") or "map"),
@@ -175,6 +182,7 @@ def upsert_field_photo(connection: sqlite3.Connection, record: dict[str, Any]) -
         INSERT INTO field_photos (
             id, created_at, submitted_at, captured_at, issue_type,
             vehicle_insurance_status, vehicle_insurance_checked_at,
+            vehicle_resolution_status, vehicle_resolution_updated_at,
             lat, lon, coordinate_source, position_updated_at, public_review_status,
             reviewed_at, owner_redactions_updated_at, redactions_json, exif_json,
             original_filename, content_type, format, size_bytes, image_width,
@@ -184,7 +192,7 @@ def upsert_field_photo(connection: sqlite3.Connection, record: dict[str, Any]) -
             submission_owner, edit_token_salt, edit_token_hash, edit_token_created_at,
             links_json, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             created_at = excluded.created_at,
             submitted_at = excluded.submitted_at,
@@ -192,6 +200,8 @@ def upsert_field_photo(connection: sqlite3.Connection, record: dict[str, Any]) -
             issue_type = excluded.issue_type,
             vehicle_insurance_status = excluded.vehicle_insurance_status,
             vehicle_insurance_checked_at = excluded.vehicle_insurance_checked_at,
+            vehicle_resolution_status = excluded.vehicle_resolution_status,
+            vehicle_resolution_updated_at = excluded.vehicle_resolution_updated_at,
             lat = excluded.lat,
             lon = excluded.lon,
             coordinate_source = excluded.coordinate_source,

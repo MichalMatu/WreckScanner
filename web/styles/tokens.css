@@ -61,6 +61,8 @@
     --popup-age-text: #e4edf9;
     --popup-status-surface: rgba(245, 158, 11, 0.17);
     --popup-status-text: #fde68a;
+    --popup-resolution-surface: rgba(56, 189, 248, 0.18);
+    --popup-resolution-text: #bae6fd;
     --popup-ufg-unknown-bg: rgba(113, 113, 122, 0.74);
     --popup-ufg-unknown-border: rgba(212, 212, 216, 0.34);
     --popup-ufg-unknown-text: #f4f4f5;
@@ -94,6 +96,11 @@
     --pin-vehicle-photo-ring: #86efac;
     --pin-vehicle-photo-halo: rgba(249, 115, 22, 0.24);
     --pin-vehicle-dot-border: #ecfdf5;
+    --pin-vehicle-removed-bg: #0f172a;
+    --pin-vehicle-removed-ring: #38bdf8;
+    --pin-vehicle-removed-ring-soft: rgba(56, 189, 248, 0.22);
+    --pin-vehicle-removed-inner-ring: rgba(56, 189, 248, 0.46);
+    --pin-vehicle-removed-glyph: #bae6fd;
     --pin-insurance-unknown-ring: #d4d4d8;
     --pin-insurance-unknown-ring-soft: rgba(212, 212, 216, 0.18);
     --pin-insurance-unknown-inner-ring: rgba(212, 212, 216, 0.42);

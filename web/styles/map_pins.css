@@ -67,6 +67,14 @@
     --pin-vehicle-current-glyph: var(--pin-insurance-uninsured-ring);
 }
 
+.vehicle-pin--removed {
+    --pin-vehicle-current-ring: var(--pin-vehicle-removed-ring);
+    --pin-vehicle-current-ring-soft: var(--pin-vehicle-removed-ring-soft);
+    --pin-vehicle-current-inner-ring: var(--pin-vehicle-removed-inner-ring);
+    --pin-vehicle-current-glyph: var(--pin-vehicle-removed-glyph);
+    background: var(--pin-vehicle-removed-bg);
+}
+
 .vehicle-pin--long-standing::after {
     content: '';
     position: absolute;
@@ -372,6 +380,12 @@
 .marker-detail--dots .vehicle-pin--mixed-pending {
     background: linear-gradient(135deg, var(--pin-vehicle-bg) 0 50%, var(--pin-vehicle-pending-bg) 50% 100%);
     box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-pending-ring-soft);
+}
+
+.marker-detail--dots .vehicle-pin--removed {
+    background: var(--pin-vehicle-removed-bg);
+    border-color: var(--pin-vehicle-removed-ring);
+    box-shadow: var(--pin-dot-shadow), 0 0 0 2px var(--pin-vehicle-removed-ring-soft);
 }
 
 .marker-detail--dots .vehicle-pin--pending {

@@ -138,6 +138,11 @@ a.map-popup-head-value {
     color: var(--popup-status-text);
 }
 
+.map-popup-head-value--resolution {
+    background: var(--popup-resolution-surface);
+    color: var(--popup-resolution-text);
+}
+
 .map-popup-head-value--insurance-unknown {
     border: 1px solid var(--popup-ufg-unknown-border);
     background: var(--popup-ufg-unknown-bg);
@@ -358,6 +363,13 @@ a.map-popup-head-value {
     border-color: var(--popup-action-report);
     color: var(--popup-on-action);
     box-shadow: 0 8px 22px color-mix(in srgb, var(--popup-action-report) 22%, transparent);
+}
+
+.map-popup-action--success:hover {
+    background: var(--popup-action-success);
+    border-color: var(--popup-action-success);
+    color: var(--popup-on-action);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--popup-action-success) 22%, transparent);
 }
 
 .map-popup-action--danger {

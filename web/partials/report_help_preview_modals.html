@@ -86,59 +86,6 @@
         </div>
     </div>
 
-    <!-- ─── MODAL: POMOC / POWITANIE ────────────────────── -->
-    <div class="modal-backdrop" id="modal-help" hidden onclick="closeModal(this)">
-        <div class="modal modal--welcome" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h2 data-i18n="modal.help.title">IleStoi.pl</h2>
-                <button type="button" class="modal-close" onclick="closeModal()" data-i18n-attr="aria-label:icon.close"
-                    aria-label="Zamknij">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="welcome-lead" data-i18n="modal.help.intro">IleStoi.pl pomaga dokumentować porzucone albo
-                    długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.</p>
-
-                <section class="welcome-section">
-                    <h3 data-i18n="modal.help.photoTitle">Jak dodać zdjęcie</h3>
-                    <ol class="modal-steps">
-                        <li data-i18n="modal.help.photoStep1" data-i18n-html>
-                            Kliknij <b>Dodaj zdjęcie</b> w menu albo kliknij prawym przyciskiem miejsce na mapie.
-                        </li>
-                        <li data-i18n="modal.help.photoStep2" data-i18n-html>
-                            Wybierz typ zgłoszenia, dodaj pliki i zachowaj token edycji po wysyłce.
-                        </li>
-                        <li data-i18n="modal.help.photoStep3" data-i18n-html>
-                            Zdjęcia pojawią się na mapie po weryfikacji i anonimizacji.
-                        </li>
-                    </ol>
-                </section>
-
-                <section class="welcome-section">
-                    <h3 data-i18n="modal.help.mapTitle">Warstwy i podkłady</h3>
-                    <p data-i18n="modal.help.mapBody" data-i18n-html>Filtry warstw i podkład mapy są w menu. Dolny suwak
-                        zostaje szybkim skrótem do ortofoto <b>POL</b>, <b>OSM</b> i roczników <b>2020-2025</b>.</p>
-                </section>
-
-                <section class="welcome-section">
-                    <h3 data-i18n="modal.help.reportTitle">Jak przygotować zgłoszenie</h3>
-                    <p data-i18n="modal.help.reportBody" data-i18n-html>Kliknij pinezkę pojazdu lub zdjęcia i wybierz
-                        generowanie zgłoszenia. Aplikacja dołączy aktualne dane i wycinki ortofoto.</p>
-                </section>
-
-                <div class="welcome-actions">
-                    <button type="button" class="btn-download welcome-start-btn" onclick="closeModal()">
-                        <span data-i18n="modal.help.start">Zaczynam</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-backdrop" id="modal-parking-costs" hidden onclick="closeModal(this)">
         <div class="modal modal--parking-costs" onclick="event.stopPropagation()">
             <div class="modal-header">

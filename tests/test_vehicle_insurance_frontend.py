@@ -16,13 +16,16 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
         field_photo_popups_js = (ROOT_DIR / "web" / "app" / "field_photo_popups.js").read_text(encoding="utf-8")
         upload_js = (ROOT_DIR / "web" / "app" / "field_photo_upload.js").read_text(encoding="utf-8")
         review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        review_vehicle_js = (ROOT_DIR / "web" / "app" / "photo_review_vehicle.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         popups_css = (ROOT_DIR / "web" / "styles" / "popups.css").read_text(encoding="utf-8")
         forms_css = (ROOT_DIR / "web" / "styles" / "forms.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
         review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
-        frontend = html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + i18n_js
+        frontend = (
+            html + config_js + popups_js + field_photo_popups_js + upload_js + review_js + review_vehicle_js + i18n_js
+        )
 
         self.assertIn("const UFG_OC_CHECK_URL = 'https://www.ufg.pl/';", config_js)
         self.assertIn("FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES", config_js)
@@ -55,12 +58,12 @@ class VehicleInsuranceFrontendTests(unittest.TestCase):
             field_photo_popups_js,
         )
         self.assertIn("formData.append('vehicle_insurance_status'", upload_js)
-        self.assertIn("photoReviewVehicleInsurancePayload", review_js)
-        self.assertIn("photoReviewVehicleInsuranceInputs", review_js)
+        self.assertIn("photoReviewVehicleInsurancePayload", review_vehicle_js)
+        self.assertIn("photoReviewVehicleInsuranceInputs", review_vehicle_js)
         self.assertIn("setPhotoReviewStatusMessage", review_js)
         self.assertNotIn("modal.photoReview.drawHint", review_js)
-        self.assertIn("vehicle_insurance_status", review_js)
-        self.assertIn("vehicle_insurance_checked_at", review_js)
+        self.assertIn("vehicle_insurance_status", review_js + review_vehicle_js)
+        self.assertIn("vehicle_insurance_checked_at", review_js + review_vehicle_js)
         self.assertIn(".map-popup-head-value--insurance-insured", popups_css)
         self.assertIn(".map-popup-head-value--insurance-uninsured", popups_css)
         self.assertNotIn(".map-popup-head-value--insurance-checked", popups_css)

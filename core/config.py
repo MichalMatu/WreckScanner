@@ -67,6 +67,11 @@ FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES = {
     "insured": "pojazd ma OC",
     "uninsured": "brak OC",
 }
+DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS = "active"
+FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES = {
+    "active": "pojazd aktywny",
+    "removed": "pojazd usunięty",
+}
 FIELD_PHOTO_GROUP_RADIUS_M = 1.0
 
 REPORT_RECIPIENT = "interwencje@smwroclaw.pl"

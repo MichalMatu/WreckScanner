@@ -24,8 +24,8 @@ const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3';
 const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2';
 const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisible.v1';
 const VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY = 'wreckscanner.vehicleStandingFilterDays.v1';
+const VEHICLE_RESOLUTION_FILTER_STORAGE_KEY = 'wreckscanner.vehicleResolutionFilter.v1';
 const REPORT_REPORTER_STORAGE_KEY = 'wreckscanner.reportReporter.v1';
-const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
 // Endpointy są relatywne, żeby aplikacja działała przez tunel/proxy bez
@@ -125,6 +125,12 @@ const FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES = new Set([
     FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN,
     'insured',
     'uninsured',
+]);
+const FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE = 'active';
+const FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_REMOVED = 'removed';
+const FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES = new Set([
+    FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE,
+    FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_REMOVED,
 ]);
 const FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
     vehicle: PUBLIC_LAYER_KEYS.vehicles,

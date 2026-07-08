@@ -27,6 +27,37 @@ def vehicle_insurance_status_from_record(record: dict[str, Any]) -> str:
     return vehicle_insurance_status(issue_type(record.get("issue_type")), record.get("vehicle_insurance_status"))
 
 
+def vehicle_resolution_status(issue_type_text: str, value: Any = None) -> str:
+    status = str(value or config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS).strip()
+    if status not in config.FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES:
+        raise ValueError("Nieprawidłowy status usunięcia pojazdu.")
+    if issue_type_text != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        if status != config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS:
+            raise ValueError("Status usunięcia dotyczy tylko zdjęć pojazdu.")
+        return config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS
+    return status
+
+
+def vehicle_resolution_status_from_record(record: dict[str, Any]) -> str:
+    return vehicle_resolution_status(issue_type(record.get("issue_type")), record.get("vehicle_resolution_status"))
+
+
+def vehicle_resolution_updated_at(issue_type_text: str, status: Any, value: Any = None) -> str | None:
+    vehicle_resolution_status(issue_type_text, status)
+    if issue_type_text != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        return None
+    text = str(value or "").strip()
+    return text or None
+
+
+def vehicle_resolution_updated_at_from_record(record: dict[str, Any]) -> str | None:
+    return vehicle_resolution_updated_at(
+        issue_type(record.get("issue_type")),
+        record.get("vehicle_resolution_status"),
+        record.get("vehicle_resolution_updated_at"),
+    )
+
+
 def vehicle_insurance_checked_at(issue_type_text: str, status: Any, value: Any = None) -> str | None:
     safe_status = vehicle_insurance_status(issue_type_text, status)
     if issue_type_text != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
@@ -85,3 +116,9 @@ def validated_vehicle_insurance_update(record: dict[str, Any], value: Any) -> st
     if value is None:
         return None
     return vehicle_insurance_status(issue_type(record.get("issue_type")), value)
+
+
+def validated_vehicle_resolution_update(record: dict[str, Any], value: Any) -> str | None:
+    if value is None:
+        return None
+    return vehicle_resolution_status(issue_type(record.get("issue_type")), value)

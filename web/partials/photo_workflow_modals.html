@@ -96,7 +96,7 @@
                         odblokujesz później edycji zdjęcia z mapy.</p>
                     <p class="modal-hint" id="field-photo-thanks-status"></p>
                 </section>
-                <section class="welcome-section field-photo-thanks-steps">
+                <section class="field-photo-thanks-section field-photo-thanks-steps">
                     <h3 data-i18n="modal.fieldPhotoThanks.nextTitle">Co dalej?</h3>
                     <ol class="modal-steps">
                         <li data-i18n="modal.fieldPhotoThanks.stepEdit">Możesz od razu przygotować anonimizację bez
@@ -107,20 +107,20 @@
                             publikacją.</li>
                     </ol>
                 </section>
-                <div class="welcome-actions">
-                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-review"
+                <div class="field-photo-thanks-actions">
+                    <button type="button" class="btn-download field-photo-thanks-action-btn" id="field-photo-thanks-review"
                         onclick="openFieldPhotoThanksOwnerReview()">
                         <span data-i18n="modal.fieldPhotoThanks.reviewNow">Anonimizuj teraz</span>
                     </button>
-                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-submit"
+                    <button type="button" class="btn-download field-photo-thanks-action-btn" id="field-photo-thanks-submit"
                         onclick="submitFieldPhotoThanksForReview()">
                         <span data-i18n="modal.fieldPhotoSummary.submit">Wyślij do weryfikacji</span>
                     </button>
-                    <button type="button" class="confirm-danger-btn welcome-start-btn" id="field-photo-thanks-discard"
+                    <button type="button" class="confirm-danger-btn field-photo-thanks-action-btn" id="field-photo-thanks-discard"
                         onclick="discardFieldPhotoThanksDraft()">
                         <span data-i18n="modal.fieldPhotoSummary.discard">Porzuć szkic</span>
                     </button>
-                    <button type="button" class="btn-download welcome-start-btn" id="field-photo-thanks-done"
+                    <button type="button" class="btn-download field-photo-thanks-action-btn" id="field-photo-thanks-done"
                         onclick="closeModal()">
                         <span data-i18n="modal.fieldPhotoThanks.done">OK</span>
                     </button>
@@ -264,6 +264,15 @@
                                         <path d="M18.3 5.7 16.9 4.3 12 9.2 7.1 4.3 5.7 5.7l4.9 4.9-4.9 4.9 1.4 1.4 4.9-4.9 4.9 4.9 1.4-1.4-4.9-4.9 4.9-4.9z" />
                                     </svg>
                                     <span class="review-action-label" data-i18n="modal.photoReview.reject">Odrzuć</span>
+                                </button>
+                                <button type="button" class="report-copy-btn review-action-btn admin-review-only"
+                                    id="photo-review-resolution-toggle" onclick="togglePhotoReviewVehicleResolution()"
+                                    data-i18n-attr="title:modal.photoReview.markRemoved;aria-label:modal.photoReview.markRemoved" hidden>
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+                                    </svg>
+                                    <span class="review-action-label" id="photo-review-resolution-label"
+                                        data-i18n="modal.photoReview.markRemovedShort">Usunięty</span>
                                 </button>
                                 <button type="button" class="confirm-danger-btn review-action-btn admin-review-only" id="photo-review-delete"
                                     onclick="deletePhotoReviewItem()"

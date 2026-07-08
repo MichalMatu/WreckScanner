@@ -309,6 +309,7 @@ def _new_field_photo_summary() -> dict[str, Any]:
     return {
         "records": 0,
         "issue_types": dict.fromkeys(config.FIELD_PHOTO_ISSUE_TYPES, 0),
+        "vehicle_resolution_statuses": dict.fromkeys(config.FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES, 0),
         "unknown_issue_types": 0,
         "private_original_bytes": 0,
         "public_image_bytes": 0,
@@ -358,6 +359,41 @@ def _audit_field_photo_issue_type(
         )
     else:
         issue_counter[issue_type] += 1
+
+
+def _audit_field_photo_vehicle_resolution(
+    record_path: Path,
+    record: dict[str, Any],
+    issues: list[dict[str, Any]],
+    summary: dict[str, Any],
+) -> None:
+    issue_type = str(record.get("issue_type") or "").strip()
+    status = str(
+        record.get("vehicle_resolution_status") or config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS
+    ).strip()
+    if status not in config.FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES:
+        _issue(
+            issues,
+            "error",
+            "field_photo_bad_vehicle_resolution_status",
+            record_path,
+            "Nieprawidłowy status usunięcia pojazdu.",
+            vehicle_resolution_status=status,
+        )
+        return
+    if issue_type != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        if status != config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS:
+            _issue(
+                issues,
+                "error",
+                "field_photo_vehicle_resolution_for_non_vehicle",
+                record_path,
+                "Status usunięcia pojazdu ustawiono dla niepojazdowej pinezki.",
+                vehicle_resolution_status=status,
+                issue_type=issue_type,
+            )
+        return
+    summary["vehicle_resolution_statuses"][status] += 1
 
 
 def _audit_field_photo_public_assets(
@@ -419,6 +455,7 @@ def _audit_field_photo_record(
     summary["records"] += 1
     _audit_field_photo_identity(directory, record_path, record, issues, field_photo_ids)
     _audit_field_photo_issue_type(record_path, record, issues, summary, issue_counter)
+    _audit_field_photo_vehicle_resolution(record_path, record, issues, summary)
 
     if not _is_coord(record.get("lat"), -90, 90) or not _is_coord(record.get("lon"), -180, 180):
         _issue(issues, "error", "field_photo_bad_coordinates", record_path, "Nieprawidłowe współrzędne zdjęcia.")
@@ -528,6 +565,7 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
     legacy_reports = report["summary"].get("legacy_report_packages") or {}
     issue_summary = report["summary"]["issues"]
     issue_types = field["issue_types"]
+    resolution_statuses = field.get("vehicle_resolution_statuses") or {}
     lines = [
         "Diagnostyka danych IleStoi.pl",
         f"Status: {str(report['status']).upper()}",
@@ -540,6 +578,11 @@ def format_data_diagnostics(report: dict[str, Any]) -> str:
         f"prywatne oryginały {_human_bytes(field['private_original_bytes'])}, "
         f"publiczne kopie {_human_bytes(field['public_image_bytes'])}, "
         f"publiczne miniatury {_human_bytes(field['public_thumb_bytes'])}",
+        "  pojazdy: "
+        + ", ".join(
+            f"{config.FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES[key]}={resolution_statuses.get(key, 0)}"
+            for key in config.FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES
+        ),
     ]
     if legacy_reports.get("exists"):
         lines.append(

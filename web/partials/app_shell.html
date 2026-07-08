@@ -72,11 +72,19 @@
                                     aria-hidden="true"></span>
                             </button>
                             <button type="button" class="vehicle-cycle-filter" id="vehicle-photo-cycle-filter"
-                                aria-pressed="false" onclick="cycleVehiclePhotoFilterMin()">
+                                aria-pressed="false" onclick="cycleVehiclePhotoFilter()">
                                 <span class="vehicle-filter-off-dot" data-vehicle-photo-filter-dot
                                     aria-hidden="true"></span>
                                 <span class="vehicle-cycle-filter-label" data-vehicle-photo-filter-label>Zdj: wył.</span>
                                 <span class="vehicle-filter-count is-empty" id="vehicle-photo-filter-count"
+                                    aria-hidden="true"></span>
+                            </button>
+                            <button type="button" class="vehicle-cycle-filter" id="vehicle-resolution-cycle-filter"
+                                aria-pressed="true" onclick="cycleVehicleResolutionFilter()">
+                                <span class="vehicle-resolution-dot" data-vehicle-resolution-filter-dot
+                                    aria-hidden="true"></span>
+                                <span class="vehicle-cycle-filter-label" data-vehicle-resolution-filter-label>Usunięte: ukryte</span>
+                                <span class="vehicle-filter-count is-empty" id="vehicle-resolution-filter-count"
                                     aria-hidden="true"></span>
                             </button>
                         </div>
@@ -85,14 +93,14 @@
                         <input type="checkbox" id="toggle-field-photo-infrastructure" checked
                             onchange="toggleFieldPhotoIssueFilter('infrastructure', this.checked)">
                         <span class="layer-pin layer-pin--field-photo-infrastructure"></span>
-                        <span class="layer-label" data-i18n="layers.fieldPhotoInfrastructure">Niebezpieczna infrastruktura</span>
+                        <span class="layer-label" data-i18n="layers.fieldPhotoInfrastructure">Infrastruktura</span>
                         <span class="layer-count-badge" id="layer-count-field-photo-infrastructure">0</span>
                     </label>
                     <label class="layer-toggle">
                         <input type="checkbox" id="toggle-field-photo-smoke" checked
                             onchange="toggleFieldPhotoIssueFilter('smoke', this.checked)">
                         <span class="layer-pin layer-pin--field-photo-smoke"></span>
-                        <span class="layer-label" data-i18n="layers.fieldPhotoSmoke">Zanieczyszczone powietrze</span>
+                        <span class="layer-label" data-i18n="layers.fieldPhotoSmoke">Powietrze</span>
                         <span class="layer-count-badge" id="layer-count-field-photo-smoke">0</span>
                     </label>
                     <label class="layer-toggle">
@@ -115,12 +123,6 @@
         </section>
 
         <nav class="app-menu-drawer-section" aria-label="Menu aplikacji">
-            <button type="button" class="app-menu-drawer-item" onclick="openModal('modal-help'); closeAppMenu()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                </svg>
-                <span data-i18n="icon.help">Jak korzystać</span>
-            </button>
             <button type="button" class="app-menu-drawer-item" onclick="openParkingCostsModal(); closeAppMenu()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 3h10v2h2v16h-2v-4H7v4H5V5h2V3zm2 2v4h6V5H9zm-2 6v4h10v-4H7zm2 1h2v2H9v-2zm4 0h2v2h-2v-2z" />
@@ -129,13 +131,6 @@
             </button>
         </nav>
         <div class="app-menu-drawer-footer">
-            <div class="app-menu-footer-links">
-                <button type="button" class="app-menu-footer-link"
-                    onclick="openModal('modal-privacy-info'); closeAppMenu()"
-                    data-i18n="footer.privacy">Prywatność</button>
-                <button type="button" class="app-menu-footer-link" onclick="openProblemReportModal(); closeAppMenu()"
-                    data-i18n="footer.report">Zgłoś problem</button>
-            </div>
             <div class="app-menu-footer-actions">
                 <button type="button" class="app-menu-footer-icon app-menu-footer-icon--settings"
                     data-i18n-attr="title:icon.settings;aria-label:icon.settings"
@@ -157,6 +152,13 @@
                         <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
                     </svg>
                 </button>
+            </div>
+            <div class="app-menu-footer-links">
+                <button type="button" class="app-menu-footer-link"
+                    onclick="openModal('modal-privacy-info'); closeAppMenu()"
+                    data-i18n="footer.privacy">Prywatność</button>
+                <button type="button" class="app-menu-footer-link" onclick="openProblemReportModal(); closeAppMenu()"
+                    data-i18n="footer.report">Zgłoś problem</button>
             </div>
         </div>
     </aside>
