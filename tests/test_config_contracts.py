@@ -93,7 +93,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertIn("const MAP_VIEW_STORAGE_KEY = 'wreckscanner.mapView.v3'", config_js)
         self.assertIn("const ENHANCEMENT_SETTINGS_STORAGE_KEY = 'wreckscanner.enhancementSettings.v2'", config_js)
         self.assertIn("const REPORT_REPORTER_STORAGE_KEY = 'wreckscanner.reportReporter.v1'", config_js)
-        self.assertIn("const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1'", config_js)
+        self.assertNotIn("WELCOME_MODAL_SEEN_STORAGE_KEY", config_js)
         self.assertIn("center: [51.107883, 17.038538]", config_js)
         self.assertIn("zoom: 13", config_js)
         self.assertIn("let DEFAULT_MAP_VIEW = normalizeDefaultMapView", config_js)

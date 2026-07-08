@@ -146,8 +146,6 @@ const TRANSLATIONS_EN = {
         'icon.fieldPhotoUpload': 'Add field photos',
         'icon.photoReview': 'Review photos',
         'icon.privacyRequests': 'Privacy requests',
-        'icon.welcomeModal': 'Show welcome',
-        'icon.help': 'How to use',
         'icon.lang': 'Język / Language',
         'icon.close': 'Close',
 
@@ -437,18 +435,6 @@ const TRANSLATIONS_EN = {
         'modal.privacyRequests.saving': 'Saving request...',
         'modal.privacyRequests.saved': 'Request saved.',
         'modal.privacyRequests.saveError': 'Could not save the request.',
-
-        'modal.help.title': 'IleStoi.pl',
-        'modal.help.intro': 'IleStoi.pl helps document abandoned or long-standing vehicles and other public-space issues.',
-        'modal.help.photoTitle': 'How to add a photo',
-        'modal.help.photoStep1': 'Click <b>Add photo</b> in the menu or right-click a place on the map.',
-        'modal.help.photoStep2': 'Choose the issue type, add files, and keep the token after upload.',
-        'modal.help.photoStep3': 'Photos appear on the map after review and anonymization.',
-        'modal.help.mapTitle': 'Layers and base maps',
-        'modal.help.mapBody': 'Layer filters and the base map are in the menu. The bottom slider remains a shortcut for <b>POL</b> orthophoto, <b>OSM</b>, and <b>2020-2025</b> imagery.',
-        'modal.help.reportTitle': 'How to prepare a report',
-        'modal.help.reportBody': 'Click a vehicle or photo pin and choose report generation. The app will attach current data and orthophoto crops.',
-        'modal.help.start': 'Start',
 
         'modal.parkingCosts.menu': 'Parking costs',
         'modal.parkingCosts.title': 'Parking costs',

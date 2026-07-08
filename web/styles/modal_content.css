@@ -58,14 +58,7 @@
     min-height: var(--space-6);
 }
 
-.welcome-lead {
-    margin: 0;
-    color: var(--text);
-    font-size: 0.95rem;
-    line-height: 1.55;
-}
-
-.welcome-section {
+.field-photo-thanks-section {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -73,20 +66,20 @@
     padding-top: 14px;
 }
 
-.welcome-section h3 {
+.field-photo-thanks-section h3 {
     margin: 0;
     color: var(--text-strong);
     font: 800 0.9rem var(--font-display);
 }
 
-.welcome-section p {
+.field-photo-thanks-section p {
     margin: 0;
     color: var(--muted-strong);
     font-size: 0.86rem;
     line-height: 1.5;
 }
 
-.welcome-actions {
+.field-photo-thanks-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -96,7 +89,7 @@
     padding-top: var(--space-2);
 }
 
-.welcome-start-btn {
+.field-photo-thanks-action-btn {
     min-height: 40px;
     padding: 0 14px;
 }

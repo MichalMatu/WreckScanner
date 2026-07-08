@@ -156,7 +156,6 @@ class FrontendContracts(unittest.TestCase):
         admin_js = (ROOT_DIR / "web" / "admin.js").read_text(encoding="utf-8")
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
         privacy_requests_js = (ROOT_DIR / "web" / "app" / "privacy_requests.js").read_text(encoding="utf-8")
-        welcome_js = (ROOT_DIR / "web" / "app" / "welcome.js").read_text(encoding="utf-8")
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         admin_css = (ROOT_DIR / "web" / "styles" / "admin.css").read_text(encoding="utf-8")
         modals_css = (ROOT_DIR / "web" / "styles" / "modals.css").read_text(encoding="utf-8")
@@ -167,7 +166,6 @@ class FrontendContracts(unittest.TestCase):
             + admin_js
             + photo_review_js
             + privacy_requests_js
-            + welcome_js
             + config_js
             + admin_css
             + modals_css
@@ -204,7 +202,9 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("openAdminChildModal('modal-photo-retention')", admin_js)
         self.assertIn("openAdminChildModal('modal-photo-review')", photo_review_js)
         self.assertIn("openAdminChildModal('modal-privacy-requests')", privacy_requests_js)
-        self.assertIn("openAdminChildModal('modal-help')", welcome_js)
+        self.assertFalse((ROOT_DIR / "web" / "app" / "welcome.js").exists())
+        for removed in ("modal-help", "/app/welcome.js", "openWelcomeModal", "modal.help", "icon.help"):
+            self.assertNotIn(removed, frontend)
         self.assertNotIn("closeModal(document.getElementById('modal-admin-panel'))", frontend)
 
     def test_admin_panel_does_not_duplicate_field_photo_upload_entry(self):

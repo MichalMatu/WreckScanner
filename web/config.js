@@ -26,7 +26,6 @@ const MAP_SOURCE_SLIDER_VISIBLE_STORAGE_KEY = 'wreckscanner.mapSourceSliderVisib
 const VEHICLE_STANDING_FILTER_DAYS_STORAGE_KEY = 'wreckscanner.vehicleStandingFilterDays.v1';
 const VEHICLE_RESOLUTION_FILTER_STORAGE_KEY = 'wreckscanner.vehicleResolutionFilter.v1';
 const REPORT_REPORTER_STORAGE_KEY = 'wreckscanner.reportReporter.v1';
-const WELCOME_MODAL_SEEN_STORAGE_KEY = 'wreckscanner.welcomeSeen.v1';
 const CADASTRAL_LAYER_VISIBLE_STORAGE_KEY = 'wroclaw-ortho-cadastral-visible';
 
 // Endpointy są relatywne, żeby aplikacja działała przez tunel/proxy bez

@@ -149,8 +149,6 @@ const TRANSLATIONS_PL = {
         'icon.fieldPhotoUpload': 'Dodaj zdjęcia terenowe',
         'icon.photoReview': 'Przegląd zdjęć',
         'icon.privacyRequests': 'Zgłoszenia prywatności',
-        'icon.welcomeModal': 'Pokaż powitanie',
-        'icon.help': 'Jak korzystać',
         'icon.lang': 'Język / Language',
         'icon.close': 'Zamknij',
 
@@ -442,19 +440,6 @@ const TRANSLATIONS_PL = {
         'modal.privacyRequests.saving': 'Zapisuję zgłoszenie...',
         'modal.privacyRequests.saved': 'Zapisano zgłoszenie.',
         'modal.privacyRequests.saveError': 'Nie udało się zapisać zgłoszenia.',
-
-        // modal: pomoc
-        'modal.help.title': 'IleStoi.pl',
-        'modal.help.intro': 'IleStoi.pl pomaga dokumentować porzucone albo długo stojące pojazdy oraz inne problemy w przestrzeni publicznej.',
-        'modal.help.photoTitle': 'Jak dodać zdjęcie',
-        'modal.help.photoStep1': 'Kliknij <b>Dodaj zdjęcie</b> w menu albo kliknij prawym przyciskiem miejsce na mapie.',
-        'modal.help.photoStep2': 'Wybierz typ zgłoszenia, dodaj pliki i zachowaj token edycji po wysyłce.',
-        'modal.help.photoStep3': 'Zdjęcia pojawią się na mapie po weryfikacji i anonimizacji.',
-        'modal.help.mapTitle': 'Warstwy i podkłady',
-        'modal.help.mapBody': 'Filtry warstw i podkład mapy są w menu. Dolny suwak zostaje szybkim skrótem do ortofoto <b>POL</b>, <b>OSM</b> i roczników <b>2020-2025</b>.',
-        'modal.help.reportTitle': 'Jak przygotować zgłoszenie',
-        'modal.help.reportBody': 'Kliknij pinezkę pojazdu lub zdjęcia i wybierz generowanie zgłoszenia. Aplikacja dołączy aktualne dane i wycinki ortofoto.',
-        'modal.help.start': 'Zaczynam',
 
         'modal.parkingCosts.menu': 'Koszty postoju',
         'modal.parkingCosts.title': 'Koszty postoju',
