@@ -4,29 +4,13 @@ const VEHICLE_FILTER_ALL = 'all';
 const VEHICLE_INSURANCE_FILTER_INSURED = 'insured';
 const VEHICLE_INSURANCE_FILTER_UNINSURED = 'uninsured';
 const VEHICLE_INSURANCE_FILTER_UNKNOWN = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
-const VEHICLE_INSURANCE_FILTERS = new Set([
-    VEHICLE_FILTER_ALL,
-    VEHICLE_INSURANCE_FILTER_INSURED,
-    VEHICLE_INSURANCE_FILTER_UNINSURED,
-    VEHICLE_INSURANCE_FILTER_UNKNOWN,
-]);
+const VEHICLE_INSURANCE_FILTERS = new Set([VEHICLE_FILTER_ALL, VEHICLE_INSURANCE_FILTER_INSURED, VEHICLE_INSURANCE_FILTER_UNINSURED, VEHICLE_INSURANCE_FILTER_UNKNOWN]);
 const VEHICLE_STANDING_FILTER_OFF = 0;
-const VEHICLE_INSURANCE_FILTER_CYCLE = [
-    VEHICLE_FILTER_ALL,
-    VEHICLE_INSURANCE_FILTER_INSURED,
-    VEHICLE_INSURANCE_FILTER_UNINSURED,
-    VEHICLE_INSURANCE_FILTER_UNKNOWN,
-];
-const VEHICLE_STANDING_FILTER_DAYS_CYCLE = [
-    VEHICLE_STANDING_FILTER_OFF,
-    ...VEHICLE_LONG_STANDING_DAY_OPTIONS,
-];
+const VEHICLE_INSURANCE_FILTER_CYCLE = [VEHICLE_FILTER_ALL, VEHICLE_INSURANCE_FILTER_INSURED, VEHICLE_INSURANCE_FILTER_UNINSURED, VEHICLE_INSURANCE_FILTER_UNKNOWN];
+const VEHICLE_STANDING_FILTER_DAYS_CYCLE = [VEHICLE_STANDING_FILTER_OFF, ...VEHICLE_LONG_STANDING_DAY_OPTIONS];
 const VEHICLE_PHOTO_FILTER_OFF = 0;
 const VEHICLE_PHOTO_FILTER_MIN_OPTIONS = [2, 3];
-const VEHICLE_PHOTO_FILTER_MIN_CYCLE = [
-    VEHICLE_PHOTO_FILTER_OFF,
-    ...VEHICLE_PHOTO_FILTER_MIN_OPTIONS,
-];
+const VEHICLE_PHOTO_FILTER_MIN_CYCLE = [VEHICLE_PHOTO_FILTER_OFF, ...VEHICLE_PHOTO_FILTER_MIN_OPTIONS];
 const VEHICLE_MARKER_BASE_Z_INDEX = 1200;
 let vehicleInsuranceFilter = VEHICLE_FILTER_ALL;
 let vehicleStandingFilterDays = loadVehicleStandingFilterDays();
@@ -153,8 +137,10 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
     const encodedApprovedPhotoIds = encodedFieldPhotoIdsForGroup({ photos });
     const encodedEditablePhotoIds = encodedFieldPhotoIdsForGroup({ photos: editablePhotos });
     const coordinatesOk = Number.isFinite(lat) && Number.isFinite(lon) && encodedApprovedPhotoIds;
+    const isRemoved = vehicleGroupIsRemoved(group);
     const canCreateReport = includeReport
         && coordinatesOk
+        && !isRemoved
         && publicFeatureAllowed(PUBLIC_FEATURE_KEYS.reportPdfs);
     const canAddFieldPhotosHere = includeUpload
         && coordinatesOk
@@ -192,6 +178,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
             'M4 5h16v14H4V5zm2 2v10h12V7H6zm2 8h8l-2.5-3.2-1.8 2.2-1.3-1.5L8 15zm10-9.5 1.1-1.1 1.5 1.5-1.1 1.1-1.5-1.5zm-6.5 6.5L18 5.5 19.5 7 13 13.5H11.5V12z'
         )
         : '';
+    const resolutionButton = vehicleGroupResolutionAction(group, encodedApprovedPhotoIds);
     const deleteButton = adminAuthenticated && encodedApprovedPhotoIds
         ? mapPopupIconAction(
             'map-popup-action--danger',
@@ -200,7 +187,7 @@ function vehicleLoosePhotoActions(group, { includeReport = true, includeUpload =
             'M9 3v1H4v2h16V4h-5V3H9zm-3 5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 3h1v9h-1v-9zm3 0h1v9h-1v-9z'
         )
         : '';
-    return [ownerButton, reportButton, photoButton, reviewButton, deleteButton];
+    return [ownerButton, reportButton, photoButton, reviewButton, resolutionButton, deleteButton];
 }
 
 function vehicleGroupPreviews(group) {
@@ -304,7 +291,8 @@ function vehicleGroupMatchesPhotoFilter(group, minPhotos = vehiclePhotoFilterMin
 function vehicleGroupMatchesFilters(group) {
     return vehicleGroupMatchesInsuranceFilter(group)
         && vehicleGroupMatchesStandingFilter(group)
-        && vehicleGroupMatchesPhotoFilter(group);
+        && vehicleGroupMatchesPhotoFilter(group)
+        && vehicleGroupMatchesResolutionFilter(group);
 }
 
 function visibleVehicleGroups(photos = fieldPhotoLayerData) {
@@ -320,6 +308,7 @@ function vehicleGroupStatusPriority(group) {
     let priority = 0;
     if (insuranceStatus === 'insured') priority += 10;
     if (insuranceStatus === FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN) priority += 20;
+    if (vehicleGroupIsRemoved(group)) priority += 30;
     if (vehicleGroupIsLongStanding(group)) priority += 40;
     if (insuranceStatus === 'uninsured') priority += 80;
     return priority;
@@ -338,6 +327,8 @@ function emptyVehicleFilterCounts() {
         unknown: 0,
         insured: 0,
         uninsured: 0,
+        active: 0,
+        removed: 0,
         standingByDays: {},
         photoByMin: {},
     };
@@ -358,7 +349,9 @@ function vehicleFilterCounts(photos = fieldPhotoLayerData) {
         .filter(group => vehicleGroupPhotoCount(group) > 0)
         .forEach(group => {
             const insuranceStatus = vehicleGroupInsuranceStatus(group);
+            const resolutionStatus = vehicleGroupResolutionStatus(group);
             if (Object.prototype.hasOwnProperty.call(counts, insuranceStatus)) counts[insuranceStatus] += 1;
+            if (Object.prototype.hasOwnProperty.call(counts, resolutionStatus)) counts[resolutionStatus] += 1;
             VEHICLE_LONG_STANDING_DAY_OPTIONS.forEach(days => {
                 if (vehicleGroupIsLongStanding(group, nowMs, days)) counts.standingByDays[days] += 1;
             });
@@ -514,6 +507,7 @@ function vehicleMarkerTooltip(group) {
     const parts = [
         t('vehicle.markerTooltipPhotos', { n: vehicleGroupPhotoCount(group) }),
     ];
+    if (vehicleGroupIsRemoved(group)) parts.push(t('vehicle.markerTooltipRemoved'));
     const pendingCount = vehicleGroupPendingPhotoCount(group);
     if (pendingCount) parts.push(t('vehicle.markerTooltipPendingPhotos', { n: pendingCount }));
     const age = popupElapsedAgeText(group.photos);
@@ -562,6 +556,16 @@ function updateVehicleFilterControlsAndCounts() {
         dotClass: vehiclePhotoFilterDotClass(vehiclePhotoFilterMin),
         active: vehiclePhotoFilterMin !== VEHICLE_PHOTO_FILTER_OFF,
     });
+    updateVehicleFilterButton({
+        buttonId: 'vehicle-resolution-cycle-filter',
+        labelSelector: '[data-vehicle-resolution-filter-label]',
+        dotSelector: '[data-vehicle-resolution-filter-dot]',
+        countId: 'vehicle-resolution-filter-count',
+        label: vehicleResolutionFilterLabel(vehicleResolutionFilter),
+        count: vehicleResolutionFilterCount(counts, vehicleResolutionFilter),
+        dotClass: vehicleResolutionFilterDotClass(vehicleResolutionFilter),
+        active: vehicleResolutionFilter !== VEHICLE_FILTER_ALL,
+    });
 }
 
 function vehiclePhotoPopup(group) {
@@ -575,6 +579,7 @@ function vehiclePhotoPopup(group) {
     const insuranceCheckedAt = vehicleGroupInsuranceCheckedAt(group);
     return mapPopup(`
             ${popupHeader(title, [
+                vehicleResolutionHeaderBadge(group),
                 vehicleInsuranceHeaderBadge(insuranceStatus, insuranceCheckedAt),
                 popupElapsedAgeBadge(group.photos),
                 pendingCount ? popupHeaderBadge(t('vehicle.popup.pendingBadge', { n: pendingCount }), 'status') : '',
@@ -601,7 +606,8 @@ function placeVehicleMarkers() {
                 'approved',
                 vehicleGroupInsuranceStatus(group),
                 vehicleGroupIsLongStanding(group),
-                vehicleGroupPendingPhotoCount(group)
+                vehicleGroupPendingPhotoCount(group),
+                vehicleGroupResolutionStatus(group)
             ),
             zIndexOffset: vehicleGroupZIndexOffset(group),
             draggable: canDrag,

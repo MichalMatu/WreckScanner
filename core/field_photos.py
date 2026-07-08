@@ -15,9 +15,6 @@ from PIL import Image, UnidentifiedImageError
 
 from core import config
 from core.field_photo_insurance import (
-    save_vehicle_insurance_group_update as _save_vehicle_insurance_group_update,
-)
-from core.field_photo_insurance import (
     set_vehicle_insurance as _set_vehicle_insurance,
 )
 from core.field_photo_insurance import (
@@ -35,6 +32,13 @@ from core.field_photo_metadata import (
 from core.field_photo_metadata import (
     vehicle_insurance_status as _vehicle_insurance_status,
 )
+from core.field_photo_metadata import (
+    vehicle_resolution_status as _vehicle_resolution_status,
+)
+from core.field_photo_metadata import (
+    vehicle_resolution_updated_at as _vehicle_resolution_updated_at,
+)
+from core.field_photo_review import review_field_photo_record as _review_field_photo_record
 from core.field_photo_serialization import (
     admin_review_item as _admin_review_item,
 )
@@ -198,6 +202,18 @@ def _prepare_field_record(record_dir: Path, record: dict[str, Any], private_dir:
     )
     if record.get("vehicle_insurance_checked_at") != vehicle_insurance_checked_at:
         record["vehicle_insurance_checked_at"] = vehicle_insurance_checked_at
+        changed = True
+    vehicle_resolution_status = _vehicle_resolution_status(issue_type, record.get("vehicle_resolution_status"))
+    if record.get("vehicle_resolution_status") != vehicle_resolution_status:
+        record["vehicle_resolution_status"] = vehicle_resolution_status
+        changed = True
+    vehicle_resolution_updated_at = _vehicle_resolution_updated_at(
+        issue_type,
+        vehicle_resolution_status,
+        record.get("vehicle_resolution_updated_at"),
+    )
+    if record.get("vehicle_resolution_updated_at") != vehicle_resolution_updated_at:
+        record["vehicle_resolution_updated_at"] = vehicle_resolution_updated_at
         changed = True
     if not is_approved(record):
         remove_public_derivatives(record, record_dir)
@@ -383,6 +399,8 @@ def save_field_photo(
         "issue_type": issue_type_text,
         "vehicle_insurance_status": vehicle_insurance_status_text,
         "vehicle_insurance_checked_at": _vehicle_insurance_checked_at_for_status(vehicle_insurance_status_text),
+        "vehicle_resolution_status": config.DEFAULT_FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS,
+        "vehicle_resolution_updated_at": None,
         "lat": lat,
         "lon": lon,
         "coordinate_source": coordinate_source,
@@ -511,34 +529,26 @@ def review_field_photo(
     photo_id: str,
     storage_dir: Path,
     *,
-    status: Any,
-    redactions: Any,
+    status: Any = None,
+    redactions: Any = None,
     vehicle_insurance_status: Any = None,
+    vehicle_resolution_status: Any = None,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
     with _FIELD_PHOTO_MUTATION_LOCK:
         record_dir = _record_dir_for(photo_id, storage_dir)
         private_root = _private_dir(private_dir)
         record = _load_field_record(record_dir, private_root)
-        validated_vehicle_insurance_status = _validated_vehicle_insurance_update(record, vehicle_insurance_status)
-        apply_review_update(
+        return _review_field_photo_record(
             record,
             record_dir,
+            storage_dir,
             private_root,
             status=status,
             redactions=redactions,
-            thumb_max_edge=config.FIELD_PHOTO_THUMBNAIL_MAX_EDGE_PX,
-            thumb_quality=config.FIELD_PHOTO_THUMBNAIL_JPEG_QUALITY,
+            vehicle_insurance_status=vehicle_insurance_status,
+            vehicle_resolution_status=vehicle_resolution_status,
         )
-        if validated_vehicle_insurance_status is not None:
-            updated_ids = _save_vehicle_insurance_group_update(storage_dir, record, validated_vehicle_insurance_status)
-        else:
-            updated_ids = []
-            _save_field_record(storage_dir, record)
-        result = {"status": "ok", "photo": _summary(record) if is_approved(record) else {"id": record["id"]}}
-        if validated_vehicle_insurance_status is not None:
-            result["vehicle_insurance_updated_photo_ids"] = updated_ids
-        return result
 
 
 def review_field_photo_by_owner(

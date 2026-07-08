@@ -19,7 +19,7 @@ kontraktem opisanym niżej.
 
 Docelowa baza ma przejąć tylko dane użytkowe, które są stanem aplikacji:
 
-- `field_photos` - zdjęcia terenowe, ich lokalizacja, typ obserwacji, ręczny status OC/UFG dla pojazdów, status przeglądu, redakcje, publiczne pochodne i ścieżka prywatnego oryginału.
+- `field_photos` - zdjęcia terenowe, ich lokalizacja, typ obserwacji, ręczny status OC/UFG dla pojazdów, status aktywny/usunięty dla pojazdów, status przeglądu, redakcje, publiczne pochodne i ścieżka prywatnego oryginału.
 - `settings` - trwałe ustawienia aplikacji i publicznych przełączników.
 - `privacy_requests` - zgłoszenia prywatności oraz ich status obsługi.
 
@@ -49,6 +49,8 @@ Następujące rzeczy nie mogą stać się tabelami ani trwałym API bazy:
 - `issue_type`
 - `vehicle_insurance_status`
 - `vehicle_insurance_checked_at`
+- `vehicle_resolution_status`
+- `vehicle_resolution_updated_at`
 - `lat`, `lon`, `coordinate_source`, `position_updated_at`
 - `public_review_status`, `reviewed_at`, `redactions`
 - `original_filename`, `content_type`, `format`, `size_bytes`, `image_width`, `image_height`

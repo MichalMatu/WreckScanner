@@ -265,6 +265,15 @@
                                     </svg>
                                     <span class="review-action-label" data-i18n="modal.photoReview.reject">Odrzuć</span>
                                 </button>
+                                <button type="button" class="report-copy-btn review-action-btn admin-review-only"
+                                    id="photo-review-resolution-toggle" onclick="togglePhotoReviewVehicleResolution()"
+                                    data-i18n-attr="title:modal.photoReview.markRemoved;aria-label:modal.photoReview.markRemoved" hidden>
+                                    <svg class="review-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+                                    </svg>
+                                    <span class="review-action-label" id="photo-review-resolution-label"
+                                        data-i18n="modal.photoReview.markRemovedShort">Usunięty</span>
+                                </button>
                                 <button type="button" class="confirm-danger-btn review-action-btn admin-review-only" id="photo-review-delete"
                                     onclick="deletePhotoReviewItem()"
                                     data-i18n-attr="title:modal.photoReview.delete;aria-label:modal.photoReview.delete" hidden>

@@ -125,6 +125,50 @@ async function updateFieldPhotoGroupLocation(group, marker) {
     }
 }
 
+function normalizeFieldPhotoVehicleResolutionStatus(status) {
+    const safeStatus = String(status || FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE).trim();
+    return FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES.has(safeStatus)
+        ? safeStatus
+        : FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE;
+}
+
+async function updateFieldPhotoGroupResolution(encodedPhotoIds, status, button = null) {
+    if (!(await ensureAdmin())) return;
+    const photoIds = decodeFieldPhotoIds(encodedPhotoIds);
+    if (!photoIds.length) return;
+    const safeStatus = normalizeFieldPhotoVehicleResolutionStatus(status);
+    const removing = safeStatus === FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_REMOVED;
+    const confirmed = await confirmAction({
+        title: t(removing ? 'fieldPhoto.markRemovedTitle' : 'fieldPhoto.markActiveTitle'),
+        message: t(removing ? 'fieldPhoto.markRemovedConfirm' : 'fieldPhoto.markActiveConfirm', { n: photoIds.length }),
+        confirmLabel: t(removing ? 'fieldPhoto.markRemoved' : 'fieldPhoto.markActive'),
+    });
+    if (!confirmed) return;
+
+    const btn = button instanceof HTMLElement ? button : null;
+    if (btn) btn.disabled = true;
+    try {
+        const data = await apiPatchJson(`${ADMIN_PHOTOS_URL}/field/${encodeURIComponent(photoIds[0])}/review`, {
+            vehicle_resolution_status: safeStatus,
+        });
+        if (data.status !== 'ok') {
+            throw new Error(data.error || t('fieldPhoto.resolutionError'));
+        }
+        await loadFieldPhotos();
+        const updatedCount = Array.isArray(data.vehicle_resolution_updated_photo_ids)
+            ? data.vehicle_resolution_updated_photo_ids.length
+            : photoIds.length;
+        statusEl.textContent = t(removing ? 'fieldPhoto.markedRemoved' : 'fieldPhoto.markedActive', {
+            n: updatedCount,
+        });
+        statusEl.className = 'ok';
+    } catch (err) {
+        if (btn) btn.disabled = false;
+        statusEl.textContent = apiErrorMessage(err, t('fieldPhoto.resolutionError'));
+        statusEl.className = 'err';
+    }
+}
+
 async function deleteFieldPhotoGroup(encodedPhotoIds, button = null) {
     if (!(await ensureAdmin())) return;
     const photoIds = decodeFieldPhotoIds(encodedPhotoIds);

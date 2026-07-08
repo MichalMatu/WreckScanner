@@ -15,6 +15,7 @@ from core.field_photo_metadata import (
     grouped_vehicle_insurance_status,
     vehicle_insurance_checked_at_from_record,
     vehicle_insurance_status_from_record,
+    vehicle_resolution_status_from_record,
 )
 from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, load_field_photo_record
 from core.geo import external_map_links
@@ -165,6 +166,8 @@ def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[t
         records.append((record_dir, record))
     if not records:
         raise ValueError("Wybierz co najmniej jedno zdjęcie terenowe do raportu.")
+    if all(vehicle_resolution_status_from_record(record) == "removed" for _, record in records):
+        raise ValueError("Raport można wygenerować tylko dla aktywnego pojazdu.")
     return records
 
 
@@ -192,6 +195,8 @@ def _copy_public_field_photo(record_dir: Path, record: dict[str, Any], report_ro
         "issue_type": config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE,
         "vehicle_insurance_status": vehicle_insurance_status_from_record(record),
         "vehicle_insurance_checked_at": vehicle_insurance_checked_at_from_record(record),
+        "vehicle_resolution_status": vehicle_resolution_status_from_record(record),
+        "vehicle_resolution_updated_at": record.get("vehicle_resolution_updated_at"),
         "captured_at": record.get("captured_at"),
         "public_review_status": record.get("public_review_status"),
         "redactions": record.get("redactions") or [],

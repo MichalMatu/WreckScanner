@@ -59,7 +59,12 @@ def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **kwargs)
 
 
 def create_field_photo_fixture(
-    root: Path, *, issue_type: str = "vehicle", status: str = "approved", vehicle_insurance_status: str = "insured"
+    root: Path,
+    *,
+    issue_type: str = "vehicle",
+    status: str = "approved",
+    vehicle_insurance_status: str = "insured",
+    vehicle_resolution_status: str = "active",
 ) -> tuple[Path, str]:
     field_dir = root / "zdjecia_terenowe"
     photo_id = "photo_20260604T201000Z_11111111"
@@ -85,6 +90,10 @@ def create_field_photo_fixture(
             "vehicle_insurance_status": (vehicle_insurance_status if issue_type == "vehicle" else "unknown"),
             "vehicle_insurance_checked_at": (
                 "2026-07-05T12:30:00Z" if issue_type == "vehicle" and vehicle_insurance_status != "unknown" else None
+            ),
+            "vehicle_resolution_status": (vehicle_resolution_status if issue_type == "vehicle" else "active"),
+            "vehicle_resolution_updated_at": (
+                "2026-07-05T12:35:00Z" if issue_type == "vehicle" and vehicle_resolution_status == "removed" else None
             ),
             "lat": 51.1,
             "lon": 17.2,
@@ -219,6 +228,16 @@ class ReportPdfTests(unittest.TestCase):
 
             field_dir, photo_id = create_field_photo_fixture(root, issue_type="smoke")
             with self.assertRaisesRegex(ValueError, "pojazdów"):
+                create_field_photo_report_pdf(
+                    valid_fields(), [photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
+                )
+
+    def test_create_field_photo_report_pdf_requires_active_vehicle_group(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, photo_id = create_field_photo_fixture(root, vehicle_resolution_status="removed")
+
+            with self.assertRaisesRegex(ValueError, "aktywnego pojazdu"):
                 create_field_photo_report_pdf(
                     valid_fields(), [photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
                 )

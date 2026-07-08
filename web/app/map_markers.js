@@ -9,7 +9,8 @@ function vehicleIcon(
     reviewStatus = 'approved',
     insuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN,
     isLongStanding = false,
-    pendingCount = 0
+    pendingCount = 0,
+    resolutionStatus = FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE
 ) {
     const numericCount = Math.max(0, Math.floor(Number(photoCount) || 0));
     const numericPendingCount = Math.max(0, Math.floor(Number(pendingCount) || 0));
@@ -18,9 +19,15 @@ function vehicleIcon(
     const safeInsuranceStatus = FIELD_PHOTO_VEHICLE_INSURANCE_STATUSES.has(insuranceStatus)
         ? insuranceStatus
         : FIELD_PHOTO_VEHICLE_INSURANCE_STATUS_UNKNOWN;
+    const safeResolutionStatus = FIELD_PHOTO_VEHICLE_RESOLUTION_STATUSES.has(resolutionStatus)
+        ? resolutionStatus
+        : FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_ACTIVE;
     const classes = ['vehicle-pin', `vehicle-pin--${safeStatus}`];
     if (numericCount > 0) classes.push('vehicle-pin--with-photos');
     if (safeStatus === 'approved') classes.push(`vehicle-pin--insurance-${safeInsuranceStatus}`);
+    if (safeStatus === 'approved' && safeResolutionStatus === FIELD_PHOTO_VEHICLE_RESOLUTION_STATUS_REMOVED) {
+        classes.push('vehicle-pin--removed');
+    }
     if (safeStatus === 'approved' && isLongStanding) classes.push('vehicle-pin--long-standing');
     if (safeStatus === 'approved' && numericPendingCount > 0) classes.push('vehicle-pin--mixed-pending');
     const className = classes.join(' ');

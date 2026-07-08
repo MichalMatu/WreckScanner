@@ -254,13 +254,15 @@ class FrontendContracts(unittest.TestCase):
         html = read_index_html()
         config_js = (ROOT_DIR / "web" / "config.js").read_text(encoding="utf-8")
         photo_review_js = (ROOT_DIR / "web" / "app" / "photo_review.js").read_text(encoding="utf-8")
+        photo_review_vehicle_js = (ROOT_DIR / "web" / "app" / "photo_review_vehicle.js").read_text(encoding="utf-8")
         vehicle_layer_js = (ROOT_DIR / "web" / "app" / "vehicle_layer.js").read_text(encoding="utf-8")
         i18n_js = read_i18n_bundle()
         review_css = (ROOT_DIR / "web" / "styles" / "review.css").read_text(encoding="utf-8")
         admin_py = (ROOT_DIR / "app" / "http" / "admin.py").read_text(encoding="utf-8")
         dispatch_py = (ROOT_DIR / "app" / "http" / "dispatch.py").read_text(encoding="utf-8")
         routes_py = (ROOT_DIR / "app" / "http" / "routes.py").read_text(encoding="utf-8")
-        frontend = html + config_js + photo_review_js + vehicle_layer_js + i18n_js + review_css
+        frontend = html + config_js + photo_review_js + photo_review_vehicle_js
+        frontend += vehicle_layer_js + i18n_js + review_css
 
         self.assertFalse((ROOT_DIR / "web" / "app" / "wreck_review.js").exists())
         self.assertFalse((ROOT_DIR / "web" / "app" / "saved_wrecks.js").exists())

@@ -26,6 +26,8 @@ def field_photo_record(photo_id: str = "photo_20260704T080000Z_test") -> dict:
         "issue_type": "vehicle",
         "vehicle_insurance_status": "uninsured",
         "vehicle_insurance_checked_at": "2026-07-04T08:05:00Z",
+        "vehicle_resolution_status": "removed",
+        "vehicle_resolution_updated_at": "2026-07-04T08:06:00Z",
         "lat": 51.1,
         "lon": 17.03,
         "coordinate_source": "map",
@@ -108,15 +110,17 @@ class JsonToDatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM settings").fetchone()[0], 2)
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM privacy_requests").fetchone()[0], 1)
             row = connection.execute(
-                "SELECT id, issue_type, vehicle_insurance_status, vehicle_insurance_checked_at, private_original_file, edit_token_hash, exif_json FROM field_photos"
+                "SELECT id, issue_type, vehicle_insurance_status, vehicle_insurance_checked_at, vehicle_resolution_status, vehicle_resolution_updated_at, private_original_file, edit_token_hash, exif_json FROM field_photos"
             ).fetchone()
             self.assertEqual(row[0], record["id"])
             self.assertEqual(row[1], "vehicle")
             self.assertEqual(row[2], "uninsured")
             self.assertEqual(row[3], "2026-07-04T08:05:00Z")
-            self.assertEqual(row[4], record["private_original_file"])
-            self.assertEqual(row[5], "hash")
-            self.assertEqual(json.loads(row[6]), {"make": "camera"})
+            self.assertEqual(row[4], "removed")
+            self.assertEqual(row[5], "2026-07-04T08:06:00Z")
+            self.assertEqual(row[6], record["private_original_file"])
+            self.assertEqual(row[7], "hash")
+            self.assertEqual(json.loads(row[8]), {"make": "camera"})
             validation = validate_database_against_json(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
             self.assertEqual(validation.database_field_photos, 1)
             self.assertEqual(validation.field_photo_records, 1)

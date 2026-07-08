@@ -21,6 +21,12 @@ Status OC/UFG jest recznie zapisywany jako `vehicle_insurance_status`:
 czyli date zapisania wyniku sprawdzenia w UFG. Aplikacja nie pobiera danych z UFG automatycznie
 i nie zapisuje tablic ani VIN.
 
+Status skutecznosci zgłoszenia pojazdu jest zapisany bez osobnej encji sprawy
+jako `vehicle_resolution_status`: `active` albo `removed`. Domyslnie kazde
+zdjecie pojazdu jest `active`; przy zmianie statusu aplikacja zapisuje
+`vehicle_resolution_updated_at`. Usuniety pojazd moze pozostac na mapie jako
+zanonimizowany wpis sukcesu ukryty domyslnie filtrem warstwy pojazdow.
+
 ## Aktualne przeplywy
 
 - Dodanie materialu tworzy rekord `field_photos` w SQLite z tokenem edycji.
@@ -35,10 +41,18 @@ i nie zapisuje tablic ani VIN.
 - Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu w tej
   samej grupie mapy. Edycja wlasciciela przez token dotyczy tylko jego zdjecia
   i wraca do kolejki review.
+- Administrator moze oznaczyc grupe pojazdu jako usunieta albo przywrocic ja
+  jako aktywna. Grupa jest traktowana jako usunieta tylko wtedy, gdy wszystkie
+  zatwierdzone zdjecia pojazdu w tej grupie maja `vehicle_resolution_status:
+  "removed"`.
+- Publiczna mapa domyslnie ukrywa usuniete pojazdy, ale tray filtrow warstwy
+  `Pojazdy` pozwala je pokazac albo wyswietlic tylko usuniete.
 - Zgloszenie PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
 - Zgloszenie zawiera tekstowy wynik recznego sprawdzenia OC/UFG oraz date
   sprawdzenia w tresci PDF.
+- Zgloszenie PDF nie jest generowane dla grupy oznaczonej w calosci jako
+  usunieta.
 - Miniatury ortofoto sa dowodem generowanym podczas tworzenia raportu PDF.
 - Raporty PDF i cropy mapy nie sa zapisywane w DB ani w stalym
   katalogu runtime.
@@ -57,6 +71,10 @@ i nie zapisuje tablic ani VIN.
 - `GET /api/admin/photos`
 - `PATCH /api/admin/photos/field/:id/review`
 - `DELETE /api/admin/photos/field/:id`
+
+`PATCH /api/admin/photos/field/:id/review` moze zapisac sama decyzje
+`vehicle_resolution_status` bez zmiany statusu moderacji lub redakcji. Taka
+aktualizacja obejmuje cala grupe pojazdu w promieniu grupowania mapy.
 
 Nie ma publicznego ani administracyjnego API `/api/wrecks`.
 

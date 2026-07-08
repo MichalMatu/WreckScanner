@@ -44,6 +44,12 @@ function handlePopupStringAction(call, button) {
         return true;
     }
 
+    match = call.match(/^updateFieldPhotoGroupResolution\('([^']*)', '(active|removed)', this\)$/);
+    if (match) {
+        updateFieldPhotoGroupResolution(match[1], match[2], button);
+        return true;
+    }
+
     match = call.match(/^openFieldPhotoGroupReport\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), '([^']*)', this\)$/);
     if (match) {
         openFieldPhotoGroupReport(Number(match[1]), Number(match[2]), match[3], button);
