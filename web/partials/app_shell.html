@@ -93,14 +93,14 @@
                         <input type="checkbox" id="toggle-field-photo-infrastructure" checked
                             onchange="toggleFieldPhotoIssueFilter('infrastructure', this.checked)">
                         <span class="layer-pin layer-pin--field-photo-infrastructure"></span>
-                        <span class="layer-label" data-i18n="layers.fieldPhotoInfrastructure">Niebezpieczna infrastruktura</span>
+                        <span class="layer-label" data-i18n="layers.fieldPhotoInfrastructure">Infrastruktura</span>
                         <span class="layer-count-badge" id="layer-count-field-photo-infrastructure">0</span>
                     </label>
                     <label class="layer-toggle">
                         <input type="checkbox" id="toggle-field-photo-smoke" checked
                             onchange="toggleFieldPhotoIssueFilter('smoke', this.checked)">
                         <span class="layer-pin layer-pin--field-photo-smoke"></span>
-                        <span class="layer-label" data-i18n="layers.fieldPhotoSmoke">Zanieczyszczone powietrze</span>
+                        <span class="layer-label" data-i18n="layers.fieldPhotoSmoke">Powietrze</span>
                         <span class="layer-count-badge" id="layer-count-field-photo-smoke">0</span>
                     </label>
                     <label class="layer-toggle">
@@ -131,13 +131,6 @@
             </button>
         </nav>
         <div class="app-menu-drawer-footer">
-            <div class="app-menu-footer-links">
-                <button type="button" class="app-menu-footer-link"
-                    onclick="openModal('modal-privacy-info'); closeAppMenu()"
-                    data-i18n="footer.privacy">Prywatność</button>
-                <button type="button" class="app-menu-footer-link" onclick="openProblemReportModal(); closeAppMenu()"
-                    data-i18n="footer.report">Zgłoś problem</button>
-            </div>
             <div class="app-menu-footer-actions">
                 <button type="button" class="app-menu-footer-icon app-menu-footer-icon--settings"
                     data-i18n-attr="title:icon.settings;aria-label:icon.settings"
@@ -159,6 +152,13 @@
                         <path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9zm5 8h-2v-4h2v4z" />
                     </svg>
                 </button>
+            </div>
+            <div class="app-menu-footer-links">
+                <button type="button" class="app-menu-footer-link"
+                    onclick="openModal('modal-privacy-info'); closeAppMenu()"
+                    data-i18n="footer.privacy">Prywatność</button>
+                <button type="button" class="app-menu-footer-link" onclick="openProblemReportModal(); closeAppMenu()"
+                    data-i18n="footer.report">Zgłoś problem</button>
             </div>
         </div>
     </aside>
