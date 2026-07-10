@@ -38,6 +38,9 @@ class ToolingContractTests(unittest.TestCase):
 
         self.assertIn('[[ "${GITHUB_ACTIONS:-}" == "true" ]]', check_script)
         self.assertIn("::error title=check.sh command failed::", check_script)
+        self.assertIn("::error title=check.sh failure output::", check_script)
+        self.assertIn("tail -n 80", check_script)
+        self.assertIn('run_with_failure_tail "$PYTHON_BIN" -m coverage run', check_script)
         self.assertIn('report_failure "$status" "$@"', check_script)
 
     def test_ci_actions_are_pinned_to_immutable_commit_shas(self):

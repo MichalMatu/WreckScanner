@@ -39,6 +39,30 @@ run() {
     fi
 }
 
+run_with_failure_tail() {
+    local output_path
+    output_path="$(mktemp)"
+    printf '\n==> %s\n' "$*"
+    set +e
+    "$@" 2>&1 | tee "$output_path"
+    local status=${PIPESTATUS[0]}
+    set -e
+    if [[ "$status" -eq 0 ]]; then
+        rm -f "$output_path"
+        return 0
+    fi
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        local details
+        details="$(tail -n 80 "$output_path")"
+        details="${details//'%'/'%25'}"
+        details="${details//$'\r'/'%0D'}"
+        details="${details//$'\n'/'%0A'}"
+        printf '::error title=check.sh failure output::%s\n' "$details" >&2
+    fi
+    rm -f "$output_path"
+    report_failure "$status" "$@"
+}
+
 run_to_file() {
     local output_path="$1"
     shift
@@ -55,7 +79,7 @@ run "$PYTHON_BIN" -m compileall -q app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff check app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff format --check app core scripts tests server.py
 run "$PYTHON_BIN" -m coverage erase
-run "$PYTHON_BIN" -m coverage run -m unittest discover -s tests
+run_with_failure_tail "$PYTHON_BIN" -m coverage run -m unittest discover -s tests
 run "$PYTHON_BIN" -m coverage report
 
 if [[ -f "package.json" ]]; then
