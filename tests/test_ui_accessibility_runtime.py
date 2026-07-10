@@ -11,10 +11,11 @@ from tempfile import TemporaryDirectory
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CHROMIUM = next(
-    (binary for name in ("chromium", "chromium-browser", "google-chrome") if (binary := shutil.which(name))),
+    (binary for name in ("google-chrome", "chromium", "chromium-browser") if (binary := shutil.which(name))),
     None,
 )
-CHROMIUM_TIMEOUT_SECONDS = 45
+CHROMIUM_TIMEOUT_SECONDS = 20
+CHROMIUM_DUMP_TIMEOUT_MS = 10_000
 
 
 def run_chromium_document(document: str, *, prefix: str, virtual_time_budget: int) -> dict:
@@ -31,6 +32,7 @@ def run_chromium_document(document: str, *, prefix: str, virtual_time_budget: in
                 "--disable-dev-shm-usage",
                 "--no-sandbox",
                 f"--user-data-dir={profile_path}",
+                f"--timeout={CHROMIUM_DUMP_TIMEOUT_MS}",
                 f"--virtual-time-budget={virtual_time_budget}",
                 "--dump-dom",
                 html_path.as_uri(),
