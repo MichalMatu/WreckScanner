@@ -8,7 +8,7 @@ class DocumentationContractTests(unittest.TestCase):
     def test_readme_links_only_essential_docs(self):
         readme = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("Aktualne wydanie: `v3.8`", readme)
+        self.assertIn("Aktualne wydanie: `v3.9`", readme)
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
