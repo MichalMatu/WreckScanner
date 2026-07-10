@@ -27,8 +27,14 @@ http://127.0.0.1:8001
 
 ## Jeden Supervisor
 
-W tym workspace serwer ma watcher autostartu. Nie uruchamiaj drugiej kopii
-recznie, jesli proces juz dziala. Tutaj uzywaj ponizszych komend `make`.
+`make help`, `make status`, `make start`, `make health`, `make logs` i
+`make autostart-status` wykrywaja, czy ten katalog obsluguje lokalny watcher,
+czy `wreckscanner.service`. `make start` jest informacyjnym aliasem statusu i
+nie uruchamia procesu. `make status` oraz `make health` koncza sie bledem, gdy
+brakuje procesu, liveness albo readiness.
+
+Nie uruchamiaj drugiej kopii recznie, jesli proces juz dziala. Polecenia
+zmieniajace stan przez `make` sa przeznaczone wylacznie dla lokalnego watchera:
 
 Sprawdzenie:
 
@@ -66,7 +72,8 @@ recznej ani drugiej instancji `server.py`.
 
 Na hoscie produkcyjnym jedynym supervisorem jest `wreckscanner.service`.
 Nie uzywaj tam `make stop`, `make restart`, `make serwerstop`, `make serwerstart`
-ani awaryjnego `nohup`; steruj procesem wylacznie przez:
+ani awaryjnego `nohup`; Makefile wykrywa ten tryb i blokuje targety watchera,
+zanim zmienia sentinel albo proces. Steruj usluga wylacznie przez:
 
 ```bash
 sudo systemctl stop wreckscanner.service

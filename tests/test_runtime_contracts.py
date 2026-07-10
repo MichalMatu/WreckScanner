@@ -55,9 +55,9 @@ class RuntimeEncodingContractTests(unittest.TestCase):
             "stop:",
             "restart:",
             "wait-server:",
-            "autostart:",
-            "autostart-start:",
-            "autostart-stop:",
+            "require-local-watcher:",
+            "autostart-start: require-local-watcher",
+            "autostart-stop: require-local-watcher",
             "autostart-status:",
             "serwerstart:",
             "serwerstop:",
@@ -74,12 +74,22 @@ class RuntimeEncodingContractTests(unittest.TestCase):
             makefile,
         )
         self.assertIn("pgrep -af '$(SERVER_PATTERN)'", makefile)
-        self.assertIn("make nie uruchamia drugiej kopii serwera", makefile)
+        self.assertIn('kill -0 "$$pid"', makefile)
+        self.assertIn("nie uruchamia procesu", makefile)
         self.assertIn("AUTOSTART_DISABLED_FILE ?= .dev/server.autostart.disabled", makefile)
+        self.assertIn("SYSTEMD_UNIT ?= wreckscanner.service", makefile)
+        self.assertIn("SYSTEMD_WORKING_DIRECTORY :=", makefile)
+        self.assertIn("SYSTEMD_MANAGED ?=", makefile)
+        self.assertIn("journalctl", makefile.lower())
+        self.assertIn('exit "$$status"', makefile)
+        self.assertIn("trap finish EXIT", makefile)
         self.assertNotIn("nohup", makefile)
         self.assertNotIn("SERVER_PID_FILE", makefile)
+        self.assertNotIn("\nautostart:\n", makefile)
+        self.assertNotIn("\nbackup-db:", makefile)
+        self.assertNotIn("\nrestore-db:", makefile)
         self.assertIn("Reczna instancja nie zostala uruchomiona", makefile)
-        self.assertIn("$(MAKE) wait-server", makefile)
+        self.assertIn("$(SUBMAKE) wait-server", makefile)
         self.assertIn("error: npm jest wymagany do lintowania calego frontendu", makefile)
         self.assertIn("npm run lint:web", makefile)
         self.assertNotIn("eslint web/*.js", makefile)

@@ -24,7 +24,10 @@ nakladu, a nie dla samego domkniecia wszystkich mozliwych usprawnien.
 ### Kolejne Male Poprawki
 
 - Raz na kilka miesiecy skopiowac zaszyfrowane repozytorium Restic na osobny
-  nosnik i sprawdzic kopie; haslo przechowywac osobno.
+  nosnik i sprawdzic kopie; haslo przechowywac osobno. Przy tej okazji wykonac
+  pelny `restic check --read-data` i izolowana probe restore.
+- Przy kolejnej zmianie ZIP ujednolicic `BACKUP_DIR` z katalogiem kopii stanu
+  sprzed restore; obecnie niestandardowy `BACKUP_DIR` dotyczy tworzenia i listy.
 - Przy okazji zmian uslugi dodac produkcyjny `EnvironmentFile`, `UMask=0077`,
   `NoNewPrivileges=true`, `PrivateTmp=true` i trwaly sekret sesji.
 - Dodac DNS `www.wreckscanner.pl` tylko wtedy, gdy ten alias bedzie potrzebny.
@@ -62,7 +65,10 @@ Aplikacja dziala pod:
 http://127.0.0.1:8001
 ```
 
-W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja ubij aktualny proces `server.py` i poczekaj, az watcher podniesie nowy proces. Szczegoly sa w [docs/START.md](docs/START.md).
+`make help` wykrywa lokalny watcher albo produkcyjny `wreckscanner.service`.
+Polecenia zmieniajace proces przez `make` sa tylko dla watchera; na systemd
+koncza sie bezpiecznym bledem z poprawna komenda operatorska. Szczegoly sa w
+[docs/START.md](docs/START.md).
 
 ## Zakres
 

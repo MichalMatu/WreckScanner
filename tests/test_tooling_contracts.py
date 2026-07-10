@@ -1,3 +1,5 @@
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -5,6 +7,15 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 
 class ToolingContractTests(unittest.TestCase):
+    def run_make(self, target: str, *variables: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["make", "--no-print-directory", target, *variables],
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
     def test_opencv_uses_the_published_python_distribution_pin(self):
         requirements = (ROOT_DIR / "requirements.txt").read_text(encoding="utf-8")
 
@@ -59,20 +70,86 @@ class ToolingContractTests(unittest.TestCase):
 
         self.assertIn("/api/health/live", makefile)
         self.assertIn("/api/health/ready", makefile)
-        self.assertIn('curl -fsS "$(SERVER_READY_URL)"', makefile)
+        self.assertIn('curl -fsS --max-time "$(SERVER_PROBE_TIMEOUT_SECONDS)" "$(SERVER_READY_URL)"', makefile)
         self.assertIn("curl jest wymagany do sprawdzenia readiness", makefile)
         self.assertNotIn("Sprawdz watcher albo uruchom tymczasowo", makefile)
 
     def test_autostart_never_falls_back_to_a_manual_server(self):
         makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
-        autostart = makefile.split("autostart-start:\n", 1)[1].split("\nautostart-status:", 1)[0]
+        autostart = makefile.split("autostart-start: require-local-watcher\n", 1)[1].split("\nautostart-status:", 1)[0]
 
-        self.assertIn("$(MAKE) SERVER_WAIT_SECONDS=$(SERVER_AUTOSTART_WAIT_SECONDS) wait-server", autostart)
+        self.assertIn("$(SUBMAKE) SERVER_WAIT_SECONDS=$(SERVER_AUTOSTART_WAIT_SECONDS) wait-server", autostart)
         self.assertIn("Reczna instancja nie zostala uruchomiona", autostart)
         self.assertNotIn("pgrep", autostart)
         self.assertNotIn("nohup", autostart)
         self.assertNotIn("server.pid", makefile)
-        self.assertNotIn("$(MAKE) autostart-start || true", makefile)
+        self.assertNotIn("$(SUBMAKE) autostart-start || true", makefile)
+
+    def test_make_dry_run_cannot_execute_recursive_recipes(self):
+        makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
+        recipes = makefile.split("menu:\n", 1)[1]
+
+        self.assertIn("SUBMAKE := $(MAKE)", makefile)
+        self.assertNotIn("$(MAKE)", recipes)
+
+    def test_make_guards_watcher_mutations_on_a_systemd_host(self):
+        makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
+
+        self.assertIn("SYSTEMD_WORKING_DIRECTORY := $(shell $(SYSTEMCTL) show", makefile)
+        self.assertIn("stop: require-local-watcher", makefile)
+        self.assertIn("restart: require-local-watcher", makefile)
+        self.assertIn("backup-data: require-local-watcher", makefile)
+        self.assertIn("restore-data: require-local-watcher", makefile)
+        self.assertIn("sudo systemctl stop|start|restart", makefile)
+
+    def test_make_reads_logs_from_the_detected_supervisor(self):
+        makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
+        logs = makefile.split("logs:\n", 1)[1].split("\ncheck:", 1)[0]
+
+        self.assertIn('"$(JOURNALCTL)" --unit "$(SYSTEMD_UNIT)"', logs)
+        self.assertIn('tail -n 80 "$(SERVER_LOG)"', logs)
+
+    def test_make_health_propagates_process_and_endpoint_failures(self):
+        makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
+        status = makefile.split("status:\n", 1)[1].split("\nlogs:", 1)[0]
+
+        self.assertIn("status=1", status)
+        self.assertIn('exit "$$status"', status)
+        self.assertNotIn('"$(SERVER_LIVE_URL)" || true', status)
+
+    def test_make_status_returns_nonzero_for_a_missing_server(self):
+        result = self.run_make(
+            "status",
+            "SYSTEMD_MANAGED=0",
+            "PORT=1",
+            "SERVER_PATTERN=[p]ython-impossible-wreckscanner-contract",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Procesy server.py:\nbrak", result.stdout)
+
+    def test_make_refuses_watcher_stop_when_systemd_is_detected(self):
+        result = self.run_make("stop", "SYSTEMD_MANAGED=1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("przeznaczona tylko dla lokalnego watchera", result.stdout)
+        self.assertIn("sudo systemctl stop|start|restart", result.stdout)
+
+    def test_make_logs_uses_journalctl_in_systemd_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fake_journalctl = Path(directory) / "journalctl-fixture"
+            fake_journalctl.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\n', encoding="utf-8")
+            fake_journalctl.chmod(0o700)
+
+            result = self.run_make(
+                "logs",
+                "SYSTEMD_MANAGED=1",
+                "SYSTEMD_UNIT=audit.service",
+                f"JOURNALCTL={fake_journalctl}",
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "--unit audit.service --lines 80 --no-pager")
 
     def test_make_exposes_incremental_restic_backup_and_rotation(self):
         makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")

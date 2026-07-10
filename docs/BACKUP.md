@@ -184,11 +184,9 @@ plikow ani pliku hasla razem z repozytorium.
 `make backup-data` tworzy snapshot `wreckscanner-data-snapshot-v2` w
 `kopie_zapasowe/`. Ta komenda jest przeznaczona dla lokalnego watchera i pamieta
 jego poprzedni stan. Na produkcji sterowanej przez systemd uzyj procedury
-stop/backup/start pokazanej wyzej i wywolaj bezposrednio:
-
-Po backupie komenda czeka na readiness procesu podniesionego przez watcher.
-Brak gotowego serwera daje niezerowy kod wyjscia; `make` nie uruchamia wtedy
-recznej instancji i nie ukrywa bledu ponownego startu.
+stop/backup/start pokazanej wyzej i wywolaj bezposrednio. Makefile rozpoznaje
+jednostke przypisana do katalogu i blokuje target watchera przed zatrzymaniem
+procesu, aby sentinel nie wywolal petli restartow systemd:
 
 ```bash
 ./.venv/bin/python scripts/backup_data.py zip \
@@ -196,6 +194,12 @@ recznej instancji i nie ukrywa bledu ponownego startu.
   --output-dir kopie_zapasowe \
   --strict
 ```
+
+Po backupie komenda czeka na readiness procesu podniesionego przez watcher.
+Brak gotowego serwera daje niezerowy kod wyjscia; `make` nie uruchamia wtedy
+recznej instancji i nie ukrywa bledu ponownego startu. Wrapper czeka tez na
+faktyczne zakonczenie starego procesu i przy przerwaniu operacji probuje
+przywrocic poprzedni stan watchera.
 
 ZIP zawiera spójny snapshot SQLite, oba katalogi zdjec, diagnostyke oraz
 `manifest.json` z rozmiarami i hashami SHA256. Plik wynikowy ma tryb `0600`.

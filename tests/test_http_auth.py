@@ -41,9 +41,11 @@ class HttpAuthTests(unittest.TestCase):
     def test_signed_active_token_is_accepted_and_tampering_is_rejected(self):
         with patch.object(auth, "admin_password", return_value="correct-password"):
             token = auth.make_admin_token("correct-password")
+            replacement = "0" if token[-1] != "0" else "1"
+            tampered_token = f"{token[:-1]}{replacement}"
 
             self.assertTrue(auth.valid_admin_token(token))
-            self.assertFalse(auth.valid_admin_token(f"{token[:-1]}0"))
+            self.assertFalse(auth.valid_admin_token(tampered_token))
 
     def test_correctly_signed_but_unregistered_token_is_rejected(self):
         issued_at = str(int(auth.time.time()))
