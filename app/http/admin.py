@@ -72,6 +72,7 @@ def handle_admin_login(handler) -> None:
 
 
 def handle_admin_logout(handler) -> None:
+    auth.revoke_admin_token(http_admin_session.admin_token_from_cookie(handler))
     cookie = http_admin_session.admin_cookie_header(handler, "", max_age=0)
     http_responses.send_json(handler, 200, {"status": "ok", "authenticated": False}, {"Set-Cookie": cookie})
 
@@ -197,34 +198,6 @@ def handle_delete_admin_photo(handler, route: tuple[str, tuple[str, ...]]) -> No
             "Admin photo delete failed",
             exc,
             public_error="Nie udało się usunąć zdjęcia.",
-        )
-
-
-def handle_delete_field_photo(handler, request_path: str) -> None:
-    if not http_admin_session.require_admin(handler):
-        return
-    photo_id = request_path.removeprefix("/api/field-photos/").strip("/")
-    if not photo_id or "/" in photo_id:
-        http_responses.send_json(handler, 400, {"error": "Nieprawidłowy identyfikator zdjęcia."})
-        return
-    try:
-        result = delete_field_photo(
-            photo_id,
-            core_config.FIELD_PHOTOS_DIR,
-            private_dir=core_config.PRIVATE_PHOTOS_DIR,
-        )
-        http_responses.send_json(handler, 200, result)
-    except FileNotFoundError as e:
-        http_responses.send_json(handler, 404, {"error": str(e)})
-    except ValueError as e:
-        http_responses.send_json(handler, 400, {"error": str(e)})
-    except Exception as exc:
-        http_responses.send_internal_error(
-            handler,
-            500,
-            "Field photo delete failed",
-            exc,
-            public_error="Nie udało się usunąć zdjęcia terenowego.",
         )
 
 

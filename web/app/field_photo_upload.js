@@ -2,6 +2,7 @@ let fieldPhotoUploadItems = [];
 let fieldPhotoUploadMapLatLng = null;
 let fieldPhotoUploadEditToken = '';
 let fieldPhotoLocationPickActive = false;
+let fieldPhotoLocationPickReturnFocus = null;
 let fieldPhotoUploadInProgress = false;
 
 function selectedFieldPhotoUploadIssueType() {
@@ -23,11 +24,10 @@ function updateFieldPhotoVehicleInsuranceUi() {
 
 function randomFieldPhotoEditToken() {
     const bytes = new Uint8Array(18);
-    if (window.crypto?.getRandomValues) {
-        window.crypto.getRandomValues(bytes);
-    } else {
-        bytes.forEach((_, index) => { bytes[index] = Math.floor(Math.random() * 256); });
+    if (!window.crypto?.getRandomValues) {
+        throw new Error(t('modal.fieldPhoto.secureRandomUnavailable'));
     }
+    window.crypto.getRandomValues(bytes);
     let binary = '';
     bytes.forEach(byte => { binary += String.fromCharCode(byte); });
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
@@ -116,6 +116,25 @@ function updateFieldPhotoLocationPickHintUi() {
     if (label) label.textContent = t('panel.addPhotoPickStatus');
 }
 
+function fieldPhotoLocationPickMapContainer() {
+    return typeof map !== 'undefined' ? map.getContainer() : null;
+}
+
+function focusFieldPhotoLocationPicker() {
+    const mapContainer = fieldPhotoLocationPickMapContainer();
+    if (!mapContainer) return;
+    if (!mapContainer.hasAttribute('tabindex')) mapContainer.tabIndex = 0;
+    requestAnimationFrame(() => {
+        if (fieldPhotoLocationPickActive) mapContainer.focus({ preventScroll: true });
+    });
+}
+
+function restoreFieldPhotoLocationPickFocus(target) {
+    const fallback = document.getElementById('app-menu-toggle');
+    const focusTarget = target && !target.closest('[hidden], [inert]') ? target : fallback;
+    requestAnimationFrame(() => focusTarget?.focus({ preventScroll: true }));
+}
+
 function updatePanelFieldPhotoLocationPickUi() {
     const button = document.getElementById('panel-add-field-photo');
     if (button) {
@@ -125,46 +144,91 @@ function updatePanelFieldPhotoLocationPickUi() {
         const label = button.querySelector('[data-panel-add-photo-label]');
         if (label) label.textContent = t(fieldPhotoLocationPickActive ? 'panel.addPhotoPicking' : 'panel.addPhoto');
     }
-    map?.getContainer()?.classList.toggle('is-picking-field-photo-location', fieldPhotoLocationPickActive);
+    const mapContainer = fieldPhotoLocationPickMapContainer();
+    mapContainer?.classList.toggle('is-picking-field-photo-location', fieldPhotoLocationPickActive);
+    if (mapContainer && fieldPhotoLocationPickActive) {
+        mapContainer.setAttribute('aria-label', t('panel.addPhotoPickMapLabel'));
+        mapContainer.setAttribute('aria-describedby', 'map-field-photo-pick-hint');
+        mapContainer.setAttribute('aria-keyshortcuts', 'Enter Space Escape');
+    } else if (mapContainer) {
+        mapContainer.setAttribute('aria-label', t('map.label'));
+        mapContainer.removeAttribute('aria-describedby');
+        mapContainer.removeAttribute('aria-keyshortcuts');
+    }
     updateFieldPhotoLocationPickHintUi();
 }
 
 function cancelFieldPhotoLocationPick(options = {}) {
     if (!fieldPhotoLocationPickActive) return;
+    const returnFocus = fieldPhotoLocationPickReturnFocus;
     fieldPhotoLocationPickActive = false;
     map.off('click', handlePanelFieldPhotoLocationPick);
+    fieldPhotoLocationPickMapContainer()?.removeEventListener('keydown', handleFieldPhotoLocationPickKeydown);
+    document.removeEventListener('keydown', handleFieldPhotoLocationPickEscape, true);
     updatePanelFieldPhotoLocationPickUi();
+    fieldPhotoLocationPickReturnFocus = null;
     if (options.clearStatus && statusEl.textContent === t('panel.addPhotoPickStatus')) {
         statusEl.textContent = '';
         statusEl.className = '';
     }
+    if (options.announce) {
+        statusEl.textContent = t('panel.addPhotoPickCancelled');
+        statusEl.className = '';
+    }
+    if (options.restoreFocus) restoreFieldPhotoLocationPickFocus(returnFocus);
 }
 
 function startFieldPhotoLocationPick() {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads) || !fieldPhotoAnyIssueAllowed()) return;
     if (fieldPhotoLocationPickActive) {
-        cancelFieldPhotoLocationPick({ clearStatus: true });
+        cancelFieldPhotoLocationPick({ announce: true, restoreFocus: true });
         return;
     }
+    fieldPhotoLocationPickReturnFocus = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     closeMapContextMenu?.();
     if (typeof closeAppMenu === 'function') closeAppMenu();
     fieldPhotoLocationPickActive = true;
     map.on('click', handlePanelFieldPhotoLocationPick);
+    fieldPhotoLocationPickMapContainer()?.addEventListener('keydown', handleFieldPhotoLocationPickKeydown);
+    document.addEventListener('keydown', handleFieldPhotoLocationPickEscape, true);
     updatePanelFieldPhotoLocationPickUi();
+    focusFieldPhotoLocationPicker();
 }
 
 function isFieldPhotoLocationPickActive() {
     return fieldPhotoLocationPickActive;
 }
 
-async function handlePanelFieldPhotoLocationPick(e) {
+async function chooseFieldPhotoLocation(mapPoint) {
     if (!fieldPhotoLocationPickActive) return;
-    const mapLatLng = L.latLng(e.latlng.lat, e.latlng.lng);
+    const mapLatLng = L.latLng(mapPoint.lat, mapPoint.lng);
     cancelFieldPhotoLocationPick({ clearStatus: true });
     await openFieldPhotoUploadModal({
         mapLatLng,
         issueType: FIELD_PHOTO_ISSUE_TYPE_VEHICLE,
     });
+}
+
+async function handlePanelFieldPhotoLocationPick(e) {
+    await chooseFieldPhotoLocation(e.latlng);
+}
+
+function handleFieldPhotoLocationPickKeydown(event) {
+    if (!fieldPhotoLocationPickActive) return;
+    if (event.target !== fieldPhotoLocationPickMapContainer()) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    event.stopPropagation();
+    void chooseFieldPhotoLocation(map.getCenter());
+}
+
+function handleFieldPhotoLocationPickEscape(event) {
+    if (!fieldPhotoLocationPickActive || event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    cancelFieldPhotoLocationPick({ announce: true, restoreFocus: true });
 }
 
 function resetFieldPhotoUploadModal(options = {}) {
@@ -374,6 +438,10 @@ async function uploadSingleFieldPhotoItem(item, submittedEditToken) {
 }
 
 function completeFieldPhotoUpload(input, summary, submittedEditToken) {
+    if (summary.failed) {
+        resetFieldPhotoFileInput(input);
+        return;
+    }
     const savedPhotoIds = fieldPhotoUploadSavedDraftPhotoIds();
     if (!adminAuthenticated && savedPhotoIds.length) {
         resetFieldPhotoFileInput(input);
@@ -382,11 +450,9 @@ function completeFieldPhotoUpload(input, summary, submittedEditToken) {
             editToken: submittedEditToken,
             photoIds: savedPhotoIds,
             submitted: false,
-            statusMessage: summary.failed ? t('modal.fieldPhotoSummary.partialUpload') : '',
         });
         return;
     }
-    if (summary.failed) return;
     resetFieldPhotoFileInput(input);
     if (adminAuthenticated) {
         closeModal(document.getElementById('modal-field-photo-upload'));
@@ -429,29 +495,29 @@ async function submitFieldPhotoUpload(event) {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
     const input = document.getElementById('field-photo-files');
     const status = document.getElementById('field-photo-status');
+    const retainedItems = fieldPhotoUploadItems.filter(item => item.status === 'saved'
+        || (item.status === 'error' && !item.validationError));
     try {
-        fieldPhotoUploadItems = validateFieldPhotoFiles(input?.files);
+        fieldPhotoUploadItems = [...retainedItems, ...validateFieldPhotoFiles(input?.files)];
     } catch (err) {
-        fieldPhotoUploadItems = [];
+        fieldPhotoUploadItems = retainedItems;
         renderFieldPhotoQueue();
         if (status) status.textContent = err.message;
         return;
     }
     const validationErrors = fieldPhotoUploadItems.filter(item => item.validationError);
-    if (validationErrors.length) {
-        renderFieldPhotoQueue();
-        if (status) {
-            status.textContent = validationErrors.length === 1
-                ? validationErrors[0].message
-                : t('modal.fieldPhoto.validationErrorHint');
-        }
-        return;
-    }
+    renderFieldPhotoQueue();
 
     const mapLatLng = currentFieldPhotoUploadMapLatLng();
     const issueType = selectedFieldPhotoUploadIssueType();
     const vehicleInsuranceStatusValue = selectedFieldPhotoVehicleInsuranceStatus(issueType);
-    const editToken = ensureFieldPhotoUploadEditToken();
+    let editToken = '';
+    try {
+        editToken = ensureFieldPhotoUploadEditToken();
+    } catch (err) {
+        if (status) status.textContent = err.message || t('modal.fieldPhoto.secureRandomUnavailable');
+        return;
+    }
     const tokenError = validateFieldPhotoEditToken(editToken);
     if (tokenError) {
         if (status) status.textContent = tokenError;
@@ -468,19 +534,30 @@ async function submitFieldPhotoUpload(event) {
         item.vehicleInsuranceStatus = vehicleInsuranceStatusValue;
         item.editToken = adminAuthenticated ? '' : editToken;
     });
-    renderFieldPhotoQueue();
     const uploadable = fieldPhotoUploadItems.filter(item => item.status === 'pending');
     if (!uploadable.length) {
-        if (status) status.textContent = t('modal.fieldPhoto.noValidFiles');
+        if (status) {
+            status.textContent = validationErrors.length
+                ? t('modal.fieldPhoto.validationErrorHint')
+                : t('modal.fieldPhoto.noValidFiles');
+        }
         return;
     }
+    if (validationErrors.length && status) status.textContent = t('modal.fieldPhoto.validationErrorHint');
     await uploadFieldPhotoItems(uploadable);
 }
 
 async function retryFailedFieldPhotoUploads() {
     if (!publicFeatureAllowed(PUBLIC_FEATURE_KEYS.photoUploads)) return;
     const mapLatLng = currentFieldPhotoUploadMapLatLng();
-    const editToken = ensureFieldPhotoUploadEditToken();
+    const status = document.getElementById('field-photo-status');
+    let editToken = '';
+    try {
+        editToken = ensureFieldPhotoUploadEditToken();
+    } catch (err) {
+        if (status) status.textContent = err.message || t('modal.fieldPhoto.secureRandomUnavailable');
+        return;
+    }
     const retryable = fieldPhotoUploadItems.filter(item => item.status === 'error' && !item.validationError);
     retryable.forEach(item => {
         item.status = 'pending';
@@ -492,7 +569,6 @@ async function retryFailedFieldPhotoUploads() {
     });
     renderFieldPhotoQueue();
     if (!retryable.length) {
-        const status = document.getElementById('field-photo-status');
         if (status) status.textContent = t('modal.fieldPhoto.noRetryableFiles');
         return;
     }

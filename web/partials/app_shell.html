@@ -12,16 +12,18 @@
             </svg>
         </button>
     </div>
-    <button class="app-menu-scrim" id="app-menu-scrim" type="button" hidden
+    <button class="app-menu-scrim" id="app-menu-scrim" type="button" tabindex="-1" aria-hidden="true" hidden
         data-i18n-attr="aria-label:appMenu.close" aria-label="Zamknij menu" onclick="closeAppMenu()"></button>
-    <aside class="app-menu-drawer" id="app-menu-drawer" hidden aria-label="Menu aplikacji">
+    <aside class="app-menu-drawer" id="app-menu-drawer" hidden aria-label="Menu aplikacji"
+        data-i18n-attr="aria-label:appMenu.label">
         <div class="app-menu-drawer-header">
             <div class="app-menu-title-wrap">
                 <button type="button" class="app-menu-brand" id="app-menu-title" onclick="closeAppMenu()">IleStoi.pl</button>
             </div>
         </div>
 
-        <section class="app-menu-map-panel" aria-label="Kontrolki mapy">
+        <section class="app-menu-map-panel" aria-label="Kontrolki mapy"
+            data-i18n-attr="aria-label:panel.mapControls">
             <button type="button" class="panel-photo-cta" id="panel-add-field-photo"
                 data-i18n-attr="title:panel.addPhotoTitle" title="Wskaż miejsce zdjęcia na mapie"
                 aria-pressed="false" onclick="openFieldPhotoUploadFromPanel()" hidden>
@@ -44,7 +46,8 @@
             </label>
 
             <section class="panel-section panel-layers">
-                <div id="map-layer-controls" class="map-layer-controls is-loading-public-layers" aria-label="Warstwy mapy">
+                <div id="map-layer-controls" class="map-layer-controls is-loading-public-layers" aria-label="Warstwy mapy"
+                    data-i18n-attr="aria-label:layers.label">
                     <div class="layer-toggle layer-toggle--vehicle">
                         <label class="layer-toggle-row">
                             <input type="checkbox" id="toggle-vehicles" checked
@@ -118,11 +121,10 @@
                     </label>
                 </div>
             </section>
-
-            <div id="status"></div>
         </section>
 
-        <nav class="app-menu-drawer-section" aria-label="Menu aplikacji">
+        <nav class="app-menu-drawer-section" aria-label="Menu aplikacji"
+            data-i18n-attr="aria-label:appMenu.label">
             <button type="button" class="app-menu-drawer-item" onclick="openParkingCostsModal(); closeAppMenu()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 3h10v2h2v16h-2v-4H7v4H5V5h2V3zm2 2v4h6V5H9zm-2 6v4h10v-4H7zm2 1h2v2H9v-2zm4 0h2v2h-2v-2z" />
@@ -163,19 +165,23 @@
         </div>
     </aside>
 
+    <div id="status" class="global-status-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
     <!-- Interactive Map -->
-    <div id="map"></div>
-    <div id="map-field-photo-pick-hint" class="map-pick-hint" role="status" aria-live="polite" hidden>
+    <div id="map" role="region" tabindex="0" aria-label="Interaktywna mapa"
+        data-i18n-attr="aria-label:map.label"></div>
+    <div id="map-field-photo-pick-hint" class="map-pick-hint" role="status" aria-live="polite"
+        aria-atomic="true" hidden>
         <span class="map-pick-hint-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
                 <path d="M12 2 5 5v6c0 4.7 3 8.8 7 10 4-1.2 7-5.3 7-10V5l-7-3zm0 3.1 4 1.5V11c0 3-1.6 5.8-4 7-2.4-1.2-4-4-4-7V6.6l4-1.5zm0 3.4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
             </svg>
         </span>
-        <span data-map-pick-hint-label data-i18n="panel.addPhotoPickStatus">Kliknij miejsce na mapie, w którym chcesz dodać zdjęcie.</span>
+        <span data-map-pick-hint-label data-i18n="panel.addPhotoPickStatus">Wybierz punkt · Enter: środek · Esc: anuluj</span>
         <button type="button" class="map-pick-hint-close"
             data-i18n-attr="title:panel.addPhotoPickCancel;aria-label:panel.addPhotoPickCancel"
             title="Anuluj wybór miejsca" aria-label="Anuluj wybór miejsca"
-            onclick="cancelFieldPhotoLocationPick({ clearStatus: true })">
+            onclick="cancelFieldPhotoLocationPick({ announce: true, restoreFocus: true })">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4-6.3-6.3-6.3 6.3-1.4-1.4L9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3 1.4 1.4z" />
             </svg>
@@ -184,17 +190,23 @@
 
     <!-- Map source slider -->
     <div id="year-slider">
-        <button type="button" class="year-arrow" id="year-prev" title="◀">◀</button>
+        <button type="button" class="year-arrow" id="year-prev" title="Poprzedni podkład"
+            aria-label="Poprzedni podkład"
+            data-i18n-attr="title:panel.baseMapPrevious;aria-label:panel.baseMapPrevious">◀</button>
         <div class="year-track">
-            <input type="range" id="year-range" min="0" max="7" step="1" value="7">
+            <input type="range" id="year-range" min="0" max="7" step="1" value="7"
+                aria-label="Wybierz podkład mapy" data-i18n-attr="aria-label:panel.baseMapSlider">
             <div class="year-ticks" id="year-ticks"></div>
         </div>
-        <button type="button" class="year-arrow" id="year-next" title="▶">▶</button>
-        <div class="year-current" id="year-current">POL</div>
+        <button type="button" class="year-arrow" id="year-next" title="Następny podkład"
+            aria-label="Następny podkład"
+            data-i18n-attr="title:panel.baseMapNext;aria-label:panel.baseMapNext">▶</button>
+        <div class="year-current" id="year-current" aria-live="polite" aria-atomic="true">POL</div>
     </div>
 
     <!-- Map right-click menu -->
-    <div id="map-context-menu" class="map-context-menu" role="menu" aria-label="Menu punktu mapy" hidden>
+    <div id="map-context-menu" class="map-context-menu" role="menu" aria-label="Menu punktu mapy"
+        data-i18n-attr="aria-label:context.menuLabel" hidden>
         <button type="button" class="context-menu-coords" id="context-menu-coords" role="menuitem"
             data-i18n-attr="title:context.copyCoords;aria-label:context.copyCoords"
             title="Kopiuj współrzędne" aria-label="Kopiuj współrzędne" onclick="copyContextCoords()">

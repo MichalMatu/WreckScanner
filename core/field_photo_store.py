@@ -40,19 +40,32 @@ def record_from_row(row: Any) -> dict[str, Any]:
 
 
 def save_field_record(storage_dir: Path, record: dict[str, Any]) -> None:
+    save_field_records(storage_dir, [record])
+
+
+def save_field_records(storage_dir: Path, records: list[dict[str, Any]]) -> None:
+    if not records:
+        raise ValueError("Brak rekordów zdjęć do zapisania.")
     connection = connection_for(storage_dir)
     try:
         with connection:
-            upsert_field_photo(connection, record)
+            for record in records:
+                upsert_field_photo(connection, record)
     finally:
         connection.close()
 
 
-def delete_field_record(storage_dir: Path, photo_id: str) -> None:
+def delete_field_records(storage_dir: Path, photo_ids: list[str]) -> None:
+    if not photo_ids:
+        raise ValueError("Brak rekordów zdjęć do usunięcia.")
+    validated_ids = [validate_photo_id(photo_id) for photo_id in photo_ids]
+    if len(set(validated_ids)) != len(validated_ids):
+        raise ValueError("Lista zdjęć do usunięcia zawiera duplikaty.")
     connection = connection_for(storage_dir)
     try:
         with connection:
-            connection.execute("DELETE FROM field_photos WHERE id = ?", (photo_id,))
+            for photo_id in validated_ids:
+                connection.execute("DELETE FROM field_photos WHERE id = ?", (photo_id,))
     finally:
         connection.close()
 

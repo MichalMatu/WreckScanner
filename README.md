@@ -8,9 +8,20 @@ Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i 
 
 ## Start
 
+Wspierany runtime to Python `3.11-3.13`. Node.js `20+` jest potrzebny tylko do
+kontroli frontendu; CI uzywa Node.js 22. Przygotowanie lokalnego srodowiska:
+
 ```bash
 cd /home/test/Desktop/WreckScanner
-source .venv/bin/activate
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-dev.txt
+npm ci
+```
+
+Reczne uruchomienie na hoscie bez aktywnego supervisora:
+
+```bash
+cd /home/test/Desktop/WreckScanner
 ./.venv/bin/python server.py
 ```
 
@@ -28,7 +39,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 - zdjecia terenowe w SQLite z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
 - warstwa pojazdow budowana z zatwierdzonych zdjec terenowych, z recznym statusem OC/UFG dla grupy wraku,
 - automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
-- pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
+- raporty PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
 - panel administratora dla zdjec, zgloszen prywatnosci, retencji oryginalow i widocznosci warstw,
 - warstwa dzialek KIEG/EGiB,
 - lokalny backup danych przez `restic`.
@@ -43,6 +54,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 
 - [docs/START.md](docs/START.md) - uruchamianie, zatrzymanie, smoke test i haslo administratora.
 - [docs/CURRENT_MODEL.md](docs/CURRENT_MODEL.md) - aktualny model danych, endpointy i audyt braku starych artefaktow.
+- [docs/DATABASE.md](docs/DATABASE.md) - aktualny kontrakt SQLite, migracje i walidacja integralnosci.
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 - [docs/DEPLOY.md](docs/DEPLOY.md) - produkcyjny deploy, sekrety, systemd i rollback.
@@ -76,4 +88,4 @@ make smoke
 make e2e-report
 ```
 
-`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport ZIP/PDF z OC/UFG.
+`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport PDF z OC/UFG.

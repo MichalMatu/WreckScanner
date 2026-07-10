@@ -1,6 +1,7 @@
 import json
 import unittest
 from io import BytesIO
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.http import health
@@ -11,7 +12,7 @@ class FakeHandler:
         self.client_address = ("127.0.0.1", 12345)
         self.command = "GET"
         self.headers = {}
-        self.path = "/api/health"
+        self.path = "/api/health/ready"
         self.response_headers = []
         self.status = None
         self.wfile = BytesIO()
@@ -31,15 +32,53 @@ class FakeHandler:
 
 
 class HttpHealthContractTests(unittest.TestCase):
-    def test_health_payload_includes_wms_cache(self):
+    def test_liveness_is_minimal(self):
         handler = FakeHandler()
 
-        with patch.object(health.wms_cache, "tile_cache_report", return_value={"count": 2}):
-            health.handle_health(handler)
+        health.handle_liveness(handler)
 
         self.assertEqual(handler.status, 200)
-        self.assertEqual(handler.payload["status"], "ok")
-        self.assertEqual(handler.payload["wms_tile_cache"], {"count": 2})
+        self.assertEqual(handler.payload, {"status": "ok"})
+
+    def test_readiness_checks_database_and_storage_without_paths(self):
+        handler = FakeHandler()
+        database = SimpleNamespace(
+            quick_check=["ok"],
+            applied_migrations=["001"],
+            field_photos=2,
+            settings=4,
+            privacy_requests=1,
+        )
+        disk = SimpleNamespace(free=10 * 1024**3)
+
+        with (
+            patch.object(health, "validate_runtime_database", return_value=database),
+            patch.object(health.shutil, "disk_usage", return_value=disk),
+            patch.object(health.os, "access", return_value=True),
+        ):
+            health.handle_readiness(handler)
+
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(handler.payload, {"status": "ok", "checks": {"database": "ok", "storage": "ok"}})
+        self.assertNotIn("field_photos", json.dumps(handler.payload))
+        self.assertNotIn("privacy_requests", json.dumps(handler.payload))
+        self.assertNotIn("free_bytes", json.dumps(handler.payload))
+        self.assertNotIn("dir", json.dumps(handler.payload))
+        self.assertNotIn("path", json.dumps(handler.payload))
+
+    def test_readiness_returns_sanitized_503_on_failure(self):
+        handler = FakeHandler()
+
+        with (
+            patch.object(health, "validate_runtime_database", side_effect=ValueError("/secret/path corrupt")),
+            patch.object(health.http_responses, "log_exception") as log_exception,
+        ):
+            health.handle_readiness(handler)
+
+        self.assertEqual(handler.status, 503)
+        self.assertNotIn("/secret/path", json.dumps(handler.payload))
+        self.assertEqual(handler.payload["status"], "error")
+        log_exception.assert_called_once()
 
 
 if __name__ == "__main__":

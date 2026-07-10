@@ -174,6 +174,14 @@ def login_admin(client: HttpClient, password: str) -> None:
     )
 
 
+def logout_admin(client: HttpClient) -> None:
+    data = client.json("POST", "/api/admin/logout")
+    expect(
+        data.get("status") == "ok" and data.get("authenticated") is False,
+        "Wylogowanie administratora nie unieważniło sesji.",
+    )
+
+
 def upload_field_photo(client: HttpClient, *, lat: float, lon: float) -> str:
     content_type, body = multipart_body(
         {
@@ -259,9 +267,9 @@ def create_report_pdf(client: HttpClient, photo_id: str, *, lat: float, lon: flo
     return data
 
 
-def screenshot_has_pixels(path: Path) -> None:
+def screenshot_has_pixels(path: Path, *, expected_size: tuple[int, int]) -> None:
     with Image.open(path) as image:
-        expect(image.size[0] >= 320 and image.size[1] >= 480, f"Screenshot {path} ma podejrzany rozmiar {image.size}.")
+        expect(image.size == expected_size, f"Screenshot {path} ma rozmiar {image.size}, oczekiwano {expected_size}.")
         stat = ImageStat.Stat(image.convert("RGB"))
         expect(sum(stat.stddev) > 5.0, f"Screenshot {path} wygląda na pusty.")
 
@@ -283,13 +291,18 @@ def capture_map_screenshot(
     output_dir: Path,
     profile_dir: Path,
     timeout: float,
+    language: str,
+    device_scale_factor: float = 1.0,
 ) -> Path:
     binary = chromium_bin()
     if not binary:
-        raise E2EFailure("Nie znaleziono Chromium/Chrome do screenshotów desktop/mobile.")
+        raise E2EFailure("Nie znaleziono Chromium/Chrome do screenshotów responsywnych.")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"e2e-map-{viewport}.png"
-    url = f"{base_url}/?photo={quote(photo_id)}"
+    if language not in {"pl", "en"}:
+        raise E2EFailure(f"Nieobsługiwany język screenshotu: {language}")
+    browser_language = "pl-PL" if language == "pl" else "en-US"
+    url = f"{base_url}/?photo={quote(photo_id)}&lang={language}"
     command = [
         binary,
         "--headless=new",
@@ -299,16 +312,23 @@ def capture_map_screenshot(
         "--ignore-certificate-errors",
         f"--user-data-dir={profile_dir}",
         f"--window-size={size[0]},{size[1]}",
+        f"--lang={browser_language}",
         "--virtual-time-budget=8000",
         f"--screenshot={output_path}",
         url,
     ]
+    if device_scale_factor != 1.0:
+        command.insert(-3, f"--force-device-scale-factor={device_scale_factor:g}")
     completed = subprocess.run(command, text=True, capture_output=True, timeout=timeout, check=False)
     if completed.returncode != 0:
         raise E2EFailure(f"Chromium screenshot {viewport} nie powiódł się: {completed.stderr.strip()}")
     if not output_path.exists():
         raise E2EFailure(f"Chromium nie zapisał screenshotu {output_path}.")
-    screenshot_has_pixels(output_path)
+    expected_size = (
+        round(size[0] * device_scale_factor),
+        round(size[1] * device_scale_factor),
+    )
+    screenshot_has_pixels(output_path, expected_size=expected_size)
     return output_path
 
 
@@ -333,7 +353,7 @@ def prime_chromium_profile(*, base_url: str, profile_dir: Path, timeout: float) 
 
 
 def delete_photo(client: HttpClient, photo_id: str) -> None:
-    response = client.request("DELETE", f"/api/field-photos/{quote(photo_id)}")
+    response = client.request("DELETE", f"/api/admin/photos/field/{quote(photo_id)}")
     if response.status not in {200, 404}:
         raise E2EFailure(f"Cleanup DELETE {photo_id}: HTTP {response.status}: {response.text}")
 
@@ -387,29 +407,58 @@ def run_e2e(args: argparse.Namespace) -> list[str]:
                 desktop = capture_map_screenshot(
                     base_url=args.base_url.rstrip("/"),
                     photo_id=photo_id,
-                    viewport="desktop",
+                    viewport="desktop-pl",
                     size=(1366, 900),
                     output_dir=args.output_dir,
                     profile_dir=profile_dir,
                     timeout=args.browser_timeout,
+                    language="pl",
+                )
+                tablet = capture_map_screenshot(
+                    base_url=args.base_url.rstrip("/"),
+                    photo_id=photo_id,
+                    viewport="tablet-en",
+                    size=(768, 1024),
+                    output_dir=args.output_dir,
+                    profile_dir=profile_dir,
+                    timeout=args.browser_timeout,
+                    language="en",
                 )
                 mobile = capture_map_screenshot(
                     base_url=args.base_url.rstrip("/"),
                     photo_id=photo_id,
-                    viewport="mobile",
+                    viewport="mobile-pl",
                     size=(390, 844),
                     output_dir=args.output_dir,
                     profile_dir=profile_dir,
                     timeout=args.browser_timeout,
+                    language="pl",
+                )
+                zoomed = capture_map_screenshot(
+                    base_url=args.base_url.rstrip("/"),
+                    photo_id=photo_id,
+                    viewport="zoom-200-en",
+                    size=(683, 450),
+                    output_dir=args.output_dir,
+                    profile_dir=profile_dir,
+                    timeout=args.browser_timeout,
+                    language="en",
+                    device_scale_factor=2.0,
                 )
             checks.append(f"screenshot:{desktop}")
+            checks.append(f"screenshot:{tablet}")
             checks.append(f"screenshot:{mobile}")
+            checks.append(f"screenshot:{zoomed}")
     finally:
-        if photo_id:
-            delete_photo(client, photo_id)
-            assert_photo_deleted(client, photo_id)
-            assert_no_persistent_report_artifacts()
-            checks.append("cleanup")
+        try:
+            if photo_id:
+                delete_photo(client, photo_id)
+                assert_photo_deleted(client, photo_id)
+                assert_no_persistent_report_artifacts()
+                checks.append("cleanup")
+        finally:
+            logout_admin(client)
+            checks.append("admin-logout")
     return checks
 
 

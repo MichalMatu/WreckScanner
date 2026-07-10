@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
@@ -10,8 +11,28 @@ from core import config as core_config
 from core.cadastral import cadastral_feature_info_params, parse_cadastral_feature_info
 from core.field_photos import list_field_photos
 from core.geo import validate_coordinates
+from core.http_response import read_limited_response_bytes, response_content_type
 from core.prg_addresses import parse_prg_address_features, prg_address_wfs_params
 from core.reverse_geocoding import normalize_reverse_geocode_result
+
+
+def _close_response(response) -> None:
+    close = getattr(response, "close", None)
+    if callable(close):
+        close()
+
+
+def _upstream_text(response, *, max_bytes: int, allowed_content_types: set[str]) -> str:
+    response.raise_for_status()
+    content_type = response_content_type(response)
+    if content_type not in allowed_content_types:
+        raise ValueError(f"Nieoczekiwany typ odpowiedzi upstreamu: {content_type or 'brak'}.")
+    payload = read_limited_response_bytes(response, max_bytes=max_bytes)
+    encoding = str(getattr(response, "encoding", None) or "utf-8")
+    try:
+        return payload.decode(encoding)
+    except (LookupError, UnicodeDecodeError) as exc:
+        raise ValueError("Nie udało się odczytać kodowania odpowiedzi upstreamu.") from exc
 
 
 def handle_field_photos(handler) -> None:
@@ -36,24 +57,31 @@ def lookup_cadastral_parcel(lat: float, lon: float) -> dict[str, Any]:
 
     params = cadastral_feature_info_params(lat, lon)
     last_error: Exception | None = None
-    response = None
+    html = None
     for upstream_url in (config.CADASTRAL_WMS_URL, config.CADASTRAL_WMS_FALLBACK_URL):
+        response = None
         try:
             response = map_downloads.get_http_session().get(
                 upstream_url,
                 params=params,
                 timeout=config.CADASTRAL_WMS_TIMEOUT,
+                stream=True,
             )
-            response.raise_for_status()
+            html = _upstream_text(
+                response,
+                max_bytes=config.CADASTRAL_MAX_RESPONSE_BYTES,
+                allowed_content_types={"text/html"},
+            )
             break
         except Exception as exc:
             last_error = exc
-            response = None
-    if response is None:
+        finally:
+            if response is not None:
+                _close_response(response)
+    if html is None:
         raise RuntimeError("Nie udało się pobrać danych działki.") from last_error
 
-    response.encoding = "utf-8"
-    parcel = parse_cadastral_feature_info(response.text)
+    parcel = parse_cadastral_feature_info(html)
     if not parcel.get("parcel_id") and not parcel.get("parcel_number"):
         raise LookupError("Nie znaleziono działki w tym punkcie.")
     return parcel
@@ -70,10 +98,17 @@ def _lookup_prg_address_cached(lat: float, lon: float) -> dict[str, Any]:
             count=config.PRG_ADDRESS_MAX_FEATURES,
         ),
         timeout=config.PRG_ADDRESS_WFS_TIMEOUT,
+        stream=True,
     )
-    response.raise_for_status()
-    response.encoding = "utf-8"
-    return parse_prg_address_features(response.text, query_lat=lat, query_lon=lon)
+    try:
+        xml_text = _upstream_text(
+            response,
+            max_bytes=config.PRG_ADDRESS_MAX_RESPONSE_BYTES,
+            allowed_content_types={"application/gml+xml", "application/xml", "text/xml"},
+        )
+    finally:
+        _close_response(response)
+    return parse_prg_address_features(xml_text, query_lat=lat, query_lon=lon)
 
 
 @lru_cache(maxsize=512)
@@ -93,9 +128,20 @@ def _lookup_nominatim_address_cached(lat: float, lon: float) -> dict[str, Any]:
             "Accept": "application/json",
         },
         timeout=config.NOMINATIM_TIMEOUT,
+        stream=True,
     )
-    response.raise_for_status()
-    return normalize_reverse_geocode_result(response.json(), query_lat=lat, query_lon=lon)
+    try:
+        json_text = _upstream_text(
+            response,
+            max_bytes=config.NOMINATIM_MAX_RESPONSE_BYTES,
+            allowed_content_types={"application/json"},
+        )
+        payload = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise LookupError("Nie udało się odczytać odpowiedzi Nominatim.") from exc
+    finally:
+        _close_response(response)
+    return normalize_reverse_geocode_result(payload, query_lat=lat, query_lon=lon)
 
 
 def lookup_nearest_address(lat: float, lon: float) -> dict[str, Any]:

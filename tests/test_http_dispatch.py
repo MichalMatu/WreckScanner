@@ -101,12 +101,48 @@ class HttpDispatchContractTests(unittest.TestCase):
 
     def test_head_unknown_api_omits_body(self):
         handler = FakeHandler("/api/missing")
+        handler.command = "HEAD"
 
         handled = dispatch.handle_head(handler)
 
         self.assertTrue(handled)
         self.assertEqual(handler.status, 404)
         self.assertEqual(handler.wfile.getvalue(), b"")
+
+    def test_head_known_api_matches_get_status_and_headers_but_omits_body(self):
+        handler = FakeHandler("/api/health/live")
+        handler.command = "HEAD"
+
+        handled = dispatch.handle_head(handler)
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 200)
+        self.assertEqual(handler.wfile.getvalue(), b"")
+        self.assertIn(("Content-Type", "application/json"), handler.response_headers)
+        self.assertGreater(int(dict(handler.response_headers)["Content-Length"]), 0)
+
+    def test_head_costly_api_uses_the_same_rate_limit_bucket_as_get(self):
+        handler = FakeHandler("/api/address/reverse?lat=51.1&lon=17.1")
+        handler.command = "HEAD"
+
+        def reject_with_response(limited_handler, method, path):
+            self.assertTrue(limited_handler._suppress_response_body)
+            dispatch.http_responses.send_json(limited_handler, 429, {"error": "limit"})
+            return True
+
+        with (
+            patch.object(
+                dispatch.http_rate_limit, "reject_limited", side_effect=reject_with_response
+            ) as reject_limited,
+            patch.object(dispatch.http_public_data, "handle_reverse_address") as reverse_address,
+        ):
+            handled = dispatch.handle_head(handler)
+
+        self.assertTrue(handled)
+        self.assertEqual(handler.status, 429)
+        self.assertEqual(handler.wfile.getvalue(), b"")
+        reject_limited.assert_called_once_with(handler, "GET", "/api/address/reverse")
+        reverse_address.assert_not_called()
 
     def test_options_sets_empty_response(self):
         handler = FakeHandler("/api/settings")
@@ -116,6 +152,32 @@ class HttpDispatchContractTests(unittest.TestCase):
 
         self.assertEqual(handler.status, 204)
         send_header.assert_any_call("Content-Length", "0")
+
+    def test_delete_uses_only_canonical_admin_photo_route(self):
+        handler = FakeHandler("/api/admin/photos/field/photo-1")
+        handler.command = "DELETE"
+
+        with (
+            patch.object(dispatch.http_request_body, "reject_unsafe_request", return_value=False),
+            patch.object(dispatch.http_admin, "handle_delete_admin_photo") as delete_photo,
+        ):
+            dispatch.handle_delete(handler)
+
+        delete_photo.assert_called_once_with(handler, ("field", ("photo-1",)))
+
+    def test_delete_rejects_retired_field_photo_shortcut(self):
+        handler = FakeHandler("/api/field-photos/photo-1")
+        handler.command = "DELETE"
+
+        with (
+            patch.object(dispatch.http_request_body, "reject_unsafe_request", return_value=False),
+            patch.object(dispatch.http_admin, "handle_delete_admin_photo") as delete_photo,
+            patch.object(dispatch.http_responses, "send_api_not_found") as not_found,
+        ):
+            dispatch.handle_delete(handler)
+
+        delete_photo.assert_not_called()
+        not_found.assert_called_once_with(handler)
 
 
 if __name__ == "__main__":

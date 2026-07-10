@@ -12,11 +12,15 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("Status projektu: wersja utrzymaniowa.", readme)
         self.assertIn("docs/START.md", readme)
         self.assertIn("docs/CURRENT_MODEL.md", readme)
+        self.assertIn("docs/DATABASE.md", readme)
         self.assertIn("docs/BACKUP.md", readme)
         self.assertIn("docs/DEPLOY.md", readme)
         self.assertIn("OC/UFG", readme)
         self.assertIn("`main` jest linia release-only", readme)
         self.assertIn("`work/dirty` jest galezia robocza", readme)
+        self.assertIn("Python `3.11-3.13`", readme)
+        self.assertIn("raport PDF z OC/UFG", readme)
+        self.assertNotIn("raport ZIP/PDF", readme)
         self.assertNotIn("docs/AUDIT.md", readme)
         self.assertNotIn("docs/README.en.md", readme)
         self.assertNotIn("RUNTIME_SMOKE", readme)
@@ -33,6 +37,12 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("make smoke", doc)
         self.assertIn("make e2e-report", doc)
         self.assertIn("statusem OC/UFG", doc)
+        self.assertIn("Python `3.11-3.13`", doc)
+        self.assertIn("jedynym supervisorem jest `wreckscanner.service`", doc)
+        self.assertIn("nie uruchamia", doc)
+        self.assertIn("drugiej instancji `server.py`", doc)
+        self.assertIn("/api/health/live", doc)
+        self.assertIn("/api/health/ready", doc)
         self.assertIn("BACKUP.md", doc)
         self.assertIn("DEPLOY.md", doc)
 
@@ -45,9 +55,27 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("systemctl enable --now wreckscanner.service", doc)
         self.assertIn("./scripts/check.sh", doc)
         self.assertIn("scripts/backup_data.py run", doc)
+        self.assertIn("git describe --exact-match --tags HEAD", doc)
+        self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
+        self.assertIn("historyczne JSON-y nie sa zrodlem prawdy", doc)
+        self.assertIn("/api/health/live", doc)
+        self.assertIn("/api/health/ready", doc)
         self.assertIn("make smoke", doc)
         self.assertIn("make e2e-report", doc)
         self.assertIn("Rollback", doc)
+
+    def test_public_runtime_validates_cloudflare_ingress_before_restart(self):
+        doc = (ROOT_DIR / "docs" / "PUBLIC_RUNTIME.md").read_text(encoding="utf-8")
+
+        validate = "cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate"
+        restart = "sudo systemctl restart cloudflared.service"
+        self.assertIn(validate, doc)
+        self.assertIn(restart, doc)
+        self.assertLess(doc.index(validate), doc.index(restart))
+        self.assertIn("www.wreckscanner.pl", doc)
+        self.assertIn("www.ilestoi.pl", doc)
+        self.assertIn("www.dlugostoi.pl", doc)
+        self.assertNotIn("3b59bac9-6bb6-47bf-a532-6e44caa9855b", doc)
 
     def test_backup_doc_has_restore_validation_commands(self):
         doc = (ROOT_DIR / "docs" / "BACKUP.md").read_text(encoding="utf-8")
@@ -57,9 +85,24 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("--field-photos-dir /tmp/wreckscanner-restore-test/zdjecia_terenowe", doc)
         self.assertIn("scripts/migrate_json_to_db.py", doc)
         self.assertIn("--validate-only", doc)
+        self.assertIn("wreckscanner-data-snapshot-v2", doc)
+        self.assertIn("--include-secrets", doc)
+        self.assertIn("--restore-secrets", doc)
+        self.assertIn("sekrety z archiwum nie sa odtwarzane", doc)
+        self.assertIn("nie ukrywa bledu ponownego startu", doc)
+        self.assertIn("RPO: najwyzej 24 godziny", doc)
+        self.assertIn("RTO: przywrocenie sprawdzonej uslugi w 4 godziny", doc)
+        self.assertIn("wreckscanner-backup.timer", doc)
+        self.assertIn("Persistent=true", doc)
+        self.assertIn("--keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune", doc)
+        self.assertIn("najnowszy snapshot ma ponad 26 godzin", doc)
+        self.assertIn("kopii off-host", doc)
+        self.assertNotIn("- `settings.json`", doc)
+        self.assertNotIn("- `zgloszenia_prywatnosci/`", doc)
 
     def test_current_model_doc_names_active_flow_and_retired_artifact_audit(self):
         doc = (ROOT_DIR / "docs" / "CURRENT_MODEL.md").read_text(encoding="utf-8")
+        normalized_doc = " ".join(doc.replace("`", "").replace("|", " ").split())
 
         self.assertIn("`wreckscanner.sqlite3` - aktywny stan aplikacji", doc)
         self.assertIn("`zdjecia_terenowe/` - publiczne pliki zdjec terenowych", doc)
@@ -75,14 +118,55 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("Zgloszenie PDF jest generowane", doc)
         self.assertIn("sprawdzenia w tresci PDF", doc)
         self.assertIn("nie jest generowane dla grupy oznaczonej w calosci jako", doc)
-        self.assertIn("`POST /api/field-photo-reports/report-pdf`", doc)
+        self.assertIn("POST /api/field-photo-reports/report-pdf", normalized_doc)
         self.assertIn("moze zapisac sama decyzje", doc)
         self.assertIn("Raporty PDF i cropy mapy nie sa zapisywane w DB ani w stalym", doc)
         self.assertIn("Nie ma publicznego ani administracyjnego API `/api/wrecks`.", doc)
         self.assertIn("test ! -e zidentyfikowane_wraki", doc)
         self.assertIn("test ! -e prywatne_zgloszenia", doc)
         self.assertIn("scripts/migrate_json_to_db.py --validate-only", doc)
+        self.assertIn("quick_check: ok", doc)
+        self.assertIn("Historyczne", doc)
         self.assertIn("scripts/check.sh", doc)
+
+        active_endpoints = (
+            "GET /api/health/live",
+            "GET /api/health/ready",
+            "GET /api/settings",
+            "POST /api/settings",
+            "GET /api/admin/status",
+            "POST /api/admin/login",
+            "POST /api/admin/logout",
+            "GET /api/field-photos",
+            "GET /api/field-photos/:id/public-image",
+            "GET /api/field-photos/:id/public-thumb",
+            "POST /api/field-photos",
+            "POST /api/field-photos/owner-claim",
+            "POST /api/field-photos/owner-submit",
+            "POST /api/field-photos/owner-discard",
+            "POST /api/field-photos/owner-delete",
+            "POST /api/field-photos/:id/owner-original",
+            "PATCH /api/field-photos/:id/owner-review",
+            "PATCH /api/field-photos/:id/location",
+            "POST /api/field-photo-reports/report-pdf",
+            "GET /api/address/reverse?lat=:lat&lon=:lon",
+            "GET /api/cadastral/identify?lat=:lat&lon=:lon",
+            "POST /api/inspect",
+            "POST /api/privacy-requests",
+            "GET /api/admin/photos",
+            "GET /api/admin/photos/field/:id/original",
+            "PATCH /api/admin/photos/field/:id/review",
+            "DELETE /api/admin/photos/field/:id",
+            "GET /api/admin/privacy-requests",
+            "PATCH /api/admin/privacy-requests/:id",
+            "GET /api/admin/photo-retention",
+            "POST /api/admin/photo-retention/run",
+            "GET /wms_proxy/OGC_ortofoto_:year/MapServer/WMSServer?...",
+            "GET /tile_proxy/geoportal-standard/:z/:x/:y?...",
+        )
+        for endpoint in active_endpoints:
+            self.assertIn(endpoint, normalized_doc, endpoint)
+        self.assertNotIn("DELETE /api/field-photos/:id", normalized_doc)
 
     def test_release_candidate_archive_stays_removed(self):
         self.assertFalse((ROOT_DIR / "docs" / "RELEASE_CANDIDATE.md").exists())
@@ -92,6 +176,7 @@ class DocumentationContractTests(unittest.TestCase):
             "ADMIN_PASSWORD_ROTATION.md",
             "AUDIT.md",
             "COMMERCIAL_GRADE_GOAL_PROMPT.md",
+            "FUTURE_DATABASE.md",
             "GEOTIFF_RUNBOOK.md",
             "PHOTO_UPLOAD_RUNBOOK.md",
             "README.en.md",

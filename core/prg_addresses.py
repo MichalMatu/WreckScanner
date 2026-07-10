@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import math
-import xml.etree.ElementTree as ET
 from typing import Any
+
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 
 GRS80_A = 6_378_137.0
 GRS80_F = 1 / 298.257222101
@@ -132,7 +134,7 @@ def _address_from_feature(feature: ET.Element, *, query_x: float, query_y: float
 def parse_prg_address_features(xml_text: str, *, query_lat: float, query_lon: float) -> dict[str, Any]:
     try:
         root = ET.fromstring(xml_text)
-    except ET.ParseError as exc:
+    except (ET.ParseError, DefusedXmlException, ValueError) as exc:
         raise LookupError("Nie udało się odczytać odpowiedzi PRG/GUGiK.") from exc
 
     easting, northing = wgs84_to_puwg1992(query_lat, query_lon)

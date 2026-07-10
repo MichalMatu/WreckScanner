@@ -186,7 +186,7 @@ async function deleteFieldPhotoGroup(encodedPhotoIds, button = null) {
     }
     try {
         for (const id of photoIds) {
-            const data = await apiDeleteJson(`${FIELD_PHOTOS_URL}/${encodeURIComponent(id)}`);
+            const data = await apiDeleteJson(`${ADMIN_PHOTOS_URL}/field/${encodeURIComponent(id)}`);
             if (data.status !== 'ok') {
                 throw new Error(data.error || t('fieldPhoto.deleteError'));
             }

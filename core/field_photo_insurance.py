@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from core import config
 from core.field_photo_groups import vehicle_photo_group_records
-from core.field_photo_store import list_field_records, save_field_record
 
 
 def _now_iso() -> str:
@@ -22,31 +20,13 @@ def set_vehicle_insurance(record: dict[str, Any], status: str, checked_at: str |
     record["vehicle_insurance_checked_at"] = checked_at
 
 
-def records_with_anchor_snapshot(storage_dir: Path, anchor_record: dict[str, Any]) -> list[dict[str, Any]]:
-    anchor_id = str(anchor_record.get("id") or "")
-    records: list[dict[str, Any]] = []
-    anchor_seen = False
-    for record in list_field_records(storage_dir):
-        if str(record.get("id") or "") == anchor_id:
-            records.append(anchor_record)
-            anchor_seen = True
-        else:
-            records.append(record)
-    if not anchor_seen:
-        records.append(anchor_record)
-    return records
-
-
-def save_vehicle_insurance_group_update(
-    storage_dir: Path,
+def apply_vehicle_insurance_group_update(
+    records: list[dict[str, Any]],
     anchor_record: dict[str, Any],
     status: str,
-) -> list[str]:
-    updated_ids: list[str] = []
+) -> list[dict[str, Any]]:
     checked_at = vehicle_insurance_checked_at_for_status(status)
-    records = records_with_anchor_snapshot(storage_dir, anchor_record)
-    for record in vehicle_photo_group_records(records, anchor_record):
+    updated_records = vehicle_photo_group_records(records, anchor_record)
+    for record in updated_records:
         set_vehicle_insurance(record, status, checked_at)
-        save_field_record(storage_dir, record)
-        updated_ids.append(str(record["id"]))
-    return updated_ids
+    return updated_records

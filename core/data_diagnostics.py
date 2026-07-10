@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,13 +65,25 @@ def _is_coord(value: Any, min_value: float, max_value: float) -> bool:
 
 def _image_info(path: Path, issues: list[dict[str, Any]], *, severity: str = "error") -> dict[str, Any] | None:
     try:
-        with Image.open(path) as image:
-            return {
-                "format": str(image.format or ""),
-                "width": int(image.size[0]),
-                "height": int(image.size[1]),
-            }
-    except (OSError, UnidentifiedImageError) as exc:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(path) as image:
+                info = {
+                    "format": str(image.format or ""),
+                    "width": int(image.size[0]),
+                    "height": int(image.size[1]),
+                }
+                image.verify()
+            with Image.open(path) as decoded:
+                decoded.load()
+            return info
+    except (
+        Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
+        OSError,
+        SyntaxError,
+        UnidentifiedImageError,
+    ) as exc:
         _issue(issues, severity, "image_unreadable", path, f"Nie da się odczytać obrazu: {exc}")
         return None
 

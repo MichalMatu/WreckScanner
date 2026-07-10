@@ -7,6 +7,7 @@ const contextMenuCoordsValue = document.getElementById('context-menu-coords-valu
 let contextMenuLatLng = null;
 let activeCadastralParcel = null;
 let activeReverseAddress = null;
+let mapContextReturnFocus = null;
 
 const CADASTRAL_LAND_USE_LABEL_KEYS = {
     B: 'context.landUse.B',
@@ -32,10 +33,28 @@ const CADASTRAL_LAND_USE_LABEL_KEYS = {
     Ps: 'context.landUse.Ps',
 };
 
-function closeMapContextMenu() {
+function mapContextMenuItems() {
+    if (!mapContextMenu) return [];
+    return Array.from(mapContextMenu.querySelectorAll('[role="menuitem"]'))
+        .filter(item => !item.hidden && !item.disabled);
+}
+
+function focusMapContextMenuItem(index = 0) {
+    const items = mapContextMenuItems();
+    if (!items.length) return;
+    const nextIndex = (index + items.length) % items.length;
+    items.forEach((item, itemIndex) => { item.tabIndex = itemIndex === nextIndex ? 0 : -1; });
+    items[nextIndex].focus({ preventScroll: true });
+}
+
+function closeMapContextMenu({ restoreFocus = true } = {}) {
     if (!mapContextMenu || mapContextMenu.hidden) return;
     mapContextMenu.hidden = true;
     contextMenuLatLng = null;
+    mapContextMenuItems().forEach(item => { item.tabIndex = -1; });
+    const returnFocus = mapContextReturnFocus;
+    mapContextReturnFocus = null;
+    if (restoreFocus && returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
 }
 
 function openMapContextMenu(e) {
@@ -43,17 +62,25 @@ function openMapContextMenu(e) {
     if (typeof closeAppMenu === 'function') closeAppMenu();
     if (typeof cancelFieldPhotoLocationPick === 'function') cancelFieldPhotoLocationPick({ clearStatus: true });
     contextMenuLatLng = e.latlng;
+    mapContextReturnFocus = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : map.getContainer();
     contextMenuCoordsValue.textContent = `${contextMenuLatLng.lat.toFixed(6)}, ${contextMenuLatLng.lng.toFixed(6)}`;
     mapContextMenu.hidden = false;
 
-    const originalEvent = e.originalEvent;
+    const originalEvent = e.originalEvent || {};
+    const mapRect = map.getContainer().getBoundingClientRect();
+    const mapPoint = map.latLngToContainerPoint(contextMenuLatLng);
     const margin = 8;
     const menuWidth = mapContextMenu.offsetWidth || 210;
     const menuHeight = mapContextMenu.offsetHeight || 110;
-    const x = Math.min(originalEvent.clientX, window.innerWidth - menuWidth - margin);
-    const y = Math.min(originalEvent.clientY, window.innerHeight - menuHeight - margin);
+    const clientX = Number.isFinite(originalEvent.clientX) ? originalEvent.clientX : mapRect.left + mapPoint.x;
+    const clientY = Number.isFinite(originalEvent.clientY) ? originalEvent.clientY : mapRect.top + mapPoint.y;
+    const x = Math.min(clientX, window.innerWidth - menuWidth - margin);
+    const y = Math.min(clientY, window.innerHeight - menuHeight - margin);
     mapContextMenu.style.left = `${Math.max(margin, x)}px`;
     mapContextMenu.style.top = `${Math.max(margin, y)}px`;
+    requestAnimationFrame(() => focusMapContextMenuItem(0));
 }
 
 map.on('contextmenu', (e) => {
@@ -66,6 +93,34 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeMapContextMenu();
+});
+
+map.getContainer().addEventListener('keydown', event => {
+    if (!(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openMapContextMenu({
+        latlng: map.getCenter(),
+        originalEvent: null,
+    });
+});
+
+mapContextMenu?.addEventListener('keydown', event => {
+    const items = mapContextMenuItems();
+    const activeIndex = items.indexOf(document.activeElement);
+    let nextIndex = null;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = activeIndex + 1;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = activeIndex - 1;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = items.length - 1;
+    else if (event.key === 'Tab') {
+        closeMapContextMenu({ restoreFocus: false });
+        return;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    focusMapContextMenuItem(nextIndex);
 });
 
 function cadastralCodeLabel(code) {

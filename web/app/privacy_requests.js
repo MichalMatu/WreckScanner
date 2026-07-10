@@ -1,5 +1,8 @@
 let privacyRequestItems = [];
 let activePrivacyRequest = null;
+let privacyQueueRequestRevision = 0;
+let privacyQueueAbortController = null;
+let privacySaveInFlight = false;
 
 function privacyRequestStatusLabel(status) {
     if (status === 'in_progress') return t('modal.privacyRequests.inProgress');
@@ -75,7 +78,8 @@ function renderPrivacyRequestDetail() {
             <textarea id="privacy-request-admin-note" rows="6" maxlength="4000">${escapeHtml(activePrivacyRequest.admin_note || '')}</textarea>
         </label>
         <div class="privacy-request-actions">
-            <button type="button" class="btn-download report-submit-btn" onclick="savePrivacyRequestUpdate()">
+            <button type="button" class="btn-download report-submit-btn" id="privacy-request-save"
+                onclick="savePrivacyRequestUpdate()" ${privacySaveInFlight ? 'disabled' : ''}>
                 <span>${escapeHtml(t('modal.privacyRequests.save'))}</span>
             </button>
         </div>
@@ -94,47 +98,74 @@ async function openPrivacyRequestsModal() {
     await loadPrivacyRequestQueue();
 }
 
-async function loadPrivacyRequestQueue() {
+async function loadPrivacyRequestQueue(options = {}) {
     if (!adminAuthenticated && !(await ensureAdmin())) return;
+    const requestRevision = ++privacyQueueRequestRevision;
+    privacyQueueAbortController?.abort();
+    const requestController = new AbortController();
+    privacyQueueAbortController = requestController;
     const filter = document.getElementById('privacy-request-filter')?.value || 'new';
+    const preferredRequestId = options.preferredRequestId ?? activePrivacyRequest?.id ?? null;
     const status = document.getElementById('privacy-request-status');
-    if (status) status.textContent = t('modal.privacyRequests.loading');
+    if (status && options.announceLoading !== false) status.textContent = t('modal.privacyRequests.loading');
     try {
         const data = await apiJson(`${ADMIN_PRIVACY_REQUESTS_URL}?status=${encodeURIComponent(filter)}&ts=${Date.now()}`, {
             cache: 'no-store',
+            signal: requestController.signal,
         });
+        if (requestRevision !== privacyQueueRequestRevision) return;
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.privacyRequests.loadError'));
         }
         privacyRequestItems = Array.isArray(data.requests) ? data.requests : [];
-        activePrivacyRequest = null;
+        activePrivacyRequest = privacyRequestItems.find(item => item.id === preferredRequestId)
+            || privacyRequestItems[0]
+            || null;
         renderPrivacyRequestQueue();
         renderPrivacyRequestDetail();
-        if (privacyRequestItems[0]) selectPrivacyRequest(privacyRequestItems[0].id);
         if (status) status.textContent = '';
     } catch (err) {
+        if (requestRevision !== privacyQueueRequestRevision || err?.payload?.code === 'cancelled') return;
         if (status) status.textContent = apiErrorMessage(err, t('modal.privacyRequests.loadError'));
+    } finally {
+        if (privacyQueueAbortController === requestController) privacyQueueAbortController = null;
     }
 }
 
 async function savePrivacyRequestUpdate() {
-    if (!activePrivacyRequest?.id) return;
+    if (!activePrivacyRequest?.id || privacySaveInFlight) return;
+    const savedRequestId = activePrivacyRequest.id;
     const statusEl = document.getElementById('privacy-request-status');
     const statusValue = document.getElementById('privacy-request-status-select')?.value || 'new';
     const adminNote = document.getElementById('privacy-request-admin-note')?.value || '';
+    privacySaveInFlight = true;
+    const saveButton = document.getElementById('privacy-request-save');
+    if (saveButton) saveButton.disabled = true;
     if (statusEl) statusEl.textContent = t('modal.privacyRequests.saving');
     try {
-        const data = await apiPatchJson(`${ADMIN_PRIVACY_REQUESTS_URL}/${encodeURIComponent(activePrivacyRequest.id)}`, {
+        const data = await apiPatchJson(`${ADMIN_PRIVACY_REQUESTS_URL}/${encodeURIComponent(savedRequestId)}`, {
             status: statusValue,
             admin_note: adminNote,
         });
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.privacyRequests.saveError'));
         }
+        await loadPrivacyRequestQueue({
+            preferredRequestId: data.request?.id || savedRequestId,
+            announceLoading: false,
+        });
         if (statusEl) statusEl.textContent = t('modal.privacyRequests.saved');
-        await loadPrivacyRequestQueue();
-        if (data.request?.id) selectPrivacyRequest(data.request.id);
     } catch (err) {
         if (statusEl) statusEl.textContent = apiErrorMessage(err, t('modal.privacyRequests.saveError'));
+    } finally {
+        privacySaveInFlight = false;
+        const currentSaveButton = document.getElementById('privacy-request-save');
+        if (currentSaveButton) currentSaveButton.disabled = false;
     }
 }
+
+document.getElementById('modal-privacy-requests')?.addEventListener('modalclose', () => {
+    privacyQueueRequestRevision += 1;
+    privacyQueueAbortController?.abort();
+    privacyQueueAbortController = null;
+});

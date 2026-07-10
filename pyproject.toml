@@ -26,6 +26,7 @@ omit = ["tests/*"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+fail_under = 65
 
 [tool.coverage.html]
 directory = "analiza/htmlcov"

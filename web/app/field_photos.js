@@ -1,5 +1,53 @@
 let fieldPhotoMarkers = [];
 let fieldPhotoLayerData = [];
+let fieldPhotoLoadRevision = 0;
+let fieldPhotoLoadAbortController = null;
+
+function fieldPhotoLoadText(key, fallback) {
+    if (typeof t !== 'function') return fallback;
+    const translated = t(key);
+    return translated && translated !== key ? translated : fallback;
+}
+
+function fieldPhotoLoadIndicator() {
+    let indicator = document.getElementById('field-photo-load-state');
+    if (indicator) return indicator;
+    indicator = document.createElement('div');
+    indicator.id = 'field-photo-load-state';
+    indicator.className = 'map-data-status';
+    indicator.setAttribute('role', 'status');
+    indicator.setAttribute('aria-live', 'polite');
+    indicator.hidden = true;
+    const message = document.createElement('span');
+    message.className = 'map-data-status-message';
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'map-data-status-retry';
+    retry.addEventListener('click', () => loadFieldPhotos());
+    indicator.replaceChildren(message, retry);
+    document.body.append(indicator);
+    return indicator;
+}
+
+function setFieldPhotoLoadState(state) {
+    const indicator = fieldPhotoLoadIndicator();
+    const message = indicator.querySelector('.map-data-status-message');
+    const retry = indicator.querySelector('.map-data-status-retry');
+    indicator.className = `map-data-status map-data-status--${state}`;
+    indicator.hidden = state === 'ready';
+    if (retry) {
+        retry.hidden = state !== 'error';
+        retry.textContent = fieldPhotoLoadText('fieldPhoto.loadRetry', 'Ponów');
+    }
+    if (!message) return;
+    const messages = {
+        loading: fieldPhotoLoadText('fieldPhoto.loading', 'Ładowanie zgłoszeń…'),
+        empty: fieldPhotoLoadText('fieldPhoto.empty', 'Brak zgłoszeń dla bieżących warstw.'),
+        error: fieldPhotoLoadText('fieldPhoto.loadError', 'Nie udało się odświeżyć zgłoszeń.'),
+        ready: '',
+    };
+    message.textContent = messages[state] || '';
+}
 
 function clearFieldPhotoMarkers() {
     fieldPhotoMarkers.forEach(m => map.removeLayer(m));
@@ -191,15 +239,31 @@ function placeFieldPhotos(photos = fieldPhotoLayerData) {
 }
 
 async function loadFieldPhotos() {
+    const requestRevision = ++fieldPhotoLoadRevision;
+    fieldPhotoLoadAbortController?.abort();
+    const requestController = new AbortController();
+    fieldPhotoLoadAbortController = requestController;
+    setFieldPhotoLoadState('loading');
     try {
-        const data = await apiJson(`${FIELD_PHOTOS_URL}?ts=${Date.now()}`, { cache: 'no-store' });
-        if (data.status === 'ok') {
-            fieldPhotoLayerData = data.photos || [];
-            placeFieldPhotos(fieldPhotoLayerData);
-            placeVehicleMarkers();
-            updateLayerCounters();
+        const data = await apiJson(`${FIELD_PHOTOS_URL}?ts=${Date.now()}`, {
+            cache: 'no-store',
+            signal: requestController.signal,
+        });
+        if (requestRevision !== fieldPhotoLoadRevision) return;
+        if (data.status !== 'ok' || !Array.isArray(data.photos)) {
+            throw new Error(fieldPhotoLoadText('fieldPhoto.loadError', 'Nie udało się odświeżyć zgłoszeń.'));
         }
-    } catch (_) {}
+        fieldPhotoLayerData = data.photos;
+        placeFieldPhotos(fieldPhotoLayerData);
+        placeVehicleMarkers();
+        updateLayerCounters();
+        setFieldPhotoLoadState(fieldPhotoLayerData.length ? 'ready' : 'empty');
+    } catch (error) {
+        if (requestRevision !== fieldPhotoLoadRevision || error?.payload?.code === 'cancelled') return;
+        setFieldPhotoLoadState('error');
+    } finally {
+        if (fieldPhotoLoadAbortController === requestController) fieldPhotoLoadAbortController = null;
+    }
 }
 
 function toggleFieldPhotoIssueFilter(issueType, visible) {

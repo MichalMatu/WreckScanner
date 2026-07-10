@@ -1,10 +1,13 @@
 {
   "private": true,
   "scripts": {
-    "lint:web": "node scripts/lint_web.mjs"
+    "lint:web": "node scripts/lint_web.mjs",
+    "test:web": "node --test tests/js/*.test.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2"
+    "@eslint/js": "9.39.4",
+    "eslint": "9.39.4",
+    "espree": "10.4.0",
+    "globals": "17.7.0"
   }
 }

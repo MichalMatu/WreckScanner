@@ -46,7 +46,7 @@ class FakeResponse:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc, traceback):
+    def __exit__(self, _exc_type, _exc, _traceback):
         return False
 
 
@@ -60,6 +60,11 @@ class FakeSession:
 
 
 class TileProxyTests(unittest.TestCase):
+    WMS_QUERY = (
+        "service=WMS&request=GetMap&layers=1&styles=&format=image%2Fpng&transparent=false&version=1.1.1"
+        "&width=256&height=256&srs=EPSG%3A3857&bbox=0%2C0%2C100%2C100"
+    )
+
     def test_tile_proxy_reads_enhancement_settings_from_request_token(self):
         token = (
             base64.urlsafe_b64encode(
@@ -122,6 +127,40 @@ class TileProxyTests(unittest.TestCase):
         self.assertEqual(request_kwargs["params"]["TILEMATRIX"], "EPSG:3857:7")
         self.assertEqual(request_kwargs["params"]["TILECOL"], "65")
         self.assertEqual(request_kwargs["params"]["TILEROW"], "42")
+
+    def test_wms_proxy_accepts_only_configured_getmap_shape(self):
+        handler = FakeHandler(f"/wms_proxy/OGC_ortofoto_2025/MapServer/WMSServer?{self.WMS_QUERY}")
+
+        with patch.object(wms_proxy, "_handle_enhanced_tile") as enhanced_tile:
+            wms_proxy.handle_wms_proxy(handler)
+
+        enhanced_tile.assert_called_once()
+        cache_identity = enhanced_tile.call_args.kwargs["cache_identity"]
+        self.assertTrue(cache_identity.startswith("OGC_ortofoto_2025/MapServer/WMSServer?"))
+        self.assertIn("request=GetMap", cache_identity)
+
+        invalid_paths = (
+            "/wms_proxy/arbitrary/service?" + self.WMS_QUERY,
+            "/wms_proxy/OGC_ortofoto_1999/MapServer/WMSServer?" + self.WMS_QUERY,
+            "/wms_proxy/OGC_ortofoto_2025/MapServer/WMSServer?" + self.WMS_QUERY + "&width=4096",
+            "/wms_proxy/OGC_ortofoto_2025/MapServer/WMSServer?" + self.WMS_QUERY + "&url=https://evil.test",
+        )
+        for invalid_path in invalid_paths:
+            invalid_handler = FakeHandler(invalid_path)
+            with (
+                self.subTest(invalid_path=invalid_path),
+                patch.object(wms_proxy, "_handle_enhanced_tile") as invalid_enhanced_tile,
+            ):
+                wms_proxy.handle_wms_proxy(invalid_handler)
+            self.assertEqual(invalid_handler.status, 400)
+            invalid_enhanced_tile.assert_not_called()
+
+    def test_image_response_rejects_oversized_declared_length(self):
+        response = FakeResponse()
+        response.headers["Content-Length"] = str(wms_proxy._MAX_TILE_BYTES + 1)
+
+        with self.assertRaisesRegex(ValueError, "too large"):
+            wms_proxy._read_image_response(response)
 
     def test_geoportal_tile_proxy_rejects_bad_coordinates(self):
         handler = FakeHandler("/tile_proxy/geoportal-standard/2/4/0")

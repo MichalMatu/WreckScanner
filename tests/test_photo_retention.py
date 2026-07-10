@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -128,6 +129,37 @@ class PhotoRetentionTests(unittest.TestCase):
             self.assertEqual(updated["private_original_retention_action"], "deleted_rejected_original")
             self.assertEqual(updated["private_original_deleted_at"], "2026-06-05T12:00:00Z")
             self.assertFalse((private_dir / f"field_photos/{photo_id}/original.jpg").exists())
+
+    def test_database_failure_restores_private_file_state(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir = root / "zdjecia_terenowe"
+            private_dir = root / "prywatne_zdjecia"
+            photo_id = "photo_20251101T100000Z_abcdef12"
+            record_dir = field_dir / photo_id
+            record = field_record(photo_id)
+            record["public_image_file"] = "public.jpg"
+            record["public_thumb_file"] = "public_thumb.jpg"
+            write_json(record_dir / "record.json", record)
+            original_path = private_dir / record["private_original_file"]
+            write_jpeg(original_path, color=(255, 0, 0))
+            write_jpeg(record_dir / "public.jpg", color=(15, 23, 42))
+            write_jpeg(record_dir / "public_thumb.jpg", size=(24, 16), color=(15, 23, 42))
+            migrate_json_to_database(root_dir=root, database_path=root / "wreckscanner.sqlite3", require_backup=False)
+
+            with (
+                patch("core.photo_retention.save_field_photo_record", side_effect=OSError("database failed")),
+                self.assertRaisesRegex(OSError, "database failed"),
+            ):
+                retire_private_originals(
+                    field_photos_dir=field_dir,
+                    private_photos_dir=private_dir,
+                    now=NOW,
+                    dry_run=False,
+                )
+
+            self.assertTrue(original_path.exists())
+            self.assertFalse(original_path.with_name("retained_public.jpg").exists())
 
     def test_skips_recent_or_pending_private_originals(self):
         with TemporaryDirectory() as tmp:

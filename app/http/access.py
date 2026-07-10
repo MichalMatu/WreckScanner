@@ -2,6 +2,7 @@ import hashlib
 
 from app.http import admin_session as http_admin_session
 from app.http import responses as http_responses
+from app.http.rate_limit import client_key
 from core import config as core_config
 from core.settings_store import DEFAULT_PUBLIC_FEATURES, DEFAULT_PUBLIC_LAYERS, load_app_settings
 from core.submission_limits import assert_pending_submission_quota
@@ -14,7 +15,7 @@ _FIELD_PHOTO_PUBLIC_LAYER_KEYS = {
 
 
 def submission_owner(handler) -> str:
-    ip = str((handler.client_address or ["unknown"])[0])
+    ip = client_key(handler)
     ua = str(handler.headers.get("User-Agent") or "")
     digest = hashlib.sha256(f"{ip}|{ua}".encode()).hexdigest()[:24]
     return f"public:{digest}"

@@ -4,12 +4,17 @@ import sys
 from app import config
 from app.http import retention as http_retention
 from app.http import server as http_server
-from core.runtime import configure_process_encoding
+from core import config as core_config
+from core.runtime import configure_process_encoding, harden_private_runtime_storage
 
 configure_process_encoding()
 
 
 def main() -> None:
+    harden_private_runtime_storage(
+        database_path=config.ROOT_DIR / core_config.DATABASE_PATH,
+        private_photos_dir=config.ROOT_DIR / core_config.PRIVATE_PHOTOS_DIR,
+    )
     try:
         srv = http_server.ReusableHTTPServer((config.HOST, config.PORT), http_server.Handler)
     except OSError as e:

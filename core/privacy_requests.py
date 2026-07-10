@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -158,3 +158,52 @@ def update_privacy_request(request_id: str, fields: dict[str, Any]) -> dict[str,
     finally:
         connection.close()
     return {"status": "ok", "request": payload}
+
+
+def purge_handled_privacy_request_content(
+    *,
+    retention_days: int = config.PRIVACY_REQUEST_CONTENT_RETENTION_DAYS,
+    now: datetime | None = None,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    if retention_days < 1:
+        raise ValueError("Retencja zgłoszeń prywatności musi wynosić co najmniej jeden dzień.")
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    cutoff = (current.astimezone(timezone.utc) - timedelta(days=retention_days)).replace(microsecond=0)
+    cutoff_iso = cutoff.isoformat().replace("+00:00", "Z")
+    connection = _connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id FROM privacy_requests
+            WHERE status IN ('done', 'rejected')
+              AND handled_at IS NOT NULL
+              AND handled_at <= ?
+              AND (email <> '' OR target <> '' OR reason <> '' OR admin_note <> '')
+            ORDER BY handled_at, id
+            """,
+            (cutoff_iso,),
+        ).fetchall()
+        request_ids = [str(row["id"]) for row in rows]
+        if request_ids and not dry_run:
+            with connection:
+                connection.executemany(
+                    """
+                    UPDATE privacy_requests
+                    SET email = '', target = '', reason = '', admin_note = '', updated_at = ?
+                    WHERE id = ?
+                    """,
+                    [(_now_iso(), request_id) for request_id in request_ids],
+                )
+    finally:
+        connection.close()
+    return {
+        "status": "ok",
+        "dry_run": dry_run,
+        "retention_days": retention_days,
+        "eligible": len(request_ids),
+        "purged": 0 if dry_run else len(request_ids),
+        "request_ids": request_ids,
+    }

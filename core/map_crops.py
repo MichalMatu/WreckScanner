@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from io import BytesIO
@@ -14,6 +15,7 @@ from PIL import Image, ImageStat
 
 from core import config
 from core.geo import bbox_3857, bbox_4326
+from core.http_response import read_limited_response_bytes, response_content_type
 
 
 @dataclass(frozen=True)
@@ -108,20 +110,42 @@ def _download_crop_image_once(
                 "FORMAT": "image/png",
             },
             timeout=config.ORTHO_WMS_TIMEOUT,
+            stream=True,
         )
-    except requests.RequestException:
+        if response.status_code != 200:
+            return None
+        if response_content_type(response) not in {"image/png", "application/octet-stream"}:
+            return None
+        response_content = read_limited_response_bytes(response, max_bytes=config.MAX_ORTHO_RESPONSE_BYTES)
+    except (requests.RequestException, ValueError):
         return None
-    if response.status_code != 200 or b"Exception" in response.content[:2048]:
+    finally:
+        if "response" in locals() and callable(getattr(response, "close", None)):
+            response.close()
+    if b"Exception" in response_content[:2048]:
         return None
 
     try:
-        raw_image = Image.open(BytesIO(response.content))
-    except OSError:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(response_content)) as raw_image:
+                width, height = raw_image.size
+                if (
+                    width <= 0
+                    or height <= 0
+                    or width > config.ORTHO_CROP_MAX_PX
+                    or height > config.ORTHO_CROP_MAX_PX
+                    or width * height > config.ORTHO_CROP_MAX_PX**2
+                ):
+                    return None
+                raw_image.load()
+                image = raw_image.convert("RGB")
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning, OSError):
         return None
 
-    if _looks_blank(raw_image):
+    if _looks_blank(image):
         return None
-    return raw_image.convert("RGB")
+    return image
 
 
 def _download_crop_image(

@@ -19,7 +19,8 @@
                         <input type="password" class="modal-input" id="admin-password-input"
                             autocomplete="current-password" required>
                     </label>
-                    <p class="modal-hint" id="admin-login-status"></p>
+                    <p class="modal-hint" id="admin-login-status" role="status" aria-live="polite"
+                        aria-atomic="true"></p>
                 </section>
                 <button type="submit" class="btn-download admin-login-submit" id="admin-login-submit">
                     <span data-i18n="modal.admin.submit">Zaloguj</span>
@@ -122,7 +123,8 @@
                             <input type="range" id="enhancement-decast" min="0" max="1" step="0.05" value="0.2">
                         </label>
                     </div>
-                    <p class="modal-hint" id="settings-save-status" data-i18n="modal.settings.enhancementHint">Parametry są używane w podglądzie mapy.</p>
+                    <p class="modal-hint" id="settings-save-status" role="status" aria-live="polite"
+                        aria-atomic="true" data-i18n="modal.settings.enhancementHint">Parametry są używane w podglądzie mapy.</p>
                 </section>
             </div>
         </div>
@@ -201,7 +203,8 @@
                                 </span>
                             </label>
                         </div>
-                        <p class="modal-hint" id="admin-public-features-status"
+                        <p class="modal-hint" id="admin-public-features-status" role="status" aria-live="polite"
+                            aria-atomic="true"
                             data-i18n="modal.adminPanel.publicFeaturesHint">Określa, co mogą robić niezalogowani.</p>
                     </section>
 
@@ -233,7 +236,8 @@
                                     step="1" value="13">
                             </label>
                         </div>
-                        <p class="modal-hint" id="admin-map-view-status"
+                        <p class="modal-hint" id="admin-map-view-status" role="status" aria-live="polite"
+                            aria-atomic="true"
                             data-i18n="modal.adminPanel.mapStartHint">Start dla nowych wejść bez linku do miejsca.</p>
                     </section>
                 </div>
@@ -276,7 +280,8 @@
                             <span data-i18n="layers.baseMapOsm">Mapa OSM</span>
                         </label>
                     </div>
-                    <p class="modal-hint" id="admin-public-layers-status"
+                    <p class="modal-hint" id="admin-public-layers-status" role="status" aria-live="polite"
+                        aria-atomic="true"
                         data-i18n="modal.adminPanel.publicLayersHint">Określa, które warstwy widzą niezalogowani.</p>
                 </section>
             </div>
@@ -310,6 +315,7 @@
                             data-i18n="modal.settings.photoRetentionApply">Wykonaj</button>
                     </div>
                     <div class="modal-hint photo-retention-status" id="photo-retention-status" role="status"
+                        aria-live="polite" aria-atomic="true"
                         data-i18n="modal.settings.photoRetentionIdle">Brak raportu retencji.</div>
                 </section>
             </div>

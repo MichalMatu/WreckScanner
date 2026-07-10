@@ -90,6 +90,15 @@ _RULES = (
         window_seconds=10 * 60,
         message="Zbyt wiele zapytań mapowych. Spróbuj ponownie za chwilę.",
     ),
+    RateLimitRule(
+        name="map-tiles",
+        methods=frozenset({"GET"}),
+        exact_paths=frozenset(),
+        prefixes=("/wms_proxy/", "/tile_proxy/"),
+        limit=2400,
+        window_seconds=10 * 60,
+        message="Zbyt wiele zapytań o kafle mapy. Spróbuj ponownie za chwilę.",
+    ),
 )
 
 _BUCKETS: defaultdict[tuple[str, str], deque[float]] = defaultdict(deque)
@@ -158,6 +167,18 @@ def _prune_buckets(now: float) -> None:
             del _BUCKETS[key]
 
 
+def _evict_excess_buckets() -> None:
+    excess = len(_BUCKETS) - _MAX_RATE_LIMIT_BUCKETS
+    if excess <= 0:
+        return
+    oldest_keys = sorted(
+        _BUCKETS,
+        key=lambda key: _BUCKETS[key][-1] if _BUCKETS[key] else float("-inf"),
+    )[:excess]
+    for key in oldest_keys:
+        _BUCKETS.pop(key, None)
+
+
 def reject_limited(handler, method: str, path: str) -> bool:
     rule = matching_rule(method, path)
     if rule is None:
@@ -185,4 +206,5 @@ def reject_limited(handler, method: str, path: str) -> bool:
         bucket.append(now)
         if len(_BUCKETS) > _MAX_RATE_LIMIT_BUCKETS:
             _prune_buckets(now)
+            _evict_excess_buckets()
     return False

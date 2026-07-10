@@ -25,6 +25,18 @@ def cors_response_headers(origin: str | None) -> dict[str, str]:
 
 def security_response_headers() -> dict[str, str]:
     return {
+        "Content-Security-Policy": (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+            "img-src 'self' data: blob: https://unpkg.com https://*.openstreetmap.org "
+            "https://*.basemaps.cartocdn.com https://integracja.gugik.gov.pl "
+            "https://integracja01.gugik.gov.pl; "
+            "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+            "frame-ancestors 'self'"
+        ),
+        "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "same-origin",
         "X-Frame-Options": "SAMEORIGIN",
@@ -32,6 +44,8 @@ def security_response_headers() -> dict[str, str]:
 
 
 def write_body(handler, body: bytes) -> bool:
+    if getattr(handler, "_suppress_response_body", False):
+        return True
     try:
         handler.wfile.write(body)
         return True
@@ -138,3 +152,13 @@ def send_text_error(handler, status: int, message: str, *, include_body: bool = 
 
 def send_api_not_found(handler, *, include_body: bool = True) -> None:
     send_json(handler, 404, {"error": "Nie znaleziono endpointu."}, include_body=include_body)
+
+
+def send_method_not_allowed(handler, *, include_body: bool = True) -> None:
+    send_json(
+        handler,
+        405,
+        {"error": "Metoda HTTP nie jest obsługiwana."},
+        {"Allow": "GET, HEAD, POST, PATCH, DELETE, OPTIONS"},
+        include_body=include_body,
+    )

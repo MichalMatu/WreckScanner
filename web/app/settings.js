@@ -56,6 +56,10 @@ let publicFeatureSettingsLoaded = false;
 let fieldPhotoIssueFilters = Object.fromEntries(Array.from(FIELD_PHOTO_ISSUE_TYPES, issueType => [issueType, true]));
 let pendingFieldPhotoLayerVisible = true;
 let photoRetentionState = {};
+let settingsSaveInFlight = false;
+let photoRetentionRunInFlight = false;
+let photoRetentionLoadRevision = 0;
+let photoRetentionLoadAbortController = null;
 
 function updateSettingsAccess() {
     const locked = !adminAuthenticated;
@@ -395,15 +399,20 @@ async function loadAppSettings() {
 
 async function saveSettings(payload, onSaved, options = {}) {
     const status = options.statusId ? document.getElementById(options.statusId) : null;
-    if (!adminAuthenticated) {
+    if (!adminAuthenticated || settingsSaveInFlight) {
         updateSettingsAccess();
         return;
     }
+    settingsSaveInFlight = true;
+    adminSettingsControls.forEach(control => { control.disabled = true; });
     try {
         const data = await apiPostJson(SETTINGS_URL, payload);
         onSaved(data);
     } catch (err) {
         if (status) status.textContent = apiErrorMessage(err, options.errorMessage || t('modal.settings.saveError'));
+    } finally {
+        settingsSaveInFlight = false;
+        updateSettingsAccess();
     }
 }
 
@@ -548,41 +557,65 @@ document.addEventListener('langchange', () => updatePhotoRetentionStatus(photoRe
 
 async function loadPhotoRetentionStatus() {
     if (!adminAuthenticated && !(await ensureAdmin())) return;
+    const requestRevision = ++photoRetentionLoadRevision;
+    photoRetentionLoadAbortController?.abort();
+    const requestController = new AbortController();
+    photoRetentionLoadAbortController = requestController;
     const status = document.getElementById('photo-retention-status');
     if (status) status.textContent = t('modal.settings.photoRetentionLoading');
     try {
-        const data = await apiJson(`${ADMIN_PHOTO_RETENTION_URL}?ts=${Date.now()}`, { cache: 'no-store' });
+        const data = await apiJson(`${ADMIN_PHOTO_RETENTION_URL}?ts=${Date.now()}`, {
+            cache: 'no-store',
+            signal: requestController.signal,
+        });
+        if (requestRevision !== photoRetentionLoadRevision) return;
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.settings.photoRetentionLoadError'));
         }
         updatePhotoRetentionStatus(data.retention || {});
     } catch (err) {
+        if (requestRevision !== photoRetentionLoadRevision || err?.payload?.code === 'cancelled') return;
         if (status) status.textContent = apiErrorMessage(err, t('modal.settings.photoRetentionLoadError'));
+    } finally {
+        if (photoRetentionLoadAbortController === requestController) photoRetentionLoadAbortController = null;
     }
 }
 
 async function runPhotoRetention(dryRun = true) {
-    if (!adminAuthenticated && !(await ensureAdmin())) return;
-    if (!dryRun) {
-        const confirmed = await confirmAction({
-            title: t('modal.settings.photoRetentionApplyTitle'),
-            message: t('modal.settings.photoRetentionApplyConfirm'),
-            confirmLabel: t('modal.settings.photoRetentionApply'),
-        });
-        if (!confirmed) return;
-    }
-    const status = document.getElementById('photo-retention-status');
-    if (status) status.textContent = t('modal.settings.photoRetentionRunning');
+    if (photoRetentionRunInFlight) return;
+    photoRetentionRunInFlight = true;
+    adminSettingsControls.forEach(control => { control.disabled = true; });
     try {
+        if (!adminAuthenticated && !(await ensureAdmin())) return;
+        if (!dryRun) {
+            const confirmed = await confirmAction({
+                title: t('modal.settings.photoRetentionApplyTitle'),
+                message: t('modal.settings.photoRetentionApplyConfirm'),
+                confirmLabel: t('modal.settings.photoRetentionApply'),
+            });
+            if (!confirmed) return;
+        }
+        const status = document.getElementById('photo-retention-status');
+        if (status) status.textContent = t('modal.settings.photoRetentionRunning');
         const data = await apiPostJson(`${ADMIN_PHOTO_RETENTION_URL}/run`, { dry_run: Boolean(dryRun) });
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.settings.photoRetentionRunError'));
         }
         updatePhotoRetentionStatus(data.retention || { last_report: data.report });
     } catch (err) {
+        const status = document.getElementById('photo-retention-status');
         if (status) status.textContent = apiErrorMessage(err, t('modal.settings.photoRetentionRunError'));
+    } finally {
+        photoRetentionRunInFlight = false;
+        updateSettingsAccess();
     }
 }
+
+document.getElementById('modal-photo-retention')?.addEventListener('modalclose', () => {
+    photoRetentionLoadRevision += 1;
+    photoRetentionLoadAbortController?.abort();
+    photoRetentionLoadAbortController = null;
+});
 
 function queueEnhancementSettingsSave(event = null) {
     if (event?.target instanceof HTMLInputElement) {

@@ -14,7 +14,7 @@ from app.http.public import reject_report_pdf_files
 from core.database import migrate_json_to_database
 from core.report_assets import report_pdf_download_name
 from core.report_models import validate_report_fields
-from core.report_pdfs import create_field_photo_report_pdf
+from core.report_pdfs import create_field_photo_report_pdf, validate_field_photo_report_selection
 from core.uploads import UploadedFile
 
 
@@ -61,13 +61,15 @@ def fake_save_location_crops(lat: float, lon: float, output_dir: Path, **kwargs)
 def create_field_photo_fixture(
     root: Path,
     *,
+    photo_id: str = "photo_20260604T201000Z_11111111",
+    lat: float = 51.1,
+    lon: float = 17.2,
     issue_type: str = "vehicle",
     status: str = "approved",
     vehicle_insurance_status: str = "insured",
     vehicle_resolution_status: str = "active",
 ) -> tuple[Path, str]:
     field_dir = root / "zdjecia_terenowe"
-    photo_id = "photo_20260604T201000Z_11111111"
     photo_dir = field_dir / photo_id
     photo_dir.mkdir(parents=True, exist_ok=True)
     (photo_dir / "public.jpg").write_bytes(image_bytes())
@@ -95,8 +97,8 @@ def create_field_photo_fixture(
             "vehicle_resolution_updated_at": (
                 "2026-07-05T12:35:00Z" if issue_type == "vehicle" and vehicle_resolution_status == "removed" else None
             ),
-            "lat": 51.1,
-            "lon": 17.2,
+            "lat": lat,
+            "lon": lon,
             "coordinate_source": "map",
             "captured_at": "2026-06-04T20:00:00",
             "private_original_file": private_rel,
@@ -115,6 +117,14 @@ def create_field_photo_fixture(
 
 
 class ReportPdfTests(unittest.TestCase):
+    def test_http_photo_id_lists_reject_oversized_raw_inputs_before_deduplication(self):
+        too_many = ["photo_20260604T201000Z_11111111"] * (http_public.core_config.MAX_OWNER_PHOTO_IDS + 1)
+
+        with self.assertRaisesRegex(ValueError, "maksymalnie"):
+            http_public._owner_photo_ids({"photo_ids": too_many})
+        with self.assertRaisesRegex(ValueError, "maksymalnie"):
+            http_public._report_photo_ids({"photo_ids": json.dumps(too_many)})
+
     def test_report_pdf_download_name_uses_readable_timestamp(self):
         self.assertEqual(
             report_pdf_download_name("report_20260702T142516Z_0b05a053"),
@@ -241,6 +251,65 @@ class ReportPdfTests(unittest.TestCase):
                 create_field_photo_report_pdf(
                     valid_fields(), [photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
                 )
+
+    def test_report_selection_rejects_client_coordinates_outside_photo_group(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, photo_id = create_field_photo_fixture(root)
+
+            with self.assertRaisesRegex(ValueError, "nie odpowiadają"):
+                validate_field_photo_report_selection(
+                    [photo_id], lat=-33.8688, lon=151.2093, field_photos_dir=field_dir
+                )
+
+    def test_report_selection_rejects_cross_group_and_removed_photos(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, first_id = create_field_photo_fixture(root)
+            _, second_id = create_field_photo_fixture(
+                root,
+                photo_id="photo_20260604T202000Z_22222222",
+                lat=51.2,
+                lon=17.3,
+            )
+
+            with self.assertRaisesRegex(ValueError, "tej samej grupy"):
+                validate_field_photo_report_selection(
+                    [first_id, second_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
+                )
+
+            _, removed_id = create_field_photo_fixture(
+                root,
+                photo_id="photo_20260604T203000Z_33333333",
+                lat=51.100001,
+                lon=17.200001,
+                vehicle_resolution_status="removed",
+            )
+            with self.assertRaisesRegex(ValueError, "aktywnego pojazdu"):
+                validate_field_photo_report_selection(
+                    [first_id, removed_id], lat=51.1, lon=17.2, field_photos_dir=field_dir
+                )
+
+    def test_report_selection_enforces_count_and_public_size_limits(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir, photo_id = create_field_photo_fixture(root)
+
+            with self.assertRaisesRegex(ValueError, "maksymalnie"):
+                validate_field_photo_report_selection([photo_id] * 26, lat=51.1, lon=17.2, field_photos_dir=field_dir)
+
+            with (
+                patch("core.report_pdfs.config.MAX_REPORT_PUBLIC_PHOTO_BYTES", 1),
+                self.assertRaisesRegex(ValueError, "rozmiar zdjęć"),
+            ):
+                validate_field_photo_report_selection([photo_id], lat=51.1, lon=17.2, field_photos_dir=field_dir)
+
+    def test_report_selection_rejects_non_finite_coordinates(self):
+        with TemporaryDirectory() as tmp:
+            field_dir, photo_id = create_field_photo_fixture(Path(tmp))
+
+            with self.assertRaisesRegex(ValueError, "lat"):
+                validate_field_photo_report_selection([photo_id], lat="nan", lon=17.2, field_photos_dir=field_dir)
 
     def test_create_field_photo_report_pdf_handles_unknown_insurance_status(self):
         with TemporaryDirectory() as tmp:

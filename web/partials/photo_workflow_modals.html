@@ -64,7 +64,8 @@
                         onclick="retryFailedFieldPhotoUploads()" data-i18n="modal.fieldPhoto.retryFailed" hidden>Ponów
                         błędne</button>
                 </div>
-                <p class="modal-hint" id="field-photo-status"></p>
+                <p class="modal-hint" id="field-photo-status" role="status" aria-live="polite"
+                    aria-atomic="true"></p>
             </form>
         </div>
     </div>
@@ -94,7 +95,8 @@
                         readonly autocomplete="off" spellcheck="false">
                     <p class="modal-hint" data-i18n="modal.fieldPhotoThanks.tokenHint">Zachowaj token. Bez niego nie
                         odblokujesz później edycji zdjęcia z mapy.</p>
-                    <p class="modal-hint" id="field-photo-thanks-status"></p>
+                    <p class="modal-hint" id="field-photo-thanks-status" role="status" aria-live="polite"
+                        aria-atomic="true"></p>
                 </section>
                 <section class="field-photo-thanks-section field-photo-thanks-steps">
                     <h3 data-i18n="modal.fieldPhotoThanks.nextTitle">Co dalej?</h3>
@@ -155,7 +157,8 @@
                     id="field-photo-owner-submit">
                     <span data-i18n="modal.fieldPhotoOwner.submit">Odblokuj edycję</span>
                 </button>
-                <p class="modal-hint" id="field-photo-owner-status"></p>
+                <p class="modal-hint" id="field-photo-owner-status" role="status" aria-live="polite"
+                    aria-atomic="true"></p>
             </div>
         </form>
     </div>
@@ -188,7 +191,8 @@
                         <option value="all" data-i18n="modal.photoReview.all">Wszystkie</option>
                     </select>
                     <input class="modal-input" id="photo-review-search" type="search"
-                        data-i18n-attr="placeholder:modal.photoReview.search" placeholder="Szukaj id zdjęcia / nazwy pliku">
+                        data-i18n-attr="placeholder:modal.photoReview.search;aria-label:modal.photoReview.search"
+                        placeholder="Szukaj id zdjęcia / nazwy pliku" aria-label="Szukaj id zdjęcia / nazwy pliku">
                 </section>
                 <div class="photo-review-layout">
                     <div class="photo-review-list" id="photo-review-list"></div>
@@ -196,7 +200,7 @@
                         <section class="photo-review-insurance" id="photo-review-vehicle-insurance-section" hidden>
                             <div class="field-photo-insurance-head">
                                 <p class="photo-review-insurance-checked" id="photo-review-vehicle-insurance-checked"
-                                    aria-live="polite"></p>
+                                    role="status" aria-live="polite" aria-atomic="true"></p>
                                 <a class="field-photo-insurance-link" href="https://www.ufg.pl/" target="_blank"
                                     rel="noopener" data-i18n="modal.fieldPhoto.vehicleInsuranceUfg">Sprawdź w UFG</a>
                             </div>
@@ -292,7 +296,8 @@
                                 </button>
                             </div>
                         </div>
-                        <p class="modal-hint" id="photo-review-status" hidden></p>
+                        <p class="modal-hint" id="photo-review-status" role="status" aria-live="polite"
+                            aria-atomic="true" hidden></p>
                     </section>
                 </div>
             </div>

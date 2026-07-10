@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import secrets
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -7,7 +10,12 @@ from typing import Any
 from PIL import Image
 
 from core import config
-from core.field_photos import field_photo_record_dir, list_field_photo_records, save_field_photo_record
+from core.field_photos import (
+    _FIELD_PHOTO_MUTATION_LOCK,
+    field_photo_record_dir,
+    list_field_photo_records,
+    save_field_photo_record,
+)
 from core.photo_privacy import is_approved, safe_child
 
 
@@ -80,11 +88,20 @@ def _replace_private_original_with_public_copy(
         return {"action": "skipped", "reason": "unsafe_private_original_path"}
 
     width, height, size_bytes = _public_image_info(public_path)
+    rollback_path: Path | None = None
+    delete_after: Path | None = None
     if not dry_run:
         retained_private_path.parent.mkdir(parents=True, exist_ok=True)
-        retained_private_path.write_bytes(public_path.read_bytes())
+        temporary_path = retained_private_path.with_name(f".{retained_private_path.name}.{secrets.token_hex(6)}.tmp")
+        try:
+            temporary_path.write_bytes(public_path.read_bytes())
+            os.replace(temporary_path, retained_private_path)
+        finally:
+            with suppress(OSError):
+                temporary_path.unlink()
+        rollback_path = retained_private_path
         if old_private_path.exists() and old_private_path.resolve() != retained_private_path.resolve():
-            old_private_path.unlink()
+            delete_after = old_private_path
         record["private_original_file"] = retained_rel
         record["private_original_replaced_at"] = _now_iso(now)
         record["private_original_retention_action"] = "replaced_with_public_copy"
@@ -95,11 +112,16 @@ def _replace_private_original_with_public_copy(
         record["image_width"] = width
         record["image_height"] = height
 
-    return {
+    result: dict[str, Any] = {
         "action": "replaced",
         "private_original_file": retained_rel,
         "public_image_file": str(public_image_file or ""),
     }
+    if rollback_path is not None:
+        result["_rollback_path"] = rollback_path
+    if delete_after is not None:
+        result["_delete_after"] = delete_after
+    return result
 
 
 def _delete_rejected_private_original(
@@ -116,14 +138,20 @@ def _delete_rejected_private_original(
         private_path = safe_child(private_photos_dir, private_rel)
     except ValueError:
         return {"action": "skipped", "reason": "unsafe_private_original_path"}
+    rollback_from: Path | None = None
     if not dry_run:
         if private_path.exists():
-            private_path.unlink()
+            rollback_from = private_path.with_name(f".{private_path.name}.{secrets.token_hex(6)}.retention")
+            os.replace(private_path, rollback_from)
         record.pop("private_original_file", None)
         record["private_original_deleted_at"] = _now_iso(now)
         record["private_original_retention_action"] = "deleted_rejected_original"
         record.pop("private_original_replaced_at", None)
-    return {"action": "deleted", "private_original_file": str(private_rel or "")}
+    result: dict[str, Any] = {"action": "deleted", "private_original_file": str(private_rel or "")}
+    if rollback_from is not None:
+        result["_rollback_from"] = rollback_from
+        result["_rollback_to"] = private_path
+    return result
 
 
 def _retire_record_private_original(
@@ -190,22 +218,42 @@ def retire_private_originals(
         "items": [],
     }
 
-    for record in list_field_photo_records(field_photos_dir, private_dir=private_photos_dir):
-        photo_id = str(record.get("id") or "")
-        result = _retire_record_private_original(
-            record,
-            record_dir=field_photo_record_dir(photo_id, field_photos_dir),
-            private_photos_dir=private_photos_dir,
-            public_image_file=record.get("public_image_file"),
-            now=current,
-            retention_days=retention_days,
-            dry_run=dry_run,
-        )
-        action = str(result.get("action") or "skipped")
-        _count(report["field_photos"], action)
-        if action in {"replaced", "deleted"} and not dry_run:
-            save_field_photo_record(record, field_photos_dir)
-        if action in {"replaced", "deleted"}:
-            report["items"].append({"scope": "field", "id": record.get("id"), **result})
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        for record in list_field_photo_records(field_photos_dir, private_dir=private_photos_dir):
+            photo_id = str(record.get("id") or "")
+            result = _retire_record_private_original(
+                record,
+                record_dir=field_photo_record_dir(photo_id, field_photos_dir),
+                private_photos_dir=private_photos_dir,
+                public_image_file=record.get("public_image_file"),
+                now=current,
+                retention_days=retention_days,
+                dry_run=dry_run,
+            )
+            action = str(result.get("action") or "skipped")
+            _count(report["field_photos"], action)
+            rollback_path = result.pop("_rollback_path", None)
+            delete_after = result.pop("_delete_after", None)
+            rollback_from = result.pop("_rollback_from", None)
+            rollback_to = result.pop("_rollback_to", None)
+            if action in {"replaced", "deleted"} and not dry_run:
+                try:
+                    save_field_photo_record(record, field_photos_dir)
+                except Exception:
+                    if isinstance(rollback_path, Path):
+                        with suppress(OSError):
+                            rollback_path.unlink()
+                    if isinstance(rollback_from, Path) and isinstance(rollback_to, Path):
+                        with suppress(OSError):
+                            os.replace(rollback_from, rollback_to)
+                    raise
+                if isinstance(delete_after, Path):
+                    with suppress(OSError):
+                        delete_after.unlink()
+                if isinstance(rollback_from, Path):
+                    with suppress(OSError):
+                        rollback_from.unlink()
+            if action in {"replaced", "deleted"}:
+                report["items"].append({"scope": "field", "id": record.get("id"), **result})
 
     return report

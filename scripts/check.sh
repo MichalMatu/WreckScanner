@@ -29,7 +29,9 @@ run_to_file() {
 run "$PYTHON_BIN" -m compileall -q app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff check app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff format --check app core scripts tests server.py
-run "$PYTHON_BIN" -m unittest discover -s tests
+run "$PYTHON_BIN" -m coverage erase
+run "$PYTHON_BIN" -m coverage run -m unittest discover -s tests
+run "$PYTHON_BIN" -m coverage report
 
 if [[ -f "package.json" ]]; then
     if ! command -v npm >/dev/null 2>&1; then
@@ -37,6 +39,7 @@ if [[ -f "package.json" ]]; then
         exit 1
     fi
     run npm run lint:web
+    run npm run test:web
 fi
 
 mkdir -p analiza

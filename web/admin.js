@@ -25,9 +25,8 @@ function setAdminAuthenticated(value) {
 
 async function refreshAdminStatus() {
     try {
-        const resp = await fetch(ADMIN_STATUS_URL, { cache: 'no-store' });
-        const data = await resp.json();
-        setAdminAuthenticated(resp.ok && data.authenticated === true);
+        const data = await apiJson(ADMIN_STATUS_URL, { cache: 'no-store', handleAdminSession: false });
+        setAdminAuthenticated(data.authenticated === true);
     } catch (_) {
         setAdminAuthenticated(false);
     }
@@ -54,7 +53,7 @@ async function adminLogin() {
 function closeAdminLoginModal(success = false, target = null) {
     if (target instanceof Element && !target.classList.contains('modal-backdrop')) return;
     const modal = document.getElementById('modal-admin-login');
-    if (modal) modal.hidden = true;
+    if (modal) hideModalBackdrop(modal);
     if (!success && pendingAdminLoginResolve) {
         pendingAdminLoginResolve(false);
         pendingAdminLoginResolve = null;
@@ -73,25 +72,11 @@ async function submitAdminLogin(event) {
         submit.querySelector('span').textContent = t('modal.admin.loggingIn');
     }
     if (status) status.textContent = '';
-    let resp;
-    let data = {};
     try {
-        resp = await fetch(ADMIN_LOGIN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password }),
-        });
-        data = await resp.json().catch(() => ({}));
+        const data = await apiPostJson(ADMIN_LOGIN_URL, { password }, { handleAdminSession: false });
+        if (data.authenticated !== true) throw new Error(data.error || t('admin.loginError'));
     } catch (err) {
-        if (status) status.textContent = err.message || t('admin.loginError');
-        if (submit) {
-            submit.disabled = false;
-            submit.querySelector('span').textContent = t('modal.admin.submit');
-        }
-        return;
-    }
-    if (!resp.ok || data.authenticated !== true) {
-        if (status) status.textContent = data.error || t('admin.loginError');
+        if (status) status.textContent = apiErrorMessage(err, t('admin.loginError'));
         setAdminAuthenticated(false);
         if (submit) {
             submit.disabled = false;
@@ -110,13 +95,25 @@ async function submitAdminLogin(event) {
 
 async function toggleAdminLogin() {
     if (adminAuthenticated) {
-        await fetch(ADMIN_LOGOUT_URL, { method: 'POST' }).catch(() => {});
+        await apiJson(ADMIN_LOGOUT_URL, { method: 'POST', handleAdminSession: false }).catch(() => {});
         setAdminAuthenticated(false);
         closeModal();
         return;
     }
     await adminLogin();
 }
+
+document.addEventListener('adminsessionexpired', () => {
+    setAdminAuthenticated(false);
+    const status = document.getElementById('status');
+    if (status) {
+        status.classList.add('is-error');
+        status.textContent = apiLocalizedText(
+            'admin.sessionExpired',
+            'Sesja administratora wygasła. Zaloguj się ponownie przed ponowieniem operacji.',
+        );
+    }
+});
 
 async function ensureAdmin() {
     if (adminAuthenticated) return true;

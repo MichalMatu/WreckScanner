@@ -6,12 +6,13 @@ PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then printf './.venv/bin/python'
 HOST ?= 127.0.0.1
 PORT ?= 8001
 SERVER_URL := http://$(HOST):$(PORT)
+SERVER_LIVE_URL := $(SERVER_URL)/api/health/live
+SERVER_READY_URL := $(SERVER_URL)/api/health/ready
 BACKUP_DIR ?= kopie_zapasowe
 SERVER_PATTERN := [p]ython[^[:space:]]*[[:space:]].*$(CURDIR)/server\.py([[:space:]]|$$)
 SERVER_WAIT_SECONDS ?= 8
 SERVER_AUTOSTART_WAIT_SECONDS ?= 3
 SERVER_LOG ?= .dev/server.log
-SERVER_PID_FILE ?= .dev/server.pid
 AUTOSTART_DISABLED_FILE ?= .dev/server.autostart.disabled
 AUTOSTART_ACTION := $(firstword $(filter start stop status,$(MAKECMDGOALS)))
 
@@ -22,7 +23,7 @@ menu:
 		'  1. Status serwera' \
 		'  2. Restart serwera' \
 		'  3. Zatrzymaj serwer' \
-		'  4. Uruchom serwer' \
+		'  4. Wlacz autostart serwera' \
 		'  5. Pelny check aplikacji' \
 		'  6. Stworz pelna kopie zapasowa ZIP' \
 		'  7. Odtworz dane z kopii ZIP' \
@@ -58,7 +59,7 @@ help:
 		'make stop' 'zatrzymaj server.py' \
 		'make restart' 'restart przez watcher' \
 		'make serwerstop' 'wylacz autostart + stop' \
-		'make serwerstart' 'wlacz autostart + start' \
+		'make serwerstart' 'wlacz autostart i czekaj na watcher' \
 		'make autostart-status' 'status autostartu'
 	@printf '%s\n' '' 'Diagnostyka:'
 	@printf '  %-24s %s\n' \
@@ -68,7 +69,7 @@ help:
 		'make test' 'testy' \
 		'make lint' 'lint + format' \
 		'make smoke' 'runtime smoke dzialajacego serwera' \
-		'make e2e-report' 'upload/review/map/raport ZIP+PDF dzialajacego serwera' \
+		'make e2e-report' 'upload/review/map/raport PDF dzialajacego serwera' \
 		'make health' 'alias status'
 	@printf '%s\n' '' 'Backup:'
 	@printf '  %-36s %s\n' \
@@ -87,7 +88,7 @@ start:
 	else \
 		echo 'server.py nie dziala.'; \
 		echo 'W tym srodowisku proces powinien podniesc autostart watcher; make nie uruchamia drugiej kopii serwera.'; \
-		echo 'Jesli watcher jest wylaczony, uruchom recznie tylko tymczasowo: $(PYTHON) server.py'; \
+		echo 'Sprawdz konfiguracje i logi watchera.'; \
 	fi
 
 stop:
@@ -98,25 +99,22 @@ stop:
 		echo "Zatrzymuje server.py: $$pids"; \
 		kill $$pids; \
 	fi
-	@rm -f "$(SERVER_PID_FILE)"
 
 restart: stop
 	@$(MAKE) wait-server
 
 wait-server:
-	@i=0; \
+	@if ! command -v curl >/dev/null 2>&1; then \
+		echo 'curl jest wymagany do sprawdzenia readiness server.py.'; \
+		exit 1; \
+	fi; \
+	i=0; \
 	while [ "$$i" -lt "$(SERVER_WAIT_SECONDS)" ]; do \
 		if pgrep -af '$(SERVER_PATTERN)' >/dev/null; then \
-			if command -v curl >/dev/null 2>&1; then \
-				if curl -fsS "$(SERVER_URL)/api/health" >/dev/null 2>&1; then \
-					echo 'server.py dziala:'; \
-					pgrep -af '$(SERVER_PATTERN)'; \
-					echo 'Health OK'; \
-					exit 0; \
-				fi; \
-			else \
+			if curl -fsS "$(SERVER_READY_URL)" >/dev/null 2>&1; then \
 				echo 'server.py dziala:'; \
 				pgrep -af '$(SERVER_PATTERN)'; \
+				echo 'Readiness OK'; \
 				exit 0; \
 			fi; \
 		fi; \
@@ -124,7 +122,7 @@ wait-server:
 		sleep 1; \
 	done; \
 	echo 'Autostart nie podniosl zdrowego server.py w ciagu $(SERVER_WAIT_SECONDS)s.'; \
-	echo 'Sprawdz watcher albo uruchom tymczasowo: $(PYTHON) server.py'; \
+	echo 'Sprawdz konfiguracje i logi watchera.'; \
 	exit 1
 
 autostart:
@@ -144,20 +142,13 @@ autostart-stop:
 
 autostart-start:
 	@rm -f "$(AUTOSTART_DISABLED_FILE)"
-	@mkdir -p "$(dir $(SERVER_LOG))"
-	@if pgrep -af '$(SERVER_PATTERN)' >/dev/null; then \
-		echo 'Autostart server.py wlaczony; server.py juz dziala:'; \
-		pgrep -af '$(SERVER_PATTERN)'; \
-	else \
-		echo 'Autostart server.py wlaczony. Czekam chwile na watcher.'; \
-		if $(MAKE) SERVER_WAIT_SECONDS=$(SERVER_AUTOSTART_WAIT_SECONDS) wait-server; then \
-			exit 0; \
-		fi; \
-		echo 'Watcher nie podniosl server.py, uruchamiam server.py w tle.'; \
-		WRECKSCANNER_HOST="$(HOST)" WRECKSCANNER_PORT="$(PORT)" nohup "$(PYTHON)" "$(CURDIR)/server.py" >> "$(SERVER_LOG)" 2>&1 & \
-		echo $$! > "$(SERVER_PID_FILE)"; \
-		$(MAKE) wait-server; \
-	fi
+	@echo 'Autostart server.py wlaczony. Czekam na readiness procesu podniesionego przez watcher.'
+	@if $(MAKE) SERVER_WAIT_SECONDS=$(SERVER_AUTOSTART_WAIT_SECONDS) wait-server; then \
+		exit 0; \
+	fi; \
+	echo 'Watcher nie podniosl server.py. Reczna instancja nie zostala uruchomiona.'; \
+	echo 'Sprawdz konfiguracje watchera i ponow make serwerstart.'; \
+	exit 1
 
 autostart-status:
 	@if [ -f "$(AUTOSTART_DISABLED_FILE)" ]; then \
@@ -175,8 +166,10 @@ serwerstart: autostart-start
 status:
 	@printf '%s\n' 'Procesy server.py:'
 	@pgrep -af '$(SERVER_PATTERN)' || true
-	@printf '\n%s\n' 'Health:'
-	@if command -v curl >/dev/null 2>&1; then curl -fsS "$(SERVER_URL)/api/health" || true; else echo 'curl niedostepny'; fi
+	@printf '\n%s\n' 'Liveness:'
+	@if command -v curl >/dev/null 2>&1; then curl -fsS "$(SERVER_LIVE_URL)" || true; else echo 'curl niedostepny'; fi
+	@printf '\n%s\n' 'Readiness:'
+	@if command -v curl >/dev/null 2>&1; then curl -fsS "$(SERVER_READY_URL)" || true; else echo 'curl niedostepny'; fi
 	@printf '\n'
 
 logs:
@@ -195,13 +188,11 @@ test:
 lint:
 	@"$(PYTHON)" -m ruff check app core scripts tests server.py
 	@"$(PYTHON)" -m ruff format --check app core scripts tests server.py
-	@if [ -x ./node_modules/.bin/eslint ]; then \
-		./node_modules/.bin/eslint web/*.js; \
-	elif command -v npm >/dev/null 2>&1; then \
-		npm run lint:web; \
-	else \
-		echo 'skip: npm/eslint niedostepne, pomijam lint JS'; \
+	@if ! command -v npm >/dev/null 2>&1; then \
+		echo 'error: npm jest wymagany do lintowania calego frontendu'; \
+		exit 1; \
 	fi
+	@npm run lint:web
 
 smoke:
 	@"$(PYTHON)" scripts/smoke_runtime.py --base-url "$(SERVER_URL)"
@@ -215,12 +206,14 @@ backup-data:
 	@was_disabled=0; \
 	if [ -f "$(AUTOSTART_DISABLED_FILE)" ]; then was_disabled=1; fi; \
 	status=0; \
+	restart_status=0; \
 	$(MAKE) autostart-stop || status=$$?; \
 	if [ "$$status" -eq 0 ]; then \
 		"$(PYTHON)" scripts/backup_data.py zip --root-dir "$(CURDIR)" --output-dir "$(BACKUP_DIR)" || status=$$?; \
 	fi; \
 	if [ "$$was_disabled" -eq 0 ]; then \
-		$(MAKE) autostart-start || true; \
+		$(MAKE) autostart-start || restart_status=$$?; \
+		if [ "$$status" -eq 0 ] && [ "$$restart_status" -ne 0 ]; then status=$$restart_status; fi; \
 	else \
 		echo 'Autostart byl wylaczony przed backupem; zostawiam wylaczony.'; \
 	fi; \
@@ -234,12 +227,14 @@ restore-data:
 	@was_disabled=0; \
 	if [ -f "$(AUTOSTART_DISABLED_FILE)" ]; then was_disabled=1; fi; \
 	status=0; \
+	restart_status=0; \
 	$(MAKE) autostart-stop || status=$$?; \
 	if [ "$$status" -eq 0 ]; then \
 		"$(PYTHON)" scripts/backup_data.py restore-zip --root-dir "$(CURDIR)" --archive "$(BACKUP)" || status=$$?; \
 	fi; \
 	if [ "$$was_disabled" -eq 0 ]; then \
-		$(MAKE) autostart-start || true; \
+		$(MAKE) autostart-start || restart_status=$$?; \
+		if [ "$$status" -eq 0 ] && [ "$$restart_status" -ne 0 ]; then status=$$restart_status; fi; \
 	else \
 		echo 'Autostart byl wylaczony przed odtwarzaniem; zostawiam wylaczony.'; \
 	fi; \

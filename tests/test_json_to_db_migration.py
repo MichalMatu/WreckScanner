@@ -1,10 +1,20 @@
+import io
 import json
 import sqlite3
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from core.database import migrate_json_to_database, validate_database_against_json
+from core.database import (
+    migrate_json_to_database,
+    validate_legacy_json_migration,
+    validate_runtime_database,
+)
+from scripts import migrate_json_to_db
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+MIGRATION_COUNT = len(list((ROOT_DIR / "database" / "migrations").glob("*.sql")))
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -121,10 +131,132 @@ class JsonToDatabaseMigrationTests(unittest.TestCase):
             self.assertEqual(row[6], record["private_original_file"])
             self.assertEqual(row[7], "hash")
             self.assertEqual(json.loads(row[8]), {"make": "camera"})
-            validation = validate_database_against_json(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            validation = validate_legacy_json_migration(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
             self.assertEqual(validation.database_field_photos, 1)
             self.assertEqual(validation.field_photo_records, 1)
             self.assertEqual(validation.missing_paths, [])
+
+    def test_runtime_validation_uses_sqlite_without_comparing_legacy_json(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record = seed_root(root)
+            migrate_json_to_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            (root / "zdjecia_terenowe" / record["id"] / "record.json").unlink()
+            (root / "settings.json").unlink()
+            for path in (root / "zgloszenia_prywatnosci").glob("*.json"):
+                path.unlink()
+
+            report = validate_runtime_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+
+            self.assertEqual(report.quick_check, ["ok"])
+            self.assertEqual(report.foreign_key_violations, [])
+            self.assertEqual(report.missing_migrations, [])
+            self.assertEqual(report.unexpected_migrations, [])
+            self.assertEqual(report.field_photos, 1)
+            self.assertEqual(report.settings, 2)
+            self.assertEqual(report.privacy_requests, 1)
+            self.assertEqual(report.missing_paths, [])
+
+    def test_validate_only_cli_ignores_legacy_json_counts(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record = seed_root(root)
+            migrate_json_to_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            (root / "zdjecia_terenowe" / record["id"] / "record.json").unlink()
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = migrate_json_to_db.main(
+                    ["--root-dir", str(root), "--database", "wreckscanner.sqlite3", "--validate-only"]
+                )
+
+            self.assertEqual(exit_code, 0, stderr.getvalue())
+            self.assertIn("SQLite quick_check: ok", stdout.getvalue())
+            self.assertIn(f"Migracje: {MIGRATION_COUNT}/{MIGRATION_COUNT}", stdout.getvalue())
+            self.assertNotIn("DB/JSON", stdout.getvalue())
+
+    def test_legacy_cli_migration_requires_and_accepts_explicit_mode(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            seed_root(root)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr), self.assertRaises(SystemExit) as missing_mode:
+                migrate_json_to_db.parse_args(["--root-dir", str(root), "--database", "wreckscanner.sqlite3"])
+            self.assertEqual(missing_mode.exception.code, 2)
+            stderr.seek(0)
+            stderr.truncate()
+
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = migrate_json_to_db.main(
+                    ["--root-dir", str(root), "--database", "wreckscanner.sqlite3", "--migrate-legacy-json"]
+                )
+
+            self.assertEqual(exit_code, 0, stderr.getvalue())
+            self.assertIn("Jawna migracja legacy JSON -> SQLite zakonczona.", stdout.getvalue())
+            self.assertTrue((root / "wreckscanner.sqlite3").is_file())
+
+    def test_runtime_validation_blocks_missing_applied_migration(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            seed_root(root)
+            migrate_json_to_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            connection = sqlite3.connect(root / "wreckscanner.sqlite3")
+            try:
+                connection.execute("DELETE FROM schema_migrations WHERE version = '005_field_photo_vehicle_resolution'")
+                connection.commit()
+            finally:
+                connection.close()
+
+            with self.assertRaisesRegex(ValueError, "missing_migrations=005_field_photo_vehicle_resolution"):
+                validate_runtime_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+
+    def test_runtime_validation_blocks_foreign_key_violations(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            seed_root(root)
+            migrate_json_to_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            connection = sqlite3.connect(root / "wreckscanner.sqlite3")
+            try:
+                connection.executescript(
+                    """
+                    PRAGMA foreign_keys = OFF;
+                    CREATE TABLE validation_parent (id INTEGER PRIMARY KEY);
+                    CREATE TABLE validation_child (
+                        id INTEGER PRIMARY KEY,
+                        parent_id INTEGER REFERENCES validation_parent(id)
+                    );
+                    INSERT INTO validation_child (id, parent_id) VALUES (1, 999);
+                    """
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            with self.assertRaisesRegex(ValueError, "foreign_key_violations=1"):
+                validate_runtime_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+
+    def test_runtime_validation_blocks_missing_referenced_file(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record = seed_root(root)
+            migrate_json_to_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+            (root / "zdjecia_terenowe" / record["id"] / "public_thumb.jpg").unlink()
+
+            with self.assertRaisesRegex(ValueError, "missing_paths=1"):
+                validate_runtime_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+
+    def test_runtime_validation_does_not_create_a_missing_database(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            database = root / "wreckscanner.sqlite3"
+
+            with self.assertRaisesRegex(ValueError, "Brak aktywnej bazy SQLite"):
+                validate_runtime_database(root_dir=root, database_path=Path("wreckscanner.sqlite3"))
+
+            self.assertFalse(database.exists())
 
     def test_migration_requires_backup_snapshot_by_default(self):
         with TemporaryDirectory() as tmp:
