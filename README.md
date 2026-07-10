@@ -6,6 +6,37 @@ Aktualne wydanie: `v3.8`.
 
 Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i podstawowej dokumentacji potrzebnej do uruchomienia, backupu i pozniejszego serwisu.
 
+## Plan Dalszego Utrzymania
+
+To poboczny projekt o niskim priorytecie, utrzymywany glownie jako prywatna mapa
+uzupelniana podczas spacerow. Kolejne prace wybieramy wedlug stosunku zysku do
+nakladu, a nie dla samego domkniecia wszystkich mozliwych usprawnien.
+
+### Teraz
+
+- Zachowywac sprawdzony stan na `work/dirty`; przed checkpointem uruchamiac
+  `scripts/check.sh`.
+- Po wiekszej sesji dodawania zdjec wykonywac `make backup-restic`. Tygodniowy
+  timer utrzymuje 8 kopii tygodniowych i 6 miesiecznych.
+- Nie dodawac nowych funkcji bez konkretnej potrzeby wynikajacej z korzystania
+  z mapy.
+
+### Kolejne Male Poprawki
+
+- Raz na kilka miesiecy skopiowac zaszyfrowane repozytorium Restic na osobny
+  nosnik i sprawdzic kopie; haslo przechowywac osobno.
+- Przy okazji zmian uslugi dodac produkcyjny `EnvironmentFile`, `UMask=0077`,
+  `NoNewPrivileges=true`, `PrivateTmp=true` i trwaly sekret sesji.
+- Dodac DNS `www.wreckscanner.pl` tylko wtedy, gdy ten alias bedzie potrzebny.
+- Przygotowac squash na `main` i tag dopiero przy swiadomym kolejnym wydaniu.
+
+### Tylko Jesli Projekt Zyska Ruch
+
+- Zautomatyzowac kopie off-host, monitoring wieku backupu i okresowy restore.
+- Usunac `'unsafe-inline'` z CSP.
+- Dalej podnosic coverage, dzielic wieksze moduly i optymalizowac UX na podstawie
+  realnych problemow uzytkownikow.
+
 ## Start
 
 Wspierany runtime to Python `3.11-3.13`. Node.js `20+` jest potrzebny tylko do

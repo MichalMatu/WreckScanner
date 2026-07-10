@@ -25,6 +25,13 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertNotIn("docs/README.en.md", readme)
         self.assertNotIn("RUNTIME_SMOKE", readme)
         self.assertNotIn("ROADMAP", readme.upper())
+        self.assertIn("Plan Dalszego Utrzymania", readme)
+        self.assertIn("Kolejne Male Poprawki", readme)
+        self.assertIn("Tylko Jesli Projekt Zyska Ruch", readme)
+        self.assertIn("make backup-restic", readme)
+        self.assertIn("NoNewPrivileges=true", readme)
+        self.assertIn("kopie off-host", readme)
+        self.assertIn("'unsafe-inline'", readme)
 
     def test_start_doc_has_runtime_admin_and_smoke_basics(self):
         doc = (ROOT_DIR / "docs" / "START.md").read_text(encoding="utf-8")
@@ -97,6 +104,13 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertIn("--keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune", doc)
         self.assertIn("najnowszy snapshot ma ponad 26 godzin", doc)
         self.assertIn("kopii off-host", doc)
+        self.assertIn("Prosty Tryb Dla Tego Projektu", doc)
+        self.assertIn("make backup-restic", doc)
+        self.assertIn("make list-restic", doc)
+        self.assertIn("make check-restic", doc)
+        self.assertIn("Restic zapisuje zmiany przyrostowo i deduplikuje", doc)
+        self.assertIn("systemctl --user enable --now wreckscanner-backup.timer", doc)
+        self.assertIn("8 punktow tygodniowych i 6 miesiecznych", doc)
         self.assertNotIn("- `settings.json`", doc)
         self.assertNotIn("- `zgloszenia_prywatnosci/`", doc)
 

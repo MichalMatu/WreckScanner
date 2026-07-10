@@ -357,6 +357,10 @@ def restic_forget(
 ) -> ResticCommandResult:
     args = [
         "forget",
+        "--group-by",
+        "host,tags",
+        "--tag",
+        "wreckscanner,data",
         "--keep-daily",
         str(keep_daily),
         "--keep-weekly",

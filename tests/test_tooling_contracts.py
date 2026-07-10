@@ -56,6 +56,31 @@ class ToolingContractTests(unittest.TestCase):
         self.assertNotIn("server.pid", makefile)
         self.assertNotIn("$(MAKE) autostart-start || true", makefile)
 
+    def test_make_exposes_incremental_restic_backup_and_rotation(self):
+        makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
+
+        self.assertIn("backup-restic:", makefile)
+        self.assertIn("prune-restic:", makefile)
+        self.assertIn("check-restic:", makefile)
+        self.assertIn("list-restic:", makefile)
+        self.assertIn("--keep-daily 0 --keep-weekly 8 --keep-monthly 6 --prune", makefile)
+        self.assertIn("scripts/backup_data.py run", makefile)
+        self.assertIn("--strict", makefile)
+
+    def test_user_backup_timer_runs_backup_rotation_and_check(self):
+        unit_dir = ROOT_DIR / "deploy" / "systemd"
+        service = (unit_dir / "wreckscanner-backup.service").read_text(encoding="utf-8")
+        timer = (unit_dir / "wreckscanner-backup.timer").read_text(encoding="utf-8")
+
+        self.assertIn("Type=oneshot", service)
+        self.assertIn("NoNewPrivileges=true", service)
+        self.assertIn("ExecStart=/usr/bin/make backup-restic", service)
+        self.assertIn("ExecStart=/usr/bin/make prune-restic", service)
+        self.assertIn("ExecStart=/usr/bin/make check-restic", service)
+        self.assertIn("OnCalendar=Sun *-*-* 04:00:00", timer)
+        self.assertIn("Persistent=true", timer)
+        self.assertIn("RandomizedDelaySec=30m", timer)
+
 
 if __name__ == "__main__":
     unittest.main()

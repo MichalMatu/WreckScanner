@@ -329,6 +329,10 @@ class DataBackupTests(unittest.TestCase):
             self.assertIn("--keep-daily", forget.command)
             self.assertIn("7", forget.command)
             self.assertIn("--prune", forget.command)
+            self.assertEqual(
+                forget.command[1:6],
+                ["forget", "--group-by", "host,tags", "--tag", "wreckscanner,data"],
+            )
             self.assertEqual(runner.calls[0]["env"]["RESTIC_REPOSITORY"], str(root / "repo"))
 
     def test_backup_data_cli_runs_fake_restic_end_to_end(self):

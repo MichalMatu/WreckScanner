@@ -43,6 +43,46 @@ cd /home/test/Desktop/WreckScanner
   --password-file .restic_password
 ```
 
+## Prosty Tryb Dla Tego Projektu
+
+Przy sporadycznym dodawaniu zdjec nie ma potrzeby codziennie kopiowac calego
+zbioru. Restic zapisuje zmiany przyrostowo i deduplikuje niezmienione zdjecia.
+Nie podmieniaj ani nie usuwaj recznie plikow w `.backups/wreckscanner-restic`.
+
+Po zakonczeniu spaceru i dodawania nowej partii zdjec wykonaj:
+
+```bash
+make backup-restic
+make list-restic
+```
+
+Raz w tygodniu to samo robi lokalny timer uzytkownika. Jego szablony sa w
+`deploy/systemd/`. Instalacja nie wymaga uprawnien roota:
+
+```bash
+systemctl --user link "$PWD/deploy/systemd/wreckscanner-backup.service"
+systemctl --user link "$PWD/deploy/systemd/wreckscanner-backup.timer"
+systemctl --user daemon-reload
+systemctl --user enable --now wreckscanner-backup.timer
+systemctl --user list-timers wreckscanner-backup.timer
+```
+
+Timer jest `Persistent=true`: jezeli komputer byl wylaczony albo sesja
+uzytkownika nie dzialala, wykona zalegly backup po kolejnym zalogowaniu. Reczny
+backup razem z rotacja i kontrola repozytorium mozna uruchomic przez:
+
+```bash
+systemctl --user start wreckscanner-backup.service
+systemctl --user status wreckscanner-backup.service --no-pager
+```
+
+Rotacja zachowuje 8 punktow tygodniowych i 6 miesiecznych; specjalne snapshoty
+recovery nie sa przez nia usuwane. `make check-restic` sprawdza repozytorium bez
+tworzenia nowej kopii. Lokalny Restic chroni przed pomylka i przypadkowym
+usunieciem, ale nie przed awaria dysku. Wystarczy raz na kilka miesiecy albo po
+waznej partii zdjec skopiowac zaszyfrowane repozytorium na osobny nosnik, a haslo
+zachowac osobno.
+
 Snapshot SQLite jest spójny podczas pracy serwera. Aby uzyskac jeden punkt w
 czasie takze dla DB i wszystkich plikow zdjec, na produkcji zatrzymaj jedyny
 supervisor przed backupem i uruchom go po sukcesie:

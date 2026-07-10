@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := menu
 
-.PHONY: menu help start stop restart status logs check test lint smoke e2e-report health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop backup-data restore-data list-backups backup-db restore-db
+.PHONY: menu help start stop restart status logs check test lint smoke e2e-report health wait-server autostart autostart-start autostart-stop autostart-status serwerstart serwerstop backup-data restore-data list-backups backup-db restore-db backup-restic prune-restic check-restic list-restic
 
 PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then printf './.venv/bin/python'; elif command -v python3 >/dev/null 2>&1; then command -v python3; else command -v python; fi)
 HOST ?= 127.0.0.1
@@ -9,6 +9,8 @@ SERVER_URL := http://$(HOST):$(PORT)
 SERVER_LIVE_URL := $(SERVER_URL)/api/health/live
 SERVER_READY_URL := $(SERVER_URL)/api/health/ready
 BACKUP_DIR ?= kopie_zapasowe
+RESTIC_REPO ?= .backups/wreckscanner-restic
+RESTIC_PASSWORD_FILE ?= .restic_password
 SERVER_PATTERN := [p]ython[^[:space:]]*[[:space:]].*$(CURDIR)/server\.py([[:space:]]|$$)
 SERVER_WAIT_SECONDS ?= 8
 SERVER_AUTOSTART_WAIT_SECONDS ?= 3
@@ -73,6 +75,10 @@ help:
 		'make health' 'alias status'
 	@printf '%s\n' '' 'Backup:'
 	@printf '  %-36s %s\n' \
+		'make backup-restic' 'szyfrowany snapshot przyrostowy po dodaniu zdjec' \
+		'make list-restic' 'pokaz snapshoty Restic' \
+		'make check-restic' 'sprawdz integralnosc repozytorium Restic' \
+		'make prune-restic' 'zachowaj 8 tygodniowych i 6 miesiecznych kopii' \
 		'make backup-data' 'pelny snapshot ZIP, zatrzymuje serwer na czas kopii' \
 		'make restore-data BACKUP=plik.zip' 'odtworz pelny snapshot ZIP' \
 		'make list-backups' 'pokaz lokalne kopie ZIP'
@@ -242,6 +248,18 @@ restore-data:
 
 list-backups:
 	@"$(PYTHON)" scripts/backup_data.py list-zips --root-dir "$(CURDIR)" --output-dir "$(BACKUP_DIR)"
+
+backup-restic:
+	@"$(PYTHON)" scripts/backup_data.py run --root-dir "$(CURDIR)" --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)" --strict
+
+prune-restic:
+	@"$(PYTHON)" scripts/backup_data.py forget --root-dir "$(CURDIR)" --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)" --keep-daily 0 --keep-weekly 8 --keep-monthly 6 --prune
+
+check-restic:
+	@"$(PYTHON)" scripts/backup_data.py check --root-dir "$(CURDIR)" --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)"
+
+list-restic:
+	@"$(PYTHON)" scripts/backup_data.py snapshots --root-dir "$(CURDIR)" --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)"
 
 backup-db: backup-data
 
