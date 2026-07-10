@@ -6,4 +6,5 @@ reportlab==5.0.0
 
 # Podgląd ortofoto
 opencv-python==5.0.0.93
-numpy==2.5.0
+numpy==2.3.5; python_version < "3.12"
+numpy==2.5.0; python_version >= "3.12"

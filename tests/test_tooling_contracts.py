@@ -11,6 +11,13 @@ class ToolingContractTests(unittest.TestCase):
         self.assertIn("opencv-python==5.0.0.93", requirements.splitlines())
         self.assertNotIn("opencv-python==5.0.0", requirements.splitlines())
 
+    def test_numpy_pin_covers_every_supported_python_runtime(self):
+        requirements = (ROOT_DIR / "requirements.txt").read_text(encoding="utf-8")
+
+        self.assertIn('numpy==2.3.5; python_version < "3.12"', requirements.splitlines())
+        self.assertIn('numpy==2.5.0; python_version >= "3.12"', requirements.splitlines())
+        self.assertNotIn("numpy==2.5.0", requirements.splitlines())
+
     def test_make_lint_delegates_to_recursive_frontend_linter(self):
         makefile = (ROOT_DIR / "Makefile").read_text(encoding="utf-8")
         lint_target = makefile.split("lint:\n", 1)[1].split("\nsmoke:", 1)[0]
