@@ -36,6 +36,8 @@ zanonimizowany wpis sukcesu ukryty domyslnie filtrem warstwy pojazdow.
   na mapie zgodnie z ustawieniami warstw, a wlasciciel z poprawnym tokenem moze
   nadal edytowac anonimizacje albo usunac swoje oczekujace zgloszenie.
 - Administrator zatwierdza albo odrzuca zdjecia w jednej kolejce photo review.
+- Ostateczna decyzja `approved` albo `rejected` usuwa identyfikator wlasciciela
+  i hash tokenu; token nie moze ponownie otworzyc zakonczonej moderacji.
 - Pojazdy na mapie sa grupami zatwierdzonych zdjec terenowych, nie osobnymi
   rekordami spraw.
 - Zmiana OC/UFG w panelu admina aktualizuje wszystkie zdjecia pojazdu w tej
@@ -49,6 +51,8 @@ zanonimizowany wpis sukcesu ukryty domyslnie filtrem warstwy pojazdow.
   `Pojazdy` pozwala je pokazac albo wyswietlic tylko usuniete.
 - Zgloszenie PDF jest generowane na zadanie z listy `field_photo.id` i
   wspolrzednych grupy.
+- Backend odrzuca mieszane grupy, usuniete pojazdy, wspolrzedne inne niz
+  polozenie grupy oraz przekroczenie limitu liczby lub rozmiaru zdjec.
 - Zgloszenie zawiera tekstowy wynik recznego sprawdzenia OC/UFG oraz date
   sprawdzenia w tresci PDF.
 - Zgloszenie PDF nie jest generowane dla grupy oznaczonej w calosci jako
@@ -56,21 +60,62 @@ zanonimizowany wpis sukcesu ukryty domyslnie filtrem warstwy pojazdow.
 - Miniatury ortofoto sa dowodem generowanym podczas tworzenia raportu PDF.
 - Raporty PDF i cropy mapy nie sa zapisywane w DB ani w stalym
   katalogu runtime.
+- Dane kontaktowe i tresc zakonczonych zgloszen prywatnosci sa automatycznie
+  zerowane po 90 dniach; pozostaje minimalny rekord statusu i dat obslugi.
 
 ## Endpointy domenowe
 
-- `GET /api/field-photos`
-- `POST /api/field-photos`
-- `PATCH /api/field-photos/:id/location`
-- `POST /api/field-photos/owner-claim`
-- `POST /api/field-photos/owner-submit`
-- `POST /api/field-photos/owner-discard`
-- `POST /api/field-photos/owner-delete`
-- `PATCH /api/field-photos/:id/owner-review`
-- `POST /api/field-photo-reports/report-pdf`
-- `GET /api/admin/photos`
-- `PATCH /api/admin/photos/field/:id/review`
-- `DELETE /api/admin/photos/field/:id`
+Ponizsza tabela jest pelnym kontraktem routingu aplikacji. "Publiczny" oznacza
+brak wymaganej sesji administratora; wlaczniki funkcji publicznych, limity i token
+edycji nadal moga ograniczyc operacje.
+
+| Metoda | Sciezka | Dostep | Zastosowanie |
+| --- | --- | --- | --- |
+| `GET` | `/api/health/live` | publiczny | liveness procesu HTTP |
+| `GET` | `/api/health/ready` | publiczny | gotowosc SQLite, migracji, plikow i dysku |
+| `GET` | `/api/settings` | publiczny | aktywne ustawienia i wartosci domyslne |
+| `POST` | `/api/settings` | administrator | zapis ustawien aplikacji |
+| `GET` | `/api/admin/status` | publiczny | stan logowania bez ujawniania sekretow |
+| `POST` | `/api/admin/login` | publiczny | rozpoczecie sesji administratora |
+| `POST` | `/api/admin/logout` | publiczny (cookie opcjonalne) | uniewaznienie biezacego tokenu i cookie |
+| `GET` | `/api/field-photos` | publiczny | mapa bez szkicow i odrzuconych; administrator omija publiczne filtry warstw |
+| `GET` | `/api/field-photos/:id/public-image` | publiczny | zatwierdzony obraz publiczny |
+| `GET` | `/api/field-photos/:id/public-thumb` | publiczny | zatwierdzona miniatura publiczna |
+| `POST` | `/api/field-photos` | publiczny lub administrator | pojedynczy upload `multipart/form-data`; funkcja publiczna moze byc wylaczona |
+| `POST` | `/api/field-photos/owner-claim` | token edycji | pobranie szkicow wlasciciela do edycji |
+| `POST` | `/api/field-photos/owner-submit` | token edycji | atomowe wyslanie szkicow do moderacji |
+| `POST` | `/api/field-photos/owner-discard` | token edycji | porzucenie szkicow |
+| `POST` | `/api/field-photos/owner-delete` | token edycji | usuniecie wlasnych szkicow lub oczekujacych zdjec |
+| `POST` | `/api/field-photos/:id/owner-original` | token edycji | pobranie prywatnego oryginalu przez wlasciciela |
+| `PATCH` | `/api/field-photos/:id/owner-review` | token edycji | zapis anonimizacji i OC/UFG przez wlasciciela |
+| `PATCH` | `/api/field-photos/:id/location` | administrator | korekta lokalizacji zdjecia |
+| `POST` | `/api/field-photo-reports/report-pdf` | publiczny lub administrator | raport PDF z zatwierdzonych zdjec; funkcja publiczna moze byc wylaczona |
+| `GET` | `/api/address/reverse?lat=:lat&lon=:lon` | publiczny | adres PRG z kontrolowanym fallbackiem Nominatim |
+| `GET` | `/api/cadastral/identify?lat=:lat&lon=:lon` | publiczny lub administrator | identyfikacja dzialki; warstwa publiczna moze byc wylaczona |
+| `POST` | `/api/inspect` | publiczny | tymczasowe wycinki ortofoto dla wskazanego punktu |
+| `POST` | `/api/privacy-requests` | publiczny | utworzenie zgloszenia prywatnosci |
+| `GET` | `/api/admin/photos` | administrator | filtrowana kolejka moderacji |
+| `GET` | `/api/admin/photos/field/:id/original` | administrator | prywatny oryginal do moderacji |
+| `PATCH` | `/api/admin/photos/field/:id/review` | administrator | decyzja, anonimizacja, OC/UFG i rozwiazanie grupy |
+| `DELETE` | `/api/admin/photos/field/:id` | administrator | kanoniczne usuniecie zdjecia i jego plikow |
+| `GET` | `/api/admin/privacy-requests` | administrator | kolejka zgloszen prywatnosci |
+| `PATCH` | `/api/admin/privacy-requests/:id` | administrator | obsluga zgloszenia prywatnosci |
+| `GET` | `/api/admin/photo-retention` | administrator | stan automatycznej retencji |
+| `POST` | `/api/admin/photo-retention/run` | administrator | reczny dry-run albo wykonanie retencji |
+| `GET` | `/wms_proxy/OGC_ortofoto_:year/MapServer/WMSServer?...` | publiczny | ograniczony proxy `GetMap` dla lat 2020-2025 |
+| `GET` | `/tile_proxy/geoportal-standard/:z/:x/:y?...` | publiczny | ograniczony proxy kafli WMTS Geoportalu |
+
+`HEAD` jest obslugiwany dla stron, statycznych zasobow i tras `GET /api/*` z
+takim samym statusem oraz naglowkami, ale bez body; kosztowne lookupy zuzywaja
+ten sam limit co `GET`. `OPTIONS` zwraca `204`.
+Nieznane trasy API zwracaja JSON `404`, a `PUT`, `TRACE` i `CONNECT` - `405`.
+
+Kazda mutacja przechodzi kontrole same-origin na podstawie `Origin` i
+`Sec-Fetch-Site`. Trasy JSON wymagaja `application/json` i maja limit body 1 MiB;
+upload zdjecia oraz generator PDF przyjmuja wylacznie `multipart/form-data` i
+maja osobne, nizsze limity domenowe. Limity per klient wynosza: logowanie 5/10
+min, upload 30/h, operacje tokenu wlasciciela 120/15 min, zgloszenia prywatnosci
+10/h, raporty 12/15 min, lookupy mapowe 180/10 min, kafle proxy 2400/10 min.
 
 `PATCH /api/admin/photos/field/:id/review` moze zapisac sama decyzje
 `vehicle_resolution_status` bez zmiany statusu moderacji lub redakcji. Taka
@@ -94,7 +139,8 @@ modelu:
 - `vehicle case` jako encja aplikacji
 
 Wyjatkiem sa testy antyregresyjne, ktore sprawdzaja, ze te nazwy nie wracaja,
-oraz dokument przyszlej bazy, ktory wymienia wycofane tabele jako niedozwolone.
+oraz [aktualny kontrakt bazy](DATABASE.md), ktory wymienia wycofane tabele jako
+niedozwolone.
 
 ## Audyt domkniecia
 
@@ -110,6 +156,8 @@ test ! -e prywatne_zgloszenia
 ./scripts/check.sh
 ```
 
-Oczekiwany wynik: walidacja DB pokazuje zgodne liczniki i `Brakujace sciezki: 0`,
-katalogi starego modelu nie istnieja, diagnostyka danych nie widzi starych
-pakietow raportow, a `scripts/check.sh` konczy sie statusem OK.
+Oczekiwany wynik: walidacja aktywnej SQLite pokazuje `quick_check: ok`, komplet
+migracji, brak naruszen kluczy obcych i `Brakujace sciezki: 0`. Historyczne
+JSON-y nie sa porownywane z baza. Katalogi starego modelu nie istnieja,
+diagnostyka danych nie widzi starych pakietow raportow, a `scripts/check.sh`
+konczy sie statusem OK.

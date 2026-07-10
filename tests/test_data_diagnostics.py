@@ -201,6 +201,22 @@ class DataDiagnosticsTests(unittest.TestCase):
             self.assertIn("field_photo_public_thumb_too_large", codes)
             self.assertIn("field_photo_size_mismatch", codes)
 
+    def test_full_image_check_rejects_a_truncated_image_with_a_readable_header(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            field_dir = root / "zdjecia_terenowe"
+            private_dir = root / "prywatne_zdjecia"
+            record_dir = write_field_photo_record(field_dir, private_dir)
+            public_image = record_dir / "public.jpg"
+            payload = public_image.read_bytes()
+            public_image.write_bytes(payload[:-1])
+            with Image.open(public_image) as header_only:
+                self.assertEqual(header_only.size, (48, 32))
+
+            report = run_data_diagnostics(field_photos_dir=field_dir, private_photos_dir=private_dir)
+
+            self.assertIn("image_unreadable", {issue["code"] for issue in report["issues"]})
+
     def test_diagnose_data_cli_outputs_json_without_archived_case_root(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

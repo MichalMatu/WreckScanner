@@ -3,11 +3,10 @@ function localDatetimeValue(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const REPORT_REPORTER_FIELDS = ['reporter_name', 'reporter_email', 'reporter_phone', 'reporter_address'];
-
 let reportPdfDownloadUrls = [];
 let reportPdfTarget = null;
 let reportPdfDefaultLocationDescription = '';
+let reportPdfAbortController = null;
 
 function reportFormField(form, name) {
     return form?.querySelector(`[name="${name}"]`) || null;
@@ -19,33 +18,7 @@ function setReportFormValue(form, name, value) {
     field.value = value;
 }
 
-function loadReportReporterDefaults() {
-    try {
-        const raw = localStorage.getItem(REPORT_REPORTER_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : {};
-        return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch (_) {
-        return {};
-    }
-}
-
-function applyReportReporterDefaults(form) {
-    const defaults = loadReportReporterDefaults();
-    for (const name of REPORT_REPORTER_FIELDS) {
-        const value = String(defaults[name] || '').trim();
-        if (value) setReportFormValue(form, name, value);
-    }
-}
-
-function saveReportReporterDefaults(form) {
-    const values = {};
-    for (const name of REPORT_REPORTER_FIELDS) {
-        values[name] = String(reportFormField(form, name)?.value || '').trim();
-    }
-    try {
-        localStorage.setItem(REPORT_REPORTER_STORAGE_KEY, JSON.stringify(values));
-    } catch (_) {}
-}
+try { localStorage.removeItem('wreckscanner.reportReporter.v1'); } catch (_) {}
 
 function applyReportDescriptionDefaults(form, target) {
     const lat = Number(target?.lat);
@@ -105,13 +78,14 @@ function resetReportPdfModal(target) {
     const result = document.getElementById('report-pdf-result');
     const status = document.getElementById('report-pdf-status');
     const submit = document.getElementById('report-pdf-submit');
+    reportPdfAbortController?.abort();
+    reportPdfAbortController = null;
     form?.reset();
     revokeReportPdfDownloadUrls();
     reportPdfTarget = target;
     updatePublicFeatureAccess();
     const observedAt = form?.querySelector('[name="observed_at"]');
     if (observedAt) observedAt.value = localDatetimeValue();
-    applyReportReporterDefaults(form);
     applyReportDescriptionDefaults(form, target);
     if (result) result.hidden = true;
     if (status) status.textContent = '';
@@ -144,6 +118,7 @@ async function submitReportPdf(event) {
     const submit = document.getElementById('report-pdf-submit');
     const result = document.getElementById('report-pdf-result');
     const target = reportPdfTarget;
+    let requestController = null;
     if (!form || !target) return;
     if (!form.reportValidity()) return;
 
@@ -158,14 +133,17 @@ async function submitReportPdf(event) {
     try {
         const formData = new FormData(form);
         if (target.type !== 'field-photos') throw new Error(t('modal.report.generateError'));
-        saveReportReporterDefaults(form);
         formData.set('photo_ids', JSON.stringify(target.photoIds || []));
         formData.set('lat', String(target.lat));
         formData.set('lon', String(target.lon));
         const reportUrl = '/api/field-photo-reports/report-pdf';
+        requestController = new AbortController();
+        reportPdfAbortController = requestController;
         const data = await apiJson(reportUrl, {
             method: 'POST',
             body: formData,
+            signal: requestController.signal,
+            timeoutMs: API_REPORT_TIMEOUT_MS,
         });
         if (data.status !== 'ok') {
             throw new Error(data.error || t('modal.report.generateError'));
@@ -183,13 +161,22 @@ async function submitReportPdf(event) {
         if (result) result.hidden = false;
         if (status) status.textContent = '';
     } catch (err) {
+        if (err?.payload?.code === 'cancelled' && reportPdfTarget !== target) return;
         if (result) result.hidden = true;
         if (submit) submit.hidden = false;
         if (status) status.textContent = apiErrorMessage(err, t('modal.report.generateError'));
     } finally {
-        if (submit) {
+        if (reportPdfAbortController === requestController) reportPdfAbortController = null;
+        if (submit && reportPdfTarget === target) {
             submit.disabled = false;
             submit.querySelector('span').textContent = t('modal.report.submit');
         }
     }
 }
+
+document.getElementById('modal-report-pdf')?.addEventListener('modalclose', () => {
+    reportPdfTarget = null;
+    reportPdfAbortController?.abort();
+    reportPdfAbortController = null;
+    revokeReportPdfDownloadUrls();
+});

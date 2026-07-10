@@ -26,6 +26,7 @@ from scripts.architecture_quality import (  # noqa: E402
     evaluate_quality_gates,
     forbidden_layer_imports,
 )
+from scripts.architecture_risk import collect_risky_patterns  # noqa: E402
 
 TARGET_DIRS = ("app", "core", "scripts", "tests", "web")
 PY_GROUPS = {"app", "core", "scripts", "tests"}
@@ -295,65 +296,6 @@ def collect_endpoints(py_trees: dict[Path, ast.AST], js_files: list[Path]) -> li
     return sorted(endpoints.values(), key=lambda item: (item["path"], item["source"], item["line"]))
 
 
-def call_name(node: ast.AST) -> str:
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        prefix = call_name(node.value)
-        return f"{prefix}.{node.attr}" if prefix else node.attr
-    return ""
-
-
-def collect_risky_patterns(py_trees: dict[Path, ast.AST], js_files: list[Path]) -> dict[str, list[dict[str, Any]]]:
-    findings: dict[str, list[dict[str, Any]]] = {
-        "broad_excepts": [],
-        "shell_true": [],
-        "dynamic_code": [],
-        "pickle_usage": [],
-        "print_calls": [],
-        "console_calls": [],
-    }
-
-    for path, tree in py_trees.items():
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ExceptHandler):
-                broad = node.type is None
-                name = "bare"
-                if isinstance(node.type, ast.Name):
-                    name = node.type.id
-                    broad = name in {"Exception", "BaseException"}
-                if broad:
-                    findings["broad_excepts"].append({"path": rel(path), "line": node.lineno, "type": name})
-            elif isinstance(node, ast.Call):
-                name = call_name(node.func)
-                if name in {"eval", "exec"}:
-                    findings["dynamic_code"].append({"path": rel(path), "line": node.lineno, "call": name})
-                if name == "print":
-                    findings["print_calls"].append({"path": rel(path), "line": node.lineno})
-                for keyword in node.keywords:
-                    if (
-                        keyword.arg == "shell"
-                        and isinstance(keyword.value, ast.Constant)
-                        and keyword.value.value is True
-                    ):
-                        findings["shell_true"].append({"path": rel(path), "line": node.lineno, "call": name})
-            elif isinstance(node, (ast.Import, ast.ImportFrom)):
-                imported_names: list[str] = []
-                if isinstance(node, ast.Import):
-                    imported_names = [alias.name for alias in node.names]
-                elif node.module:
-                    imported_names = [node.module]
-                if any(name == "pickle" or name.startswith("pickle.") for name in imported_names):
-                    findings["pickle_usage"].append({"path": rel(path), "line": node.lineno, "import": imported_names})
-
-    for path in js_files:
-        for lineno, line in enumerate(read_text(path).splitlines(), start=1):
-            if "console." in line:
-                findings["console_calls"].append({"path": rel(path), "line": lineno, "snippet": line.strip()[:160]})
-
-    return findings
-
-
 def group_dependencies(imports: list[dict[str, Any]], js_files: list[Path]) -> list[dict[str, Any]]:
     counter: Counter[tuple[str, str]] = Counter()
     for item in imports:
@@ -442,7 +384,7 @@ def build_report() -> dict[str, Any]:
     js_files = [path for path in files if path.suffix == ".js"]
     py_trees = {path: tree for path in py_files if (tree := parse_python(path)) is not None}
     imports, graph = collect_imports(py_trees)
-    risky_patterns = collect_risky_patterns(py_trees, js_files)
+    risky_patterns = collect_risky_patterns(py_trees, js_files, path_label=rel, read_source=read_text)
 
     report = {
         "generated_at": now_iso(),

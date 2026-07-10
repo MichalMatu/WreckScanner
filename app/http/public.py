@@ -1,5 +1,7 @@
 import json
+from threading import BoundedSemaphore
 
+from app import config as app_config
 from app.http import access
 from app.http import admin_session as http_admin_session
 from app.http import request_body as http_request_body
@@ -16,10 +18,11 @@ from core.field_photos import (
     submit_field_photos_by_owner,
 )
 from core.privacy_requests import create_privacy_request
-from core.report_pdfs import create_field_photo_report_pdf
+from core.report_pdfs import create_field_photo_report_pdf, validate_field_photo_report_selection
 from core.uploads import UploadedFile
 
 OWNER_DELETABLE_REVIEW_STATUSES = {"draft", "pending"}
+_REPORT_REQUEST_SEMAPHORE = BoundedSemaphore(app_config.REPORT_MAX_CONCURRENT_REQUESTS)
 
 
 def reject_report_pdf_files(files: list[UploadedFile]) -> None:
@@ -38,7 +41,10 @@ def _report_photo_ids(fields: dict[str, str]) -> list[str]:
         parsed = [item.strip() for item in raw.split(",") if item.strip()]
     if not isinstance(parsed, list):
         raise ValueError("Nieprawidłowa lista zdjęć terenowych.")
-    return [str(item or "").strip() for item in parsed if str(item or "").strip()]
+    if len(parsed) > core_config.MAX_REPORT_PHOTOS:
+        raise ValueError(f"Raport może zawierać maksymalnie {core_config.MAX_REPORT_PHOTOS} zdjęć.")
+    photo_ids = [str(item or "").strip() for item in parsed if str(item or "").strip()]
+    return photo_ids
 
 
 def _report_cadastral_context(lat: str | None, lon: str | None) -> tuple[dict | None, str]:
@@ -67,15 +73,17 @@ def _report_address_context(lat: str | None, lon: str | None) -> dict | None:
         return None
 
 
-def _owner_photo_ids(data: dict) -> list[str]:
+def _owner_photo_ids(data: dict, empty_message: str = "Wskaż zdjęcie.") -> list[str]:
     raw_photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+    if len(raw_photo_ids) > core_config.MAX_OWNER_PHOTO_IDS:
+        raise ValueError(f"Jedna operacja może objąć maksymalnie {core_config.MAX_OWNER_PHOTO_IDS} zdjęć.")
     photo_ids: list[str] = []
     for raw_photo_id in raw_photo_ids:
         photo_id = str(raw_photo_id or "").strip()
         if photo_id and photo_id not in photo_ids:
             photo_ids.append(photo_id)
     if not photo_ids:
-        raise ValueError("Wskaż zdjęcie do usunięcia.")
+        raise ValueError(empty_message)
     return photo_ids
 
 
@@ -109,7 +117,7 @@ def handle_create_privacy_request(handler) -> None:
 def handle_claim_field_photos(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+        photo_ids = _owner_photo_ids(data, "Wskaż zdjęcie do edycji.")
         photos = list_owner_field_photo_review_items(
             photo_ids,
             data.get("edit_token"),
@@ -136,7 +144,7 @@ def handle_claim_field_photos(handler) -> None:
 def handle_submit_field_photos(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+        photo_ids = _owner_photo_ids(data, "Wskaż zdjęcie do wysłania.")
         result = submit_field_photos_by_owner(
             photo_ids,
             data.get("edit_token"),
@@ -163,7 +171,7 @@ def handle_submit_field_photos(handler) -> None:
 def handle_discard_field_photo_drafts(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else []
+        photo_ids = _owner_photo_ids(data, "Wskaż zdjęcie do porzucenia.")
         result = discard_field_photo_drafts_by_owner(
             photo_ids,
             data.get("edit_token"),
@@ -190,7 +198,9 @@ def handle_discard_field_photo_drafts(handler) -> None:
 def handle_delete_field_photos_by_owner(handler) -> None:
     try:
         data = http_request_body.read_json_body(handler)
-        result = _delete_field_photos_by_owner(_owner_photo_ids(data), data.get("edit_token"))
+        result = _delete_field_photos_by_owner(
+            _owner_photo_ids(data, "Wskaż zdjęcie do usunięcia."), data.get("edit_token")
+        )
         http_responses.send_json(handler, 200, result)
     except PermissionError as e:
         http_responses.send_json(handler, 403, {"error": str(e)})
@@ -213,14 +223,31 @@ def handle_field_photo_report_pdf(handler) -> None:
         handler, "report_pdfs", "Generowanie raportów przez niezalogowanych jest teraz wyłączone."
     ):
         return
+    request_slot_acquired = False
     try:
         fields, files = http_request_body.read_multipart_form(handler, core_config.MAX_REPORT_PDF_BODY_BYTES)
         reject_report_pdf_files(files)
+        if not _REPORT_REQUEST_SEMAPHORE.acquire(blocking=False):
+            http_responses.send_json(
+                handler,
+                503,
+                {"error": "Generator raportów jest zajęty. Spróbuj ponownie za chwilę."},
+                {"Retry-After": "5"},
+            )
+            return
+        request_slot_acquired = True
+        photo_ids = _report_photo_ids(fields)
+        validate_field_photo_report_selection(
+            photo_ids,
+            lat=fields.get("lat"),
+            lon=fields.get("lon"),
+            field_photos_dir=core_config.FIELD_PHOTOS_DIR,
+        )
         parcel, parcel_error = _report_cadastral_context(fields.get("lat"), fields.get("lon"))
         address = _report_address_context(fields.get("lat"), fields.get("lon"))
         result = create_field_photo_report_pdf(
             fields,
-            _report_photo_ids(fields),
+            photo_ids,
             lat=fields.get("lat"),
             lon=fields.get("lon"),
             parcel=parcel,
@@ -229,6 +256,8 @@ def handle_field_photo_report_pdf(handler) -> None:
             field_photos_dir=core_config.FIELD_PHOTOS_DIR,
         )
         http_responses.send_json(handler, 200, result)
+    except http_request_body.PayloadTooLargeError as e:
+        http_responses.send_json(handler, 413, {"error": str(e)})
     except FileNotFoundError as e:
         http_responses.send_json(handler, 404, {"error": str(e)})
     except ValueError as e:
@@ -241,6 +270,9 @@ def handle_field_photo_report_pdf(handler) -> None:
             exc,
             public_error="Nie udało się przygotować raportu ze zdjęć terenowych.",
         )
+    finally:
+        if request_slot_acquired:
+            _REPORT_REQUEST_SEMAPHORE.release()
 
 
 def handle_create_field_photo(handler) -> None:
@@ -283,6 +315,8 @@ def handle_create_field_photo(handler) -> None:
             public_review_status="pending" if is_admin else "draft",
         )
         http_responses.send_json(handler, 200, result)
+    except http_request_body.PayloadTooLargeError as e:
+        http_responses.send_json(handler, 413, {"error": str(e)})
     except ValueError as e:
         http_responses.send_json(handler, 400, {"error": str(e)})
     except Exception as exc:

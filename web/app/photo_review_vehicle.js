@@ -94,6 +94,7 @@ async function togglePhotoReviewVehicleResolution() {
     ) {
         return;
     }
+    if (!(await confirmPhotoReviewDiscard())) return;
     const savedPhotoId = activePhotoReview.id;
     const savedPhotoIndex = photoReviewActiveIndex(savedPhotoId);
     const list = document.getElementById('photo-review-list');

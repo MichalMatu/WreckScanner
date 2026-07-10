@@ -31,14 +31,25 @@ def handle_head(handler) -> bool:
     if http_static_files.handle_web_asset(handler, path, include_body=False):
         return True
     if path.startswith("/api/"):
-        http_responses.send_api_not_found(handler, include_body=False)
-        return True
+        handler._suppress_response_body = True
+        try:
+            if http_rate_limit.reject_limited(handler, "GET", path):
+                return True
+            if handle_static_api_get(handler, path):
+                return True
+            if handle_dynamic_api_get(handler, path):
+                return True
+            http_responses.send_api_not_found(handler, include_body=False)
+            return True
+        finally:
+            del handler._suppress_response_body
     return False
 
 
 def handle_static_api_get(handler, path: str) -> bool:
     handlers = {
-        "/api/health": lambda: http_health.handle_health(handler),
+        "/api/health/live": lambda: http_health.handle_liveness(handler),
+        "/api/health/ready": lambda: http_health.handle_readiness(handler),
         "/api/admin/status": lambda: http_admin.handle_admin_status(handler),
         "/api/admin/photos": lambda: http_admin.handle_admin_photos(handler),
         "/api/admin/privacy-requests": lambda: http_admin.handle_admin_privacy_requests(handler),
@@ -101,20 +112,20 @@ def handle_get(handler) -> bool:
 
 
 def handle_delete(handler) -> None:
+    if http_request_body.reject_unsafe_request(handler):
+        return
     request_path = unquote(urlsplit(handler.path).path)
     admin_photo_delete_route = http_routes.admin_photo_delete_route(request_path)
     if admin_photo_delete_route:
         http_admin.handle_delete_admin_photo(handler, admin_photo_delete_route)
         return
 
-    if request_path.startswith("/api/field-photos/"):
-        http_admin.handle_delete_field_photo(handler, request_path)
-        return
-
     http_responses.send_api_not_found(handler)
 
 
 def handle_patch(handler) -> None:
+    if http_request_body.reject_unsafe_request(handler):
+        return
     request_path = unquote(urlsplit(handler.path).path)
     if http_rate_limit.reject_limited(handler, "PATCH", request_path):
         return
@@ -151,6 +162,8 @@ def handle_patch(handler) -> None:
 
 
 def handle_post(handler) -> None:
+    if http_request_body.reject_unsafe_request(handler):
+        return
     request_path = unquote(urlsplit(handler.path).path)
     if http_rate_limit.reject_limited(handler, "POST", request_path):
         return
@@ -179,6 +192,8 @@ def handle_post(handler) -> None:
         http_request_body.dispatch_json_request(handler, http_retention.handle_run_photo_retention, handler)
         return
     if request_path == "/api/field-photo-reports/report-pdf":
+        if http_request_body.reject_wrong_content_type(handler, "multipart/form-data"):
+            return
         http_public.handle_field_photo_report_pdf(handler)
         return
     field_photo_owner_original_route = http_routes.field_photo_owner_original_route(request_path)
@@ -188,6 +203,8 @@ def handle_post(handler) -> None:
         )
         return
     if request_path == "/api/field-photos":
+        if http_request_body.reject_wrong_content_type(handler, "multipart/form-data"):
+            return
         http_public.handle_create_field_photo(handler)
         return
     if request_path == "/api/settings":

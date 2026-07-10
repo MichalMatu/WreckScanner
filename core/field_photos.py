@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import hashlib
-import io
 import math
 import re
 import secrets
 import shutil
+from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import RLock
 from typing import Any, Literal
 
-from PIL import Image, UnidentifiedImageError
-
 from core import config
+from core.field_photo_deletion import delete_loaded_field_photos as _delete_loaded_field_photos
 from core.field_photo_insurance import (
     set_vehicle_insurance as _set_vehicle_insurance,
 )
@@ -52,7 +51,7 @@ from core.field_photo_store import (
     FIELD_PHOTO_ID_RE as _FIELD_PHOTO_ID_RE,
 )
 from core.field_photo_store import (
-    delete_field_record as _delete_field_record,
+    delete_field_records as _delete_field_records,
 )
 from core.field_photo_store import (
     list_field_records as _list_field_records,
@@ -64,8 +63,12 @@ from core.field_photo_store import (
     save_field_record as _save_field_record,
 )
 from core.field_photo_store import (
+    save_field_records as _save_field_records,
+)
+from core.field_photo_store import (
     validate_photo_id as _validate_photo_id,
 )
+from core.field_photo_upload import validated_upload_image, write_bytes_atomic
 from core.geo import external_map_links
 from core.photo_privacy import (
     REVIEW_STATUSES,
@@ -73,7 +76,6 @@ from core.photo_privacy import (
     ensure_review_fields,
     generate_public_derivatives,
     is_approved,
-    remove_empty_private_photo_dir,
     remove_public_derivatives,
     review_status,
     safe_child,
@@ -94,11 +96,6 @@ def _now_iso() -> str:
     return _now_utc().isoformat().replace("+00:00", "Z")
 
 
-def _safe_text(value: Any, max_len: int = 300) -> str:
-    text = str(value or "").replace("\x00", "").strip()
-    return text[:max_len]
-
-
 def _safe_original_name(raw_name: str, ext: str) -> str:
     stem = Path(raw_name or "").stem or "zdjecie"
     stem = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._-") or "zdjecie"
@@ -112,35 +109,6 @@ def _record_dir_for(photo_id: str, storage_dir: Path) -> Path:
     if root != record_dir and root not in record_dir.parents:
         raise ValueError("Nieprawidłowa ścieżka zdjęcia.")
     return record_dir
-
-
-def _format_exif_datetime(value: Any) -> str | None:
-    text = _safe_text(value, 80)
-    match = re.fullmatch(r"(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})", text)
-    if not match:
-        return text or None
-    year, month, day, hour, minute, second = match.groups()
-    return f"{year}-{month}-{day}T{hour}:{minute}:{second}"
-
-
-def _limited_exif(exif: Image.Exif) -> dict[str, str]:
-    labels = {
-        271: "make",
-        272: "model",
-        306: "datetime",
-        36867: "datetime_original",
-        36868: "datetime_digitized",
-    }
-    values: dict[str, str] = {}
-    for tag, label in labels.items():
-        value = _safe_text(exif.get(tag), 200)
-        if value:
-            values[label] = value
-    return values
-
-
-def _captured_at(exif: Image.Exif) -> str | None:
-    return _format_exif_datetime(exif.get(36867) or exif.get(306))
 
 
 def _coord_float(value: Any, label: str) -> float:
@@ -277,6 +245,19 @@ def _require_edit_token(record: dict[str, Any], edit_token: Any) -> None:
         raise PermissionError("Nieprawidłowy token edycji zdjęcia.")
 
 
+def validated_field_photo_ids(photo_ids: list[Any], empty_message: str) -> list[str]:
+    if len(photo_ids) > config.MAX_OWNER_PHOTO_IDS:
+        raise ValueError(f"Jedna operacja może objąć maksymalnie {config.MAX_OWNER_PHOTO_IDS} zdjęć.")
+    requested_ids: list[str] = []
+    for raw_photo_id in photo_ids:
+        photo_id = str(raw_photo_id or "").strip()
+        if photo_id and photo_id not in requested_ids:
+            requested_ids.append(_validate_photo_id(photo_id))
+    if not requested_ids:
+        raise ValueError(empty_message)
+    return requested_ids
+
+
 def list_field_photos(storage_dir: Path, *, private_dir: Path | None = None) -> list[dict[str, Any]]:
     private_root = _private_dir(private_dir)
     records: list[dict[str, Any]] = []
@@ -302,13 +283,7 @@ def list_owner_field_photo_review_items(
 ) -> list[dict[str, Any]]:
     normalize_photo_edit_token(edit_token)
     private_root = _private_dir(private_dir)
-    requested_ids: list[str] = []
-    for raw_photo_id in photo_ids:
-        photo_id = str(raw_photo_id or "").strip()
-        if photo_id and photo_id not in requested_ids:
-            requested_ids.append(_validate_photo_id(photo_id))
-    if not requested_ids:
-        raise ValueError("Wskaż zdjęcie do edycji.")
+    requested_ids = validated_field_photo_ids(photo_ids, "Wskaż zdjęcie do edycji.")
 
     items: list[dict[str, Any]] = []
     for photo_id in requested_ids:
@@ -369,21 +344,12 @@ def save_field_photo(
     if review_status_text not in REVIEW_STATUSES:
         raise ValueError("Nieprawidłowy status przeglądu zdjęcia.")
 
-    try:
-        with Image.open(io.BytesIO(upload.data)) as image:
-            image_format = str(image.format or "").upper()
-            if image_format not in config.ALLOWED_UPLOAD_IMAGE_FORMATS:
-                raise ValueError("Dozwolone są tylko zdjęcia JPG, PNG albo WebP.")
-            exif = image.getexif()
-            lat, lon, coordinate_source = _map_coordinates_from(map_lat, map_lon)
-            width, height = image.size
-    except UnidentifiedImageError as exc:
-        raise ValueError("Plik nie jest obsługiwanym zdjęciem.") from exc
+    image_format, width, height, captured_at, limited_exif = validated_upload_image(upload)
+    lat, lon, coordinate_source = _map_coordinates_from(map_lat, map_lon)
 
     ext, content_type = config.ALLOWED_UPLOAD_IMAGE_FORMATS[image_format]
     photo_id = _photo_id(upload)
     record_dir = storage_dir / photo_id
-    record_dir.mkdir(parents=True, exist_ok=False)
 
     private_original_file = f"field_photos/{photo_id}/original{ext}"
     vehicle_insurance_status_text = _vehicle_insurance_status(issue_type_text, vehicle_insurance_status)
@@ -404,8 +370,8 @@ def save_field_photo(
         "lat": lat,
         "lon": lon,
         "coordinate_source": coordinate_source,
-        "captured_at": _captured_at(exif),
-        "exif": _limited_exif(exif),
+        "captured_at": captured_at,
+        "exif": limited_exif,
         "private_original_file": private_original_file,
         "public_review_status": review_status_text,
         "redactions": [],
@@ -416,10 +382,31 @@ def save_field_photo(
     if edit_token is not None and str(edit_token).strip():
         record.update(new_photo_edit_token_hash(edit_token))
         record["edit_token_created_at"] = _now_iso()
-    original_path = safe_child(private_root, private_original_file)
-    original_path.parent.mkdir(parents=True, exist_ok=True)
-    original_path.write_bytes(upload.data)
-    _save_field_record(storage_dir, record)
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        original_path = safe_child(private_root, private_original_file)
+        try:
+            record_dir.mkdir(parents=True, exist_ok=False)
+            if private_root.is_symlink():
+                raise ValueError("Katalog prywatnych zdjęć nie może być dowiązaniem symbolicznym.")
+            private_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+            private_root.chmod(0o700)
+            original_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            (private_root / "field_photos").chmod(0o700)
+            original_path.parent.chmod(0o700)
+            write_bytes_atomic(original_path, upload.data)
+            _save_field_record(storage_dir, record)
+        except Exception:
+            with suppress(Exception):
+                _delete_field_records(storage_dir, [photo_id])
+            with suppress(OSError):
+                shutil.rmtree(record_dir)
+            with suppress(OSError):
+                original_path.unlink()
+            with suppress(OSError):
+                original_path.parent.rmdir()
+            with suppress(OSError):
+                (private_root / "field_photos").rmdir()
+            raise
     return {"status": "ok", "photo": _summary(record)}
 
 
@@ -431,39 +418,17 @@ def update_field_photo_location(
     lon: Any,
     private_dir: Path | None = None,
 ) -> dict[str, Any]:
-    record_dir = _record_dir_for(photo_id, storage_dir)
-    record = _load_field_record(record_dir, _private_dir(private_dir))
-    lat_float, lon_float = _validated_lat_lon(lat, lon)
-    record["lat"] = lat_float
-    record["lon"] = lon_float
-    record["coordinate_source"] = "manual"
-    record["position_updated_at"] = _now_iso()
-    record["links"] = _links(lat_float, lon_float)
-    _save_field_record(storage_dir, record)
-    return {"status": "ok", "photo": _summary(record)}
-
-
-def _delete_loaded_field_photo(
-    photo_id: str,
-    storage_dir: Path,
-    *,
-    record_dir: Path,
-    private_root: Path,
-    record: dict[str, Any],
-) -> dict[str, Any]:
-    try:
-        private_rel = record.get("private_original_file")
-        original = safe_child(private_root, private_rel) if private_rel else None
-        if original and original.exists():
-            original.unlink()
-        if original:
-            remove_empty_private_photo_dir(private_root, photo_id, original)
-    except (FileNotFoundError, ValueError):
-        pass
-    if record_dir.exists():
-        shutil.rmtree(record_dir)
-    _delete_field_record(storage_dir, photo_id)
-    return {"status": "ok", "deleted": photo_id}
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        record_dir = _record_dir_for(photo_id, storage_dir)
+        record = _load_field_record(record_dir, _private_dir(private_dir))
+        lat_float, lon_float = _validated_lat_lon(lat, lon)
+        record["lat"] = lat_float
+        record["lon"] = lon_float
+        record["coordinate_source"] = "manual"
+        record["position_updated_at"] = _now_iso()
+        record["links"] = _links(lat_float, lon_float)
+        _save_field_record(storage_dir, record)
+        return {"status": "ok", "photo": _summary(record)}
 
 
 def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | None = None) -> dict[str, Any]:
@@ -471,13 +436,12 @@ def delete_field_photo(photo_id: str, storage_dir: Path, *, private_dir: Path | 
         record_dir = _record_dir_for(photo_id, storage_dir)
         private_root = _private_dir(private_dir)
         record = _load_field_record(record_dir, private_root)
-        return _delete_loaded_field_photo(
-            photo_id,
+        deleted = _delete_loaded_field_photos(
+            [(photo_id, record_dir, record)],
             storage_dir,
-            record_dir=record_dir,
             private_root=private_root,
-            record=record,
         )
+        return {"status": "ok", "deleted": deleted[0]}
 
 
 def field_photo_asset(
@@ -596,35 +560,33 @@ def submit_field_photos_by_owner(
 ) -> dict[str, Any]:
     normalize_photo_edit_token(edit_token)
     private_root = _private_dir(private_dir)
-    requested_ids: list[str] = []
-    for raw_photo_id in photo_ids:
-        photo_id = str(raw_photo_id or "").strip()
-        if photo_id and photo_id not in requested_ids:
-            requested_ids.append(_validate_photo_id(photo_id))
-    if not requested_ids:
-        raise ValueError("Wskaż zdjęcie do wysłania.")
+    requested_ids = validated_field_photo_ids(photo_ids, "Wskaż zdjęcie do wysłania.")
 
     photos: list[dict[str, Any]] = []
-    for photo_id in requested_ids:
-        record_dir = _record_dir_for(photo_id, storage_dir)
-        try:
-            record = _load_field_record(record_dir, private_root)
-        except FileNotFoundError:
-            continue
-        try:
-            _require_edit_token(record, edit_token)
-        except PermissionError:
-            continue
-        status = review_status(record)
-        if status == "draft":
-            record["public_review_status"] = "pending"
-            record["submitted_at"] = _now_iso()
-            record["reviewed_at"] = None
-            remove_public_derivatives(record, record_dir)
-            _save_field_record(storage_dir, record)
-            status = "pending"
-        if status == "pending":
-            photos.append(_summary(record))
+    with _FIELD_PHOTO_MUTATION_LOCK:
+        records_to_save: list[dict[str, Any]] = []
+        for photo_id in requested_ids:
+            record_dir = _record_dir_for(photo_id, storage_dir)
+            try:
+                record = _load_field_record(record_dir, private_root)
+            except FileNotFoundError:
+                continue
+            try:
+                _require_edit_token(record, edit_token)
+            except PermissionError:
+                continue
+            status = review_status(record)
+            if status == "draft":
+                record["public_review_status"] = "pending"
+                record["submitted_at"] = _now_iso()
+                record["reviewed_at"] = None
+                remove_public_derivatives(record, record_dir)
+                records_to_save.append(record)
+                status = "pending"
+            if status == "pending":
+                photos.append(_summary(record))
+        if records_to_save:
+            _save_field_records(storage_dir, records_to_save)
     if not photos:
         raise PermissionError("Nieprawidłowy token edycji zdjęcia albo zdjęcie nie jest szkicem.")
     return {"status": "ok", "photos": sorted(photos, key=lambda item: str(item.get("created_at") or ""), reverse=True)}

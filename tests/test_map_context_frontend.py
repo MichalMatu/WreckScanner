@@ -35,11 +35,15 @@ class MapContextFrontendContracts(unittest.TestCase):
             "ADDRESS_REVERSE_URL",
             "context.addressTitle",
             "context.addressSource",
+            "event.key === 'ContextMenu'",
+            "event.shiftKey && event.key === 'F10'",
+            "focusMapContextMenuItem(0)",
+            "event.key === 'ArrowDown'",
+            "returnFocus.focus({ preventScroll: true })",
         ):
             self.assertIn(expected, frontend)
         for retired in (
             'data-i18n="context.copyCoords"',
-            "button:not([hidden])')?.focus",
             "openMapSourcePanelFromContext",
             "context.changeBaseMap",
             "map-context-secondary",

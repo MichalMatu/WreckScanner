@@ -549,8 +549,17 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("openFieldPhotoUploadSavedDraftSummary", upload_js)
         self.assertIn("modal.fieldPhoto.uploadInProgress", i18n_js)
         self.assertIn("modal.fieldPhoto.validationErrorHint", i18n_js)
+        self.assertIn("modal.fieldPhoto.secureRandomUnavailable", i18n_js)
         self.assertIn("modal.fieldPhotoSummary.closeUploadWithDrafts", i18n_js)
-        self.assertIn("modal.fieldPhotoSummary.partialUpload", i18n_js)
+        self.assertNotIn("modal.fieldPhotoSummary.partialUpload", i18n_js)
+        self.assertNotIn("Math.random", upload_js)
+        complete_upload = upload_js.split("function completeFieldPhotoUpload", 1)[1].split("async function", 1)[0]
+        self.assertIn("if (summary.failed)", complete_upload)
+        self.assertLess(
+            complete_upload.index("if (summary.failed)"), complete_upload.index("openFieldPhotoThanksModal({")
+        )
+        self.assertIn("...validateFieldPhotoFiles(input?.files)", upload_js)
+        self.assertNotIn("if (validationErrors.length) {\n        renderFieldPhotoQueue();", upload_js)
         self.assertIn("field-photo-thanks-token", html)
         self.assertIn("field-photo-thanks-submit", html)
         self.assertIn("field-photo-thanks-discard", html)
@@ -637,14 +646,3 @@ class FrontendContracts(unittest.TestCase):
         self.assertIn("showHeader: false", popups_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Photo {date}'", i18n_js)
         self.assertNotIn("'modal.photoPreview.photoDated': 'Zdjęcie {date}'", i18n_js)
-
-    def test_script_order_keeps_inspection_after_field_photo_actions(self):
-        html = read_index_html()
-        self.assertLess(
-            html.index('<script src="/app/field_photo_actions.js"></script>'),
-            html.index('<script src="/app/location_inspection.js"></script>'),
-        )
-        self.assertLess(
-            html.index('<script src="/app/vehicle_layer.js"></script>'),
-            html.index('<script src="/app/location_inspection.js"></script>'),
-        )

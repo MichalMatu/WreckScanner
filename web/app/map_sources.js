@@ -33,6 +33,7 @@ const retryingTileMixin = {
         let settled = false;
         let retryTimer = null;
         let currentObjectUrl = '';
+        let currentRequestController = null;
         let stopped = false;
 
         tile.alt = '';
@@ -52,6 +53,8 @@ const retryingTileMixin = {
         const cleanup = () => {
             stopped = true;
             clearRetryTimer();
+            currentRequestController?.abort();
+            currentRequestController = null;
             if (currentObjectUrl) {
                 URL.revokeObjectURL(currentObjectUrl);
                 currentObjectUrl = '';
@@ -101,8 +104,15 @@ const retryingTileMixin = {
         };
         const loadTile = async attempt => {
             if (!shouldContinueRetrying(attempt)) return;
+            currentRequestController?.abort();
+            const requestController = new AbortController();
+            currentRequestController = requestController;
+            const timeoutId = window.setTimeout(() => requestController.abort(), 10000);
             try {
-                const response = await fetch(this.getTileUrl(coords), { cache: 'default' });
+                const response = await fetch(this.getTileUrl(coords), {
+                    cache: 'default',
+                    signal: requestController.signal,
+                });
                 const cacheStatus = response.headers.get('X-WMS-Cache') || '';
                 if (!response.ok || RETRYABLE_TILE_CACHE_STATUSES.has(cacheStatus)) {
                     showFallback();
@@ -112,8 +122,12 @@ const retryingTileMixin = {
                 const blob = await response.blob();
                 loadBlob(blob);
             } catch (_) {
+                if (stopped) return;
                 showFallback();
                 scheduleRetry(attempt);
+            } finally {
+                window.clearTimeout(timeoutId);
+                if (currentRequestController === requestController) currentRequestController = null;
             }
         };
 
@@ -268,6 +282,7 @@ function updateMapSourceUi() {
         range.min = 0;
         range.max = Math.max(0, visibleIndices.length - 1);
         range.value = mapSourceVisiblePosition(currentMapSourceIndex, visibleIndices);
+        range.setAttribute('aria-valuetext', source.label);
     }
     renderMapSourceTicks(visibleIndices);
     applyMapSourceSliderVisibility();

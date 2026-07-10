@@ -1,0 +1,16 @@
+[Unit]
+Description=Weekly encrypted WreckScanner backup
+ConditionPathExists=/home/test/Desktop/WreckScanner/.restic_password
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/test/Desktop/WreckScanner
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=45min
+ExecStart=/usr/bin/make backup-restic
+ExecStart=/usr/bin/make prune-restic
+ExecStart=/usr/bin/make check-restic

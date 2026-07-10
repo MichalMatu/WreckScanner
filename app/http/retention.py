@@ -9,6 +9,7 @@ from app.http import request_body as http_request_body
 from app.http import responses as http_responses
 from core import config as core_config
 from core.photo_retention import retire_private_originals
+from core.privacy_requests import purge_handled_privacy_request_content
 
 logger = logging.getLogger("wreckscanner.server")
 
@@ -52,6 +53,7 @@ def run(*, dry_run: bool, source: str) -> dict:
             private_photos_dir=core_config.PRIVATE_PHOTOS_DIR,
             dry_run=dry_run,
         )
+        report["privacy_requests"] = purge_handled_privacy_request_content(dry_run=dry_run)
         with _photo_retention_state_lock:
             _photo_retention_state.update(
                 {

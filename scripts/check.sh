@@ -14,22 +14,73 @@ else
     PYTHON_BIN="python"
 fi
 
+report_failure() {
+    local status="$1"
+    shift
+    local command
+    printf -v command '%q ' "$@"
+    printf '\nerror: command failed (%s): %s\n' "$status" "$command" >&2
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        command="${command//'%'/'%25'}"
+        command="${command//$'\r'/'%0D'}"
+        command="${command//$'\n'/'%0A'}"
+        printf '::error title=check.sh command failed::%s (exit %s)\n' "$command" "$status" >&2
+    fi
+    return "$status"
+}
+
 run() {
     printf '\n==> %s\n' "$*"
-    "$@"
+    if "$@"; then
+        return 0
+    else
+        local status=$?
+        report_failure "$status" "$@"
+    fi
+}
+
+run_with_failure_tail() {
+    local output_path
+    output_path="$(mktemp)"
+    printf '\n==> %s\n' "$*"
+    set +e
+    "$@" 2>&1 | tee "$output_path"
+    local status=${PIPESTATUS[0]}
+    set -e
+    if [[ "$status" -eq 0 ]]; then
+        rm -f "$output_path"
+        return 0
+    fi
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        local details
+        details="$(tail -n 80 "$output_path")"
+        details="${details//'%'/'%25'}"
+        details="${details//$'\r'/'%0D'}"
+        details="${details//$'\n'/'%0A'}"
+        printf '::error title=check.sh failure output::%s\n' "$details" >&2
+    fi
+    rm -f "$output_path"
+    report_failure "$status" "$@"
 }
 
 run_to_file() {
     local output_path="$1"
     shift
     printf '\n==> %s > %s\n' "$*" "$output_path"
-    "$@" > "$output_path"
+    if "$@" > "$output_path"; then
+        return 0
+    else
+        local status=$?
+        report_failure "$status" "$@"
+    fi
 }
 
 run "$PYTHON_BIN" -m compileall -q app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff check app core scripts tests server.py
 run "$PYTHON_BIN" -m ruff format --check app core scripts tests server.py
-run "$PYTHON_BIN" -m unittest discover -s tests
+run "$PYTHON_BIN" -m coverage erase
+run_with_failure_tail "$PYTHON_BIN" -m coverage run -m unittest discover -s tests
+run "$PYTHON_BIN" -m coverage report
 
 if [[ -f "package.json" ]]; then
     if ! command -v npm >/dev/null 2>&1; then
@@ -37,6 +88,7 @@ if [[ -f "package.json" ]]; then
         exit 1
     fi
     run npm run lint:web
+    run npm run test:web
 fi
 
 mkdir -p analiza

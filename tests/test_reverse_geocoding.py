@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import patch
 
@@ -71,6 +72,16 @@ class ReverseGeocodingTests(unittest.TestCase):
         self.assertEqual(result["source_label"], "PRG/GUGiK")
         self.assertLess(result["distance_m"], 40)
 
+    def test_parse_prg_address_features_rejects_entities(self):
+        xml = """<!DOCTYPE data [<!ENTITY xxe SYSTEM 'file:///etc/passwd'>]>
+        <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0"
+            xmlns:ms="http://mapserver.gis.umn.edu/mapserver">
+            <ms:prg-adresy><ms:miejscowosc>&xxe;</ms:miejscowosc></ms:prg-adresy>
+        </wfs:FeatureCollection>"""
+
+        with self.assertRaisesRegex(LookupError, "odczytać"):
+            parse_prg_address_features(xml, query_lat=51.0, query_lon=17.0)
+
     def test_prg_address_wfs_params_use_puwg1992_bbox(self):
         params = prg_address_wfs_params(51.08793078, 17.04468526, radius_m=160, count=50)
 
@@ -83,7 +94,7 @@ class ReverseGeocodingTests(unittest.TestCase):
 
     def test_lookup_nearest_address_uses_prg_first_and_caches_rounded_coordinates(self):
         class FakeResponse:
-            text = """
+            payload = """
             <wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0"
                 xmlns:ms="http://mapserver.gis.umn.edu/mapserver" xmlns:gml="http://www.opengis.net/gml/3.2">
                 <wfs:member>
@@ -98,8 +109,15 @@ class ReverseGeocodingTests(unittest.TestCase):
             </wfs:FeatureCollection>
             """
             encoding = "utf-8"
+            headers = {"Content-Type": "text/xml"}
 
             def raise_for_status(self):
+                return None
+
+            def iter_content(self, chunk_size=65536):
+                yield self.payload.encode("utf-8")
+
+            def close(self):
                 return None
 
         class FakeSession:
@@ -127,26 +145,41 @@ class ReverseGeocodingTests(unittest.TestCase):
 
     def test_lookup_nearest_address_falls_back_to_nominatim_when_prg_has_no_match(self):
         class FakeResponse:
-            text = "<wfs:FeatureCollection />"
-            encoding = "utf-8"
+            def __init__(self, *, nominatim=False):
+                self.encoding = "utf-8"
+                if nominatim:
+                    self.headers = {"Content-Type": "application/json"}
+                    self.payload = json.dumps(
+                        {
+                            "lat": "51.087930",
+                            "lon": "17.044685",
+                            "display_name": "Komuny Paryskiej 73, Wrocław",
+                            "address": {
+                                "road": "Komuny Paryskiej",
+                                "house_number": "73",
+                                "city": "Wrocław",
+                            },
+                        }
+                    ).encode("utf-8")
+                else:
+                    self.headers = {"Content-Type": "text/xml"}
+                    self.payload = b"<wfs:FeatureCollection />"
 
             def raise_for_status(self):
                 return None
 
-            def json(self):
-                return {
-                    "lat": "51.087930",
-                    "lon": "17.044685",
-                    "display_name": "Komuny Paryskiej 73, Wrocław",
-                    "address": {"road": "Komuny Paryskiej", "house_number": "73", "city": "Wrocław"},
-                }
+            def iter_content(self, chunk_size=65536):
+                yield self.payload
+
+            def close(self):
+                return None
 
         class FakeSession:
             calls = 0
 
             def get(self, *args, **kwargs):
                 self.calls += 1
-                return FakeResponse()
+                return FakeResponse(nominatim="nominatim" in str(args[0]))
 
         session = FakeSession()
         public_data._lookup_prg_address_cached.cache_clear()
@@ -161,6 +194,20 @@ class ReverseGeocodingTests(unittest.TestCase):
         finally:
             public_data._lookup_prg_address_cached.cache_clear()
             public_data._lookup_nominatim_address_cached.cache_clear()
+
+    def test_upstream_text_rejects_oversized_response_before_parsing(self):
+        class FakeResponse:
+            headers = {"Content-Type": "text/xml", "Content-Length": "101"}
+            encoding = "utf-8"
+
+            def raise_for_status(self):
+                return None
+
+            def iter_content(self, chunk_size=65536):
+                raise AssertionError("oversized response should be rejected from its header")
+
+        with self.assertRaisesRegex(ValueError, "rozmiar"):
+            public_data._upstream_text(FakeResponse(), max_bytes=100, allowed_content_types={"text/xml"})
 
 
 if __name__ == "__main__":

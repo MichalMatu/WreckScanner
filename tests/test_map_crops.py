@@ -42,20 +42,28 @@ class FakeResponse:
     def __init__(self, content: bytes, status_code: int = 200):
         self.content = content
         self.status_code = status_code
+        self.headers = {"Content-Type": "image/png", "Content-Length": str(len(content))}
+
+    def iter_content(self, chunk_size=65536):
+        for offset in range(0, len(self.content), chunk_size):
+            yield self.content[offset : offset + chunk_size]
+
+    def close(self):
+        return None
 
 
 class FakeSession:
     def __init__(self):
         self.calls = []
 
-    def get(self, url, *, params, timeout):
+    def get(self, url, *, params, timeout, stream):
         self.calls.append((url, params, timeout))
         year = url.split("OGC_ortofoto_", 1)[1].split("/", 1)[0]
         return FakeResponse(png_bytes((20, 40, 80) if year == "2024" else (220, 230, 240)))
 
 
 class LowContrastSession:
-    def get(self, url, *, params, timeout):
+    def get(self, url, *, params, timeout, stream):
         return FakeResponse(low_contrast_png_bytes())
 
 
@@ -63,7 +71,7 @@ class FlakySession:
     def __init__(self):
         self.calls = []
 
-    def get(self, url, *, params, timeout):
+    def get(self, url, *, params, timeout, stream):
         year = url.split("OGC_ortofoto_", 1)[1].split("/", 1)[0]
         self.calls.append(year)
         if self.calls.count(year) == 1:
@@ -107,6 +115,16 @@ class MapCropTests(unittest.TestCase):
         self.assertEqual(metadata["requested_years"], [2024])
         self.assertEqual(metadata["missing_years"], [])
         sleep.assert_called_once()
+
+    def test_fetch_location_crops_rejects_oversized_upstream_response(self):
+        class OversizedSession:
+            def get(self, url, *, params, timeout, stream):
+                response = FakeResponse(b"x")
+                response.headers["Content-Length"] = str(13 * 1024 * 1024)
+                return response
+
+        with self.assertRaisesRegex(FileNotFoundError, "ortofotomap"):
+            fetch_location_crops(51.1, 17.2, crop_m=7.5, years=(2024,), session=OversizedSession())
 
     def test_save_location_crops_writes_only_case_evidence_images(self):
         session = FakeSession()

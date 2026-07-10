@@ -44,6 +44,7 @@ function drawPhotoReviewCanvas() {
     };
     photoReviewRedactions.forEach((redaction, index) => drawRedaction(redaction, false, index));
     if (photoReviewDraftRect) drawRedaction(photoReviewDraftRect, true);
+    if (typeof updatePhotoReviewCanvasAccessibility === 'function') updatePhotoReviewCanvasAccessibility();
 }
 
 const PHOTO_REVIEW_HANDLE_SIZE_PX = 14;
@@ -255,6 +256,40 @@ function moveRedaction(redaction, dx, dy) {
     };
 }
 
+function scaleRedaction(redaction, amount) {
+    const points = Array.isArray(redaction?.points) ? redaction.points : [];
+    if (points.length < 3) return redaction;
+    const center = redactionCenter(redaction);
+    const factor = Math.max(0.2, 1 + amount);
+    return {
+        points: points.map(point => ({
+            x: Number(clampUnit(center.x + (point.x - center.x) * factor).toFixed(6)),
+            y: Number(clampUnit(center.y + (point.y - center.y) * factor).toFixed(6)),
+        })),
+    };
+}
+
+function photoReviewCanvasText(key, fallback, params = null) {
+    if (typeof t !== 'function') return fallback;
+    const translated = t(key, params || undefined);
+    return translated && translated !== key ? translated : fallback;
+}
+
+function updatePhotoReviewCanvasAccessibility() {
+    const canvas = document.getElementById('photo-review-canvas');
+    const status = document.getElementById('photo-review-canvas-status');
+    if (!canvas) return;
+    const count = photoReviewRedactions.length;
+    const selected = activePhotoReviewRedactionIndex >= 0 ? activePhotoReviewRedactionIndex + 1 : 0;
+    const label = photoReviewCanvasText(
+        'modal.photoReview.canvasState',
+        `Anonimizacja zdjęcia. Obszary: ${count}. Wybrany: ${selected || 'brak'}.`,
+        { count, selected: selected || '-' },
+    );
+    canvas.setAttribute('aria-label', label);
+    if (status) status.textContent = label;
+}
+
 function undoPhotoRedaction() {
     if (!photoReviewRedactions.length) return;
     photoReviewRedactions.pop();
@@ -289,7 +324,72 @@ function rotatePhotoRedaction(degrees) {
 (() => {
     const canvas = document.getElementById('photo-review-canvas');
     if (!canvas) return;
+    canvas.tabIndex = 0;
+    canvas.setAttribute('role', 'application');
+    canvas.setAttribute('aria-describedby', 'photo-review-canvas-help');
+    const help = document.createElement('p');
+    help.id = 'photo-review-canvas-help';
+    help.className = 'visually-hidden';
+    help.textContent = photoReviewCanvasText(
+        'modal.photoReview.canvasHelp',
+        'Enter dodaje obszar. Strzałki przesuwają, Control i strzałki zmieniają rozmiar, Delete usuwa, Page Up i Page Down wybierają obszar.',
+    );
+    const accessibilityStatus = document.createElement('p');
+    accessibilityStatus.id = 'photo-review-canvas-status';
+    accessibilityStatus.className = 'visually-hidden';
+    accessibilityStatus.setAttribute('role', 'status');
+    accessibilityStatus.setAttribute('aria-live', 'polite');
+    canvas.after(help, accessibilityStatus);
+    updatePhotoReviewCanvasAccessibility();
     let dragState = null;
+
+    canvas.addEventListener('keydown', event => {
+        if (!photoReviewImage) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            if (photoReviewRedactions.length >= 100) return;
+            const redaction = rectToRedaction(0.35, 0.4, 0.3, 0.2);
+            if (!redaction) return;
+            photoReviewRedactions.push(redaction);
+            activePhotoReviewRedactionIndex = photoReviewRedactions.length - 1;
+            drawPhotoReviewCanvas();
+            return;
+        }
+        if (event.key === 'PageUp' || event.key === 'PageDown') {
+            if (!photoReviewRedactions.length) return;
+            event.preventDefault();
+            const delta = event.key === 'PageDown' ? 1 : -1;
+            activePhotoReviewRedactionIndex = (
+                activePhotoReviewRedactionIndex + delta + photoReviewRedactions.length
+            ) % photoReviewRedactions.length;
+            drawPhotoReviewCanvas();
+            return;
+        }
+        if ((event.key === 'Delete' || event.key === 'Backspace') && activePhotoReviewRedactionIndex >= 0) {
+            event.preventDefault();
+            photoReviewRedactions.splice(activePhotoReviewRedactionIndex, 1);
+            activePhotoReviewRedactionIndex = Math.min(
+                activePhotoReviewRedactionIndex,
+                photoReviewRedactions.length - 1,
+            );
+            drawPhotoReviewCanvas();
+            return;
+        }
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        if (activePhotoReviewRedactionIndex < 0) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 0.03 : 0.01;
+        const active = photoReviewRedactions[activePhotoReviewRedactionIndex];
+        if (event.ctrlKey || event.metaKey) {
+            const grow = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+            photoReviewRedactions[activePhotoReviewRedactionIndex] = scaleRedaction(active, grow ? step : -step);
+        } else {
+            const dx = event.key === 'ArrowLeft' ? -step : (event.key === 'ArrowRight' ? step : 0);
+            const dy = event.key === 'ArrowUp' ? -step : (event.key === 'ArrowDown' ? step : 0);
+            photoReviewRedactions[activePhotoReviewRedactionIndex] = moveRedaction(active, dx, dy);
+        }
+        drawPhotoReviewCanvas();
+    });
 
     const updateHoverState = event => {
         if (!photoReviewImage) return;

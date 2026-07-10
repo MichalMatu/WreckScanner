@@ -1,6 +1,9 @@
 import unittest
+from pathlib import Path
 
 from app.http import routes
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
 
 
 class HttpRouteParsingTests(unittest.TestCase):
@@ -28,6 +31,18 @@ class HttpRouteParsingTests(unittest.TestCase):
         self.assertEqual(routes.field_photo_owner_original_route("/api/field-photos/photo-1/owner-original"), "photo-1")
         self.assertEqual(routes.field_photo_owner_review_route("/api/field-photos/photo-1/owner-review"), "photo-1")
         self.assertEqual(routes.admin_privacy_request_route("/api/admin/privacy-requests/request-1"), "request-1")
+
+    def test_frontend_uses_only_canonical_admin_photo_delete_route(self):
+        actions_js = (ROOT_DIR / "web" / "app" / "field_photo_actions.js").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "apiDeleteJson(`${ADMIN_PHOTOS_URL}/field/${encodeURIComponent(id)}`)",
+            actions_js,
+        )
+        self.assertNotIn(
+            "apiDeleteJson(`${FIELD_PHOTOS_URL}/${encodeURIComponent(id)}`)",
+            actions_js,
+        )
 
 
 if __name__ == "__main__":

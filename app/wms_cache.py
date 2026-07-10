@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import threading
 import time
 from pathlib import Path
@@ -69,6 +70,10 @@ def write_tile_cache(cache_path: Path, data: bytes) -> None:
         return
     try:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
+        if shutil.disk_usage(cache_path.parent).free < config.WMS_TILE_CACHE_MIN_FREE_BYTES:
+            cleanup_tile_cache(force=True)
+        if shutil.disk_usage(cache_path.parent).free < config.WMS_TILE_CACHE_MIN_FREE_BYTES:
+            return
         tmp_path = cache_path.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp")
         tmp_path.write_bytes(data)
         os.replace(tmp_path, cache_path)
@@ -104,12 +109,18 @@ def cleanup_tile_cache(force: bool = False) -> None:
                 continue
             total += stat.st_size
             entries.append((stat.st_atime, stat.st_size, path))
-        if total <= config.WMS_TILE_CACHE_MAX_BYTES:
+        try:
+            free_bytes = shutil.disk_usage(config.WMS_TILE_CACHE_DIR).free
+        except OSError:
+            free_bytes = config.WMS_TILE_CACHE_MIN_FREE_BYTES
+        free_deficit = max(0, config.WMS_TILE_CACHE_MIN_FREE_BYTES - free_bytes)
+        target_total = min(config.WMS_TILE_CACHE_MAX_BYTES, max(0, total - free_deficit))
+        if total <= target_total:
             return
         entries.sort()
         removed = 0
         for _, size, path in entries:
-            if total <= config.WMS_TILE_CACHE_MAX_BYTES:
+            if total <= target_total:
                 break
             try:
                 path.unlink()
@@ -140,4 +151,5 @@ def tile_cache_report() -> dict:
         "total_bytes": total,
         "total_gb": round(total / BYTES_PER_GIB, 2),
         "max_gb": round(config.WMS_TILE_CACHE_MAX_BYTES / BYTES_PER_GIB, 2),
+        "min_free_gb": round(config.WMS_TILE_CACHE_MIN_FREE_BYTES / BYTES_PER_GIB, 2),
     }

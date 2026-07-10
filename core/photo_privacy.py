@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -94,6 +95,8 @@ def _clamped_point(raw_point: Any) -> dict[str, float]:
         y = float(raw_point.get("y"))
     except (TypeError, ValueError) as exc:
         raise ValueError("Nieprawidłowe współrzędne punktu redakcji.") from exc
+    if not math.isfinite(x) or not math.isfinite(y):
+        raise ValueError("Nieprawidłowe współrzędne punktu redakcji.")
     return {
         "x": round(min(max(x, 0.0), 1.0), 6),
         "y": round(min(max(y, 0.0), 1.0), 6),
@@ -116,6 +119,8 @@ def _rect_to_points(item: dict[str, Any]) -> list[dict[str, float]]:
         height = float(item.get("height"))
     except (TypeError, ValueError) as exc:
         raise ValueError("Nieprawidłowe współrzędne redakcji.") from exc
+    if not all(math.isfinite(value) for value in (x, y, width, height)):
+        raise ValueError("Nieprawidłowe współrzędne redakcji.")
     x = min(max(x, 0.0), 1.0)
     y = min(max(y, 0.0), 1.0)
     width = min(max(width, 0.0), 1.0 - x)
@@ -133,12 +138,16 @@ def _rect_to_points(item: dict[str, Any]) -> list[dict[str, float]]:
 def normalize_redactions(raw_redactions: Any) -> list[dict[str, list[dict[str, float]]]]:
     if not isinstance(raw_redactions, list):
         raise ValueError("Redakcje muszą być listą obszarów.")
+    if len(raw_redactions) > config.MAX_PHOTO_REDACTIONS:
+        raise ValueError(f"Można zapisać maksymalnie {config.MAX_PHOTO_REDACTIONS} obszarów anonimizacji.")
     normalized: list[dict[str, list[dict[str, float]]]] = []
     for item in raw_redactions:
         if not isinstance(item, dict):
             raise ValueError("Każda redakcja musi być obiektem.")
         raw_points = item.get("points")
         if isinstance(raw_points, list):
+            if len(raw_points) > config.MAX_REDACTION_POINTS:
+                raise ValueError(f"Obszar anonimizacji może mieć maksymalnie {config.MAX_REDACTION_POINTS} punktów.")
             points = [_clamped_point(point) for point in raw_points]
         else:
             points = _rect_to_points(item)

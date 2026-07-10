@@ -85,7 +85,9 @@ def parse_args() -> argparse.Namespace:
     zip_parser.add_argument("--output", type=Path, help="Dokładna ścieżka pliku ZIP do utworzenia.")
     zip_parser.add_argument("--diagnostics-output", type=Path, default=DEFAULT_DIAGNOSTICS_OUTPUT)
     zip_parser.add_argument(
-        "--without-secrets", action="store_true", help="Nie dołączaj .admin_password i .restic_password."
+        "--include-secrets",
+        action="store_true",
+        help="Jawnie dołącz .admin_password i .restic_password do niezaszyfrowanego ZIP.",
     )
     zip_parser.add_argument("--no-image-check", action="store_true", help="Nie otwieraj obrazów podczas diagnostyki.")
     zip_parser.add_argument(
@@ -94,6 +96,11 @@ def parse_args() -> argparse.Namespace:
 
     restore_parser = subparsers.add_parser("restore-zip", parents=[root_common], help="Odtwórz dane z ZIP snapshotu.")
     restore_parser.add_argument("--archive", type=Path, required=True, help="Ścieżka do archiwum ZIP.")
+    restore_parser.add_argument(
+        "--restore-secrets",
+        action="store_true",
+        help="Jawnie odtwórz .admin_password i .restic_password zawarte w ZIP.",
+    )
 
     list_parser = subparsers.add_parser("list-zips", parents=[root_common], help="Pokaż lokalne snapshoty ZIP.")
     list_parser.add_argument("--output-dir", type=Path, default=DEFAULT_ZIP_BACKUP_DIR)
@@ -149,7 +156,7 @@ def _run_zip_backup(args: argparse.Namespace) -> int:
         output_dir=args.output_dir,
         output=args.output,
         diagnostics_output=args.diagnostics_output,
-        include_secrets=not args.without_secrets,
+        include_secrets=args.include_secrets,
         strict=args.strict,
         check_images=not args.no_image_check,
     )
@@ -170,7 +177,11 @@ def _run_zip_backup(args: argparse.Namespace) -> int:
 
 
 def _run_zip_restore(args: argparse.Namespace) -> int:
-    result = restore_zip_backup(root_dir=args.root_dir, archive_path=args.archive)
+    result = restore_zip_backup(
+        root_dir=args.root_dir,
+        archive_path=args.archive,
+        restore_secrets=args.restore_secrets,
+    )
     print(result.message)
     print(f"Archiwum ZIP: {result.archive_path}")
     if result.safety_path:

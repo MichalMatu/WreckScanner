@@ -3,28 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from core.field_photo_deletion import delete_loaded_field_photos
 from core.field_photos import (
     _FIELD_PHOTO_MUTATION_LOCK,
-    _delete_loaded_field_photo,
     _load_field_record,
     _private_dir,
     _record_dir_for,
     _require_edit_token,
-    _validate_photo_id,
+    validated_field_photo_ids,
 )
 from core.photo_privacy import review_status
 from core.photo_tokens import normalize_photo_edit_token
 
 
 def _dedup_photo_ids(photo_ids: list[Any], empty_message: str) -> list[str]:
-    requested_ids: list[str] = []
-    for raw_photo_id in photo_ids:
-        photo_id = str(raw_photo_id or "").strip()
-        if photo_id and photo_id not in requested_ids:
-            requested_ids.append(_validate_photo_id(photo_id))
-    if not requested_ids:
-        raise ValueError(empty_message)
-    return requested_ids
+    return validated_field_photo_ids(photo_ids, empty_message)
 
 
 def delete_field_photos_by_owner(
@@ -49,17 +42,11 @@ def delete_field_photos_by_owner(
                 raise PermissionError("Możesz usunąć tylko szkic albo zdjęcie oczekujące na weryfikację.")
             deletion_plan.append((photo_id, record_dir, record))
 
-        for photo_id, record_dir, record in deletion_plan:
-            result = _delete_loaded_field_photo(
-                photo_id,
-                storage_dir,
-                record_dir=record_dir,
-                private_root=private_root,
-                record=record,
-            )
-            deleted_id = str(result.get("deleted") or "")
-            if deleted_id:
-                deleted.append(deleted_id)
+        deleted = delete_loaded_field_photos(
+            deletion_plan,
+            storage_dir,
+            private_root=private_root,
+        )
     return {"status": "ok", "deleted": deleted}
 
 
@@ -90,15 +77,9 @@ def discard_field_photo_drafts_by_owner(
         if not deletion_plan:
             raise PermissionError("Nieprawidłowy token edycji zdjęcia albo szkic został już wysłany.")
 
-        for photo_id, record_dir, record in deletion_plan:
-            result = _delete_loaded_field_photo(
-                photo_id,
-                storage_dir,
-                record_dir=record_dir,
-                private_root=private_root,
-                record=record,
-            )
-            deleted_id = str(result.get("deleted") or "")
-            if deleted_id:
-                deleted.append(deleted_id)
+        deleted = delete_loaded_field_photos(
+            deletion_plan,
+            storage_dir,
+            private_root=private_root,
+        )
     return {"status": "ok", "deleted": deleted}

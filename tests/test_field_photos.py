@@ -138,7 +138,11 @@ class FieldPhotoTests(unittest.TestCase):
             self.assertEqual(record["public_review_status"], "pending")
             self.assertEqual(record["private_original_file"], f"field_photos/{photo['id']}/original.png")
             self.assertNotIn("original_file", record)
-            self.assertTrue((private_dir / record["private_original_file"]).exists())
+            private_original = private_dir / record["private_original_file"]
+            self.assertTrue(private_original.exists())
+            self.assertEqual(private_dir.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(private_original.parent.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(private_original.stat().st_mode & 0o777, 0o600)
             self.assertEqual(record["issue_type"], "vehicle")
             self.assertEqual(record["vehicle_insurance_status"], "unknown")
             self.assertIsNone(record.get("vehicle_insurance_checked_at"))
@@ -275,7 +279,7 @@ class FieldPhotoTests(unittest.TestCase):
                 discard_field_photo_drafts_by_owner([pending_photo_id], token, storage_dir, private_dir=private_dir)
             self.assertTrue(db_record_exists(storage_dir, pending_photo_id))
 
-    def test_owner_review_saves_redactions_as_pending_for_admin_decision(self):
+    def test_final_admin_decision_revokes_owner_edit_credentials(self):
         with TemporaryDirectory() as tmp:
             private_dir = Path(tmp) / "private"
             token = "owner-token-123"
@@ -290,20 +294,21 @@ class FieldPhotoTests(unittest.TestCase):
             photo_id = result["photo"]["id"]
             review_field_photo(photo_id, Path(tmp), status="approved", redactions=[], private_dir=private_dir)
 
-            owner_result = review_field_photo_by_owner(
-                photo_id,
-                token,
-                Path(tmp),
-                redactions=[{"x": 0, "y": 0, "width": 0.5, "height": 0.5}],
-                private_dir=private_dir,
-            )
+            with self.assertRaises(PermissionError):
+                review_field_photo_by_owner(
+                    photo_id,
+                    token,
+                    Path(tmp),
+                    redactions=[{"x": 0, "y": 0, "width": 0.5, "height": 0.5}],
+                    private_dir=private_dir,
+                )
             record = db_record(Path(tmp), photo_id)
 
-            self.assertEqual(owner_result["photo"]["public_review_status"], "pending")
-            self.assertEqual(record["public_review_status"], "pending")
-            self.assertEqual(len(record["redactions"][0]["points"]), 4)
-            self.assertTrue(record["owner_redactions_updated_at"])
-            self.assertFalse((Path(tmp) / photo_id / "public.jpg").exists())
+            self.assertEqual(record["public_review_status"], "approved")
+            self.assertIsNone(record["submission_owner"])
+            self.assertIsNone(record["edit_token_salt"])
+            self.assertIsNone(record["edit_token_hash"])
+            self.assertIsNone(record["edit_token_created_at"])
 
     def test_review_field_photo_generates_redacted_public_copy_without_exif(self):
         with TemporaryDirectory() as tmp:
@@ -608,7 +613,7 @@ class FieldPhotoTests(unittest.TestCase):
                     private_dir=Path(tmp) / "private",
                 )
 
-            with self.assertRaisesRegex(ValueError, "obsługiwanym zdjęciem"):
+            with self.assertRaisesRegex(ValueError, "uszkodzonym"):
                 save_field_photo(
                     upload(b"not an image", "bad.jpg"),
                     Path(tmp),

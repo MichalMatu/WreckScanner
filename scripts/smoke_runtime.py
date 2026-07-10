@@ -6,6 +6,7 @@ import json
 import sys
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -25,15 +26,30 @@ class SmokeResponse:
         return self.body.decode("utf-8", errors="replace")
 
 
+def validated_base_url(base_url: str) -> str:
+    text = str(base_url or "").strip().rstrip("/")
+    try:
+        parsed = urlsplit(text)
+        _ = parsed.port
+    except ValueError as exc:
+        raise SmokeFailure("Base URL smoke testu jest nieprawidlowy.") from exc
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise SmokeFailure("Base URL smoke testu musi uzywac schematu http albo https i zawierac host.")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise SmokeFailure("Base URL smoke testu nie moze zawierac danych logowania, query ani fragmentu.")
+    return text
+
+
 def smoke_url(base_url: str, path: str) -> str:
-    return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
+    return f"{validated_base_url(base_url)}/{path.lstrip('/')}"
 
 
 def request(base_url: str, path: str, *, timeout: float = 5.0, method: str = "GET") -> SmokeResponse:
     url = smoke_url(base_url, path)
     req = Request(url, method=method, headers={"User-Agent": "WreckScannerRuntimeSmoke/1"})
     try:
-        with urlopen(req, timeout=timeout) as response:
+        # smoke_url accepts only explicit HTTP(S) URLs with a host, so other urllib schemes cannot reach this call.
+        with urlopen(req, timeout=timeout) as response:  # nosec B310
             return SmokeResponse(url=url, status=response.status, headers=response.headers, body=response.read())
     except HTTPError as exc:
         return SmokeResponse(url=url, status=exc.code, headers=exc.headers, body=exc.read())
@@ -56,6 +72,9 @@ def expect_header(response: SmokeResponse, key: str, value: str, label: str) -> 
 
 
 def expect_security_headers(response: SmokeResponse, label: str) -> None:
+    content_security_policy = response.headers.get("Content-Security-Policy", "")
+    expect("object-src 'none'" in content_security_policy, f"{label}: brak restrykcyjnego CSP.")
+    expect_header(response, "Permissions-Policy", "camera=(), geolocation=(), microphone=()", label)
     expect_header(response, "X-Content-Type-Options", "nosniff", label)
     expect_header(response, "Referrer-Policy", "same-origin", label)
     expect_header(response, "X-Frame-Options", "SAMEORIGIN", label)
@@ -102,13 +121,18 @@ def check_static_asset(base_url: str, path: str, timeout: float) -> str:
 
 
 def check_health(base_url: str, timeout: float) -> str:
-    response = request(base_url, "/api/health", timeout=timeout)
-    expect_status(response, 200, "health")
-    expect_security_headers(response, "health")
-    payload = expect_json(response, "health")
-    expect(payload.get("status") in {"ok", "degraded"}, f"health: nieprawidłowy status {payload.get('status')!r}.")
-    for key in ("wms_tile_cache",):
-        expect(isinstance(payload.get(key), dict), f"health: pole {key!r} musi być obiektem.")
+    live_response = request(base_url, "/api/health/live", timeout=timeout)
+    expect_status(live_response, 200, "health live")
+    expect_security_headers(live_response, "health live")
+    live_payload = expect_json(live_response, "health live")
+    expect(live_payload.get("status") == "ok", "health live: status JSON musi być 'ok'.")
+
+    ready_response = request(base_url, "/api/health/ready", timeout=timeout)
+    expect_status(ready_response, 200, "health ready")
+    expect_security_headers(ready_response, "health ready")
+    ready_payload = expect_json(ready_response, "health ready")
+    expect(ready_payload.get("status") == "ok", "health ready: status JSON musi być 'ok'.")
+    expect(isinstance(ready_payload.get("checks"), dict), "health ready: pole 'checks' musi być obiektem.")
     return "health"
 
 

@@ -114,6 +114,18 @@ class HttpAccessContractTests(unittest.TestCase):
         self.assertEqual(kwargs["additional_bytes"], 12)
         self.assertEqual(kwargs["additional_items"], 2)
 
+    def test_submission_owner_uses_trusted_proxy_client_identity(self):
+        handler = FakeHandler()
+        handler.headers["CF-Connecting-IP"] = "203.0.113.9"
+
+        with patch.object(access, "client_key", return_value="203.0.113.9"):
+            first_owner = access.submission_owner(handler)
+        with patch.object(access, "client_key", return_value="203.0.113.10"):
+            second_owner = access.submission_owner(handler)
+
+        self.assertTrue(first_owner.startswith("public:"))
+        self.assertNotEqual(first_owner, second_owner)
+
 
 if __name__ == "__main__":
     unittest.main()

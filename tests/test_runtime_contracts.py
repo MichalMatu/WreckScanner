@@ -55,9 +55,9 @@ class RuntimeEncodingContractTests(unittest.TestCase):
             "stop:",
             "restart:",
             "wait-server:",
-            "autostart:",
-            "autostart-start:",
-            "autostart-stop:",
+            "require-local-watcher:",
+            "autostart-start: require-local-watcher",
+            "autostart-stop: require-local-watcher",
             "autostart-status:",
             "serwerstart:",
             "serwerstop:",
@@ -74,22 +74,53 @@ class RuntimeEncodingContractTests(unittest.TestCase):
             makefile,
         )
         self.assertIn("pgrep -af '$(SERVER_PATTERN)'", makefile)
-        self.assertIn("make nie uruchamia drugiej kopii serwera", makefile)
+        self.assertIn('kill -0 "$$pid"', makefile)
+        self.assertIn("nie uruchamia procesu", makefile)
         self.assertIn("AUTOSTART_DISABLED_FILE ?= .dev/server.autostart.disabled", makefile)
-        self.assertIn('nohup "$(PYTHON)" "$(CURDIR)/server.py"', makefile)
-        self.assertIn("$(MAKE) wait-server", makefile)
-        self.assertIn("skip: npm/eslint niedostepne, pomijam lint JS", makefile)
+        self.assertIn("SYSTEMD_UNIT ?= wreckscanner.service", makefile)
+        self.assertIn("SYSTEMD_WORKING_DIRECTORY :=", makefile)
+        self.assertIn("SYSTEMD_MANAGED ?=", makefile)
+        self.assertIn("journalctl", makefile.lower())
+        self.assertIn('exit "$$status"', makefile)
+        self.assertIn("trap finish EXIT", makefile)
+        self.assertNotIn("nohup", makefile)
+        self.assertNotIn("SERVER_PID_FILE", makefile)
+        self.assertNotIn("\nautostart:\n", makefile)
+        self.assertNotIn("\nbackup-db:", makefile)
+        self.assertNotIn("\nrestore-db:", makefile)
+        self.assertIn("Reczna instancja nie zostala uruchomiona", makefile)
+        self.assertIn("$(SUBMAKE) wait-server", makefile)
+        self.assertIn("error: npm jest wymagany do lintowania calego frontendu", makefile)
+        self.assertIn("npm run lint:web", makefile)
+        self.assertNotIn("eslint web/*.js", makefile)
+        self.assertIn("SERVER_LIVE_URL := $(SERVER_URL)/api/health/live", makefile)
+        self.assertIn("SERVER_READY_URL := $(SERVER_URL)/api/health/ready", makefile)
         self.assertIn("./scripts/check.sh", makefile)
         self.assertIn('scripts/smoke_runtime.py --base-url "$(SERVER_URL)"', makefile)
 
     def test_github_check_workflow_installs_frontend_dependencies(self):
         workflow = (ROOT_DIR / ".github" / "workflows" / "check.yml").read_text(encoding="utf-8")
 
-        self.assertIn("uses: actions/setup-node@v4", workflow)
+        self.assertIn("uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4", workflow)
         self.assertIn('node-version: "22"', workflow)
         self.assertIn('cache: "npm"', workflow)
         self.assertIn("run: npm ci", workflow)
         self.assertLess(workflow.index("run: npm ci"), workflow.index("run: scripts/check.sh"))
+
+    def test_e2e_captures_required_viewports_languages_and_zoom(self):
+        script = (ROOT_DIR / "scripts" / "e2e_field_photo_report.py").read_text(encoding="utf-8")
+
+        for viewport, size, language in (
+            ("desktop-pl", "size=(1366, 900)", 'language="pl"'),
+            ("tablet-en", "size=(768, 1024)", 'language="en"'),
+            ("mobile-pl", "size=(390, 844)", 'language="pl"'),
+        ):
+            block = script.split(f'viewport="{viewport}"', 1)[1][:600]
+            self.assertIn(size, block)
+            self.assertIn(language, block)
+        zoom_block = script.split('viewport="zoom-200-en"', 1)[1][:600]
+        self.assertIn("size=(683, 450)", zoom_block)
+        self.assertIn("device_scale_factor=2.0", zoom_block)
 
     def test_server_entrypoint_respects_autostart_disable_file(self):
         entrypoint = (ROOT_DIR / "server.py").read_text(encoding="utf-8")

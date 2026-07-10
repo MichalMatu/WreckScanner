@@ -29,6 +29,8 @@ def json_response(payload: dict) -> FakeResponse:
         200,
         {
             "Content-Type": "application/json",
+            "Content-Security-Policy": "default-src 'self'; object-src 'none'",
+            "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
             "X-Content-Type-Options": "nosniff",
             "Referrer-Policy": "same-origin",
             "X-Frame-Options": "SAMEORIGIN",
@@ -40,6 +42,8 @@ def json_response(payload: dict) -> FakeResponse:
 def text_response(content_type: str, body: str, *, cache_control: str | None = None) -> FakeResponse:
     headers = {
         "Content-Type": content_type,
+        "Content-Security-Policy": "default-src 'self'; object-src 'none'",
+        "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "same-origin",
         "X-Frame-Options": "SAMEORIGIN",
@@ -77,12 +81,13 @@ class RuntimeSmokeTests(unittest.TestCase):
             "/app/settings.js",
         }:
             return text_response("text/plain", "asset", cache_control="no-store")
-        if path == "/api/health":
+        if path == "/api/health/live":
+            return json_response({"status": "ok"})
+        if path == "/api/health/ready":
             return json_response(
                 {
                     "status": "ok",
-                    "pressure": {"overloaded": False},
-                    "wms_tile_cache": {"count": 1},
+                    "checks": {"database": {"quick_check": ["ok"]}, "storage": {"free_bytes": 1}},
                 }
             )
         if path == "/api/field-photos":
@@ -94,6 +99,8 @@ class RuntimeSmokeTests(unittest.TestCase):
                 "Not found",
                 {
                     "Content-Type": "application/json",
+                    "Content-Security-Policy": "default-src 'self'; object-src 'none'",
+                    "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
                     "X-Content-Type-Options": "nosniff",
                     "Referrer-Policy": "same-origin",
                     "X-Frame-Options": "SAMEORIGIN",
@@ -136,6 +143,27 @@ class RuntimeSmokeTests(unittest.TestCase):
             self.assertRaisesRegex(smoke_runtime.SmokeFailure, "panel-add-field-photo"),
         ):
             smoke_runtime.run_smoke("http://example.test", timeout=1)
+
+    def test_runtime_smoke_rejects_non_http_and_ambiguous_base_urls(self):
+        invalid_urls = (
+            "file:///tmp/index.html",
+            "ftp://example.test",
+            "localhost:8001",
+            "http:///missing-host",
+            "http://user:secret@example.test",
+            "https://example.test?target=other",
+            "https://example.test#fragment",
+            "http://example.test:invalid",
+        )
+
+        for base_url in invalid_urls:
+            with self.subTest(base_url=base_url), self.assertRaises(smoke_runtime.SmokeFailure):
+                smoke_runtime.request(base_url, "/")
+
+        self.assertEqual(
+            smoke_runtime.smoke_url("https://example.test/base/", "/api/health/live"),
+            "https://example.test/base/api/health/live",
+        )
 
 
 if __name__ == "__main__":

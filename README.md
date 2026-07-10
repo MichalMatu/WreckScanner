@@ -2,15 +2,60 @@
 
 IleStoi.pl to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
 
-Aktualne wydanie: `v3.8`.
+Aktualne wydanie: `v3.9`.
 
 Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i podstawowej dokumentacji potrzebnej do uruchomienia, backupu i pozniejszego serwisu.
 
+## Plan Dalszego Utrzymania
+
+To poboczny projekt o niskim priorytecie, utrzymywany glownie jako prywatna mapa
+uzupelniana podczas spacerow. Kolejne prace wybieramy wedlug stosunku zysku do
+nakladu, a nie dla samego domkniecia wszystkich mozliwych usprawnien.
+
+### Teraz
+
+- Zachowywac sprawdzony stan na `work/dirty`; przed checkpointem uruchamiac
+  `scripts/check.sh`.
+- Po wiekszej sesji dodawania zdjec wykonywac `make backup-restic`. Tygodniowy
+  timer utrzymuje 8 kopii tygodniowych i 6 miesiecznych.
+- Nie dodawac nowych funkcji bez konkretnej potrzeby wynikajacej z korzystania
+  z mapy.
+
+### Kolejne Male Poprawki
+
+- Raz na kilka miesiecy skopiowac zaszyfrowane repozytorium Restic na osobny
+  nosnik i sprawdzic kopie; haslo przechowywac osobno. Przy tej okazji wykonac
+  pelny `restic check --read-data` i izolowana probe restore.
+- Przy kolejnej zmianie ZIP ujednolicic `BACKUP_DIR` z katalogiem kopii stanu
+  sprzed restore; obecnie niestandardowy `BACKUP_DIR` dotyczy tworzenia i listy.
+- Przy okazji zmian uslugi dodac produkcyjny `EnvironmentFile`, `UMask=0077`,
+  `NoNewPrivileges=true`, `PrivateTmp=true` i trwaly sekret sesji.
+- Dodac DNS `www.wreckscanner.pl` tylko wtedy, gdy ten alias bedzie potrzebny.
+- Przygotowac squash na `main` i tag dopiero przy swiadomym kolejnym wydaniu.
+
+### Tylko Jesli Projekt Zyska Ruch
+
+- Zautomatyzowac kopie off-host, monitoring wieku backupu i okresowy restore.
+- Usunac `'unsafe-inline'` z CSP.
+- Dalej podnosic coverage, dzielic wieksze moduly i optymalizowac UX na podstawie
+  realnych problemow uzytkownikow.
+
 ## Start
+
+Wspierany runtime to Python `3.11-3.13`. Node.js `20+` jest potrzebny tylko do
+kontroli frontendu; CI uzywa Node.js 22. Przygotowanie lokalnego srodowiska:
 
 ```bash
 cd /home/test/Desktop/WreckScanner
-source .venv/bin/activate
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-dev.txt
+npm ci
+```
+
+Reczne uruchomienie na hoscie bez aktywnego supervisora:
+
+```bash
+cd /home/test/Desktop/WreckScanner
 ./.venv/bin/python server.py
 ```
 
@@ -20,7 +65,10 @@ Aplikacja dziala pod:
 http://127.0.0.1:8001
 ```
 
-W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja ubij aktualny proces `server.py` i poczekaj, az watcher podniesie nowy proces. Szczegoly sa w [docs/START.md](docs/START.md).
+`make help` wykrywa lokalny watcher albo produkcyjny `wreckscanner.service`.
+Polecenia zmieniajace proces przez `make` sa tylko dla watchera; na systemd
+koncza sie bezpiecznym bledem z poprawna komenda operatorska. Szczegoly sa w
+[docs/START.md](docs/START.md).
 
 ## Zakres
 
@@ -28,7 +76,7 @@ W tym workspace serwer ma watcher autostartu. Przy pracy z dzialajaca aplikacja 
 - zdjecia terenowe w SQLite z typem obserwacji, lokalizacja, kolejka zatwierdzania, anonimizacja i publicznymi kopiami bez EXIF,
 - warstwa pojazdow budowana z zatwierdzonych zdjec terenowych, z recznym statusem OC/UFG dla grupy wraku,
 - automatyczne miniatury historyczne pobierane z WMS podczas generowania zgloszenia,
-- pakiety ZIP/PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
+- raporty PDF generowane na zadanie z wybranych zdjec terenowych, bez zapisu stalego rekordu sprawy,
 - panel administratora dla zdjec, zgloszen prywatnosci, retencji oryginalow i widocznosci warstw,
 - warstwa dzialek KIEG/EGiB,
 - lokalny backup danych przez `restic`.
@@ -43,6 +91,7 @@ Haslo administratora pochodzi z `WRECKSCANNER_ADMIN_PASSWORD` albo z lokalnego p
 
 - [docs/START.md](docs/START.md) - uruchamianie, zatrzymanie, smoke test i haslo administratora.
 - [docs/CURRENT_MODEL.md](docs/CURRENT_MODEL.md) - aktualny model danych, endpointy i audyt braku starych artefaktow.
+- [docs/DATABASE.md](docs/DATABASE.md) - aktualny kontrakt SQLite, migracje i walidacja integralnosci.
 - [docs/PUBLIC_RUNTIME.md](docs/PUBLIC_RUNTIME.md) - porty publicznych uslug i konfiguracja Cloudflare Tunnel.
 - [docs/BACKUP.md](docs/BACKUP.md) - lokalny backup i restore danych.
 - [docs/DEPLOY.md](docs/DEPLOY.md) - produkcyjny deploy, sekrety, systemd i rollback.
@@ -76,4 +125,4 @@ make smoke
 make e2e-report
 ```
 
-`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport ZIP/PDF z OC/UFG.
+`scripts/check.sh` uruchamia compile, Ruff, testy, frontend lint, diagnostyki i `git diff --check`. `make smoke` sprawdza dzialajacy serwer, a `make e2e-report` wykonuje przeplyw upload -> review -> mapa -> raport PDF z OC/UFG.

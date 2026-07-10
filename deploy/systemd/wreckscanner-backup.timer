@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly encrypted WreckScanner backup
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=30m
+AccuracySec=15m
+Unit=wreckscanner-backup.service
+
+[Install]
+WantedBy=timers.target

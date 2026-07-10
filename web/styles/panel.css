@@ -454,11 +454,25 @@ select:focus {
     fill: currentColor;
 }
 
-/* Status message — wyświetla się tylko gdy ma treść (nie rezerwuje miejsca) */
+/* Globalny, przejściowy status pozostaje widoczny także przy zamkniętym menu. */
 #status {
+    position: fixed;
+    top: max(var(--space-4), env(safe-area-inset-top));
+    right: var(--space-4);
+    z-index: 970;
+    max-width: min(420px, calc(100vw - 80px));
+    padding: 9px 12px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-control);
+    background: var(--glass-panel-bg-strong);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: var(--glass-blur-soft);
+    -webkit-backdrop-filter: var(--glass-blur-soft);
     font-size: 0.8rem;
     line-height: 1.5;
-    color: var(--muted);
+    color: var(--text-soft);
+    overflow-wrap: anywhere;
+    pointer-events: none;
 }
 
 #status:empty {
@@ -466,11 +480,15 @@ select:focus {
 }
 
 #status.ok {
-    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 48%, transparent);
+    background: color-mix(in srgb, var(--success) 16%, var(--glass-panel-bg-strong));
+    color: var(--success-text);
 }
 
 #status.err {
-    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 52%, transparent);
+    background: color-mix(in srgb, var(--danger) 16%, var(--glass-panel-bg-strong));
+    color: var(--popup-action-danger-text);
 }
 
 .btn-lang .lang-label {

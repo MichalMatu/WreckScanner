@@ -2,10 +2,13 @@ import base64
 import binascii
 import json
 import logging
+import math
+import re
 import struct
+import threading
 import zlib
 from functools import lru_cache
-from urllib.parse import parse_qsl, unquote, urlsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 
 from app import config, map_downloads, wms_cache
 from app.http import responses as http_responses
@@ -15,7 +18,28 @@ from core.settings_store import enhancement_settings_from_dict, enhancement_sett
 
 _MAX_PROXY_PATH_CHARS = 2048
 _MAX_TILE_BYTES = 8 * BYTES_PER_MIB
-_ALLOWED_PROXY_PATH_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~/%?&=:+,;@")
+_WMS_PATH_RE = re.compile(r"OGC_ortofoto_(\d{4})/MapServer/WMSServer")
+_ALLOWED_WMS_QUERY_KEYS = frozenset(
+    {
+        "service",
+        "request",
+        "layers",
+        "styles",
+        "format",
+        "transparent",
+        "version",
+        "width",
+        "height",
+        "srs",
+        "crs",
+        "bbox",
+        "enhancementsettings",
+    }
+)
+_WEB_MERCATOR_LIMIT = 20_100_000.0
+_WMS_REQUEST_SEMAPHORE = threading.BoundedSemaphore(config.WMS_MAX_CONCURRENT_REQUESTS)
+_TILE_LOCKS_GUARD = threading.Lock()
+_TILE_LOCKS: dict[str, threading.Lock] = {}
 
 
 def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
@@ -39,18 +63,69 @@ def _fallback_tile_png() -> bytes:
     )
 
 
-def _safe_proxy_path(upstream_path: str) -> bool:
+def _normalized_wms_query(query: str) -> tuple[list[tuple[str, str]], dict[str, str]]:
+    pairs = parse_qsl(query, keep_blank_values=True)
+    values: dict[str, str] = {}
+    for key, value in pairs:
+        lowered = key.lower()
+        if lowered not in _ALLOWED_WMS_QUERY_KEYS or lowered in values:
+            raise ValueError("Invalid WMS query")
+        values[lowered] = value
+    return pairs, values
+
+
+def _validate_wms_operation(values: dict[str, str]) -> None:
+    if values.get("service", "").upper() != "WMS" or values.get("request", "").upper() != "GETMAP":
+        raise ValueError("Invalid WMS operation")
+    if values.get("layers") != "1" or values.get("format", "").lower() != "image/png":
+        raise ValueError("Invalid WMS layer or format")
+    if values.get("styles", "") not in {"", "default"}:
+        raise ValueError("Invalid WMS style")
+    if values.get("transparent", "false").lower() not in {"false", "true"}:
+        raise ValueError("Invalid WMS transparency")
+    if values.get("version", "1.1.1") not in {"1.1.1", "1.3.0"}:
+        raise ValueError("Invalid WMS version")
+
+
+def _validate_wms_geometry(values: dict[str, str]) -> None:
+    try:
+        width = int(values.get("width", ""))
+        height = int(values.get("height", ""))
+        bbox = [float(value) for value in values.get("bbox", "").split(",")]
+    except ValueError as exc:
+        raise ValueError("Invalid WMS tile dimensions") from exc
+    if not (1 <= width <= 512 and 1 <= height <= 512):
+        raise ValueError("Invalid WMS tile dimensions")
+    if len(bbox) != 4 or not all(math.isfinite(value) and abs(value) <= _WEB_MERCATOR_LIMIT for value in bbox):
+        raise ValueError("Invalid WMS bounding box")
+
+
+def _validate_wms_projection_and_enhancement(values: dict[str, str]) -> None:
+    projections = [values[key].upper() for key in ("srs", "crs") if key in values]
+    if not projections or any(value != "EPSG:3857" for value in projections):
+        raise ValueError("Invalid WMS projection")
+    token = values.get("enhancementsettings", "")
+    if len(token) > 1500 or (token and re.fullmatch(r"[A-Za-z0-9_-]+", token) is None):
+        raise ValueError("Invalid enhancement settings")
+
+
+def _validated_wms_proxy_path(upstream_path: str) -> str:
     if not upstream_path or len(upstream_path) > _MAX_PROXY_PATH_CHARS:
-        return False
-    if any(char not in _ALLOWED_PROXY_PATH_CHARS for char in upstream_path):
-        return False
+        raise ValueError("Invalid wms_proxy path")
     parts = urlsplit(upstream_path)
-    if parts.scheme or parts.netloc:
-        return False
+    if parts.scheme or parts.netloc or parts.fragment:
+        raise ValueError("Invalid wms_proxy path")
     path = parts.path.strip("/")
-    if not path or "\\" in path:
-        return False
-    return all(part not in {"", ".", ".."} for part in path.split("/"))
+    match = _WMS_PATH_RE.fullmatch(path)
+    if match is None or int(match.group(1)) not in config.WMS_ALLOWED_YEARS:
+        raise ValueError("Invalid wms_proxy path")
+
+    pairs, values = _normalized_wms_query(parts.query)
+    _validate_wms_operation(values)
+    _validate_wms_geometry(values)
+    _validate_wms_projection_and_enhancement(values)
+    canonical_query = urlencode(sorted((key.lower(), value) for key, value in pairs))
+    return f"{path}?{canonical_query}"
 
 
 def _looks_like_image(data: bytes) -> bool:
@@ -66,6 +141,14 @@ def _read_image_response(resp) -> bytes:
     content_type = str(resp.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
     if content_type and not content_type.startswith("image/") and content_type != "application/octet-stream":
         raise ValueError(f"Unexpected upstream content type: {content_type}")
+    raw_length = str(resp.headers.get("Content-Length") or "").strip()
+    if raw_length:
+        try:
+            declared_length = int(raw_length)
+        except ValueError as exc:
+            raise ValueError("Invalid upstream Content-Length") from exc
+        if declared_length < 0 or declared_length > _MAX_TILE_BYTES:
+            raise ValueError("Upstream tile response is too large")
 
     chunks: list[bytes] = []
     total = 0
@@ -144,58 +227,79 @@ def _handle_enhanced_tile(
     if cached_bytes is not None:
         _send_tile_response(handler, body=cached_bytes, content_type="image/png", cache_status="HIT")
         return
-
-    try:
-        raw_bytes = fetch_raw_tile(stripped_upstream_path)
-    except Exception as exc:
-        http_responses.log_exception(
-            handler,
-            f"{upstream_error_label} upstream tile request failed; returning fallback tile",
-            exc,
-            status=200,
-            level=logging.WARNING,
-        )
-        _send_tile_fallback(handler, cache_status="UPSTREAM_ERROR")
+    if not _WMS_REQUEST_SEMAPHORE.acquire(blocking=False):
+        _send_tile_fallback(handler, cache_status="BUSY")
+        return
+    with _TILE_LOCKS_GUARD:
+        tile_lock = _TILE_LOCKS.setdefault(cache_key, threading.Lock())
+    if not tile_lock.acquire(blocking=False):
+        _WMS_REQUEST_SEMAPHORE.release()
+        _send_tile_fallback(handler, cache_status="IN_FLIGHT")
         return
     try:
-        import cv2
-        import numpy as np
-    except ModuleNotFoundError:
-        _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
-        return
+        cached_bytes = wms_cache.read_tile_cache(cache_path)
+        if cached_bytes is not None:
+            _send_tile_response(handler, body=cached_bytes, content_type="image/png", cache_status="HIT")
+            return
+        try:
+            raw_bytes = fetch_raw_tile(stripped_upstream_path)
+        except Exception as exc:
+            http_responses.log_exception(
+                handler,
+                f"{upstream_error_label} upstream tile request failed; returning fallback tile",
+                exc,
+                status=200,
+                level=logging.WARNING,
+            )
+            _send_tile_fallback(handler, cache_status="UPSTREAM_ERROR")
+            return
+        try:
+            import cv2
+            import numpy as np
+        except ModuleNotFoundError:
+            _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
+            return
 
-    nparr = np.frombuffer(raw_bytes, dtype=np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if img is None or img.size == 0:
-        _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
-        return
-    try:
-        enhanced = enhance_orthophoto(img, settings=enhancement_settings)
-    except Exception as exc:
-        http_responses.log_exception(
-            handler,
-            "WMS enhancement failed; returning raw tile",
-            exc,
-            status=200,
-            level=logging.WARNING,
-        )
-        _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
-        return
+        nparr = np.frombuffer(raw_bytes, dtype=np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None or img.size == 0:
+            _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
+            return
+        try:
+            enhanced = enhance_orthophoto(img, settings=enhancement_settings)
+        except Exception as exc:
+            http_responses.log_exception(
+                handler,
+                "WMS enhancement failed; returning raw tile",
+                exc,
+                status=200,
+                level=logging.WARNING,
+            )
+            _send_tile_response(handler, body=raw_bytes, content_type=raw_content_type, cache_status="MISS")
+            return
 
-    success, encoded = cv2.imencode(".png", enhanced, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-    if not success:
-        logging.getLogger(__name__).warning("WMS PNG encoding failed; returning fallback tile")
-        _send_tile_fallback(handler, cache_status="ENCODE_ERROR")
-        return
-    out_bytes = encoded.tobytes()
-    wms_cache.write_tile_cache(cache_path, out_bytes)
-    wms_cache.cleanup_tile_cache()
-    _send_tile_response(handler, body=out_bytes, content_type="image/png", cache_status="MISS")
+        success, encoded = cv2.imencode(".png", enhanced, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        if not success:
+            logging.getLogger(__name__).warning("WMS PNG encoding failed; returning fallback tile")
+            _send_tile_fallback(handler, cache_status="ENCODE_ERROR")
+            return
+        out_bytes = encoded.tobytes()
+        wms_cache.write_tile_cache(cache_path, out_bytes)
+        wms_cache.cleanup_tile_cache()
+        _send_tile_response(handler, body=out_bytes, content_type="image/png", cache_status="MISS")
+    finally:
+        tile_lock.release()
+        _WMS_REQUEST_SEMAPHORE.release()
+        with _TILE_LOCKS_GUARD:
+            if _TILE_LOCKS.get(cache_key) is tile_lock:
+                _TILE_LOCKS.pop(cache_key, None)
 
 
 def handle_wms_proxy(handler) -> None:
     upstream_path = handler.path[len("/wms_proxy/") :]
-    if not _safe_proxy_path(upstream_path):
+    try:
+        upstream_path = _validated_wms_proxy_path(upstream_path)
+    except ValueError:
         http_responses.send_text_error(handler, 400, "Invalid wms_proxy path")
         return
 

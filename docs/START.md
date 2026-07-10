@@ -1,10 +1,21 @@
 # Start I Utrzymanie
 
-## Uruchomienie
+## Runtime I Instalacja
+
+- Python `3.11-3.13` (CI sprawdza 3.11 i 3.13),
+- Node.js `20+` do lintowania frontendu (CI uzywa Node.js 22).
 
 ```bash
 cd /home/test/Desktop/WreckScanner
-source .venv/bin/activate
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-dev.txt
+npm ci
+```
+
+Reczne uruchomienie jest przeznaczone tylko dla hosta bez aktywnego watchera i
+bez jednostki systemd:
+
+```bash
 ./.venv/bin/python server.py
 ```
 
@@ -14,9 +25,16 @@ Adres lokalny:
 http://127.0.0.1:8001
 ```
 
-## Autostart
+## Jeden Supervisor
 
-W tym workspace serwer ma watcher autostartu. Nie uruchamiaj drugiej kopii recznie, jesli proces juz dziala.
+`make help`, `make status`, `make start`, `make health`, `make logs` i
+`make autostart-status` wykrywaja, czy ten katalog obsluguje lokalny watcher,
+czy `wreckscanner.service`. `make start` jest informacyjnym aliasem statusu i
+nie uruchamia procesu. `make status` oraz `make health` koncza sie bledem, gdy
+brakuje procesu, liveness albo readiness.
+
+Nie uruchamiaj drugiej kopii recznie, jesli proces juz dziala. Polecenia
+zmieniajace stan przez `make` sa przeznaczone wylacznie dla lokalnego watchera:
 
 Sprawdzenie:
 
@@ -46,6 +64,22 @@ Ponowne wlaczenie:
 
 ```bash
 make serwerstart
+```
+
+Ta komenda usuwa blokade autostartu i tylko czeka na zewnetrzny watcher. Jesli
+watcher nie podniesie gotowego procesu, komenda konczy sie bledem i nie uruchamia
+recznej ani drugiej instancji `server.py`.
+
+Na hoscie produkcyjnym jedynym supervisorem jest `wreckscanner.service`.
+Nie uzywaj tam `make stop`, `make restart`, `make serwerstop`, `make serwerstart`
+ani awaryjnego `nohup`; Makefile wykrywa ten tryb i blokuje targety watchera,
+zanim zmienia sentinel albo proces. Steruj usluga wylacznie przez:
+
+```bash
+sudo systemctl stop wreckscanner.service
+sudo systemctl start wreckscanner.service
+sudo systemctl restart wreckscanner.service
+systemctl status wreckscanner.service --no-pager
 ```
 
 ## Haslo Administratora
@@ -83,13 +117,18 @@ make e2e-report
 
 Ten test wymaga `.admin_password`, dzialajacego serwera, Chromium oraz dostepu do
 WMS. Dodaje male zdjecie testowe, zatwierdza je, sprawdza publiczny kontrakt mapy,
-generuje ZIP/PDF z tymczasowymi cropami mapy oraz statusem OC/UFG, zapisuje
-screenshoty desktop/mobile w `analiza/`, a na koncu usuwa testowy rekord i pliki.
+generuje PDF z tymczasowymi cropami mapy oraz statusem OC/UFG, zapisuje w
+`analiza/` zrzuty: desktop PL, tablet EN, mobile PL i widok EN przy efektywnym
+powiekszeniu 200%, a na koncu wylogowuje administratora oraz usuwa testowy rekord
+i pliki.
 
-Szybki health check:
+Liveness odpowiada tylko na pytanie, czy proces HTTP dziala. Readiness sprawdza
+aktywne SQLite, migracje, odwolania do plikow i bezpieczna rezerwe dysku; tylko
+wynik readiness `200` dopuszcza ruch po starcie lub restarcie:
 
 ```bash
-curl -fsS http://127.0.0.1:8001/api/health
+curl -fsS http://127.0.0.1:8001/api/health/live
+curl -fsS http://127.0.0.1:8001/api/health/ready
 ```
 
 ## Backup

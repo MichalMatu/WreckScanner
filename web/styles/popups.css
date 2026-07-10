@@ -427,3 +427,19 @@ a.map-popup-head-value {
         --map-popup-photo-columns: 2;
     }
 }
+
+@media (max-height: 520px) {
+    .leaflet-popup-content {
+        max-height: calc(100vh - 112px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .map-popup--media {
+        --map-popup-width: min(300px, calc(100vw - 72px));
+    }
+
+    .map-popup-photo {
+        aspect-ratio: 16 / 7;
+    }
+}

@@ -15,7 +15,7 @@
 
 .map-context-menu button {
     width: 100%;
-    min-height: 34px;
+    min-height: var(--control-hit-target);
     border: 0;
     border-radius: var(--radius-control);
     background: transparent;
@@ -49,6 +49,44 @@
     flex-shrink: 0;
 }
 
+.map-data-status {
+    position: fixed;
+    z-index: 925;
+    left: 50%;
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    max-width: min(90vw, 520px);
+    min-height: var(--control-hit-target);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 7px 9px 7px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-full);
+    color: var(--text-strong);
+    background: var(--glass-panel-bg-strong);
+    box-shadow: var(--shadow-glass);
+}
+
+.map-data-status[hidden] {
+    display: none;
+}
+
+.map-data-status--error {
+    border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+
+.map-data-status-retry {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: #fff;
+    font: 700 0.78rem var(--font);
+    cursor: var(--cursor-action);
+}
+
 /* Override Leaflet tiles to look nicer */
 .leaflet-container {
     background: color-mix(in srgb, var(--surface-canvas) 8%, #d1d8e0);
@@ -59,6 +97,24 @@
 .leaflet-container.is-picking-field-photo-location .leaflet-tile,
 .leaflet-container.is-picking-field-photo-location .leaflet-marker-icon {
     cursor: crosshair !important;
+}
+
+.leaflet-container.is-picking-field-photo-location::after {
+    content: '';
+    position: absolute;
+    z-index: 800;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    background:
+        linear-gradient(var(--primary), var(--primary)) center / 2px 30px no-repeat,
+        linear-gradient(90deg, var(--primary), var(--primary)) center / 30px 2px no-repeat;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface-overlay) 78%, transparent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
 .map-pick-hint {

@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import math
 import secrets
 import shutil
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
 from core import config, report_assets, report_mail, report_models, report_pdf
+from core.field_photo_groups import same_vehicle_photo_group
 from core.field_photo_metadata import (
     grouped_vehicle_insurance_checked_at,
     grouped_vehicle_insurance_status,
@@ -18,7 +21,7 @@ from core.field_photo_metadata import (
     vehicle_resolution_status_from_record,
 )
 from core.field_photos import FIELD_PHOTO_ID_RE, field_photo_record_dir, load_field_photo_record
-from core.geo import external_map_links
+from core.geo import external_map_links, meters_between
 from core.map_crops import validate_crop_m
 from core.photo_privacy import is_approved, safe_child
 from core.report_evidence import first_last_year, save_report_evidence
@@ -144,30 +147,59 @@ def _field_photo_record_dir(photo_id: Any, field_photos_dir: Path) -> Path:
     return field_photo_record_dir(photo_id_text, field_photos_dir)
 
 
-def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
-    records: list[tuple[Path, dict[str, Any]]] = []
+def _unique_report_photo_ids(photo_ids: list[Any]) -> Iterator[str]:
+    if len(photo_ids) > config.MAX_REPORT_PHOTOS:
+        raise ValueError(f"Raport może zawierać maksymalnie {config.MAX_REPORT_PHOTOS} zdjęć.")
     seen: set[str] = set()
     for raw_photo_id in photo_ids:
         photo_id = str(raw_photo_id or "").strip()
         if not photo_id or photo_id in seen:
             continue
         seen.add(photo_id)
-        record_dir = _field_photo_record_dir(photo_id, field_photos_dir)
-        record = load_field_photo_record(photo_id, field_photos_dir)
-        if not isinstance(record, dict) or str(record.get("id") or "") != photo_id:
-            raise ValueError("Nieprawidłowy rekord zdjęcia terenowego.")
-        if not is_approved(record):
-            raise ValueError("Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych.")
-        if (
-            str(record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE)
-            != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE
-        ):
-            raise ValueError("Raport pojazdu można wygenerować tylko ze zdjęć pojazdów.")
-        records.append((record_dir, record))
+        yield photo_id
+
+
+def _load_report_photo_record(photo_id: str, field_photos_dir: Path) -> tuple[Path, dict[str, Any]]:
+    record_dir = _field_photo_record_dir(photo_id, field_photos_dir)
+    record = load_field_photo_record(photo_id, field_photos_dir)
+    if not isinstance(record, dict) or str(record.get("id") or "") != photo_id:
+        raise ValueError("Nieprawidłowy rekord zdjęcia terenowego.")
+    if not is_approved(record):
+        raise ValueError("Raport można wygenerować tylko z zatwierdzonych zdjęć terenowych.")
+    issue_type = str(record.get("issue_type") or config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE)
+    if issue_type != config.DEFAULT_FIELD_PHOTO_ISSUE_TYPE:
+        raise ValueError("Raport pojazdu można wygenerować tylko ze zdjęć pojazdów.")
+    return record_dir, record
+
+
+def _validate_report_photo_group(records: list[tuple[Path, dict[str, Any]]]) -> None:
     if not records:
         raise ValueError("Wybierz co najmniej jedno zdjęcie terenowe do raportu.")
-    if all(vehicle_resolution_status_from_record(record) == "removed" for _, record in records):
+    anchor = records[0][1]
+    if any(not same_vehicle_photo_group(anchor, record) for _, record in records[1:]):
+        raise ValueError("Wszystkie zdjęcia raportu muszą należeć do tej samej grupy pojazdu.")
+    if any(vehicle_resolution_status_from_record(record) == "removed" for _, record in records):
         raise ValueError("Raport można wygenerować tylko dla aktywnego pojazdu.")
+
+
+def _validate_report_photo_files(records: list[tuple[Path, dict[str, Any]]]) -> None:
+    total_public_bytes = 0
+    for record_dir, record in records:
+        for key in ("public_image_file", "public_thumb_file"):
+            public_path = safe_child(record_dir, record.get(key))
+            if not public_path.is_file():
+                raise FileNotFoundError("Brak publicznej kopii zdjęcia terenowego.")
+            total_public_bytes += public_path.stat().st_size
+            if total_public_bytes > config.MAX_REPORT_PUBLIC_PHOTO_BYTES:
+                raise ValueError("Łączny rozmiar zdjęć raportu przekracza bezpieczny limit.")
+
+
+def _field_photo_records(photo_ids: list[Any], field_photos_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
+    records = [
+        _load_report_photo_record(photo_id, field_photos_dir) for photo_id in _unique_report_photo_ids(photo_ids)
+    ]
+    _validate_report_photo_group(records)
+    _validate_report_photo_files(records)
     return records
 
 
@@ -212,11 +244,34 @@ def _float_coordinate(value: Any, label: str) -> float:
         coord = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"Nieprawidłowa wartość {label}.") from exc
+    if not math.isfinite(coord):
+        raise ValueError(f"Nieprawidłowa wartość {label}.")
     if not (-90 <= coord <= 90) and label == "lat":
         raise ValueError("Nieprawidłowa szerokość geograficzna.")
     if not (-180 <= coord <= 180) and label == "lon":
         raise ValueError("Nieprawidłowa długość geograficzna.")
     return coord
+
+
+def _validate_report_coordinates(
+    photo_records: list[tuple[Path, dict[str, Any]]], lat: Any, lon: Any
+) -> tuple[float, float]:
+    lat_float = _float_coordinate(lat, "lat")
+    lon_float = _float_coordinate(lon, "lon")
+    anchor = photo_records[0][1]
+    anchor_lat = _float_coordinate(anchor.get("lat"), "lat")
+    anchor_lon = _float_coordinate(anchor.get("lon"), "lon")
+    if meters_between(lat_float, lon_float, anchor_lat, anchor_lon) > config.FIELD_PHOTO_GROUP_RADIUS_M:
+        raise ValueError("Współrzędne raportu nie odpowiadają wybranej grupie zdjęć.")
+    return lat_float, lon_float
+
+
+def validate_field_photo_report_selection(
+    photo_ids: list[Any], *, lat: Any, lon: Any, field_photos_dir: Path
+) -> list[tuple[Path, dict[str, Any]]]:
+    records = _field_photo_records(photo_ids, field_photos_dir)
+    _validate_report_coordinates(records, lat, lon)
+    return records
 
 
 def _field_photo_report_record(
@@ -229,8 +284,7 @@ def _field_photo_report_record(
     address: dict[str, Any] | None = None,
     report_root: Path,
 ) -> dict[str, Any]:
-    lat_float = _float_coordinate(lat, "lat")
-    lon_float = _float_coordinate(lon, "lon")
+    lat_float, lon_float = _validate_report_coordinates(photo_records, lat, lon)
     safe_parcel = _normalize_report_parcel(parcel)
     safe_address = _normalize_report_address(address)
     safe_parcel_error = _report_context_text(parcel_error, max_len=500)
@@ -295,7 +349,9 @@ def create_field_photo_report_pdf(
     crop_m = _report_crop_m(fields)
     fields = report_models.validate_report_fields(fields)
     report_id = _report_id("field_photo_group", fields)
-    photo_records = _field_photo_records(photo_ids, field_photos_dir)
+    photo_records = validate_field_photo_report_selection(
+        photo_ids, lat=lat, lon=lon, field_photos_dir=field_photos_dir
+    )
 
     with TemporaryDirectory(prefix=f"{report_id}_") as work_dir_name:
         work_dir = Path(work_dir_name)

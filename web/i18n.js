@@ -10,6 +10,8 @@ const TRANSLATIONS = {
 
 // Bieżący język — wybór z localStorage → navigator → 'pl'
 function detectLang() {
+    const requested = new URLSearchParams(window.location.search).get('lang');
+    if (requested === 'pl' || requested === 'en') return requested;
     try {
         const saved = localStorage.getItem(I18N_LANG_KEY);
         if (saved === 'pl' || saved === 'en') return saved;
