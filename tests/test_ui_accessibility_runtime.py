@@ -14,11 +14,13 @@ CHROMIUM = next(
     (binary for name in ("chromium", "chromium-browser", "google-chrome") if (binary := shutil.which(name))),
     None,
 )
+CHROMIUM_TIMEOUT_SECONDS = 45
 
 
 def run_chromium_document(document: str, *, prefix: str, virtual_time_budget: int) -> dict:
     with TemporaryDirectory(prefix=prefix) as tmp:
         html_path = Path(tmp) / "runtime.html"
+        profile_path = Path(tmp) / "chromium-profile"
         html_path.write_text(document, encoding="utf-8")
         completed = subprocess.run(
             [
@@ -26,7 +28,9 @@ def run_chromium_document(document: str, *, prefix: str, virtual_time_budget: in
                 "--headless=new",
                 "--disable-gpu",
                 "--disable-extensions",
+                "--disable-dev-shm-usage",
                 "--no-sandbox",
+                f"--user-data-dir={profile_path}",
                 f"--virtual-time-budget={virtual_time_budget}",
                 "--dump-dom",
                 html_path.as_uri(),
@@ -34,7 +38,7 @@ def run_chromium_document(document: str, *, prefix: str, virtual_time_budget: in
             check=False,
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=CHROMIUM_TIMEOUT_SECONDS,
         )
 
     if completed.returncode:
