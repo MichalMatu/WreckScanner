@@ -29,8 +29,16 @@ class ToolingContractTests(unittest.TestCase):
     def test_ci_covers_supported_python_runtime_endpoints(self):
         workflow = (ROOT_DIR / ".github" / "workflows" / "check.yml").read_text(encoding="utf-8")
 
+        self.assertIn("fail-fast: false", workflow)
         self.assertIn('python-version: ["3.11", "3.13"]', workflow)
         self.assertIn("python-version: ${{ matrix.python-version }}", workflow)
+
+    def test_check_script_annotates_the_exact_failing_ci_command(self):
+        check_script = (ROOT_DIR / "scripts" / "check.sh").read_text(encoding="utf-8")
+
+        self.assertIn('[[ "${GITHUB_ACTIONS:-}" == "true" ]]', check_script)
+        self.assertIn("::error title=check.sh command failed::", check_script)
+        self.assertIn('report_failure "$status" "$@"', check_script)
 
     def test_ci_actions_are_pinned_to_immutable_commit_shas(self):
         workflow = (ROOT_DIR / ".github" / "workflows" / "check.yml").read_text(encoding="utf-8")

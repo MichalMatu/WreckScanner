@@ -14,16 +14,41 @@ else
     PYTHON_BIN="python"
 fi
 
+report_failure() {
+    local status="$1"
+    shift
+    local command
+    printf -v command '%q ' "$@"
+    printf '\nerror: command failed (%s): %s\n' "$status" "$command" >&2
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        command="${command//'%'/'%25'}"
+        command="${command//$'\r'/'%0D'}"
+        command="${command//$'\n'/'%0A'}"
+        printf '::error title=check.sh command failed::%s (exit %s)\n' "$command" "$status" >&2
+    fi
+    return "$status"
+}
+
 run() {
     printf '\n==> %s\n' "$*"
-    "$@"
+    if "$@"; then
+        return 0
+    else
+        local status=$?
+        report_failure "$status" "$@"
+    fi
 }
 
 run_to_file() {
     local output_path="$1"
     shift
     printf '\n==> %s > %s\n' "$*" "$output_path"
-    "$@" > "$output_path"
+    if "$@" > "$output_path"; then
+        return 0
+    else
+        local status=$?
+        report_failure "$status" "$@"
+    fi
 }
 
 run "$PYTHON_BIN" -m compileall -q app core scripts tests server.py
