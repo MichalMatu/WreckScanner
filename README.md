@@ -2,7 +2,7 @@
 
 IleStoi.pl to lokalna aplikacja mapowa do dokumentowania pojazdow zalegajacych w przestrzeni publicznej. Wynik aplikacji jest materialem pomocniczym do weryfikacji, a nie decyzja o stanie prawnym pojazdu.
 
-Aktualne wydanie: `v3.9`.
+Aktualne wydanie: `v4.0`.
 
 Status projektu: wersja utrzymaniowa. Repo zostaje odchudzone do kodu, testow i podstawowej dokumentacji potrzebnej do uruchomienia, backupu i pozniejszego serwisu.
 
@@ -30,7 +30,8 @@ nakladu, a nie dla samego domkniecia wszystkich mozliwych usprawnien.
   sprzed restore; obecnie niestandardowy `BACKUP_DIR` dotyczy tworzenia i listy.
 - Przy okazji zmian uslugi dodac produkcyjny `EnvironmentFile`, `UMask=0077`,
   `NoNewPrivileges=true`, `PrivateTmp=true` i trwaly sekret sesji.
-- Dodac DNS `www.wreckscanner.pl` tylko wtedy, gdy ten alias bedzie potrzebny.
+- Utrzymywac DNS starych hostow `wreckscanner.pl`, `dlugostoi.pl` i ich
+  wariantow `www`, aby stale przekierowywaly do kanonicznego `ilestoi.pl`.
 - Przygotowac squash na `main` i tag dopiero przy swiadomym kolejnym wydaniu.
 
 ### Tylko Jesli Projekt Zyska Ruch

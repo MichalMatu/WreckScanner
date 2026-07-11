@@ -1,3 +1,4 @@
+import http.client
 import http.server
 import json
 import threading
@@ -5,6 +6,8 @@ import unittest
 from io import BytesIO
 from unittest.mock import patch
 
+from app import config
+from app.http import proxy as http_proxy
 from app.http.server import Handler, ReusableHTTPServer
 
 
@@ -27,9 +30,18 @@ class FakeSocket:
         self.closed = True
 
 
-class FakeHandler:
-    def __init__(self):
-        self.headers = {}
+class FakeHandler(Handler):
+    def __init__(
+        self,
+        *,
+        headers: dict[str, str] | None = None,
+        path: str = "/",
+        client_host: str = "127.0.0.1",
+    ):
+        self.client_address = (client_host, 12345)
+        self.headers = headers or {}
+        self.path = path
+        self.close_connection = False
         self.wfile = BytesIO()
         self.status = None
         self.response_headers = []
@@ -45,6 +57,12 @@ class FakeHandler:
 
 
 class HttpServerTests(unittest.TestCase):
+    def setUp(self):
+        http_proxy._trusted_proxy_networks.cache_clear()
+
+    def tearDown(self):
+        http_proxy._trusted_proxy_networks.cache_clear()
+
     def test_over_capacity_connection_gets_bounded_503(self):
         server = ReusableHTTPServer.__new__(ReusableHTTPServer)
         server._request_slots = threading.Semaphore(0)
@@ -83,6 +101,140 @@ class HttpServerTests(unittest.TestCase):
         self.assertIn("/api/address/reverse", rendered)
         self.assertNotIn("lat=", rendered)
         self.assertNotIn("lon=", rendered)
+
+    def test_public_aliases_and_http_redirect_to_canonical_https(self):
+        path = "/report?lat=51.1&lon=17.2&lang=pl"
+
+        for forwarded_proto in ("http", "https"):
+            for hostname in config.PUBLIC_HOSTS:
+                if forwarded_proto == "https" and hostname == config.CANONICAL_PUBLIC_HOST:
+                    continue
+                handler = FakeHandler(
+                    headers={"Host": hostname, "X-Forwarded-Proto": forwarded_proto},
+                    path=path,
+                )
+
+                with self.subTest(forwarded_proto=forwarded_proto, hostname=hostname):
+                    self.assertTrue(handler._canonicalize_public_request())
+
+                    self.assertEqual(handler.status, 308)
+                    self.assertIn(
+                        ("Location", f"{config.CANONICAL_PUBLIC_ORIGIN}{path}"),
+                        handler.response_headers,
+                    )
+                    self.assertIn(("Content-Length", "0"), handler.response_headers)
+                    self.assertIn(("Connection", "close"), handler.response_headers)
+                    self.assertEqual(handler.wfile.getvalue(), b"")
+                    self.assertTrue(handler.close_connection)
+
+    def test_canonical_https_request_is_served_without_redirect(self):
+        handler = FakeHandler(
+            headers={"Host": config.CANONICAL_PUBLIC_HOST, "X-Forwarded-Proto": "https"},
+        )
+
+        self.assertFalse(handler._canonicalize_public_request())
+
+        self.assertIsNone(handler.status)
+        self.assertFalse(handler.close_connection)
+
+    def test_index_html_redirects_to_canonical_root(self):
+        handler = FakeHandler(
+            headers={"Host": config.CANONICAL_PUBLIC_HOST, "X-Forwarded-Proto": "https"},
+            path="/index.html?source=legacy",
+        )
+
+        self.assertTrue(handler._canonicalize_public_request())
+
+        self.assertEqual(handler.status, 308)
+        self.assertIn(
+            ("Location", f"{config.CANONICAL_PUBLIC_ORIGIN}/?source=legacy"),
+            handler.response_headers,
+        )
+
+    def test_insecure_redirect_rejects_untrusted_public_host_values(self):
+        for hostname in ("", "attacker.example", "ilestoi.pl@attacker.example", "ilestoi.pl:443", "ilestoi.pl/"):
+            with self.subTest(hostname=hostname):
+                handler = FakeHandler(
+                    headers={"Host": hostname, "X-Forwarded-Proto": "http"},
+                )
+
+                self.assertTrue(handler._canonicalize_public_request())
+
+                self.assertEqual(handler.status, 400)
+                self.assertFalse(any(key == "Location" for key, _value in handler.response_headers))
+                self.assertTrue(handler.close_connection)
+
+    def test_canonical_headers_are_honored_only_from_trusted_proxy(self):
+        cases = (
+            ({"Host": "ilestoi.pl"}, "127.0.0.1", False, None),
+            ({"Host": "ilestoi.pl", "X-Forwarded-Proto": "http"}, "198.51.100.10", False, None),
+            ({"Host": "ilestoi.pl", "X-Forwarded-Proto": "ftp"}, "127.0.0.1", True, 400),
+        )
+
+        for headers, client_host, expected_handled, expected_status in cases:
+            with self.subTest(headers=headers, client_host=client_host):
+                handler = FakeHandler(headers=headers, client_host=client_host)
+
+                self.assertEqual(handler._canonicalize_public_request(), expected_handled)
+                self.assertEqual(handler.status, expected_status)
+
+    def test_canonical_redirect_rejects_unsafe_request_targets(self):
+        for path in ("//attacker.example/path", "https://attacker.example/path", "/ok#fragment", "/bad\x01path"):
+            with self.subTest(path=path):
+                handler = FakeHandler(
+                    headers={"Host": "wreckscanner.pl", "X-Forwarded-Proto": "https"},
+                    path=path,
+                )
+
+                self.assertTrue(handler._canonicalize_public_request())
+
+                self.assertEqual(handler.status, 400)
+                self.assertFalse(any(key == "Location" for key, _value in handler.response_headers))
+
+    def test_parse_request_stops_dispatch_after_canonical_redirect(self):
+        handler = Handler.__new__(Handler)
+
+        with (
+            patch.object(http.server.BaseHTTPRequestHandler, "parse_request", return_value=True),
+            patch.object(Handler, "_canonicalize_public_request", return_value=True) as redirect,
+        ):
+            self.assertFalse(handler.parse_request())
+
+        redirect.assert_called_once_with()
+
+    def test_parse_request_keeps_local_http_requests(self):
+        handler = Handler.__new__(Handler)
+
+        with (
+            patch.object(http.server.BaseHTTPRequestHandler, "parse_request", return_value=True),
+            patch.object(Handler, "_canonicalize_public_request", return_value=False) as redirect,
+        ):
+            self.assertTrue(handler.parse_request())
+
+        redirect.assert_called_once_with()
+
+    def test_real_post_request_redirects_before_body_dispatch(self):
+        server = ReusableHTTPServer(("127.0.0.1", 0), Handler)
+        server_thread = threading.Thread(target=server.handle_request)
+        server_thread.start()
+        connection = http.client.HTTPConnection(*server.server_address, timeout=2)
+        try:
+            connection.putrequest("POST", "/api/settings?source=map", skip_host=True)
+            connection.putheader("Host", "wreckscanner.pl")
+            connection.putheader("X-Forwarded-Proto", "https")
+            connection.putheader("Content-Type", "application/json")
+            connection.putheader("Content-Length", "2")
+            connection.endheaders(b"{}")
+
+            response = connection.getresponse()
+
+            self.assertEqual(response.status, 308)
+            self.assertEqual(response.getheader("Location"), "https://ilestoi.pl/api/settings?source=map")
+            self.assertEqual(response.read(), b"")
+        finally:
+            connection.close()
+            server.server_close()
+            server_thread.join(timeout=2)
 
     def test_unsupported_mutation_method_returns_json_405(self):
         handler = FakeHandler()

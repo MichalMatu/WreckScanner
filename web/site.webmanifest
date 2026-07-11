@@ -1,0 +1,19 @@
+{
+  "name": "IleStoi.pl – mapa pojazdów długo stojących",
+  "short_name": "IleStoi.pl",
+  "description": "Mapa zgłoszeń pojazdów długo stojących lub nieużytkowanych.",
+  "lang": "pl-PL",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101820",
+  "theme_color": "#152738",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

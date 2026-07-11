@@ -64,6 +64,9 @@ class RuntimeSmokeTests(unittest.TestCase):
             return text_response(
                 "text/html; charset=utf-8",
                 """
+                <link rel="canonical" href="https://ilestoi.pl/">
+                <script type="application/ld+json">{}</script>
+                <h1>IleStoi.pl</h1>
                 <div id="map"></div>
                 <button id="panel-add-field-photo" onclick="openFieldPhotoUploadFromPanel()" hidden></button>
                 <script src="/app/startup.js"></script>
@@ -79,6 +82,11 @@ class RuntimeSmokeTests(unittest.TestCase):
             "/app/api.js",
             "/app/field_photo_upload.js",
             "/app/settings.js",
+            "/favicon.svg",
+            "/robots.txt",
+            "/sitemap.xml",
+            "/llms.txt",
+            "/site.webmanifest",
         }:
             return text_response("text/plain", "asset", cache_control="no-store")
         if path == "/api/health/live":
@@ -126,6 +134,11 @@ class RuntimeSmokeTests(unittest.TestCase):
                 "/app/api.js",
                 "/app/field_photo_upload.js",
                 "/app/settings.js",
+                "/favicon.svg",
+                "/robots.txt",
+                "/sitemap.xml",
+                "/llms.txt",
+                "/site.webmanifest",
                 "health",
                 "/api/field-photos",
                 "api 404",

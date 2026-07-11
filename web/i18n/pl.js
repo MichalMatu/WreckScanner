@@ -1,16 +1,18 @@
 const TRANSLATIONS_PL = {
         // tytuł / meta
-        'meta.title': 'IleStoi.pl',
-        'meta.description': 'Mapa dokumentowania porzuconych pojazdów i zdjęć terenowych.',
+        'meta.title': 'IleStoi.pl – mapa pojazdów długo stojących',
+        'meta.description': 'Mapa zgłoszeń pojazdów długo stojących lub nieużytkowanych. Zobacz lokalizacje i dokumentację zdjęciową albo dodaj obserwację do weryfikacji.',
         'page.nav.map': 'Mapa',
         'page.nav.privacy': 'Prywatność',
         'page.nav.report': 'Zgłoś problem',
         'appMenu.open': 'Otwórz menu',
         'appMenu.close': 'Zamknij menu',
         'appMenu.label': 'Menu aplikacji',
+        'site.home': 'IleStoi.pl — strona główna',
+        'site.tagline': 'Mapa zgłoszeń długo stojących pojazdów',
         'map.label': 'Interaktywna mapa zgłoszeń',
 
-        'page.privacy.title': 'Prywatność - IleStoi.pl',
+        'page.privacy.title': 'Prywatność – IleStoi.pl',
         'page.privacy.description': 'Informacje o przetwarzaniu zdjęć, anonimizacji, retencji i zgłoszeniach korekty.',
         'page.privacy.heading': 'Prywatność',
         'page.privacy.intro': 'IleStoi.pl służy do dokumentowania zgłoszeń dotyczących pojazdów nieużytkowanych albo zalegających w przestrzeni publicznej. Publiczne wpisy są zgłoszeniami do weryfikacji, a nie rozstrzygnięciem o stanie prawnym pojazdu.',
@@ -37,7 +39,7 @@ const TRANSLATIONS_PL = {
         'page.privacy.logsTitle': 'Logi techniczne',
         'page.privacy.logsBody': 'Serwer może zapisywać podstawowe logi techniczne, takie jak czas żądania, adres IP, ścieżka URL bez parametrów zapytania, kod odpowiedzi i informacje diagnostyczne. Logi służą utrzymaniu bezpieczeństwa, diagnozowaniu błędów i ochronie przed nadużyciami.',
 
-        'page.report.title': 'Zgłoś problem - IleStoi.pl',
+        'page.report.title': 'Zgłoś problem – IleStoi.pl',
         'page.report.description': 'Formularz żądania usunięcia, anonimizacji albo korekty publicznego wpisu lub zdjęcia.',
         'page.report.heading': 'Zgłoś problem z wpisem lub zdjęciem',
         'page.report.intro': 'Użyj formularza, jeżeli chcesz zgłosić prośbę o usunięcie, anonimizację albo korektę publicznego wpisu. Podaj link do wpisu, identyfikator zdjęcia albo inny opis, który pozwoli administratorowi znaleźć zgłoszenie.',

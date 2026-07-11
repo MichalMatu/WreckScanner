@@ -1,0 +1,26 @@
+# IleStoi.pl
+
+> IleStoi.pl is a public, community-oriented map for documenting vehicles that appear to remain unused or stand in one place for a long time.
+
+Canonical website: https://ilestoi.pl/
+
+## What the service contains
+
+- A map of public, anonymized vehicle and field-photo reports.
+- Observation dates, field photos, location context, and verification statuses where available.
+- Tools for reviewing location history and preparing a report for the appropriate authority.
+
+Public entries are observations submitted for verification. They are not legal determinations that a vehicle is abandoned, unlawfully parked, uninsured, or owned by any particular person.
+
+## Key pages
+
+- [Interactive map](https://ilestoi.pl/)
+- [Privacy and data handling](https://ilestoi.pl/privacy)
+- [Correction, anonymization, or removal request](https://ilestoi.pl/report)
+
+## Identity
+
+- Preferred name: IleStoi.pl
+- Primary language: Polish
+- Canonical host: ilestoi.pl
+- Privacy contact: privacy@ilestoi.pl
