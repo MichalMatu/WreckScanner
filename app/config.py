@@ -89,6 +89,14 @@ TRUSTED_PROXY_ADDRESSES = tuple(
     for address in os.environ.get("WRECKSCANNER_TRUSTED_PROXY_ADDRESSES", "127.0.0.1,::1").split(",")
     if address.strip()
 )
+PUBLIC_HOSTS = tuple(
+    hostname.strip().lower().rstrip(".")
+    for hostname in os.environ.get(
+        "WRECKSCANNER_PUBLIC_HOSTS",
+        "wreckscanner.pl,www.wreckscanner.pl,ilestoi.pl,www.ilestoi.pl,dlugostoi.pl,www.dlugostoi.pl",
+    ).split(",")
+    if hostname.strip()
+)
 
 # JSON endpointy przenoszą małe komendy i ustawienia. Większe payloady zdjęć
 # idą przez multipart i mają osobne limity w core.config.

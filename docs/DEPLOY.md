@@ -15,6 +15,7 @@ WRECKSCANNER_ADMIN_SESSION_SECRET=...
 WRECKSCANNER_ADMIN_COOKIE_SECURE=1
 WRECKSCANNER_CORS_ALLOWED_ORIGINS=https://wreckscanner.pl,https://www.wreckscanner.pl,https://ilestoi.pl,https://www.ilestoi.pl,https://dlugostoi.pl,https://www.dlugostoi.pl
 WRECKSCANNER_TRUSTED_PROXY_ADDRESSES=127.0.0.1,::1
+WRECKSCANNER_PUBLIC_HOSTS=wreckscanner.pl,www.wreckscanner.pl,ilestoi.pl,www.ilestoi.pl,dlugostoi.pl,www.dlugostoi.pl
 WRECKSCANNER_PHOTO_RETENTION_AUTORUN=1
 ```
 

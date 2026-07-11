@@ -62,4 +62,10 @@ systemctl status cloudflared.service --no-pager
 Nie restartuj tunelu, jesli walidacja ingress nie zakonczy sie wynikiem `OK`.
 Dla kazdego hostname'u utworz odpowiadajacy, proxied rekord Tunnel/CNAME w DNS.
 
+Backend honoruje `X-Forwarded-Proto` tylko od adresow z
+`WRECKSCANNER_TRUSTED_PROXY_ADDRESSES`. Publiczne zadanie przekazane przez
+Cloudflare jako HTTP dostaje `308` do tego samego hosta i sciezki po HTTPS,
+o ile host znajduje sie w `WRECKSCANNER_PUBLIC_HOSTS`. Bezposrednie lokalne
+health-checki bez naglowka proxy nadal dzialaja po HTTP.
+
 Usuniecie strony oznacza usuniecie jej wpisow `ingress`, usuniecie jej rekordow DNS w Cloudflare i zatrzymanie/wylaczenie jej uslugi systemd.

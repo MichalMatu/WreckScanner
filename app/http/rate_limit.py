@@ -3,11 +3,9 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from functools import lru_cache
-from ipaddress import ip_address, ip_network
 from threading import Lock
 
-from app import config
+from app.http import proxy as http_proxy
 from app.http import responses as http_responses
 
 
@@ -119,27 +117,8 @@ def _client_host(handler) -> str:
     return _safe_client_token(client_address[0] if client_address else "unknown")
 
 
-@lru_cache(maxsize=1)
-def _trusted_proxy_networks():
-    networks = []
-    for value in config.TRUSTED_PROXY_ADDRESSES:
-        try:
-            networks.append(ip_network(value, strict=False))
-        except ValueError:
-            continue
-    return tuple(networks)
-
-
-def _request_from_trusted_proxy(handler) -> bool:
-    try:
-        client_ip = ip_address(_client_host(handler))
-    except ValueError:
-        return False
-    return any(client_ip in network for network in _trusted_proxy_networks())
-
-
 def client_key(handler) -> str:
-    if _request_from_trusted_proxy(handler):
+    if http_proxy.request_from_trusted_proxy(handler):
         for header in ("CF-Connecting-IP", "X-Forwarded-For"):
             value = _safe_client_token(handler.headers.get(header))
             if value != "unknown":

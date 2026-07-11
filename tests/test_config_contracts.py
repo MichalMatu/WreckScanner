@@ -53,6 +53,17 @@ class ConfigModuleContractTests(unittest.TestCase):
             ("https://wreckscanner.pl", "https://ilestoi.pl", "https://dlugostoi.pl"),
         )
         self.assertEqual(app_config.TRUSTED_PROXY_ADDRESSES, ("127.0.0.1", "::1"))
+        self.assertEqual(
+            app_config.PUBLIC_HOSTS,
+            (
+                "wreckscanner.pl",
+                "www.wreckscanner.pl",
+                "ilestoi.pl",
+                "www.ilestoi.pl",
+                "dlugostoi.pl",
+                "www.dlugostoi.pl",
+            ),
+        )
 
     def test_web_config_is_loaded_before_application_code(self):
         html = read_index_html()
