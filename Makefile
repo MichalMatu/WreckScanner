@@ -24,7 +24,9 @@ SERVER_PROBE_TIMEOUT_SECONDS ?= 5
 SERVER_LOG ?= .dev/server.log
 AUTOSTART_DISABLED_FILE ?= .dev/server.autostart.disabled
 SYSTEMD_WORKING_DIRECTORY := $(shell $(SYSTEMCTL) show "$(SYSTEMD_UNIT)" --property=WorkingDirectory --value 2>/dev/null)
-SYSTEMD_MANAGED ?= $(if $(filter $(CURDIR),$(SYSTEMD_WORKING_DIRECTORY)),1,0)
+SYSTEMD_MOUNT_PATHS := $(shell $(SYSTEMCTL) show "$(SYSTEMD_UNIT)" --property=BindPaths --property=BindReadOnlyPaths --value 2>/dev/null)
+SYSTEMD_CHECKOUT_MOUNTS := $(filter $(CURDIR):% $(CURDIR)/server.py:%,$(SYSTEMD_MOUNT_PATHS))
+SYSTEMD_MANAGED ?= $(if $(or $(filter $(CURDIR),$(SYSTEMD_WORKING_DIRECTORY)),$(SYSTEMD_CHECKOUT_MOUNTS)),1,0)
 
 menu:
 	@printf '%s\n' \
@@ -208,15 +210,23 @@ status:
 	@status=0; \
 	if [ "$(SYSTEMD_MANAGED)" = '1' ]; then \
 		active="$$( $(SYSTEMCTL) is-active "$(SYSTEMD_UNIT)" 2>/dev/null || true )"; \
+		main_pid="$$( $(SYSTEMCTL) show "$(SYSTEMD_UNIT)" --property=MainPID --value 2>/dev/null || true )"; \
 		echo "Supervisor: systemd ($(SYSTEMD_UNIT)), stan: $${active:-nieznany}"; \
 		if [ "$$active" != 'active' ]; then status=1; fi; \
+		printf '%s\n' 'Procesy server.py:'; \
+		if [ -n "$$main_pid" ] && [ "$$main_pid" != '0' ]; then \
+			echo "$$main_pid ($(SYSTEMD_UNIT))"; \
+		else \
+			echo 'brak'; \
+			status=1; \
+		fi; \
 	else \
 		echo 'Supervisor: lokalny watcher'; \
-	fi; \
-	printf '%s\n' 'Procesy server.py:'; \
-	if ! pgrep -af '$(SERVER_PATTERN)'; then \
-		echo 'brak'; \
-		status=1; \
+		printf '%s\n' 'Procesy server.py:'; \
+		if ! pgrep -af '$(SERVER_PATTERN)'; then \
+			echo 'brak'; \
+			status=1; \
+		fi; \
 	fi; \
 	printf '\n%s\n' 'Liveness:'; \
 	if command -v curl >/dev/null 2>&1; then \
