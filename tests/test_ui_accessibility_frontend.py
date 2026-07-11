@@ -53,7 +53,7 @@ class UiAccessibilityFrontendContracts(unittest.TestCase):
         html = static_files.render_web_template("index.html")
         i18n = "\n".join((ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js"))
 
-        self.assertIn('id="map" role="region" tabindex="0" aria-label="Interaktywna mapa"', html)
+        self.assertIn('<main id="map" tabindex="0" aria-label="Interaktywna mapa"', html)
         self.assertIn('id="year-range"', html)
         self.assertIn('data-i18n-attr="aria-label:panel.baseMapSlider"', html)
         self.assertIn("title:panel.baseMapPrevious;aria-label:panel.baseMapPrevious", html)
@@ -68,7 +68,7 @@ class UiAccessibilityFrontendContracts(unittest.TestCase):
         map_css = (ROOT_DIR / "web" / "styles" / "map.css").read_text(encoding="utf-8")
         i18n = "\n".join((ROOT_DIR / "web" / path).read_text(encoding="utf-8") for path in ("i18n/pl.js", "i18n/en.js"))
 
-        self.assertRegex(html, r'id="map" role="region" tabindex="0"')
+        self.assertRegex(html, r'<main id="map" tabindex="0"')
         self.assertIn("function focusFieldPhotoLocationPicker()", upload_js)
         self.assertIn("function handleFieldPhotoLocationPickKeydown(event)", upload_js)
         self.assertIn("function handleFieldPhotoLocationPickEscape(event)", upload_js)

@@ -50,7 +50,7 @@ class ConfigModuleContractTests(unittest.TestCase):
         self.assertTrue(app_config.ADMIN_COOKIE_SECURE)
         self.assertEqual(
             app_config.CORS_ALLOWED_ORIGINS,
-            ("https://wreckscanner.pl", "https://ilestoi.pl", "https://dlugostoi.pl"),
+            ("https://ilestoi.pl",),
         )
         self.assertEqual(app_config.TRUSTED_PROXY_ADDRESSES, ("127.0.0.1", "::1"))
         self.assertEqual(
@@ -64,6 +64,8 @@ class ConfigModuleContractTests(unittest.TestCase):
                 "www.dlugostoi.pl",
             ),
         )
+        self.assertEqual(app_config.CANONICAL_PUBLIC_HOST, "ilestoi.pl")
+        self.assertEqual(app_config.CANONICAL_PUBLIC_ORIGIN, "https://ilestoi.pl")
 
     def test_web_config_is_loaded_before_application_code(self):
         html = read_index_html()

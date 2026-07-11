@@ -21,7 +21,7 @@ curl -fsS http://127.0.0.1:8001/api/health/ready
 `live` potwierdza dzialanie procesu; do kierowania ruchu przez tunel wymagaj
 odpowiedzi `200` z `ready`.
 
-## Jeden tunel, wiele stron
+## Jeden tunel, wiele hostow
 
 Jeden `cloudflared` na tym samym Raspberry Pi moze obslugiwac kilka publicznych hostname'ow. Dla kazdej strony dodaj osobny wpis DNS/CNAME w Cloudflare i osobny wpis `ingress` w `/etc/cloudflared/config.yml`.
 
@@ -63,9 +63,24 @@ Nie restartuj tunelu, jesli walidacja ingress nie zakonczy sie wynikiem `OK`.
 Dla kazdego hostname'u utworz odpowiadajacy, proxied rekord Tunnel/CNAME w DNS.
 
 Backend honoruje `X-Forwarded-Proto` tylko od adresow z
-`WRECKSCANNER_TRUSTED_PROXY_ADDRESSES`. Publiczne zadanie przekazane przez
-Cloudflare jako HTTP dostaje `308` do tego samego hosta i sciezki po HTTPS,
-o ile host znajduje sie w `WRECKSCANNER_PUBLIC_HOSTS`. Bezposrednie lokalne
-health-checki bez naglowka proxy nadal dzialaja po HTTP.
+`WRECKSCANNER_TRUSTED_PROXY_ADDRESSES`. `ilestoi.pl` jest jedynym hostem
+kanonicznym. Publiczne zadanie HTTP oraz kazde zadanie do aliasu
+`wreckscanner.pl`, `dlugostoi.pl` albo wariantu `www` dostaje jeden `308` do
+tej samej sciezki pod `https://ilestoi.pl`. Wszystkie aliasy musza pozostac w
+DNS i ingress tunelu, aby stare linki oraz boty otrzymywaly przekierowanie.
+Bezposrednie lokalne health-checki bez naglowka proxy nadal dzialaja po HTTP.
+
+Po wdrozeniu zmiany domeny sprawdz:
+
+```bash
+curl -sSI http://wreckscanner.pl/ | sed -n '1p;/^location:/Ip'
+curl -sSI https://dlugostoi.pl/ | sed -n '1p;/^location:/Ip'
+curl -fsS https://ilestoi.pl/robots.txt
+curl -fsS https://ilestoi.pl/sitemap.xml
+```
+
+W Google Search Console zweryfikuj stara i nowa domene, zglos zmiane adresu na
+`ilestoi.pl`, dodaj `https://ilestoi.pl/sitemap.xml` i popros o ponowne
+zindeksowanie strony glownej.
 
 Usuniecie strony oznacza usuniecie jej wpisow `ingress`, usuniecie jej rekordow DNS w Cloudflare i zatrzymanie/wylaczenie jej uslugi systemd.

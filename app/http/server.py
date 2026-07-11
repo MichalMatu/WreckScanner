@@ -60,37 +60,46 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def parse_request(self) -> bool:
         if not super().parse_request():
             return False
-        return not self._redirect_insecure_request()
+        return not self._canonicalize_public_request()
 
-    def _redirect_insecure_request(self) -> bool:
+    def _canonicalize_public_request(self) -> bool:
         if not http_proxy.request_from_trusted_proxy(self):
             return False
 
         forwarded_proto = str(self.headers.get("X-Forwarded-Proto") or "").strip().lower()
-        if not forwarded_proto or forwarded_proto == "https":
+        if not forwarded_proto:
             return False
-        if forwarded_proto != "http":
+        if forwarded_proto not in {"http", "https"}:
             self.close_connection = True
             http_responses.send_text_error(self, 400, "Nieprawidłowy protokół przekazany przez proxy.")
             return True
 
-        hostname = self._public_request_hostname()
+        hostname = self._public_request_hostname(forwarded_proto)
         redirect_path = self._redirect_path()
         if hostname is None or redirect_path is None:
             self.close_connection = True
             http_responses.send_text_error(self, 400, "Nieprawidłowy publiczny adres żądania.")
             return True
 
+        path, query = redirect_path
+        canonical_path = "/" if path == "/index.html" else path
+        raw_host = str(self.headers.get("Host") or "").strip().lower()
+        if forwarded_proto == "https" and raw_host == config.CANONICAL_PUBLIC_HOST and canonical_path == path:
+            return False
+
         self.close_connection = True
         self.send_response(308)
-        self.send_header("Location", urlunsplit(("https", hostname, redirect_path[0], redirect_path[1], "")))
+        self.send_header(
+            "Location",
+            urlunsplit(("https", config.CANONICAL_PUBLIC_HOST, canonical_path, query, "")),
+        )
         self.send_header("Content-Length", "0")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Connection", "close")
         self.end_headers()
         return True
 
-    def _public_request_hostname(self) -> str | None:
+    def _public_request_hostname(self, forwarded_proto: str) -> str | None:
         raw_host = str(self.headers.get("Host") or "").strip()
         if not raw_host or any(char.isspace() or ord(char) < 33 for char in raw_host):
             return None
@@ -100,13 +109,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except ValueError:
             return None
         hostname = str(parsed_host.hostname or "").lower().rstrip(".")
+        expected_port = 80 if forwarded_proto == "http" else 443
         if (
             parsed_host.username is not None
             or parsed_host.password is not None
             or parsed_host.path
             or parsed_host.query
             or parsed_host.fragment
-            or port not in {None, 80}
+            or port not in {None, expected_port}
             or hostname not in config.PUBLIC_HOSTS
         ):
             return None

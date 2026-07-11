@@ -1,0 +1,13 @@
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /tile_proxy/
+Disallow: /wms_proxy/
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /tile_proxy/
+Disallow: /wms_proxy/
+
+Sitemap: https://ilestoi.pl/sitemap.xml

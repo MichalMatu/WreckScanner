@@ -80,7 +80,7 @@ CORS_ALLOWED_ORIGINS = tuple(
     origin.strip()
     for origin in os.environ.get(
         "WRECKSCANNER_CORS_ALLOWED_ORIGINS",
-        "https://wreckscanner.pl,https://ilestoi.pl,https://dlugostoi.pl",
+        "https://ilestoi.pl",
     ).split(",")
     if origin.strip()
 )
@@ -97,6 +97,8 @@ PUBLIC_HOSTS = tuple(
     ).split(",")
     if hostname.strip()
 )
+CANONICAL_PUBLIC_HOST = "ilestoi.pl"
+CANONICAL_PUBLIC_ORIGIN = f"https://{CANONICAL_PUBLIC_HOST}"
 
 # JSON endpointy przenoszą małe komendy i ustawienia. Większe payloady zdjęć
 # idą przez multipart i mają osobne limity w core.config.

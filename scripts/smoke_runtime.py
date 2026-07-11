@@ -102,6 +102,9 @@ def check_landing(base_url: str, timeout: float) -> str:
         'id="map"',
         'id="panel-add-field-photo"',
         'onclick="openFieldPhotoUploadFromPanel()"',
+        '<link rel="canonical" href="https://ilestoi.pl/">',
+        "<h1>IleStoi.pl</h1>",
+        'type="application/ld+json"',
         '<script src="/app/startup.js"></script>',
     ):
         expect(marker in html, f"landing: brakuje markera {marker!r}.")
@@ -169,6 +172,11 @@ def run_smoke(base_url: str, *, timeout: float = 5.0) -> list[str]:
         check_static_asset(base_url, "/app/api.js", timeout),
         check_static_asset(base_url, "/app/field_photo_upload.js", timeout),
         check_static_asset(base_url, "/app/settings.js", timeout),
+        check_static_asset(base_url, "/favicon.svg", timeout),
+        check_static_asset(base_url, "/robots.txt", timeout),
+        check_static_asset(base_url, "/sitemap.xml", timeout),
+        check_static_asset(base_url, "/llms.txt", timeout),
+        check_static_asset(base_url, "/site.webmanifest", timeout),
         check_health(base_url, timeout),
         check_public_json_list(base_url, "/api/field-photos", "photos", timeout),
         check_json_404(base_url, timeout),

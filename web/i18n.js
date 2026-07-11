@@ -8,7 +8,8 @@ const TRANSLATIONS = {
     en: TRANSLATIONS_EN,
 };
 
-// Bieżący język — wybór z localStorage → navigator → 'pl'
+// Polski jest deterministycznym językiem kanonicznego URL-a. Angielski wymaga
+// jawnego parametru albo wcześniejszego wyboru użytkownika.
 function detectLang() {
     const requested = new URLSearchParams(window.location.search).get('lang');
     if (requested === 'pl' || requested === 'en') return requested;
@@ -16,8 +17,7 @@ function detectLang() {
         const saved = localStorage.getItem(I18N_LANG_KEY);
         if (saved === 'pl' || saved === 'en') return saved;
     } catch (_) {}
-    const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
-    return nav.startsWith('pl') ? 'pl' : 'en';
+    return 'pl';
 }
 
 let CURRENT_LANG = detectLang();
@@ -62,9 +62,19 @@ function applyI18n() {
     // tytuł strony i meta description
     const titleKey = document.documentElement.dataset.i18nTitle || 'meta.title';
     const descriptionKey = document.documentElement.dataset.i18nDescription || 'meta.description';
-    document.title = t(titleKey);
+    const localizedTitle = t(titleKey);
+    const localizedDescription = t(descriptionKey);
+    document.title = localizedTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', t(descriptionKey));
+    if (metaDesc) metaDesc.setAttribute('content', localizedDescription);
+    document.querySelectorAll('meta[property="og:title"], meta[name="twitter:title"]').forEach(meta => {
+        meta.setAttribute('content', localizedTitle);
+    });
+    document.querySelectorAll('meta[property="og:description"], meta[name="twitter:description"]').forEach(meta => {
+        meta.setAttribute('content', localizedDescription);
+    });
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
+    if (ogLocale) ogLocale.setAttribute('content', CURRENT_LANG === 'pl' ? 'pl_PL' : 'en_US');
 
     // przełącznik języka — zaznacz aktywną opcję
     document.querySelectorAll('[data-lang-option]').forEach(el => {
