@@ -7,8 +7,6 @@ const TRANSLATIONS_EN = {
         'appMenu.open': 'Open menu',
         'appMenu.close': 'Close menu',
         'appMenu.label': 'Application menu',
-        'site.home': 'IleStoi.pl — home page',
-        'site.tagline': 'Map of long-standing vehicle reports',
         'map.label': 'Interactive report map',
 
         'page.privacy.title': 'Privacy – IleStoi.pl',

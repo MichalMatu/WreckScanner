@@ -8,8 +8,6 @@ const TRANSLATIONS_PL = {
         'appMenu.open': 'Otwórz menu',
         'appMenu.close': 'Zamknij menu',
         'appMenu.label': 'Menu aplikacji',
-        'site.home': 'IleStoi.pl — strona główna',
-        'site.tagline': 'Mapa zgłoszeń długo stojących pojazdów',
         'map.label': 'Interaktywna mapa zgłoszeń',
 
         'page.privacy.title': 'Prywatność – IleStoi.pl',
