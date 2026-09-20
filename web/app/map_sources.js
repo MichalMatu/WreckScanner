@@ -13,7 +13,7 @@ try {
 const TILE_FALLBACK_DATA_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#d1d8e0"/></svg>'
 )}`;
-const RETRYABLE_TILE_CACHE_STATUSES = new Set(['UPSTREAM_ERROR', 'ENCODE_ERROR']);
+const RETRYABLE_TILE_CACHE_STATUSES = new Set(['BUSY', 'IN_FLIGHT', 'UPSTREAM_ERROR', 'ENCODE_ERROR']);
 
 function retryTileDelayMs(attempt) {
     return Math.min(30000, 1500 * (2 ** Math.min(attempt, 5)));
